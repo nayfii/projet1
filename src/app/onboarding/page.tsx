@@ -3,9 +3,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
-import { getCompany, getMyPendingInvitations } from "@/modules/organizations/server/queries";
+import { getCompany, getMyPendingInvitations, listMembers } from "@/modules/organizations/server/queries";
 import { OnboardingWizard, type OnboardingStep } from "@/modules/organizations/ui/onboarding-wizard";
-import { listMembers } from "@/modules/organizations/server/queries";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("onboarding");
@@ -57,7 +56,9 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
         website: company.website,
         description: company.description,
       } : null}
-      members={members.filter((m) => m.status === "active").map((m) => ({ userId: m.userId, name: m.fullName ?? m.email }))}
+      members={members
+        .filter((m) => m.status === "active" && m.role !== "owner")
+        .map((m) => ({ userId: m.userId, name: m.fullName ?? m.email }))}
     />
   );
 }
