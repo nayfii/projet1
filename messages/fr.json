@@ -206,7 +206,7 @@
     "visibilityRestrictedHint": "Seules les personnes choisies y ont accès.",
     "visibilityUpdated": "Visibilité mise à jour",
     "assignees": "Personnes ayant accès",
-    "noAssigneesYet": "Aucun employé pour l'instant. Vous pourrez attribuer ce client après avoir invité votre équipe.",
+    "noAssigneesYet": "Aucun collègue pour l'instant. Les personnes invitées apparaîtront ici dès qu'elles auront rejoint l'espace.",
     "ownerAlwaysAccess": "Le propriétaire de l'entreprise a toujours accès.",
     "assignedCount": "{count, plural, =0 {Personne n'a accès} one {# personne a accès} other {# personnes ont accès}}",
     "emptyTitle": "Aucun client pour l'instant",

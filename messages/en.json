@@ -206,7 +206,7 @@
     "visibilityRestrictedHint": "Only the people you choose have access.",
     "visibilityUpdated": "Visibility updated",
     "assignees": "People with access",
-    "noAssigneesYet": "No employees yet. You can assign this client once your team has joined.",
+    "noAssigneesYet": "No colleagues yet. Invited people will appear here as soon as they join the workspace.",
     "ownerAlwaysAccess": "The company owner always has access.",
     "assignedCount": "{count, plural, =0 {Nobody has access} one {# person has access} other {# people have access}}",
     "emptyTitle": "No clients yet",
