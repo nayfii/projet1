@@ -34,3 +34,9 @@ worker/tmp/
 .vscode/
 .idea/
 *.log
+
+# misc
+*.pem
+.vercel
+.pnp
+.pnp.*

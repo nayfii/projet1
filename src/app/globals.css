@@ -1,0 +1,137 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Design tokens. A warm neutral palette and a single accent ("brand").
+ * The accent is one variable: change --brand to rebrand the whole product.
+ */
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.99 0.002 90);
+  --foreground: oklch(0.22 0.006 90);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.22 0.006 90);
+  --primary-foreground: oklch(0.99 0.002 90);
+  --secondary: oklch(0.965 0.003 90);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.965 0.003 90);
+  --muted-foreground: oklch(0.52 0.008 90);
+  --accent: oklch(0.955 0.004 90);
+  --accent-foreground: var(--foreground);
+  --border: oklch(0.915 0.004 90);
+  --input: oklch(0.895 0.004 90);
+  --ring: oklch(0.56 0.16 262);
+
+  --brand: oklch(0.53 0.17 262);
+  --brand-foreground: oklch(0.99 0.002 90);
+  --brand-soft: oklch(0.955 0.03 262);
+
+  --destructive: oklch(0.57 0.2 27);
+  --destructive-soft: oklch(0.96 0.03 27);
+  --success: oklch(0.58 0.12 155);
+  --success-soft: oklch(0.96 0.03 155);
+  --warning: oklch(0.7 0.14 70);
+  --warning-soft: oklch(0.97 0.04 85);
+
+  --sidebar: oklch(0.975 0.003 90);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: oklch(0.93 0.004 90);
+  --sidebar-accent: oklch(0.94 0.004 90);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.175 0.004 90);
+    --foreground: oklch(0.955 0.003 90);
+    --card: oklch(0.2 0.004 90);
+    --popover: oklch(0.21 0.004 90);
+    --primary: oklch(0.955 0.003 90);
+    --primary-foreground: oklch(0.2 0.004 90);
+    --secondary: oklch(0.24 0.004 90);
+    --muted: oklch(0.235 0.004 90);
+    --muted-foreground: oklch(0.69 0.006 90);
+    --accent: oklch(0.255 0.004 90);
+    --border: oklch(0.285 0.004 90);
+    --input: oklch(0.31 0.004 90);
+    --ring: oklch(0.68 0.15 262);
+
+    --brand: oklch(0.68 0.15 262);
+    --brand-foreground: oklch(0.17 0.004 90);
+    --brand-soft: oklch(0.26 0.04 262);
+
+    --destructive: oklch(0.66 0.18 25);
+    --destructive-soft: oklch(0.27 0.05 25);
+    --success: oklch(0.7 0.12 155);
+    --success-soft: oklch(0.26 0.04 155);
+    --warning: oklch(0.78 0.13 75);
+    --warning-soft: oklch(0.28 0.04 75);
+
+    --sidebar: oklch(0.155 0.004 90);
+    --sidebar-border: oklch(0.255 0.004 90);
+    --sidebar-accent: oklch(0.23 0.004 90);
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent: var(--sidebar-accent);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--brand) 22%, transparent);
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}

@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **plan (Step 0)**. Nothing below is implemented yet. This document is updated at the end of every step.
+Status: **Step 1 implemented** (identity, companies, roles, invitations, clients, audit, the three spaces). Later sections describe the plan for Steps 2–10. Updated at the end of every step.
 Source of truth for product decisions: `CLAUDE.md`. Open questions live in `docs/STATUS.md`.
 
 ---
@@ -341,3 +341,18 @@ typed message / attachments / retrieved excerpts
 - **Errors:** typed domain errors mapped to friendly translated messages; provider errors normalised (§6).
 - **Testing:** Vitest (unit: Hide detectors, router, permissions logic), integration tests against local Supabase with several real users' JWTs, pgTAP for RLS, Playwright for the launch scenario. A clearly-labelled **fake provider** exists for automated tests only; real-key smoke tests run when keys are configured.
 - **Hosting:** EU regions only (app, database, storage, worker). Exact hosts chosen at Step 10.
+
+---
+
+## 12. Implementation notes (Step 1)
+
+- **Rendering model.** Next.js 16 ships "Cache Components" switched on in new projects. It is **off** here: nearly every screen is per-user and permission-filtered, so pages render at request time (the previous model). To revisit when Next.js makes it mandatory.
+- **`src/proxy.ts`** (Next.js 16's new name for middleware) only refreshes the Supabase session and sends signed-out visitors to `/login` (401 JSON for `/api/*`). It is **not** the authorisation layer.
+- **Authorisation layers.** (1) `src/lib/auth/guards.ts` in every page and server action (`requireMember`, `requireCompanyAdmin`, `requireScope`, `requirePlatformAdmin`); (2) `SECURITY DEFINER` RPCs that re-check roles (`create_company`, `create_invitation`, `accept_invitation`, `admin_update_member`, `update_my_member_card`, `platform_*`); (3) RLS on every table. Direct writes to members, invitations, companies' platform fields and the audit log are revoked from API roles, and so is `TRUNCATE`.
+- **Database errors** are raised as stable codes (`private.fail('seat_limit_reached')`) and translated in `messages/*.json` → `errors`. Unknown database messages are never shown to users.
+- **Sign-in emails** link to `/auth/confirm?token_hash=…` (works even when the link is opened in another browser). Templates are bilingual: `supabase/templates/`.
+- **Invitations**: only a SHA-256 hash of the token is stored. The email is sent by Supabase Auth (an "invite" email for new addresses, a sign-in link for existing accounts), and the inviter can copy the link if sending fails. Acceptance requires the signed-in email to match the invitation. Seat limits are enforced at invitation time.
+- **Activity log**: written by database triggers (clients, assignments, plans) and by the RPCs, so a change is logged whatever path made it. Only ids and settings are stored; names are resolved at display time from what the viewer may already see.
+- **Service-role client** (`src/lib/supabase/admin.ts`): a lint rule restricts its import to the audited files (sign-in bootstrap of platform admins, invitation emails).
+- **i18n**: `next-intl` without locale in the URL; `react/jsx-no-literals` blocks hardcoded text in JSX; a unit test checks that `fr.json` and `en.json` have identical keys.
+- **UI kit**: shadcn/ui-style components written by hand on `radix-ui` (the shadcn registry is unreachable from the development container).

@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 0 (kickoff and plan), 2026-10-18.
+Last update: Step 1 (foundation), 2026-10-18.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -30,8 +30,8 @@ Legend: **done** · **partial** · **not started** · **known issue**
 |---|---|
 | Company memory | not started |
 | Client memory (one per client) | not started |
-| Client visibility Open / Restricted | not started |
-| Client assignments | not started |
+| Client visibility Open / Restricted | **done** (Step 1) |
+| Client assignments | **done** (Step 1) |
 | Permission categories (read / write per memory) | not started |
 | Deliberate memory entries (from chat, document, approved AI suggestion) | not started |
 | Entries editable / deletable, with source, author, date | not started |
@@ -65,7 +65,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | AI context = history visible to all + intersection of permissions, with indicator | not started |
 | Conversation transfer (ownership change, sender loses access, logged) | not started |
 | Smart Handover (conversation, restricted client, project) | not started |
-| Who Can Help (expertise, suggestions, invite button, opt-out) | not started |
+| Who Can Help (expertise, suggestions, invite button, opt-out) | partial: expertise and opt-out are captured in profiles (Step 1); suggestions come in Step 5 |
 
 ## 4.5 Confronter
 | Feature | Status |
@@ -113,44 +113,44 @@ Legend: **done** · **partial** · **not started** · **known issue**
 ## 4.8 Company admin console
 | Feature | Status |
 |---|---|
-| Employees: invite, deactivate, roles, expertise | not started |
-| Permissions: memory categories, client visibility and assignments | not started |
+| Employees: invite, deactivate, roles, expertise | **done** (Step 1) |
+| Permissions: memory categories, client visibility and assignments | partial: client visibility and assignments done; memory categories in Step 3 |
 | Models: enable / disable, default, Auto mode | not started |
 | Agents and tools: enable per role, approve company-wide tools | not started |
 | Hide policies | not started |
 | Usage dashboards (real provider data; costs labelled as estimates) | not started |
 | Quotas | not started |
-| Activity log | not started |
+| Activity log | partial: sign-ins, invitations, member changes, client creation / visibility / access; transfers, masking events and blocked requests come with their features |
 
 ## 4.9 Platform admin console
 | Feature | Status |
 |---|---|
-| Company list, create / suspend | not started |
-| Plans and seats | not started |
-| Quotas and credits per company | not started |
+| Company list, create / suspend | **done** (Step 1) |
+| Plans and seats | **done** (Step 1): seat limit enforced on invitations |
+| Quotas and credits per company | partial: plans define monthly and video credits; consumption and quotas in Step 2 |
 | Usage and estimated AI cost per company (margin view) | not started |
 | Provider health | not started |
-| Platform audit log | not started |
-| No access to customer content (DB policies + server + tests) | not started |
+| Platform audit log | **done** (Step 1) |
+| No access to customer content (DB policies + server + tests) | **done** for Step 1 tables; every new content table must be added to the test list |
 
 ## 4.10 Onboarding
 | Feature | Status |
 |---|---|
-| Create account → company → profile → invite → first client → first document → first conversation, skippable steps | not started |
+| Create account → company → profile → invite → first client → first document → first conversation, skippable steps | partial: all steps up to the first client work; "first document" and "first conversation" are shown as Coming soon until Steps 3 and 2 |
 
 ## Foundations (sections 2, 3, 5, 7, 8)
 | Feature | Status |
 |---|---|
-| Next.js + TypeScript + Tailwind + shadcn/ui project | not started |
-| Design system and app shell | not started |
-| i18n French / English, browser default, per-user switch | not started |
-| Supabase local + migrations + RLS on every tenant table | not started |
-| Authentication: email + magic link, Google | not started |
-| Server-side authorisation helpers | not started |
-| Three spaces (platform admin, company admin, member app) | not started |
+| Next.js + TypeScript + Tailwind + shadcn/ui project | **done** (Next.js 16.4, React 19.3, Tailwind 4.3). shadcn/ui components written by hand in the same style: the shadcn registry is blocked from this cloud session |
+| Design system and app shell | **done** (v1): tokens in `src/app/globals.css`, components in `src/components/ui`, shell in `src/components/shell`. Light and dark (system). Product name and accent colour are placeholders |
+| i18n French / English, browser default, per-user switch | **done**: `messages/fr.json` + `en.json`, lint rule against hardcoded JSX text, test that both files have the same keys |
+| Supabase local + migrations + RLS on every tenant table | **done** for Step 1 tables (`supabase/migrations/20261018000001_foundation.sql`); a test fails if any public table lacks RLS |
+| Authentication: email + magic link, Google | partial: magic link **done and tested end to end**; Google sign-in implemented but **not tested** (needs a Google OAuth client) |
+| Server-side authorisation helpers | **done** (`src/lib/auth/guards.ts`), plus RPC checks and RLS in the database |
+| Three spaces (platform admin, company admin, member app) | **done**: `/platform`, `/admin`, member app at `/` |
 | Quotas per company and per user (80 % warning, 100 % stop) | not started |
-| Configurable plans, quotas, credit costs (no hardcoded prices) | not started |
-| Isolation tests (companies, clients, group intersection, platform admin) | not started |
+| Configurable plans, quotas, credit costs (no hardcoded prices) | partial: plans (seats, credits, displayed price) editable by the platform admin; credit costs and quotas in Step 2 |
+| Isolation tests (companies, clients, group intersection, platform admin) | partial: 36 integration tests for companies, clients, members, admin scopes, platform admin, invitations; group intersection in Step 5 |
 | Model-independent knowledge: single context builder, stateless providers, identical context across models (test) | not started |
 
 ---
@@ -165,7 +165,7 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 | Package manager | pnpm 10.28.0 ✓ (chosen); npm, yarn, bun also present |
 | Docker | 29.8.2 ✓ (daemon started manually in the session) |
 | Supabase CLI | 2.121.0 ✓ (installed at Step 0 via npm) |
-| Supabase local images | pull from Docker Hub works ✓ (AWS ECR public mirror refused: "data limit exceeded") |
+| Supabase local images | ✓ pulled from Docker Hub (`pnpm db:start` sets `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io`; GitHub's registry is blocked here) |
 | git | 2.43.0 ✓ (repository initialised at Step 0, **no remote yet**) |
 | FFmpeg / Chromium | present ✓ (useful for Step 8 tests) |
 
@@ -184,14 +184,34 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
+## Tests (Step 1)
+
+| Suite | Command | Result |
+|---|---|---|
+| Unit (translations, safe redirects, helpers) | `pnpm test` | 26 passed |
+| Integration: isolation with real users and JWTs | `pnpm test:integration` | 36 passed |
+| End to end in Chromium (sign-up by email link, onboarding, invitations, restricted client, platform console, phone) | `npx playwright test` | 5 passed |
+| Type check, lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
+
 ## Known issues
 
 - **Code persistence:** the cloud container is temporary. Until a GitHub repository is connected and the code pushed, the work exists only in this container.
+- **The founder cannot click-test yet:** the app runs only inside this container. A preview deployment (Supabase EU project + EU hosting) is needed for hands-on testing.
 - OpenAI cannot be tested from this cloud session until `api.openai.com` is allowed in the environment's network settings.
-
----
+- Google sign-in is untested (needs a Google OAuth client). The button stays hidden until `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`.
+- Emails go to the local test inbox (Mailpit). Production needs an SMTP provider; Supabase's default limit of 2 emails/hour must then be raised.
+- No ownership transfer (Owner → someone else) and no company switcher for people in several companies (the database supports several memberships, the UI uses the first active one).
+- A platform admin who is also a member of a company sees that company's content as a member. Our team should use separate accounts.
+- Product name ("Workspace") and accent colour are placeholders until the branding is chosen.
+- Ad-hoc decisions taken in Step 1, to confirm:
+  - only the Owner and Admins with the "clients" scope create clients (members cannot);
+  - an Admin with the "clients" scope sees the name of restricted clients in order to manage them (their memory will stay restricted);
+  - the Owner always has access to every client, including restricted ones ("full control").
 
 ## Open questions for the founder
+
+The founder asked to proceed ("je suis prêt à construire le tout") without answering these yet: the proposals below are applied as **defaults** and can be changed.
+
 
 1. **Permission categories** — proposed meaning: named groups of people (e.g. "All employees", "Management", "Finance") that are granted read and/or write on each memory. Defaults: everyone reads company memory, Owner + Admins write it; anyone with access to a client reads and writes its memory. To confirm.
 2. **"Project"** appears in Smart Handover ("a conversation, a restricted client or a project is transferred") but no project object exists elsewhere in the spec. Proposal: no "project" object at launch; handover for conversations and clients only. To confirm.
