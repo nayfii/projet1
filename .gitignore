@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js / build
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# env files (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# tests
+coverage/
+playwright-report/
+test-results/
+
+# local models and render outputs
+models/
+worker/tmp/
+*.mp4
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.log
