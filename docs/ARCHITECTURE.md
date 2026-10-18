@@ -23,6 +23,16 @@ Guiding rules:
 - The browser never holds a provider key or the Supabase service key.
 - Logs and analytics hold **metadata only** (counts, categories, ids), never prompt content or masked values.
 
+### 1.1 Model-independent knowledge (core differentiator)
+
+The company's and clients' knowledge lives **outside every LLM**, in our database. Models are interchangeable readers that receive the same authorised information at each request and keep nothing.
+
+1. **Single source of truth in our database:** company memory, client memories, documents (original file + extracted text), conversations, company tone and instructions, agents and tools.
+2. **Stateless providers:** no provider-side memory, threads, assistants, projects, uploaded files or vector stores. Every request is self-contained; `store: false` (or equivalent) wherever the API offers it. Short-lived prompt caching is allowed (performance only, not a knowledge store).
+3. **One context builder for all models:** the same retrieval, the same selection of passages, the same system prompt, whichever model answers. Only the wire format differs per adapter. The context budget fits the smallest context window among the company's allowed models, so no model gets more or less knowledge. A test asserts that the context built for a given question is identical across providers.
+4. **The search index is derived and rebuildable:** embeddings are computed from the text we keep; the embedding model is stored on each row, so the index can be regenerated with another provider or a local model without losing anything.
+5. **Switching or losing a provider loses nothing:** removing an adapter removes a reader, never knowledge.
+
 ---
 
 ## 2. Repository layout

@@ -151,6 +151,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Quotas per company and per user (80 % warning, 100 % stop) | not started |
 | Configurable plans, quotas, credit costs (no hardcoded prices) | not started |
 | Isolation tests (companies, clients, group intersection, platform admin) | not started |
+| Model-independent knowledge: single context builder, stateless providers, identical context across models (test) | not started |
 
 ---
 
@@ -200,3 +201,4 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 6. **Who sees real values in a group chat** — proposal: every participant who can see a message sees the real values typed in it (they were shared by a colleague); the AI only ever sees placeholders. To confirm.
 7. **Gemini terms** — the free tier of the Gemini API allows Google to use data to improve its products. The production key must be on a paid (billing-enabled) Google project, or on Vertex AI in an EU region.
 8. **Meeting Minutes with audio** — needs a speech-to-text model (e.g. OpenAI or Gemini audio input). This is another data flow to document; to confirm it is acceptable.
+9. **Knowledge export** — a company could export its whole memory (entries + documents) in open formats, which proves it is not locked in. Not in the launch spec; to confirm whether to add it.
