@@ -82,3 +82,39 @@ describe("embeddings (real API)", () => {
     },
   );
 });
+
+describe("Hide with a real model", () => {
+  it.skipIf(!getProvider("openai").isConfigured())("keeps placeholders exactly as written, so real values can be put back", async () => {
+    const { PROTECTED_VALUES_RULES } = await import("@/modules/conversations/system-prompt");
+    const { restorePlaceholders } = await import("@/modules/hide/mask");
+    const events: ChatEvent[] = [];
+    for await (const e of getProvider("openai").stream(
+      {
+        apiModelId: "gpt-6-luna",
+        system: `You are a helpful assistant.\n\n## Protected values\n${PROTECTED_VALUES_RULES}`,
+        messages: [
+          {
+            role: "user",
+            content: [{ type: "text", text: "Écris en une phrase un rappel de paiement à [CLIENT_1] pour la facture à régler sur [IBAN_1]." }],
+          },
+        ],
+        maxOutputTokens: 2000,
+      },
+      new AbortController().signal,
+    )) {
+      events.push(e);
+    }
+    const error = events.find((e) => e.type === "error");
+    if (error?.type === "error" && error.error.code === "provider_quota") {
+      console.warn("hide: provider account out of credits (provider_quota)");
+      return;
+    }
+    expect(error).toBeUndefined();
+    const text = events.flatMap((e) => (e.type === "text" ? [e.delta] : [])).join("");
+    expect(text).toContain("[CLIENT_1]");
+    expect(text).toContain("[IBAN_1]");
+    const restored = restorePlaceholders(text, new Map([["[CLIENT_1]", "Boulangerie Dupont"], ["[IBAN_1]", "FR76 3000 6000 0112 3456 7890 189"]]));
+    expect(restored).toContain("Boulangerie Dupont");
+    console.info("hide/gpt-6-luna:", JSON.stringify(text.slice(0, 200)));
+  });
+});

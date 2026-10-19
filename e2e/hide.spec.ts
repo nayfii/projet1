@@ -156,3 +156,18 @@ test("Admin: custom sensitive terms and categories; the activity log has counts,
   await expect(page.getByRole("main")).not.toContainText("Phoenix");
   await shot(page, "56-activity-hide");
 });
+
+test("the protection control fits on a phone", async ({ browser }) => {
+  const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
+  const p = await phone.newPage();
+  await signIn(p, owner);
+  await p.goto("/chat");
+  await expect(p.getByRole("button", { name: "Automatique" })).toBeVisible();
+  await p.getByRole("button", { name: "Manuel" }).tap();
+  await p.getByRole("textbox", { name: "Écrivez votre message…" }).fill(`Virement sur ${IBAN} pour Banque Martin`);
+  await expect(p.locator("[data-hide]").first()).toBeVisible();
+  // No horizontal scrolling.
+  expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await shot(p, "57-hide-mobile");
+  await phone.close();
+});
