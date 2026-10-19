@@ -50,5 +50,6 @@ export async function getChatPageData(ctx: MemberContext) {
     fakeMode: fakeProviderEnabled(),
     // Hide: the company's default modes and the categories Automatic masks.
     hide,
+    me: { id: ctx.user.id },
   };
 }

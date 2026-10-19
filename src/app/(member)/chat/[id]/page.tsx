@@ -5,6 +5,7 @@ import { requireMember } from "@/lib/auth/guards";
 import { getConversation } from "@/modules/conversations/server/queries";
 import { getChatPageData } from "@/modules/conversations/server/page-data";
 import { ChatView } from "@/modules/conversations/ui/chat-view";
+import { getConversationPeople, getEligibleColleagues, getMyHandover } from "@/modules/collaboration/server/queries";
 
 export async function generateMetadata({ params }: PageProps<"/chat/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -19,11 +20,18 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
   // RLS returns nothing for a conversation the user may not see: a 404 that does not confirm it exists.
   const conversation = /^[0-9a-f-]{36}$/i.test(id) ? await getConversation(id) : null;
   if (!conversation || conversation.company_id !== ctx.active.companyId) notFound();
-  const data = await getChatPageData(ctx);
+  const [data, participants, colleagues, handover] = await Promise.all([
+    getChatPageData(ctx),
+    getConversationPeople(conversation.id),
+    getEligibleColleagues(ctx, conversation.client_id),
+    getMyHandover({ conversationId: conversation.id }),
+  ]);
+  const group = participants.length > 1;
   return (
     <ChatView
-      // A new key once an answer that was in progress elsewhere is finished: the view reloads its messages.
-      key={`${conversation.id}:${conversation.messages.some((m) => m.status === "streaming") ? "pending" : "settled"}`}
+      // Alone: a new key once an answer that was in progress elsewhere is finished, so the view reloads
+      // its messages. In a group, real time keeps the view up to date.
+      key={group ? conversation.id : `${conversation.id}:${conversation.messages.some((m) => m.status === "streaming") ? "pending" : "settled"}`}
       conversation={{
         id: conversation.id,
         title: conversation.title,
@@ -33,6 +41,9 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
         lastHideModes: conversation.lastHideModes,
       }}
       initialClientId={null}
+      participants={participants}
+      colleagues={colleagues}
+      handover={handover}
       {...data}
     />
   );

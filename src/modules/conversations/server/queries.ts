@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { RoutingInfo } from "../stream-events";
+import type { RoutingInfo, SuggestedColleague } from "../stream-events";
 import type { TimelineMessage } from "../types";
 import { isHideMode, type HideCounts, type Span } from "@/modules/hide/categories";
 import type { SourceProof } from "@/modules/memory/types";
@@ -39,7 +39,20 @@ export async function getConversation(conversationId: string) {
     .maybeSingle();
   if (!conversation) return null;
 
-  const { data: rows } = await supabase
+  const { rows, messages } = await loadTimeline(supabase, conversationId);
+
+  // Hide modes of the last message sent: the mode control starts from them.
+  const lastHideModes = [...rows].reverse().find((r) => r.author_type === "user")?.hide_modes ?? [];
+  return { ...conversation, messages, lastHideModes: lastHideModes.filter(isHideMode) };
+}
+
+export type ConversationDetail = NonNullable<Awaited<ReturnType<typeof getConversation>>>;
+
+type UserClientLike = Awaited<ReturnType<typeof createClient>>;
+
+/** Timeline messages as the viewer may see them (RLS); `ids`: only these (real-time updates). */
+async function loadTimeline(supabase: UserClientLike, conversationId: string, ids?: string[]) {
+  const { data: allRows } = await supabase
     .from("messages")
     .select(
       "id, seq, author_type, content, masked_content, hide_counts, hide_modes, hide_spans, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated)",
@@ -47,6 +60,7 @@ export async function getConversation(conversationId: string) {
     .eq("conversation_id", conversationId)
     .is("superseded_at", null)
     .order("seq");
+  const rows = ids ? (allRows ?? []).filter((r) => ids.includes(r.id)) : (allRows ?? []);
 
   // RLS shows a source only to participants who can still read its memory.
   const { data: sourceRows } = await supabase
@@ -79,7 +93,7 @@ export async function getConversation(conversationId: string) {
   }
 
   const now = Date.now();
-  const messages: TimelineMessage[] = (rows ?? []).map((m) => ({
+  const messages: TimelineMessage[] = rows.map((m) => ({
     id: m.id,
     seq: m.seq,
     role: m.author_type === "assistant" ? "assistant" : "user",
@@ -105,11 +119,16 @@ export async function getConversation(conversationId: string) {
     maskedContent: m.masked_content,
     hideCounts: (m.hide_counts as HideCounts | null) ?? null,
     hideSpans: Array.isArray(m.hide_spans) ? (m.hide_spans as Span[]) : [],
+    contextLimited: Boolean((m.context_meta as { context_limited?: boolean } | null)?.context_limited),
+    suggestedColleagues: ((m.context_meta as { suggested_colleagues?: SuggestedColleague[] } | null)?.suggested_colleagues ?? []).filter(
+      (c) => typeof c?.userId === "string" && typeof c?.name === "string",
+    ),
   }));
 
-  // Hide modes of the last message sent: the mode control starts from them.
-  const lastHideModes = [...(rows ?? [])].reverse().find((r) => r.author_type === "user")?.hide_modes ?? [];
-  return { ...conversation, messages, lastHideModes: lastHideModes.filter(isHideMode) };
+  return { rows, messages };
 }
 
-export type ConversationDetail = NonNullable<Awaited<ReturnType<typeof getConversation>>>;
+/** Some messages of a conversation, for real-time updates (a colleague's message, an answer they asked for). */
+export async function getTimelineMessages(conversationId: string, ids: string[]): Promise<TimelineMessage[]> {
+  return (await loadTimeline(await createClient(), conversationId, ids)).messages;
+}

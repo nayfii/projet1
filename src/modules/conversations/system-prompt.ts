@@ -17,7 +17,16 @@ export type SystemPromptInput = {
   knowledge?: KnowledgePassage[];
   /** Hide is on: some values were replaced by placeholders such as [CLIENT_1]. */
   protectedValues?: boolean;
+  /** Who Can Help: colleagues with declared expertise (never from private conversations). */
+  colleagues?: { name: string; expertise: string[] }[];
+  /** Group conversation: several people talk; the AI was mentioned by one of them. */
+  group?: boolean;
 };
+
+export const WHO_CAN_HELP_RULES = [
+  "- If the user's need clearly matches the declared expertise of a colleague listed below, you may suggest asking them, in one short sentence, writing their name exactly as listed. At most two colleagues.",
+  "- Do not suggest anyone for simple questions, and never invent or extend someone's expertise.",
+].join("\n");
 
 export const PROTECTED_VALUES_RULES = [
   "- Some values were replaced by placeholders such as [CLIENT_1], [PERSON_2] or [IBAN_1] to protect sensitive data. When you refer to these values, write the placeholders exactly as they are: the user will see the real values.",
@@ -52,6 +61,11 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     "## Format\nUse Markdown when it helps (short headings, lists, tables). Be concise and practical.",
   ];
   if (input.protectedValues) sections.push(`## Protected values\n${PROTECTED_VALUES_RULES}`);
+  if (input.group) {
+    sections.push(
+      "## Group conversation\nSeveral colleagues take part in this conversation; their messages are labelled with their names. You were mentioned by the author of the latest message: answer them, and stay brief.",
+    );
+  }
 
   const context = [`Company: ${company.name}`];
   if (company.industry) context.push(`Industry: ${company.industry}`);
@@ -71,6 +85,10 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
       return `[S${p.position}] ${where} · ${what}${when}\n"""\n${p.content}\n"""`;
     });
     sections.push(`## Company knowledge\n${KNOWLEDGE_RULES}\n\n${passages.join("\n\n")}`);
+  }
+  if (input.colleagues?.length) {
+    const list = input.colleagues.map((c) => `- ${c.name}: ${c.expertise.join(", ")}`);
+    sections.push(`## Colleagues who can help\n${WHO_CAN_HELP_RULES}\n\n${list.join("\n")}`);
   }
   return sections.join("\n\n");
 }

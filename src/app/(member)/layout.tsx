@@ -32,7 +32,7 @@ export default async function MemberLayout({ children }: { children: React.React
   ];
 
   return (
-    <ChatListProvider initial={conversations}>
+    <ChatListProvider initial={conversations} meId={ctx.user.id}>
       <AppShell
         sections={sections}
         context={{ title: ctx.active.companyName, subtitle: tRoles(ctx.active.role) }}

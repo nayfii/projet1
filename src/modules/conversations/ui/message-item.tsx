@@ -13,7 +13,10 @@ import {
   RefreshCwIcon,
   ShieldCheckIcon,
   SparklesIcon,
+  UserPlusIcon,
+  UsersIcon,
 } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,6 +30,7 @@ import { modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_ERROR_CODES, type ProviderErrorCode, type ProviderId } from "@/modules/providers/types";
 import { cn } from "@/lib/utils";
 import type { TimelineMessage } from "../types";
+import type { SuggestedColleague } from "../stream-events";
 import { Markdown } from "./markdown";
 import type { PickerModel } from "./model-picker";
 import { ModelName, ProviderDot } from "./provider-mark";
@@ -37,6 +41,9 @@ import { ProtectedText } from "@/modules/hide/ui/hide-composer";
 
 type MemoryProps = { memoryTargets: MemoryTarget[]; conversationId: string | null };
 
+/** Who Can Help: colleagues the answer suggests who are not in the conversation yet. */
+type InviteProps = { invitable?: SuggestedColleague[]; onInvite?: (userId: string) => void };
+
 export function MessageItem({
   message,
   live,
@@ -46,6 +53,9 @@ export function MessageItem({
   onRegenerate,
   memoryTargets,
   conversationId,
+  meId,
+  invitable,
+  onInvite,
 }: {
   message: TimelineMessage;
   /** The answer is streaming right now in this browser. */
@@ -54,8 +64,14 @@ export function MessageItem({
   busy: boolean;
   models: PickerModel[];
   onRegenerate: (modelChoice?: string) => void;
-} & MemoryProps) {
-  if (message.role === "user") return <UserMessage message={message} memoryTargets={memoryTargets} conversationId={conversationId} />;
+  /** The viewer: their messages are on the right, colleagues' on the left with their name. */
+  meId: string;
+} & MemoryProps &
+  InviteProps) {
+  if (message.role === "user") {
+    const mine = !message.author || message.author.id === meId;
+    return <UserMessage message={message} mine={mine} memoryTargets={memoryTargets} conversationId={conversationId} />;
+  }
   return (
     <AssistantMessage
       message={message}
@@ -66,6 +82,8 @@ export function MessageItem({
       onRegenerate={onRegenerate}
       memoryTargets={memoryTargets}
       conversationId={conversationId}
+      invitable={invitable}
+      onInvite={onInvite}
     />
   );
 }
@@ -94,7 +112,41 @@ function SaveToMemory({ message, memoryTargets, conversationId, className }: { m
   );
 }
 
-function UserMessage({ message, memoryTargets, conversationId }: { message: TimelineMessage } & MemoryProps) {
+function UserMessage({ message, mine, memoryTargets, conversationId }: { message: TimelineMessage; mine: boolean } & MemoryProps) {
+  const t = useTranslations("collaboration");
+  if (!mine) {
+    // A colleague's message (group conversation, or a conversation taken over after a transfer).
+    const name = message.author?.name ?? t("someone");
+    return (
+      <div className="group/user flex flex-col items-start gap-2">
+        <div className="flex items-center gap-2 text-[13px]">
+          <Avatar name={name} className="size-5" />
+          <span className="font-medium">{name}</span>
+        </div>
+        {message.attachments.length > 0 ? (
+          <div className="flex max-w-[85%] flex-wrap gap-1.5">
+            {message.attachments.map((a) => (
+              <AttachmentChip key={a.id} attachment={a} />
+            ))}
+          </div>
+        ) : null}
+        {message.content ? (
+          <div className="flex max-w-[85%] items-start gap-1">
+            <div className="whitespace-pre-wrap break-words rounded-2xl rounded-tl-md border bg-card px-4 py-2.5 text-[15px] leading-relaxed">
+              <ProtectedText text={message.content} spans={message.hideSpans} />
+            </div>
+            <SaveToMemory
+              message={message}
+              memoryTargets={memoryTargets}
+              conversationId={conversationId}
+              className="mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100"
+            />
+          </div>
+        ) : null}
+        <MaskedView kind="message" maskedContent={message.maskedContent} counts={message.hideCounts} />
+      </div>
+    );
+  }
   return (
     <div className="group/user flex flex-col items-end gap-2">
       {message.attachments.length > 0 ? (
@@ -195,6 +247,8 @@ function AssistantMessage({
   onRegenerate,
   memoryTargets,
   conversationId,
+  invitable,
+  onInvite,
 }: {
   message: TimelineMessage;
   live?: boolean;
@@ -202,11 +256,14 @@ function AssistantMessage({
   busy: boolean;
   models: PickerModel[];
   onRegenerate: (modelChoice?: string) => void;
-} & MemoryProps) {
+} & MemoryProps &
+  InviteProps) {
   const t = useTranslations("chat");
+  const tCollab = useTranslations("collaboration");
   const [copied, setCopied] = React.useState(false);
   const [openSource, setOpenSource] = React.useState<number | null>(null);
-  const waiting = live && !message.content;
+  // Also while a colleague's request is being answered (real time shows the answer once written).
+  const waiting = (live || message.status === "streaming") && !message.content;
   const brand = message.model ? modelDisplay(message.model.provider, message.model.label).brand : "";
   const errorKey: ProviderErrorCode = PROVIDER_ERROR_CODES.includes(message.errorCode as ProviderErrorCode)
     ? (message.errorCode as ProviderErrorCode)
@@ -250,6 +307,24 @@ function AssistantMessage({
       <SourceSheet source={message.sources.find((x) => x.position === openSource) ?? null} onClose={() => setOpenSource(null)} />
       {message.omittedMessages > 0 ? (
         <p className="text-xs text-muted-foreground">{t("omitted", { count: message.omittedMessages })}</p>
+      ) : null}
+      {message.contextLimited ? (
+        <Tooltip content={tCollab("contextLimitedHint")}>
+          <p className="inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground" tabIndex={0}>
+            <UsersIcon className="size-3.5" />
+            {tCollab("contextLimited")}
+          </p>
+        </Tooltip>
+      ) : null}
+      {invitable?.length && onInvite && !live ? (
+        <div className="flex flex-wrap gap-1.5">
+          {invitable.map((c) => (
+            <Button key={c.userId} variant="outline" size="sm" className="gap-1.5" onClick={() => onInvite(c.userId)}>
+              <UserPlusIcon />
+              {tCollab("invite", { name: c.name })}
+            </Button>
+          ))}
+        </div>
       ) : null}
 
       {!live && message.status !== "streaming" ? (

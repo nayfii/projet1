@@ -45,6 +45,11 @@ const KNOWN = new Set<string>([
   "hide_settings_updated",
   "hide_term_added",
   "hide_term_removed",
+  "conversation_participant_added",
+  "conversation_participant_left",
+  "conversation_history_shared",
+  "conversation_transferred",
+  "client_transferred",
 ]);
 
 type EventLike = { action: string; target_id: string | null; metadata: Json };

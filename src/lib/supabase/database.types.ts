@@ -413,6 +413,50 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"handovers": {
+                  Row: {
+                    "ai_generated": boolean,"client_id": string | null,"company_id": string,"conversation_id": string | null,"created_at": string,"edited_at": string | null,"from_user": string | null,"id": string,"kind": string,"sections": NonNullable<Json>,"to_user": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "ai_generated"?: boolean,"client_id"?: string | null,"company_id": string,"conversation_id"?: string | null,"created_at"?: string,"edited_at"?: string | null,"from_user"?: string | null,"id"?: string,"kind": string,"sections"?: NonNullable<Json>,"to_user": string
+                  }
+                  Update: {
+                    "ai_generated"?: boolean,"client_id"?: string | null,"company_id"?: string,"conversation_id"?: string | null,"created_at"?: string,"edited_at"?: string | null,"from_user"?: string | null,"id"?: string,"kind"?: string,"sections"?: NonNullable<Json>,"to_user"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "handovers_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "handovers_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "handovers_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "handovers_from_user_fkey"
+      columns: ["from_user"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "handovers_to_user_fkey"
+      columns: ["to_user"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"hide_mappings": {
                   Row: {
                     "category": string,"company_id": string,"conversation_id": string,"created_at": string,"id": string,"placeholder": string,"value_ciphertext": string,"value_hash": string
@@ -888,6 +932,9 @@ isOneToOne: false
             "accept_invitation":
 { Args: { "p_invitation"?: string,"p_token"?: string }; Returns: string
                            },
+"add_conversation_participants":
+{ Args: { "p_conversation": string,"p_from_seq"?: number,"p_users": (string)[] }; Returns: undefined
+                           },
 "admin_delete_category":
 { Args: { "p_category": string,"p_company": string }; Returns: undefined
                            },
@@ -920,6 +967,9 @@ isOneToOne: false
 "company_usage_summary":
 { Args: { "p_company": string,"p_from": string,"p_to": string }; Returns: Json
                            },
+"conversation_shared_spaces":
+{ Args: { "p_conversation": string }; Returns: string[]
+                           },
 "create_company":
 { Args: { "p_default_locale"?: string,"p_description"?: string,"p_industry"?: string,"p_name": string,"p_size_range"?: string,"p_website"?: string }; Returns: string
                            },
@@ -935,6 +985,9 @@ isOneToOne: false
 { Args: { "p_conversation": string,"p_items"?: Json }; Returns: {
               "category": string,"placeholder": string,"value_ciphertext": string,"value_hash": string
             }[]
+                           },
+"leave_conversation":
+{ Args: { "p_conversation": string }; Returns: undefined
                            },
 "match_memory":
 { Args: { "p_embedding"?: string,"p_embedding_model"?: string,"p_keywords": string,"p_limit"?: number,"p_min_similarity"?: number,"p_space_ids": (string)[] }; Returns: {
@@ -992,6 +1045,15 @@ isOneToOne: false
 { Args: { "p_company": string,"p_limit"?: number,"p_query": string }; Returns: {
               "client_id": string,"conversation_id": string,"matched_at": string,"snippet": string,"title": string
             }[]
+                           },
+"share_conversation_history":
+{ Args: { "p_conversation": string,"p_from_seq": number,"p_user": string }; Returns: undefined
+                           },
+"transfer_client":
+{ Args: { "p_ai_generated": boolean,"p_client": string,"p_sections": Json,"p_to": string }; Returns: string
+                           },
+"transfer_conversation":
+{ Args: { "p_ai_generated": boolean,"p_conversation": string,"p_sections": Json,"p_to": string }; Returns: string
                            },
 "update_my_member_card":
 { Args: { "p_company": string,"p_expertise": (string)[],"p_job_title": string,"p_opt_out": boolean }; Returns: undefined

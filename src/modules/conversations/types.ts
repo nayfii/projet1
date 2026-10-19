@@ -1,5 +1,5 @@
 import type { ProviderId } from "@/modules/providers/types";
-import type { RoutingInfo } from "./stream-events";
+import type { RoutingInfo, SuggestedColleague } from "./stream-events";
 import type { SourceProof } from "@/modules/memory/types";
 import type { HideCounts, Span } from "@/modules/hide/categories";
 
@@ -26,4 +26,8 @@ export type TimelineMessage = {
   hideCounts: HideCounts | null;
   /** Hide: where the protected values are in a user message (shown struck through in green). */
   hideSpans: Span[];
+  /** Group conversation: the answer used only what every participant can see, and that was less. */
+  contextLimited: boolean;
+  /** Who Can Help: colleagues the answer suggests asking. */
+  suggestedColleagues: SuggestedColleague[];
 };

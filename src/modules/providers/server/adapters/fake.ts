@@ -27,6 +27,18 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         yield* simulated(JSON.stringify([{ title: "[TEST] Point clé", content: `[TEST] ${text.slice(0, 160)}` }]));
         return;
       }
+      if (request.system.startsWith("Task: write a handover file.")) {
+        yield* simulated(
+          JSON.stringify({
+            summary: "[TEST] Résumé du travail réalisé.",
+            decisions: "- [TEST] Décision prise pendant la conversation.",
+            documents: "- [TEST] Documents utiles.",
+            tasks: "- [TEST] Tâche restante.",
+            next_actions: "- [TEST] Prochaine action.",
+          }),
+        );
+        return;
+      }
       if (request.system.startsWith("Task: generalise a client note.")) {
         yield* simulated(JSON.stringify({ general: true, title: "[TEST] Enseignement général", content: "[TEST] Les clients de ce secteur préfèrent des points courts et réguliers." }));
         return;
@@ -35,6 +47,11 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
       // Memory passages are numbered "[S1] …" in the system prompt: cite the first one, like a real model would.
       const passages = [...request.system.matchAll(/^\[S(\d+)\] /gm)].length;
       const images = request.messages.flatMap((m) => m.content).filter((p) => p.type === "image").length;
+      // Who Can Help: suggest a listed colleague whose declared expertise appears in the question.
+      const colleagues = request.system.split("## Colleagues who can help")[1] ?? "";
+      const helper = [...colleagues.matchAll(/^- (.+?): (.+)$/gm)].find((m) =>
+        m[2].split(",").some((skill) => skill.trim().length >= 4 && text.toLowerCase().includes(skill.trim().toLowerCase())),
+      );
       const answer = [
         `[TEST] Simulated answer from **${request.apiModelId}**.`,
         "",
@@ -44,6 +61,7 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         // Shows exactly what the model received (with Hide, placeholders instead of sensitive values).
         `- Last message as received: «${text.slice(0, 300)}»`,
         ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
+        ...(helper ? ["", `You can ask ${helper[1]} about it.`] : []),
       ].join("\n");
       for (const word of answer.split(/(?<=\s)/)) {
         if (signal.aborted) return;

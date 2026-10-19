@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
+  ArrowRightLeftIcon,
   ArrowUpIcon,
+  AtSignIcon,
   BriefcaseIcon,
   LightbulbIcon,
+  LogOutIcon,
   MoreHorizontalIcon,
   PaperclipIcon,
   PencilIcon,
@@ -47,6 +50,15 @@ import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
 import { AutoSwitch, FilePreview, HideBar, HideOverlay, useHideComposer, type HidePayload } from "@/modules/hide/ui/hide-composer";
 import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
+import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
+import { PROVIDER_IDS } from "@/modules/providers/types";
+import { leaveConversationAction, loadParticipantsAction, loadTimelineMessagesAction } from "@/modules/collaboration/server/actions";
+import type { Colleague, Handover, Participant } from "@/modules/collaboration/server/queries";
+import { AddPeopleDialog, ParticipantsBar, TypingLine } from "@/modules/collaboration/ui/people";
+import { TransferDialog } from "@/modules/collaboration/ui/transfer-dialog";
+import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
+import { filterMentions, MentionMenu, mentionAt, PROVIDER_TOKENS, type MentionOption } from "@/modules/collaboration/ui/mention-menu";
+import { useConversationRealtime } from "@/modules/collaboration/ui/use-conversation-realtime";
 
 type PendingAttachment = {
   key: string;
@@ -78,6 +90,12 @@ type Props = {
   fakeMode: boolean;
   memoryTargets: { spaceId: string; clientId: string | null; label: string }[];
   hide: HideSettings;
+  /** The viewer. */
+  me: { id: string };
+  /** Collaboration: who takes part, colleagues who could join or receive a transfer, and the handover file the viewer received. */
+  participants: Participant[];
+  colleagues: Colleague[];
+  handover: Handover | null;
 };
 
 // Shared by the input and the Manual-mode overlay drawn under it: they must wrap text identically.
@@ -105,6 +123,24 @@ export function ChatView(props: Props) {
   const [suggesting, setSuggesting] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
+  // Collaboration (CLAUDE.md §4.4): participants, real time, mentions, transfer.
+  const tCollab = useTranslations("collaboration");
+  const tErrors = useTranslations("errors");
+  const [participants, setParticipants] = React.useState(props.participants);
+  // "Ajouter" dialog, open with these colleagues preselected (Who Can Help's "Inviter").
+  const [adding, setAdding] = React.useState<string[] | null>(null);
+  const [transferring, setTransferring] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
+  const [caret, setCaret] = React.useState(0);
+  const [mentionIndex, setMentionIndex] = React.useState(0);
+  const [mentionDismissed, setMentionDismissed] = React.useState<number | null>(null);
+  const group = participants.length > 1;
+  // A new conversation is the viewer's own; otherwise the participant marked owner.
+  const isOwner = participants.length === 0 || participants.some((p) => p.userId === props.me.id && p.role === "owner");
+  const participantIds = new Set(participants.map((p) => p.userId));
+  // The answer this browser is streaming: real-time reloads leave it alone.
+  const liveRef = React.useRef<string | null>(null);
+
   const abortRef = React.useRef<AbortController | null>(null);
   // Stop clicked before the server said which answer it is writing: stop it as soon as it does.
   const stopPending = React.useRef(false);
@@ -126,11 +162,14 @@ export function ChatView(props: Props) {
   });
 
   const blocked = quota?.state === "blocked";
+  // In a group, people can still talk to each other without credits; only "@IA" is refused.
+  const inputBlocked = blocked && !group;
   const clientName = props.clients.find((c) => c.id === clientId)?.name ?? null;
   const uploading = attachments.some((a) => a.uploading);
-  // An answer started before this page was opened is still being written: wait for it.
-  const pendingElsewhere = props.conversation?.messages.some((m) => m.status === "streaming") ?? false;
-  const canSend = !busy && !pendingElsewhere && !blocked && !uploading && (input.trim().length > 0 || attachments.some((a) => a.id));
+  // An answer started before this page was opened is still being written: wait for it. In a group,
+  // real time shows it when it is done and people keep talking meanwhile.
+  const pendingElsewhere = !group && (props.conversation?.messages.some((m) => m.status === "streaming") ?? false);
+  const canSend = !busy && !pendingElsewhere && !inputBlocked && !uploading && (input.trim().length > 0 || attachments.some((a) => a.id));
 
   // Keep the newest message in view while the answer streams, unless the user scrolled up.
   React.useEffect(() => {
@@ -191,6 +230,97 @@ export function ChatView(props: Props) {
     return creating.current;
   }, [conversationId, clientId, modelChoice, chatList, clientName, t]);
 
+  const refreshParticipants = React.useCallback(async () => {
+    if (!conversationId) return;
+    const next = await loadParticipantsAction({ conversationId });
+    // Nobody visible: the viewer no longer has access (transferred or removed from another window).
+    if (next.length === 0) {
+      router.push("/chat");
+      return;
+    }
+    setParticipants(next);
+  }, [conversationId, router]);
+
+  // Real time: colleagues' messages and the answers they ask for, as this person may see them.
+  const incoming = React.useRef(new Set<string>());
+  const flushing = React.useRef(false);
+  const { online, typing, notifyTyping } = useConversationRealtime({
+    conversationId,
+    meId: props.me.id,
+    onMessage: (id) => {
+      // Alone in the conversation, this browser already shows everything.
+      if (!group || !conversationId) return;
+      incoming.current.add(id);
+      if (flushing.current) return;
+      flushing.current = true;
+      const target = conversationId;
+      setTimeout(async () => {
+        while (incoming.current.size > 0) {
+          const ids = [...incoming.current].slice(0, 50);
+          ids.forEach((x) => incoming.current.delete(x));
+          const fresh = await loadTimelineMessagesAction({ conversationId: target, ids });
+          if (mounted.current) setMessages((list) => mergeMessages(list, ids, fresh, liveRef.current, props.me.id));
+        }
+        flushing.current = false;
+      }, 250);
+    },
+    onParticipants: () => void refreshParticipants(),
+  });
+  const typingNames = [...typing].map((id) => participants.find((p) => p.userId === id)?.name).filter((n): n is string => Boolean(n));
+
+  async function openAdd(preselected: string[]) {
+    const id = await ensureConversation();
+    if (id) setAdding(preselected);
+  }
+
+  // Mentions: "@IA" (the selected model or Auto), "@Claude", "@ChatGPT", "@Gemini" for allowed providers.
+  const mentionOptions = React.useMemo(() => {
+    const selected = props.models.find((m) => m.id === modelChoice);
+    const options: MentionOption[] = [
+      {
+        token: tCollab("aiToken"),
+        aliases: ["ai", "ia"],
+        provider: null,
+        hint: modelChoice === MODEL_CHOICE_AUTO ? tCollab("mentionAuto") : selected ? modelDisplay(selected.provider, selected.label).brand : tCollab("mentionSelected"),
+      },
+    ];
+    for (const provider of PROVIDER_IDS) {
+      const usable = props.models.filter((m) => m.provider === provider && m.available);
+      const model = usable.find((m) => m.tier === "balanced") ?? usable[0];
+      if (model) options.push({ ...PROVIDER_TOKENS[provider], provider, hint: modelDisplay(provider, model.label).name });
+    }
+    return options;
+  }, [props.models, modelChoice, tCollab]);
+  const mention = group ? mentionAt(input, caret) : null;
+  const mentionMatches =
+    mention && mention.start !== mentionDismissed && !mentionOptions.some((o) => [o.token, ...o.aliases].some((n) => n.toLowerCase() === mention.query.toLowerCase()))
+      ? filterMentions(mentionOptions, mention.query)
+      : [];
+  const activeMention = Math.min(mentionIndex, Math.max(mentionMatches.length - 1, 0));
+
+  function insertAtCaret(start: number, end: number, text: string) {
+    const el = textarea.current;
+    const position = start + text.length;
+    setInput(input.slice(0, start) + text + input.slice(end));
+    setCaret(position);
+    setMentionIndex(0);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(position, position);
+    });
+  }
+
+  function pickMention(option: MentionOption) {
+    if (mention) insertAtCaret(mention.start, mention.start + 1 + mention.query.length, `@${option.token} `);
+  }
+
+  /** The "@" button: starts a mention where the caret is. */
+  function startMention() {
+    const at = textarea.current?.selectionStart ?? input.length;
+    setMentionDismissed(null);
+    insertAtCaret(at, at, at > 0 && !/\s/.test(input[at - 1]) ? " @" : "@");
+  }
+
   async function stream(payload: Record<string, unknown>, options: { replaced?: TimelineMessage; onRefused?: () => void } = {}) {
     setBusy(true);
     setRequestError(null);
@@ -230,27 +360,21 @@ export function ChatView(props: Props) {
         buffer = rest;
         for (const line of lines) {
           const event = JSON.parse(line) as ChatStreamEvent;
-          if (event.type === "meta") {
+          if (event.type === "posted") {
+            // Group conversation without a mention: posted for the others, no answer.
+            setMessages((list) => confirmPending(list, event.userMessage));
+          } else if (event.type === "meta") {
             currentLive = event.assistantMessage.id;
+            liveRef.current = currentLive;
             setLiveId(currentLive);
             if (stopPending.current) {
               requestStop(currentLive);
               controller.abort();
             }
             setMessages((list) => {
-              const saved = event.userMessage;
-              let next = list.map((m) =>
-                m.id === "pending-user" && saved
-                  ? {
-                      ...m,
-                      id: saved.id,
-                      seq: saved.seq,
-                      maskedContent: saved.masked?.content ?? null,
-                      hideCounts: saved.masked?.counts ?? null,
-                      hideSpans: saved.masked?.spans ?? [],
-                    }
-                  : m,
-              );
+              // Real time may have brought these messages already: the stream's version wins.
+              let next = list.filter((m) => m.id !== event.assistantMessage.id);
+              if (event.userMessage) next = confirmPending(next, event.userMessage);
               if (event.replaces) next = next.filter((m) => m.id !== event.replaces);
               return [
                 ...next,
@@ -271,6 +395,8 @@ export function ChatView(props: Props) {
                   maskedContent: null,
                   hideCounts: null,
                   hideSpans: [],
+                  contextLimited: event.contextLimited,
+                  suggestedColleagues: [],
                 },
               ];
             });
@@ -280,7 +406,13 @@ export function ChatView(props: Props) {
           } else if (event.type === "done") {
             const id = currentLive;
             restoreReplaced = null;
-            setMessages((list) => list.map((m) => (m.id === id ? { ...m, status: "complete", sources: event.sources ?? [], maskedContent: event.masked ?? null } : m)));
+            setMessages((list) =>
+              list.map((m) =>
+                m.id === id
+                  ? { ...m, status: "complete", sources: event.sources ?? [], maskedContent: event.masked ?? null, suggestedColleagues: event.suggestedColleagues ?? [] }
+                  : m,
+              ),
+            );
             if (event.quota) setQuota(event.quota);
           } else if (event.type === "error") {
             const id = currentLive;
@@ -305,6 +437,7 @@ export function ChatView(props: Props) {
       }
     } finally {
       setBusy(false);
+      liveRef.current = null;
       setLiveId(null);
       abortRef.current = null;
       if (conversationId || payload.conversationId) {
@@ -354,6 +487,8 @@ export function ChatView(props: Props) {
         maskedContent: null,
         hideCounts: null,
         hideSpans: [],
+        contextLimited: false,
+        suggestedColleagues: [],
       },
     ]);
     if (!title && text) {
@@ -412,7 +547,7 @@ export function ChatView(props: Props) {
     const result = await setConversationClientAction({ conversationId, clientId: next });
     if (!result.ok) {
       setClientId(previous);
-      toast.error(t("clientLinkFailed"));
+      toast.error(result.error === "no_client_access" ? tErrors("no_client_access") : t("clientLinkFailed"));
       return;
     }
     chatList.upsert({ id: conversationId, clientId: next, clientName: props.clients.find((c) => c.id === next)?.name ?? null });
@@ -473,24 +608,33 @@ export function ChatView(props: Props) {
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col md:h-dvh">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sm:px-6">
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{title ?? t("newConversation")}</h1>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className={cn("max-w-52 gap-1.5 text-muted-foreground", clientName && "text-foreground")}>
-              <BriefcaseIcon />
-              <span className="truncate">{clientName ?? t("linkClient")}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-80 w-60 overflow-y-auto">
-            <DropdownMenuLabel>{t("clientLabel")}</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => changeClient(null)}>{t("noClient")}</DropdownMenuItem>
-            {props.clients.length > 0 ? <DropdownMenuSeparator /> : null}
-            {props.clients.map((c) => (
-              <DropdownMenuItem key={c.id} onSelect={() => changeClient(c.id)}>
-                <span className="truncate">{c.name}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ParticipantsBar participants={participants} online={online} onAdd={() => void openAdd([])} />
+        {isOwner ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className={cn("max-w-52 gap-1.5 text-muted-foreground", clientName && "text-foreground")}>
+                <BriefcaseIcon />
+                <span className="truncate">{clientName ?? t("linkClient")}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-80 w-60 overflow-y-auto">
+              <DropdownMenuLabel>{t("clientLabel")}</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => changeClient(null)}>{t("noClient")}</DropdownMenuItem>
+              {props.clients.length > 0 ? <DropdownMenuSeparator /> : null}
+              {props.clients.map((c) => (
+                <DropdownMenuItem key={c.id} onSelect={() => changeClient(c.id)}>
+                  <span className="truncate">{c.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : clientName ? (
+          // Only the person responsible for the conversation links it to a client.
+          <span className="inline-flex max-w-52 items-center gap-1.5 px-2 text-sm">
+            <BriefcaseIcon className="size-4 shrink-0 text-muted-foreground" />
+            <span className="truncate">{clientName}</span>
+          </span>
+        ) : null}
         {conversationId ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -503,14 +647,27 @@ export function ChatView(props: Props) {
                 <LightbulbIcon />
                 {t("proposeMemory")}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setRenaming(true)}>
-                <PencilIcon />
-                {t("rename")}
-              </DropdownMenuItem>
-              <DropdownMenuItem destructive onSelect={() => setDeleting(true)}>
-                <Trash2Icon />
-                {t("delete")}
-              </DropdownMenuItem>
+              {isOwner ? (
+                <>
+                  <DropdownMenuItem onSelect={() => setRenaming(true)}>
+                    <PencilIcon />
+                    {t("rename")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setTransferring(true)} disabled={busy}>
+                    <ArrowRightLeftIcon />
+                    {tCollab("transfer")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem destructive onSelect={() => setDeleting(true)}>
+                    <Trash2Icon />
+                    {t("delete")}
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem destructive onSelect={() => setLeaving(true)}>
+                  <LogOutIcon />
+                  {tCollab("leave")}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
@@ -525,6 +682,7 @@ export function ChatView(props: Props) {
         }}
       >
         <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+          {props.handover ? <HandoverCard handover={props.handover} className="mb-8" /> : null}
           {messages.length === 0 ? (
             <EmptyChat onPick={(text) => { setInput(text); textarea.current?.focus(); }} />
           ) : (
@@ -544,6 +702,10 @@ export function ChatView(props: Props) {
                       onRegenerate={(choice) => regenerate(m, choice)}
                       memoryTargets={memoryTargets}
                       conversationId={conversationId}
+                      meId={props.me.id}
+                      // Who Can Help: colleagues not here yet who may join (access to the linked client).
+                      invitable={m.suggestedColleagues.filter((c) => !participantIds.has(c.userId) && props.colleagues.some((x) => x.userId === c.userId))}
+                      onInvite={(userId) => void openAdd([userId])}
                     />
                   </React.Fragment>
                 );
@@ -561,11 +723,12 @@ export function ChatView(props: Props) {
               {t(`requestErrors.${requestError}`)}
             </p>
           ) : null}
+          {group ? <TypingLine names={typingNames} /> : null}
           <HideBar state={hide} onProtectAndSend={() => void send(hide.payloadProtectingAll())} onSendAnyway={() => void send(hide.payload())} />
           <div
             className={cn(
-              "rounded-2xl border bg-card shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
-              blocked && "opacity-60",
+              "relative rounded-2xl border bg-card shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
+              inputBlocked && "opacity-60",
             )}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
@@ -573,6 +736,7 @@ export function ChatView(props: Props) {
               if (!blocked) void addFiles(e.dataTransfer.files);
             }}
           >
+            {mentionMatches.length > 0 ? <MentionMenu options={mentionMatches} active={activeMention} onPick={pickMention} /> : null}
             {attachments.length > 0 ? (
               <div className="flex flex-wrap gap-1.5 px-3 pt-3">
                 {attachments.map((a) => {
@@ -604,9 +768,32 @@ export function ChatView(props: Props) {
               <textarea
                 ref={textarea}
                 value={input}
-                disabled={blocked}
-                onChange={(e) => setInput(e.target.value)}
+                disabled={inputBlocked}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  setCaret(e.target.selectionStart);
+                  setMentionIndex(0);
+                  if (group) notifyTyping();
+                }}
                 onKeyDown={(e) => {
+                  if (mentionMatches.length > 0 && !e.nativeEvent.isComposing) {
+                    const count = mentionMatches.length;
+                    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setMentionIndex((activeMention + (e.key === "ArrowDown" ? 1 : count - 1)) % count);
+                      return;
+                    }
+                    if ((e.key === "Enter" && !e.shiftKey) || e.key === "Tab") {
+                      e.preventDefault();
+                      pickMention(mentionMatches[activeMention]);
+                      return;
+                    }
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      setMentionDismissed(mention?.start ?? null);
+                      return;
+                    }
+                  }
                   if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     void send();
@@ -621,12 +808,13 @@ export function ChatView(props: Props) {
                 }}
                 onSelect={(e) => {
                   const el = e.currentTarget;
+                  setCaret(el.selectionStart);
                   const selected = input.slice(el.selectionStart, el.selectionEnd).trim();
                   hide.setSelection(selected.length >= 2 ? selected : null);
                 }}
                 rows={1}
-                placeholder={t("placeholder")}
-                aria-label={t("placeholder")}
+                placeholder={group ? tCollab("groupPlaceholder") : t("placeholder")}
+                aria-label={group ? tCollab("groupPlaceholder") : t("placeholder")}
                 className={cn(
                   TEXTAREA_LAYOUT,
                   // The visible text is drawn by HideOverlay underneath.
@@ -646,6 +834,13 @@ export function ChatView(props: Props) {
                   <PaperclipIcon />
                 </Button>
               </Tooltip>
+              {group ? (
+                <Tooltip content={tCollab("mentionButton")}>
+                  <Button variant="ghost" size="icon-sm" aria-label={tCollab("mentionButton")} disabled={inputBlocked} onClick={startMention}>
+                    <AtSignIcon />
+                  </Button>
+                </Tooltip>
+              ) : null}
               <input
                 ref={fileInput}
                 type="file"
@@ -659,7 +854,7 @@ export function ChatView(props: Props) {
               />
               <ModelPicker value={modelChoice} onChange={changeModel} models={props.models} autoEnabled={props.autoEnabled} disabled={busy} />
               <div className="flex-1" />
-              <AutoSwitch state={hide} disabled={blocked} />
+              <AutoSwitch state={hide} disabled={inputBlocked} />
               {busy ? (
                 <Button size="icon-sm" variant="secondary" aria-label={t("stop")} onClick={stopAnswer} className="rounded-full">
                   <SquareIcon className="size-3 fill-current" />
@@ -677,6 +872,59 @@ export function ChatView(props: Props) {
 
       <FilePreview file={hide.files.find((f) => f.key === previewKey) ?? null} state={hide} onClose={() => setPreviewKey(null)} />
       {conversationId ? <ConversationSuggestions open={suggesting} onOpenChange={setSuggesting} conversationId={conversationId} /> : null}
+      <AddPeopleDialog
+        open={adding !== null}
+        onOpenChange={(open) => {
+          if (!open) setAdding(null);
+        }}
+        conversationId={conversationId}
+        colleagues={props.colleagues.filter((c) => !participantIds.has(c.userId))}
+        messages={messages}
+        preselected={adding ?? []}
+        onAdded={() => void refreshParticipants()}
+      />
+      {conversationId ? (
+        <TransferDialog
+          open={transferring}
+          onOpenChange={setTransferring}
+          target={{ kind: "conversation", id: conversationId }}
+          colleagues={props.colleagues}
+          onTransferred={() => {
+            chatList.remove(conversationId);
+            router.push("/chat");
+          }}
+        />
+      ) : null}
+      <Dialog open={leaving} onOpenChange={setLeaving}>
+        <DialogContent className="max-w-md" closeLabel={tCommon("close")}>
+          <DialogHeader>
+            <DialogTitle>{tCollab("leaveTitle")}</DialogTitle>
+            <DialogDescription>{tCollab("leaveBody")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setLeaving(false)}>
+              {tCommon("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!conversationId) return;
+                const result = await leaveConversationAction({ conversationId });
+                if (!result.ok) {
+                  toast.error(tErrors(result.error));
+                  return;
+                }
+                chatList.remove(conversationId);
+                setLeaving(false);
+                toast.success(tCollab("left"));
+                router.push("/chat");
+              }}
+            >
+              {tCollab("leave")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <RenameDialog
         open={renaming}
         onOpenChange={setRenaming}
@@ -790,4 +1038,40 @@ function RenameDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Swaps the "pending-user" placeholder for the saved message (Hide: what the AI received, protected spans). */
+function confirmPending(
+  list: TimelineMessage[],
+  saved: { id: string; seq: number; masked: { content: string | null; counts: TimelineMessage["hideCounts"]; spans: Span[] } | null },
+): TimelineMessage[] {
+  return list
+    .filter((m) => m.id !== saved.id)
+    .map((m) =>
+      m.id === "pending-user"
+        ? { ...m, id: saved.id, seq: saved.seq, maskedContent: saved.masked?.content ?? null, hideCounts: saved.masked?.counts ?? null, hideSpans: saved.masked?.spans ?? [] }
+        : m,
+    );
+}
+
+/**
+ * Real time: merges reloaded messages. `requested` ids that came back empty are gone for this person
+ * (an answer replaced by Regenerate). The answer streaming in this browser and the viewer's own message
+ * being sent are left to the stream.
+ */
+function mergeMessages(list: TimelineMessage[], requested: string[], fresh: TimelineMessage[], live: string | null, meId: string): TimelineMessage[] {
+  const next = [...list];
+  for (const id of requested) {
+    if (id === live) continue;
+    const message = fresh.find((m) => m.id === id);
+    const index = next.findIndex((m) => m.id === id);
+    if (!message) {
+      if (index >= 0) next.splice(index, 1);
+    } else if (index >= 0) {
+      next[index] = message;
+    } else if (!(message.role === "user" && message.author?.id === meId && next.some((m) => m.id === "pending-user"))) {
+      next.push(message);
+    }
+  }
+  return next.sort((a, b) => a.seq - b.seq);
 }

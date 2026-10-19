@@ -19,12 +19,15 @@ import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMe
 import { retrievePassages } from "@/modules/memory/server/retrieval";
 import { citedPositions } from "@/modules/memory/citations";
 import type { KnowledgePassage, SourceProof } from "@/modules/memory/types";
-import { HIDE_MODES, isHideMode, MAX_BLUR_CHARS, totalCount, type HideMode } from "@/modules/hide/categories";
+import { HIDE_MODES, isHideMode, MAX_BLUR_CHARS, PLACEHOLDER_PATTERN, totalCount, type HideMode } from "@/modules/hide/categories";
 import type { StreamRestorer } from "@/modules/hide/mask";
 import { hideConfigured } from "@/modules/hide/server/crypto";
 import { createConversationMasker, getHideSettings, loadDetectionLists, type Masker } from "@/modules/hide/server/masker";
 import { logMaskingEvent, saveAttachmentMasks, saveMessageMask } from "@/modules/hide/server/store";
 import { maskPassages, maskTurn } from "@/modules/hide/server/turn";
+import { modelForProvider, parseMention, suggestedColleagues } from "@/modules/collaboration/mentions";
+import { conversationScope, myMemorySpaces } from "@/modules/memory/server/retrieval";
+import type { SuggestedColleague } from "../stream-events";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -84,10 +87,18 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     .maybeSingle();
   if (!conversation || conversation.company_id !== companyId) return fail("not_found", 404);
 
+  // Group conversation: several participants (CLAUDE.md §4.4).
+  const { data: participantRows } = await supabase
+    .from("conversation_participants")
+    .select("user_id, visible_from_seq")
+    .eq("conversation_id", conversation.id);
+  const participants = participantRows ?? [];
+  const group = participants.length > 1;
+
   const { data: rows } = await supabase
     .from("messages")
     .select(
-      "id, seq, author_type, content, masked_content, hide_modes, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text)",
+      "id, seq, author_type, author_id, content, masked_content, hide_modes, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text)",
     )
     .eq("conversation_id", conversation.id)
     .order("seq");
@@ -121,32 +132,46 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     if (!newText && pending.length === 0) return fail("validation", 400);
   }
 
-  // Model: the explicit choice, else the conversation's. Auto routes with simple rules.
+  // In a group, the AI answers only when mentioned (@Claude, @ChatGPT, @Gemini, @IA); Regenerate is
+  // an explicit request too. Otherwise the message is simply posted for the others.
+  const mention = input.message && group ? parseMention(newText) : null;
+  const aiRequested = !group || Boolean(input.regenerate) || mention !== null;
+
+  // Model: the mentioned provider, else the explicit choice, else the conversation's. Auto routes with simple rules.
   const models = await getCompanyModels(companyId);
-  const choice = input.modelChoice ?? conversation.model_choice;
+  let choice = input.modelChoice ?? conversation.model_choice;
+  if (mention && mention !== "selected") {
+    const mentioned = modelForProvider(mention, models.allowed, models.configured);
+    if (!mentioned) return fail("model_not_allowed", 409);
+    choice = mentioned.id;
+  }
   const lastUser = [...base].reverse().find((r) => r.author_type === "user");
   const routedText = input.regenerate ? (lastUser?.content ?? "") : newText;
   const routedAttachments = (input.regenerate ? (lastUser?.attachments ?? []) : pending) as AttachmentRow[];
-  const resolution = resolveModel(choice, models, {
-    text: routedText,
-    imageCount: routedAttachments.filter((a) => a.kind === "image").length,
-    attachmentChars: routedAttachments.reduce((n, a) => n + (a.extracted_text?.length ?? 0), 0),
-    historyTokens: base.reduce((n, r) => n + estimateTokens(r.content), 0),
-  });
-  if (!resolution.ok) {
-    if (resolution.error === "model_not_allowed" || resolution.error === "auto_disabled") {
-      await logBlockedRequest(companyId, ctx.user.id, resolution.error);
+  let resolution: Extract<ReturnType<typeof resolveModel>, { ok: true }> | null = null;
+  if (aiRequested) {
+    const resolved = resolveModel(choice, models, {
+      text: routedText,
+      imageCount: routedAttachments.filter((a) => a.kind === "image").length,
+      attachmentChars: routedAttachments.reduce((n, a) => n + (a.extracted_text?.length ?? 0), 0),
+      historyTokens: base.reduce((n, r) => n + estimateTokens(r.content), 0),
+    });
+    if (!resolved.ok) {
+      if (resolved.error === "model_not_allowed" || resolved.error === "auto_disabled") {
+        await logBlockedRequest(companyId, ctx.user.id, resolved.error);
+      }
+      return fail(resolved.error, resolved.error === "missing_key" || resolved.error === "no_model_available" ? 503 : 409);
     }
-    return fail(resolution.error, resolution.error === "missing_key" || resolution.error === "no_model_available" ? 503 : 409);
-  }
+    resolution = resolved;
 
-  // Quotas are checked before any provider call: hard stop at 100 %.
-  const quota = await getMyQuota(companyId);
-  if (!quota) return fail("server_error", 500);
-  if (quota.state.state === "blocked") {
-    const reason = quota.state.scope === "user" ? "quota_user" : "quota_company";
-    await logBlockedRequest(companyId, ctx.user.id, reason);
-    return fail(reason === "quota_user" ? "quota_exceeded_user" : "quota_exceeded_company", 402);
+    // Quotas are checked before any provider call: hard stop at 100 %.
+    const quota = await getMyQuota(companyId);
+    if (!quota) return fail("server_error", 500);
+    if (quota.state.state === "blocked") {
+      const reason = quota.state.scope === "user" ? "quota_user" : "quota_company";
+      await logBlockedRequest(companyId, ctx.user.id, reason);
+      return fail(reason === "quota_user" ? "quota_exceeded_user" : "quota_exceeded_company", 402);
+    }
   }
 
   if (input.modelChoice && input.modelChoice !== conversation.model_choice) {
@@ -173,10 +198,30 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     if (!hideConfigured()) return fail("hide_unavailable", 503);
     masker = await createConversationMasker(conversation.id, await loadDetectionLists(supabase, ctx));
   }
+  // Who Can Help: colleagues with declared expertise who did not opt out (never from private
+  // conversations). In a group, message authors are named too. Both are masked like other names.
+  const [{ data: memberRows }, { data: authorRows }] = await Promise.all([
+    aiRequested
+      ? supabase
+          .from("company_members")
+          .select("user_id, expertise, status, who_can_help_opt_out, profile:profiles!company_members_user_id_fkey(full_name)")
+          .eq("company_id", companyId)
+      : Promise.resolve({ data: [] }),
+    group
+      ? supabase.from("profiles").select("id, full_name").in("id", [...new Set(base.map((r) => r.author_id).filter((id): id is string => Boolean(id)).concat(ctx.user.id))])
+      : Promise.resolve({ data: [] }),
+  ]);
+  const participantIds = new Set(participants.map((p) => p.user_id));
+  const colleagues = (memberRows ?? [])
+    .filter((m) => m.status === "active" && !m.who_can_help_opt_out && m.user_id !== ctx.user.id && m.expertise.length > 0 && m.profile?.full_name)
+    .slice(0, 15)
+    .map((m) => ({ userId: m.user_id, name: m.profile!.full_name!, expertise: m.expertise }));
+  const authors = (authorRows ?? []).map((a) => ({ id: a.id, name: a.full_name?.trim() || "?" }));
   const facts = {
     userName: ctx.profile.fullName,
     companyDescription: companyRes.data?.description ?? null,
     client: clientRes.data ? { name: clientRes.data.name, sector: clientRes.data.sector, description: clientRes.data.description } : null,
+    people: [...colleagues.map((c) => c.name), ...authors.map((a) => a.name)],
   };
   const turn = masker
     ? await maskTurn(masker, {
@@ -224,6 +269,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         id: data.id,
         seq: data.seq,
         author_type: "user",
+        author_id: ctx.user.id,
         content: newText,
         masked_content: turn?.message ?? null,
         hide_modes: hideModes,
@@ -234,11 +280,36 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     ];
   }
 
-  const history = await toHistory(supabase, base);
-  // Memory passages, filtered by the user's permissions before any model sees them. The search by
-  // meaning uses the masked question: the embeddings provider gets no more than the chat model.
+  if (!aiRequested || !resolution) {
+    const posted = userMessage!;
+    return {
+      ok: true,
+      run: async function* () {
+        yield { type: "posted", userMessage: posted };
+      },
+    };
+  }
+
+  // Group rule: the AI uses only the history every current participant can see…
+  const contextFrom = group ? Math.max(...participants.map((p) => p.visible_from_seq)) : 1;
+  const sharedBase = base.filter((r) => r.seq >= contextFrom);
+  const historyLimited = sharedBase.length < base.length;
+  const people = promptFacts.people;
+  const authorLabel = new Map(authors.map((a, i) => [a.id, people[colleagues.length + i] ?? a.name]));
+  const history = await toHistory(supabase, sharedBase, group ? authorLabel : null);
+  // …and only the memories every participant may read (intersection of their permissions).
+  let restrictTo: Set<string> | undefined;
+  let memoryLimited = false;
+  if (group) {
+    const { data: shared } = await supabase.rpc("conversation_shared_spaces", { p_conversation: conversation.id });
+    restrictTo = new Set((shared ?? []) as string[]);
+    const mine = conversationScope(await myMemorySpaces(supabase, companyId), conversation.client_id);
+    memoryLimited = mine.some((space) => !restrictTo!.has(space.spaceId));
+  }
+  // Memory passages, filtered by permissions before any model sees them. The search by meaning uses
+  // the masked question: the embeddings provider gets no more than the chat model.
   const embeddingQuery = input.message ? (turn?.message ?? newText) : (lastUser?.masked_content ?? routedText);
-  const knowledge = await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText, embeddingQuery });
+  const knowledge = await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText, embeddingQuery, restrictTo });
   const promptKnowledge = masker ? await maskPassages(masker, knowledge, hideModes, autoCategories) : knowledge;
   const system = buildSystemPrompt({
     company: { name: companyRes.data?.name ?? ctx.active.companyName, industry: companyRes.data?.industry, description: promptFacts.companyDescription },
@@ -248,6 +319,8 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     today: new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()),
     knowledge: promptKnowledge,
     protectedValues: masker !== null,
+    colleagues: colleagues.map((c, i) => ({ name: people[i] ?? c.name, expertise: c.expertise })),
+    group,
   });
   const context = buildChatContext({ system, history, budgetTokens: contextBudget(models.allowed) });
 
@@ -267,7 +340,12 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         knowledge,
         userMessage,
         target: target ? { id: target.id, complete: target.status === "complete" } : null,
-        restorer: masker?.restorer() ?? null,
+        // In a group, only values the model was shown are put back: a placeholder it invents can never
+        // reveal a value from history that some participants cannot see.
+        restorer: masker?.restorer(group ? contextPlaceholders(context) : undefined) ?? null,
+        contextLimited: group && (historyLimited || memoryLimited),
+        // Colleagues already in the conversation need no invitation.
+        colleagues: colleagues.filter((c) => !participantIds.has(c.userId)).map((c) => ({ userId: c.userId, name: c.name })),
       }),
   };
 }
@@ -284,6 +362,9 @@ async function* runTurn(p: {
   target: { id: string; complete: boolean } | null;
   /** Hide: puts real values back in place of placeholders as the answer streams. */
   restorer: StreamRestorer | null;
+  contextLimited: boolean;
+  /** Who Can Help: colleagues the answer may suggest (real names). */
+  colleagues: SuggestedColleague[];
 }): AsyncGenerator<ChatStreamEvent> {
   const started = Date.now();
   // A failed or stopped answer is replaced right away; a good one only once the new one succeeds.
@@ -295,7 +376,7 @@ async function* runTurn(p: {
       conversationId: p.conversationId,
       model: p.model,
       routing: p.routing as Json | null,
-      contextMeta: p.context.omittedMessages ? { omitted_messages: p.context.omittedMessages } : null,
+      contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, []),
     });
   } catch {
     yield { type: "error", code: "server_error", retryable: true };
@@ -311,6 +392,7 @@ async function* runTurn(p: {
     routing: p.routing,
     replaces: p.target?.id ?? null,
     omittedMessages: p.context.omittedMessages,
+    contextLimited: p.contextLimited,
   };
 
   // `text` is what the model wrote (with placeholders); `shown` has the real values restored.
@@ -361,6 +443,7 @@ async function* runTurn(p: {
     yield { type: "delta", text: rest };
   }
   const masked = p.restorer && shown !== text ? text : null;
+  const suggested = suggestedColleagues(shown, p.colleagues).map((c) => ({ userId: c.userId, name: c.name }));
 
   const aborted = stop.signal.aborted && !providerError;
   const status = providerError ? "error" : aborted ? "stopped" : "complete";
@@ -372,17 +455,19 @@ async function* runTurn(p: {
     : { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 });
   const charge = computeCharge(p.model.pricing, counted);
 
+  // Source Proof: the passages the answer actually cited. Saved first: other participants reload the
+  // answer when it is marked finished (real time), and must find its sources by then.
+  const sources = toSourceProofs(p.knowledge, citedPositions(text, p.knowledge.length));
+  if (sources.length > 0) await saveMessageSources(assistant.id, p.conversationId, sources);
   await finishAssistantMessage(assistant.id, {
     content: shown,
     maskedContent: masked,
+    contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, suggested),
     status,
     errorCode: providerError?.code ?? null,
     inputTokens: usage?.inputTokens ?? null,
     outputTokens: usage?.outputTokens ?? null,
   });
-  // Source Proof: the passages the answer actually cited.
-  const sources = toSourceProofs(p.knowledge, citedPositions(text, p.knowledge.length));
-  if (sources.length > 0) await saveMessageSources(assistant.id, p.conversationId, sources);
   await recordUsage({
     companyId: p.ctx.active.companyId,
     userId: p.ctx.user.id,
@@ -411,7 +496,20 @@ async function* runTurn(p: {
   }
   if (aborted) return;
   const quota = await getMyQuota(p.ctx.active.companyId);
-  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources, masked };
+  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources, masked, suggestedColleagues: suggested };
+}
+
+function contextPlaceholders(context: ReturnType<typeof buildChatContext>): Set<string> {
+  const texts = [context.system, ...context.messages.flatMap((m) => m.content.flatMap((part) => (part.type === "text" ? [part.text] : [])))];
+  return new Set(texts.flatMap((text) => [...text.matchAll(PLACEHOLDER_PATTERN)].map((m) => m[0])));
+}
+
+function contextMeta(omitted: number, limited: boolean, suggested: SuggestedColleague[]): Json | null {
+  const meta: Record<string, Json> = {};
+  if (omitted) meta.omitted_messages = omitted;
+  if (limited) meta.context_limited = true;
+  if (suggested.length) meta.suggested_colleagues = suggested;
+  return Object.keys(meta).length ? meta : null;
 }
 
 function toSourceProofs(knowledge: KnowledgePassage[], positions: number[]): SourceProof[] {
@@ -436,10 +534,14 @@ function toSourceProofs(knowledge: KnowledgePassage[], positions: number[]): Sou
   });
 }
 
-/** Turns stored messages into context messages; images are re-sent only for recent messages. */
+/**
+ * Turns stored messages into context messages; images are re-sent only for recent messages. In a
+ * group, people's messages start with their (masked) name so the model knows who said what.
+ */
 async function toHistory(
   supabase: UserClient,
-  rows: { author_type: string; content: string; masked_content?: string | null; status: string; attachments?: unknown }[],
+  rows: { author_type: string; author_id?: string | null; content: string; masked_content?: string | null; status: string; attachments?: unknown }[],
+  authorLabel: Map<string, string> | null,
 ): Promise<HistoryMessage[]> {
   const usable = rows.filter(
     (r) => r.author_type === "user" || (r.status === "complete" && r.content) || (r.status === "stopped" && r.content),
@@ -462,7 +564,9 @@ async function toHistory(
         }),
       );
       // Hide: models always receive the masked version of earlier messages.
-      return { role: r.author_type === "assistant" ? ("assistant" as const) : ("user" as const), text: r.masked_content ?? r.content, attachments };
+      const body = r.masked_content ?? r.content;
+      const label = authorLabel && r.author_type === "user" && r.author_id ? authorLabel.get(r.author_id) : null;
+      return { role: r.author_type === "assistant" ? ("assistant" as const) : ("user" as const), text: label ? `${label}: ${body}` : body, attachments };
     }),
   );
 }

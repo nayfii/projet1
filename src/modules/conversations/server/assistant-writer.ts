@@ -45,6 +45,8 @@ export async function finishAssistantMessage(
     content: string;
     /** Hide: the answer as the model wrote it, with placeholders (null when nothing was restored). */
     maskedContent?: string | null;
+    /** Replaces the context metadata set at creation (e.g. adds Who Can Help suggestions). */
+    contextMeta?: Json | null;
     status: "complete" | "error" | "stopped";
     errorCode: string | null;
     inputTokens: number | null;
@@ -56,6 +58,7 @@ export async function finishAssistantMessage(
     .update({
       content: result.content,
       masked_content: result.maskedContent ?? null,
+      ...(result.contextMeta !== undefined ? { context_meta: result.contextMeta } : {}),
       status: result.status,
       error_code: result.errorCode,
       input_tokens: result.inputTokens,

@@ -7,6 +7,7 @@ import { memberOrNull } from "@/lib/auth/guards";
 import { toErrorCode, type ActionResult } from "@/lib/errors";
 import { getCompanyModels } from "@/modules/providers/server/models";
 import { MODEL_CHOICE_AUTO } from "@/modules/providers/catalog";
+import { listConversations } from "./queries";
 
 const choiceSchema = z.string().regex(/^[a-z0-9][a-z0-9._-]{1,62}$/);
 
@@ -137,4 +138,11 @@ export async function searchConversationsAction(query: string): Promise<SearchHi
     snippet: r.snippet,
     matchedAt: r.matched_at,
   }));
+}
+
+/** The sidebar's recent conversations, reloaded when a colleague adds this person to one. */
+export async function loadConversationListAction() {
+  const ctx = await memberOrNull();
+  if (!ctx) return null;
+  return listConversations(ctx.active.companyId, { limit: 30 });
 }

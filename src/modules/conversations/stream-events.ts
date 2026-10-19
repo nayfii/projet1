@@ -13,6 +13,8 @@ export type RoutingInfo = { mode: "auto"; task: TaskType; basis: RoutingBasis };
 
 export type StreamModel = { id: string; provider: ProviderId; label: string };
 
+export type SuggestedColleague = { userId: string; name: string };
+
 export type ChatStreamEvent =
   | {
       type: "meta";
@@ -25,7 +27,11 @@ export type ChatStreamEvent =
       /** Answer being replaced (Regenerate). */
       replaces: string | null;
       omittedMessages: number;
+      /** Group conversation: the AI used only what every participant can see, and that was less. */
+      contextLimited: boolean;
     }
+  /** Group conversation without a mention: the message was posted, the AI does not answer. */
+  | { type: "posted"; userMessage: NonNullable<Extract<ChatStreamEvent, { type: "meta" }>["userMessage"]> }
   | { type: "delta"; text: string }
   | {
       type: "done";
@@ -34,6 +40,8 @@ export type ChatStreamEvent =
       sources: SourceProof[];
       /** The answer as the model wrote it (with placeholders), when Hide restored values in it. */
       masked: string | null;
+      /** Who Can Help: colleagues the answer suggests asking (Invite button). */
+      suggestedColleagues: SuggestedColleague[];
     }
   | { type: "error"; code: ProviderErrorCode | "server_error"; retryable: boolean };
 

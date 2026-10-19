@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useMyConversationsRealtime } from "@/modules/collaboration/ui/use-my-conversations-realtime";
+import { loadConversationListAction } from "../server/actions";
 
 export type ChatListItem = { id: string; title: string | null; clientId: string | null; clientName: string | null; lastMessageAt: string };
 
@@ -16,7 +18,7 @@ const ChatListContext = React.createContext<ChatListValue | null>(null);
  * Recent conversations shown in the sidebar. Seeded by the server (RLS-filtered) and updated
  * instantly by the chat view, so a new conversation appears without reloading the page.
  */
-export function ChatListProvider({ initial, children }: { initial: ChatListItem[]; children: React.ReactNode }) {
+export function ChatListProvider({ initial, meId, children }: { initial: ChatListItem[]; meId: string; children: React.ReactNode }) {
   const [items, setItems] = React.useState(initial);
   // Server data wins whenever the layout re-renders (after a rename, a deletion…).
   const [seed, setSeed] = React.useState(initial);
@@ -24,6 +26,12 @@ export function ChatListProvider({ initial, children }: { initial: ChatListItem[
     setSeed(initial);
     setItems(initial);
   }
+  // A colleague added this person to a conversation: it appears right away.
+  useMyConversationsRealtime(meId, () => {
+    void loadConversationListAction().then((list) => {
+      if (list) setItems(list);
+    });
+  });
 
   const value = React.useMemo<ChatListValue>(
     () => ({

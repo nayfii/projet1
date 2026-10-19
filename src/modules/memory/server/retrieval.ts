@@ -47,12 +47,17 @@ export function conversationScope(spaces: MemorySpace[], clientId: string | null
 export async function retrievePassages(
   supabase: UserClient,
   ctx: MemberContext,
-  /** `embeddingQuery`: the text sent to the embeddings provider (the masked question when Hide is on). */
-  options: { clientId: string | null; query: string; embeddingQuery?: string },
+  /**
+   * `embeddingQuery`: the text sent to the embeddings provider (the masked question when Hide is on).
+   * `restrictTo`: in a group conversation, the memories every participant may read (intersection).
+   */
+  options: { clientId: string | null; query: string; embeddingQuery?: string; restrictTo?: ReadonlySet<string> },
 ): Promise<KnowledgePassage[]> {
   const query = options.query.trim();
   if (!query) return [];
-  const scope = conversationScope(await myMemorySpaces(supabase, ctx.active.companyId), options.clientId);
+  const scope = conversationScope(await myMemorySpaces(supabase, ctx.active.companyId), options.clientId).filter(
+    (s) => !options.restrictTo || options.restrictTo.has(s.spaceId),
+  );
   if (scope.length === 0) return [];
   const ids = scope.map((s) => s.spaceId);
 

@@ -8,6 +8,8 @@ type Facts = {
   userName: string | null;
   companyDescription: string | null;
   client: { name: string; sector: string | null; description: string | null } | null;
+  /** Colleagues' names given to the model (message authors in a group, Who Can Help), in order. */
+  people: string[];
 };
 
 export type MaskedTurn = {
@@ -68,6 +70,7 @@ export async function maskTurn(
         clientName: facts.client && auto.has("client") ? add(facts.client.name, whole(facts.client.name, "client")) : -1,
         clientSector: facts.client?.sector ? add(facts.client.sector, autoSpans(masker.detect(facts.client.sector), auto)) : -1,
         clientDescription: facts.client?.description ? add(facts.client.description, autoSpans(masker.detect(facts.client.description), auto)) : -1,
+        people: facts.people.map((name) => (name && auto.has("person") ? add(name, whole(name, "person")) : -1)),
       }
     : null;
 
@@ -99,6 +102,7 @@ export async function maskTurn(
                 description: facts.client.description ? at(factIndex.clientDescription, facts.client.description) : null,
               }
             : null,
+          people: facts.people.map((name, i) => at(factIndex.people[i], name)),
         }
       : facts,
   };

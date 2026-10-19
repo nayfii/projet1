@@ -24,6 +24,9 @@ export const ERROR_CODES = [
   "category_exists",
   "already_decided",
   "term_exists",
+  "no_client_access",
+  "owner_must_transfer",
+  "not_restricted",
   "unknown",
 ] as const;
 

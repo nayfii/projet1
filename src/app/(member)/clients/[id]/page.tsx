@@ -11,6 +11,9 @@ import { listConversations } from "@/modules/conversations/server/queries";
 import { listMemorySpaces } from "@/modules/memory/server/queries";
 import { getClientById, listClients } from "@/modules/clients/server/queries";
 import { AvatarStack, VisibilityBadge } from "@/modules/clients/ui/client-badges";
+import { getEligibleColleagues, getMyHandover } from "@/modules/collaboration/server/queries";
+import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
+import { ClientTransferButton } from "@/modules/collaboration/ui/client-transfer";
 
 export async function generateMetadata({ params }: PageProps<"/clients/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -29,6 +32,9 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
   // RLS: only the conversations this user takes part in.
   const conversations = await listConversations(ctx.active.companyId, { clientId: id, limit: 20 });
   const format = await getFormatter();
+  // Smart Handover: an assigned employee can hand a restricted client over; the recipient finds the file here.
+  const canTransfer = client.visibility === "restricted" && Boolean(withAssignees?.assignees.some((a) => a.userId === ctx.user.id));
+  const [handover, colleagues] = await Promise.all([getMyHandover({ clientId: id }), canTransfer ? getEligibleColleagues(ctx, null) : Promise.resolve([])]);
 
   // The client's memory, if this person can read it (same rights as everywhere else).
   const space = (await listMemorySpaces(ctx)).find((s) => s.clientId === id);
@@ -49,10 +55,12 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
         actions={<VisibilityBadge visibility={client.visibility} />}
       />
       {client.description ? <p className="mb-8 max-w-2xl whitespace-pre-line text-sm leading-relaxed">{client.description}</p> : null}
+      {handover ? <HandoverCard handover={handover} className="mb-8 max-w-3xl" /> : null}
       {client.visibility === "restricted" && withAssignees ? (
-        <div className="mb-8 flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="mb-8 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <AvatarStack people={withAssignees.assignees} max={8} />
           <span>{t("assignedCount", { count: withAssignees.assignees.length })}</span>
+          {canTransfer ? <ClientTransferButton client={{ id: client.id, name: client.name }} colleagues={colleagues} /> : null}
         </div>
       ) : null}
       <section className="mb-8 space-y-3">

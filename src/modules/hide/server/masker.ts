@@ -41,7 +41,8 @@ export type Masker = {
   /** Masks several texts at once; new values get the next placeholders of their category. */
   mask(items: MaskItem[]): Promise<{ masked: string; counts: HideCounts }[]>;
   restore(text: string): string;
-  restorer(): StreamRestorer;
+  /** `only`: restore just these placeholders (group conversations: those the model was shown). */
+  restorer(only?: ReadonlySet<string>): StreamRestorer;
 };
 
 /**
@@ -78,7 +79,7 @@ export async function createConversationMasker(conversationId: string, lists: De
       return items.map((item) => applyPlaceholders(item.text, item.spans, (category, value) => placeholders.get(hashOf(category, value)) ?? `[${placeholderPrefix(category)}_0]`));
     },
     restore: (text) => restorePlaceholders(text, values),
-    restorer: () => new StreamRestorer(values),
+    restorer: (only) => new StreamRestorer(only ? new Map([...values].filter(([placeholder]) => only.has(placeholder))) : values),
   };
 }
 
@@ -105,7 +106,7 @@ export function createEphemeralMasker(lists: DetectionLists): Masker {
       );
     },
     restore: (text) => restorePlaceholders(text, values),
-    restorer: () => new StreamRestorer(values),
+    restorer: (only) => new StreamRestorer(only ? new Map([...values].filter(([placeholder]) => only.has(placeholder))) : values),
   };
 }
 
