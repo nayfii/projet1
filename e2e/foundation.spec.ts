@@ -44,7 +44,7 @@ test("owner signs up and completes onboarding", async ({ page }) => {
   await page.getByRole("button", { name: "Créer le client" }).click();
 
   await expect(page.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
-  await expect(page.getByText("Bientôt").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ajouter un document" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
   await expect(page.getByRole("heading", { name: "Votre première conversation" })).toBeVisible();
   await page.getByRole("button", { name: "Accéder à mon espace" }).click();
