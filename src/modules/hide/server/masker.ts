@@ -5,8 +5,8 @@ import {
   AUTO_CATEGORIES,
   DEFAULT_AUTO_CATEGORIES,
   DEFAULT_MODES,
+  HIDE_MODES,
   isAutoCategory,
-  isHideMode,
   placeholderPrefix,
   type HideCategory,
   type HideCounts,
@@ -23,7 +23,7 @@ export async function getHideSettings(supabase: UserClient, companyId: string): 
   const { data } = await supabase.from("company_hide_settings").select("default_modes, auto_categories").eq("company_id", companyId).maybeSingle();
   if (!data) return { defaultModes: DEFAULT_MODES, autoCategories: DEFAULT_AUTO_CATEGORIES };
   return {
-    defaultModes: data.default_modes.filter(isHideMode),
+    defaultModes: HIDE_MODES.filter((m) => data.default_modes.includes(m)),
     autoCategories: data.auto_categories.filter(isAutoCategory).sort((a, b) => AUTO_CATEGORIES.indexOf(a) - AUTO_CATEGORIES.indexOf(b)),
   };
 }
