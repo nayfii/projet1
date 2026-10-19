@@ -26,10 +26,16 @@ export function ChatListProvider({ initial, meId, children }: { initial: ChatLis
     setSeed(initial);
     setItems(initial);
   }
-  // A colleague added this person to a conversation: it appears right away.
+  // A colleague added this person to a conversation (or transferred one): it appears right away.
+  // Only new conversations are added; those already listed keep their live state (e.g. a title
+  // derived in this browser before the server has saved it).
   useMyConversationsRealtime(meId, () => {
     void loadConversationListAction().then((list) => {
-      if (list) setItems(list);
+      if (!list) return;
+      setItems((current) => {
+        const known = new Set(current.map((c) => c.id));
+        return [...list.filter((c) => !known.has(c.id)), ...current].sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
+      });
     });
   });
 

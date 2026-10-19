@@ -211,9 +211,10 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
       ? supabase.from("profiles").select("id, full_name").in("id", [...new Set(base.map((r) => r.author_id).filter((id): id is string => Boolean(id)).concat(ctx.user.id))])
       : Promise.resolve({ data: [] }),
   ]);
+  // People already in the conversation are not suggested: they are here.
   const participantIds = new Set(participants.map((p) => p.user_id));
   const colleagues = (memberRows ?? [])
-    .filter((m) => m.status === "active" && !m.who_can_help_opt_out && m.user_id !== ctx.user.id && m.expertise.length > 0 && m.profile?.full_name)
+    .filter((m) => m.status === "active" && !m.who_can_help_opt_out && !participantIds.has(m.user_id) && m.user_id !== ctx.user.id && m.expertise.length > 0 && m.profile?.full_name)
     .slice(0, 15)
     .map((m) => ({ userId: m.user_id, name: m.profile!.full_name!, expertise: m.expertise }));
   const authors = (authorRows ?? []).map((a) => ({ id: a.id, name: a.full_name?.trim() || "?" }));
@@ -344,8 +345,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         // reveal a value from history that some participants cannot see.
         restorer: masker?.restorer(group ? contextPlaceholders(context) : undefined) ?? null,
         contextLimited: group && (historyLimited || memoryLimited),
-        // Colleagues already in the conversation need no invitation.
-        colleagues: colleagues.filter((c) => !participantIds.has(c.userId)).map((c) => ({ userId: c.userId, name: c.name })),
+        colleagues: colleagues.map((c) => ({ userId: c.userId, name: c.name })),
       }),
   };
 }

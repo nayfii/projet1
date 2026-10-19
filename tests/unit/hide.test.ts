@@ -225,3 +225,11 @@ describe("restoring in a group conversation", () => {
     expect(all.push("[IBAN_1]") + all.flush()).toBe("FR76 3000 6000 0112 3456 7890 189");
   });
 });
+
+describe("AI mentions are not sensitive", () => {
+  it("leaves @Claude, @ChatGPT, @Gemini and @IA alone, but not a colleague named Claude", () => {
+    const text = "@Claude et @IA, demandez à Claude Bernard ; @ChatGPT puis @Gemini";
+    const found = values(text, detectSensitive(text, { terms: [], firstNames: ["Claude"] }));
+    expect(found).toEqual(["Claude Bernard"]);
+  });
+});

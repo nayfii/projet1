@@ -12,6 +12,9 @@ export type DetectionLists = {
   firstNames: string[];
 };
 
+// "@Claude", "@ChatGPT", "@Gemini", "@IA": calling the AI in a group conversation, not a person's name.
+const AI_MENTION = /^(?:claude|chatgpt|gpt|gemini|ia|ai)$/i;
+
 /** Every sensitive passage found in the text, without overlaps (longest, then most specific, wins). */
 export function detectSensitive(text: string, lists: DetectionLists): Span[] {
   if (!text.trim()) return [];
@@ -23,5 +26,5 @@ export function detectSensitive(text: string, lists: DetectionLists): Span[] {
     ...detectAmounts(text),
     ...detectListTerms(text, lists.terms),
     ...detectPersons(text, lists.firstNames),
-  ]);
+  ]).filter((s) => !(text[s.start - 1] === "@" && AI_MENTION.test(text.slice(s.start, s.end))));
 }

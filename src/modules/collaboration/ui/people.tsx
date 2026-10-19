@@ -22,7 +22,7 @@ export function ParticipantsBar({ participants, online, onAdd }: { participants:
     <div className="flex items-center gap-1.5">
       {participants.length > 1 ? (
         <Tooltip content={participants.map((p) => p.name).join(", ")}>
-          <div className="flex -space-x-1.5" aria-label={t("participants", { count: participants.length })}>
+          <div className="flex -space-x-1" aria-label={t("participants", { count: participants.length })}>
             {participants.slice(0, 5).map((p) => (
               <span key={p.userId} className="relative">
                 <Avatar name={p.name} src={p.avatarUrl} className="size-6 ring-2 ring-background" />
@@ -192,7 +192,7 @@ export function AddPeopleDialog({
               <HistoryOption checked={history === "all"} onSelect={() => setHistory("all")} label={t("historyAll")} />
               <div className="rounded-lg border">
                 <p className="border-b px-3 py-2 text-xs text-muted-foreground">{t("historyFrom")}</p>
-                <div className="max-h-56 overflow-y-auto py-1">
+                <div className="max-h-44 overflow-y-auto py-1">
                   {timeline.map((m) => (
                     <label key={m.id} className={cn("flex cursor-pointer items-start gap-2.5 px-3 py-1.5 text-[13px] hover:bg-accent/50", history === m.seq && "bg-brand-soft/60")}>
                       <input type="radio" name="history-from" className="mt-1 accent-[var(--brand)]" checked={history === m.seq} onChange={() => setHistory(m.seq)} />
@@ -202,7 +202,7 @@ export function AddPeopleDialog({
                           {" · "}
                           {format.dateTime(new Date(m.createdAt), { dateStyle: "short", timeStyle: "short" })}
                         </span>
-                        <span className="line-clamp-1">{m.content}</span>
+                        <span className="line-clamp-1">{plainPreview(m.content)}</span>
                       </span>
                     </label>
                   ))}
@@ -226,6 +226,16 @@ export function AddPeopleDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** One line of a message for the timeline: no Markdown marks nor citation badges. */
+function plainPreview(text: string): string {
+  return text
+    .replace(/\[S\d{1,2}\]/g, "")
+    .replace(/[*_`#>]+/g, "")
+    .replace(/^\s*-\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function HistoryOption({ checked, onSelect, label, hint }: { checked: boolean; onSelect: () => void; label: string; hint?: string }) {

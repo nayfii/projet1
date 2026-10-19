@@ -91,7 +91,7 @@ type Props = {
   memoryTargets: { spaceId: string; clientId: string | null; label: string }[];
   hide: HideSettings;
   /** The viewer. */
-  me: { id: string };
+  me: { id: string; name: string | null };
   /** Collaboration: who takes part, colleagues who could join or receive a transfer, and the handover file the viewer received. */
   participants: Participant[];
   colleagues: Colleague[];
@@ -145,7 +145,8 @@ export function ChatView(props: Props) {
   // Stop clicked before the server said which answer it is writing: stop it as soon as it does.
   const stopPending = React.useRef(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
-  const stickToBottom = React.useRef(true);
+  // A conversation received with a handover file opens at the top, on the file.
+  const stickToBottom = React.useRef(!props.handover);
   const fileInput = React.useRef<HTMLInputElement>(null);
   const textarea = React.useRef<HTMLTextAreaElement>(null);
   const creating = React.useRef<Promise<string | null> | null>(null);
@@ -244,7 +245,7 @@ export function ChatView(props: Props) {
   // Real time: colleagues' messages and the answers they ask for, as this person may see them.
   const incoming = React.useRef(new Set<string>());
   const flushing = React.useRef(false);
-  const { online, typing, notifyTyping } = useConversationRealtime({
+  const { online, typing, notifyTyping, stopTyping } = useConversationRealtime({
     conversationId,
     meId: props.me.id,
     onMessage: (id) => {
@@ -468,6 +469,7 @@ export function ChatView(props: Props) {
 
     setInput("");
     setAttachments([]);
+    stopTyping();
     setMessages((list) => [
       ...list,
       {
@@ -478,7 +480,7 @@ export function ChatView(props: Props) {
         status: "complete",
         errorCode: null,
         createdAt: new Date().toISOString(),
-        author: null,
+        author: { id: props.me.id, name: props.me.name },
         model: null,
         routing: null,
         omittedMessages: 0,

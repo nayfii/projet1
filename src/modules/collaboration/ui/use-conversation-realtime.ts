@@ -83,6 +83,13 @@ export function useConversationRealtime({
       void channelRef.current?.track({ typing: false });
     }, 3000);
   }, []);
+  /** The message was sent: no longer "typing". */
+  const stopTyping = React.useCallback(() => {
+    if (stopTimer.current) clearTimeout(stopTimer.current);
+    if (lastSent.current === 0) return;
+    lastSent.current = 0;
+    void channelRef.current?.track({ typing: false });
+  }, []);
 
-  return { online, typing, notifyTyping };
+  return { online, typing, notifyTyping, stopTyping };
 }
