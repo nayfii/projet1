@@ -35,7 +35,7 @@ export async function getConversation(conversationId: string) {
   const supabase = await createClient();
   const { data: conversation } = await supabase
     .from("conversations")
-    .select("id, company_id, client_id, owner_id, title, model_choice, created_at")
+    .select("id, company_id, client_id, owner_id, title, model_choice, agent_id, created_at")
     .eq("id", conversationId)
     .maybeSingle();
   if (!conversation) return null;

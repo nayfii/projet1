@@ -6,6 +6,7 @@ import { getConversation } from "@/modules/conversations/server/queries";
 import { getChatPageData } from "@/modules/conversations/server/page-data";
 import { ChatView } from "@/modules/conversations/ui/chat-view";
 import { getConversationPeople, getEligibleColleagues, getMyHandover } from "@/modules/collaboration/server/queries";
+import { getAgent } from "@/modules/agents/server/queries";
 
 export async function generateMetadata({ params }: PageProps<"/chat/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -20,11 +21,12 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
   // RLS returns nothing for a conversation the user may not see: a 404 that does not confirm it exists.
   const conversation = /^[0-9a-f-]{36}$/i.test(id) ? await getConversation(id) : null;
   if (!conversation || conversation.company_id !== ctx.active.companyId) notFound();
-  const [data, participants, colleagues, handover] = await Promise.all([
+  const [data, participants, colleagues, handover, agent] = await Promise.all([
     getChatPageData(ctx),
     getConversationPeople(conversation.id),
     getEligibleColleagues(ctx, conversation.client_id),
     getMyHandover({ conversationId: conversation.id }),
+    conversation.agent_id ? getAgent(ctx, conversation.agent_id) : Promise.resolve(null),
   ]);
   const group = participants.length > 1;
   return (
@@ -44,6 +46,7 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
       participants={participants}
       colleagues={colleagues}
       handover={handover}
+      agent={agent ? { id: agent.id, name: agent.name, attachments: agent.tools.includes("attachments"), allowedModels: agent.allowedModels } : null}
       {...data}
     />
   );

@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ErrorCode } from "@/lib/errors";
-import { revokeInvitationAction, updateMemberAction } from "../server/actions";
+import { revokeInvitationAction, setMemberTeamAction, updateMemberAction } from "../server/actions";
 import { ADMIN_SCOPES, AVAILABLE_SCOPES, type AdminScope } from "../scopes";
 import type { MemberRow } from "../server/queries";
 import { InviteForm } from "./invite-form";
@@ -85,7 +85,7 @@ export function MembersManager({
                   {isSelf ? <span className="text-xs font-normal text-muted-foreground">{t("you")}</span> : null}
                 </p>
                 <p className="truncate text-[13px] text-muted-foreground">
-                  {[m.jobTitle, m.fullName ? m.email : null].filter(Boolean).join(" · ")}
+                  {[m.jobTitle, m.teamName, m.fullName ? m.email : null].filter(Boolean).join(" · ")}
                 </p>
                 {m.expertise.length > 0 ? (
                   <div className="mt-1.5 flex flex-wrap gap-1">
@@ -201,18 +201,25 @@ export function MembersManager({
         </DialogContent>
       </Dialog>
 
-      {editing ? <EditMemberDialog member={editing} onClose={() => setEditing(null)} /> : null}
+      {editing ? (
+        <EditMemberDialog
+          member={editing}
+          teams={[...new Set(members.map((m) => m.teamName).filter((n): n is string => Boolean(n)))]}
+          onClose={() => setEditing(null)}
+        />
+      ) : null}
       {scopesFor ? <ScopesDialog member={scopesFor} onClose={() => setScopesFor(null)} /> : null}
     </div>
   );
 }
 
-function EditMemberDialog({ member, onClose }: { member: MemberRow; onClose: () => void }) {
+function EditMemberDialog({ member, teams, onClose }: { member: MemberRow; teams: string[]; onClose: () => void }) {
   const t = useTranslations("members");
   const tErrors = useTranslations("errors");
   const tCommon = useTranslations("common");
   const [jobTitle, setJobTitle] = useState(member.jobTitle ?? "");
   const [expertise, setExpertise] = useState(member.expertise.join(", "));
+  const [team, setTeam] = useState(member.teamName ?? "");
   const [pending, startTransition] = useTransition();
 
   return (
@@ -228,6 +235,14 @@ function EditMemberDialog({ member, onClose }: { member: MemberRow; onClose: () 
           <Field label={t("expertise")} htmlFor="edit-expertise" hint={t("expertiseHint")}>
             <Input id="edit-expertise" value={expertise} onChange={(e) => setExpertise(e.target.value)} />
           </Field>
+          <Field label={t("team")} htmlFor="edit-team" hint={t("teamHint")}>
+            <Input id="edit-team" list="edit-team-options" value={team} onChange={(e) => setTeam(e.target.value)} maxLength={80} />
+            <datalist id="edit-team-options">
+              {teams.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+          </Field>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
@@ -242,6 +257,11 @@ function EditMemberDialog({ member, onClose }: { member: MemberRow; onClose: () 
                   jobTitle,
                   expertise: expertise.split(",").map((s) => s.trim()).filter(Boolean),
                 });
+                const teamResult = result.ok && team.trim() !== (member.teamName ?? "") ? await setMemberTeamAction({ userId: member.userId, team }) : result;
+                if (!teamResult.ok) {
+                  toast.error(tErrors(teamResult.error));
+                  return;
+                }
                 if (result.ok) {
                   toast.success(t("updated"));
                   onClose();

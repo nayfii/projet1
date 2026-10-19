@@ -17,5 +17,5 @@ export default async function NewChatPage({ searchParams }: PageProps<"/chat">) 
   const data = await getChatPageData(ctx);
   const initialClientId = typeof client === "string" && data.clients.some((c) => c.id === client) ? client : null;
   const colleagues = await getEligibleColleagues(ctx, initialClientId);
-  return <ChatView key="new" conversation={null} initialClientId={initialClientId} participants={[]} colleagues={colleagues} handover={null} {...data} />;
+  return <ChatView key="new" conversation={null} initialClientId={initialClientId} participants={[]} colleagues={colleagues} handover={null} agent={null} {...data} />;
 }

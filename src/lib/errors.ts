@@ -27,6 +27,7 @@ export const ERROR_CODES = [
   "no_client_access",
   "owner_must_transfer",
   "not_restricted",
+  "no_team",
   "unknown",
 ] as const;
 

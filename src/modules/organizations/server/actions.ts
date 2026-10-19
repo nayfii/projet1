@@ -203,6 +203,22 @@ const memberUpdateSchema = z.object({
   expertise: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
 });
 
+/** Puts an employee in a team (created if new), or in none: used by "My team" tool sharing. */
+export async function setMemberTeamAction(input: { userId: string; team: string }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ userId: z.uuid(), team: z.string().trim().max(80) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("admin_set_member_team", {
+    p_company: ctx.active.companyId,
+    p_user: parsed.data.userId,
+    p_team_name: parsed.data.team,
+  });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/admin/members");
+  return { ok: true };
+}
+
 export async function updateMemberAction(input: z.input<typeof memberUpdateSchema>): Promise<ActionResult> {
   const ctx = await memberOrNull("members");
   if (!ctx) return { ok: false, error: "forbidden" };

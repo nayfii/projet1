@@ -39,6 +39,23 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         );
         return;
       }
+      if (request.system.startsWith("Task: turn a conversation into a reusable tool.")) {
+        yield* simulated(
+          JSON.stringify({
+            name: "[TEST] Synthèse client",
+            description: "[TEST] Résume une situation client en trois points.",
+            department: "sales",
+            input_fields: [
+              { label: "Client", type: "client", required: true },
+              { label: "Notes de réunion", type: "textarea", required: true },
+            ],
+            instructions: "[TEST] Résume les notes de réunion pour le client choisi, en trois points, puis propose une prochaine étape.",
+            output_format: "document",
+            memory_scope: "company_and_client",
+          }),
+        );
+        return;
+      }
       if (request.system.startsWith("Task: critique answers.")) {
         const reviewed = [...text.matchAll(/^Answer from (.+?):$/gm)].map((m) => m[1]);
         yield* simulated(`[TEST] Critique of ${reviewed.join(" and ")}: one claim needs checking; the reasoning is otherwise sound.`);
@@ -71,6 +88,8 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
       const helper = [...colleagues.matchAll(/^- (.+?): (.+)$/gm)].find((m) =>
         m[2].split(",").some((skill) => skill.trim().length >= 4 && text.toLowerCase().includes(skill.trim().toLowerCase())),
       );
+      // A tool's instructions are in the system prompt: say which tool, like a real model would follow it.
+      const tool = /^## Tool: (.+)$/m.exec(request.system)?.[1];
       const answer = [
         `[TEST] Simulated answer from **${request.apiModelId}**.`,
         "",
@@ -79,6 +98,7 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         `- Your last message had ${text.length} characters.`,
         // Shows exactly what the model received (with Hide, placeholders instead of sensitive values).
         `- Last message as received: «${text.slice(0, 300)}»`,
+        ...(tool ? [`- Tool instructions received: ${tool}`] : []),
         ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
         ...(helper ? ["", `You can ask ${helper[1]} about it.`] : []),
       ].join("\n");

@@ -16,7 +16,7 @@ export async function listMembers(companyId: string) {
   const { data } = await supabase
     .from("company_members")
     .select(
-      "user_id, role, admin_scopes, status, job_title, expertise, who_can_help_opt_out, joined_at, profile:profiles!company_members_user_id_fkey(full_name, email, avatar_url)",
+      "user_id, role, admin_scopes, status, job_title, expertise, who_can_help_opt_out, joined_at, team:teams(name), profile:profiles!company_members_user_id_fkey(full_name, email, avatar_url)",
     )
     .eq("company_id", companyId)
     .order("joined_at");
@@ -28,6 +28,7 @@ export async function listMembers(companyId: string) {
     jobTitle: m.job_title,
     expertise: m.expertise,
     optOut: m.who_can_help_opt_out,
+    teamName: m.team?.name ?? null,
     joinedAt: m.joined_at,
     fullName: m.profile?.full_name ?? null,
     email: m.profile?.email ?? "",

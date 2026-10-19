@@ -5,7 +5,51 @@ export type Database = {
   
   "public": {
           Tables: {
-            "ai_models": {
+            "agents": {
+                  Row: {
+                    "allowed_models": (string)[],"builtin_key": string | null,"company_id": string | null,"created_at": string,"created_by": string | null,"decided_at": string | null,"decided_by": string | null,"default_model": string | null,"department": string,"description": string,"enabled_roles": (Database["public"]['Enums']["company_role"])[],"id": string,"input_fields": NonNullable<Json>,"instructions": string,"kind": string,"memory_scope": string,"name": string,"output_format": string,"publication": string,"source_conversation_id": string | null,"team_id": string | null,"tools": (string)[],"updated_at": string,"visibility": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "allowed_models"?: (string)[],"builtin_key"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"decided_at"?: string | null,"decided_by"?: string | null,"default_model"?: string | null,"department"?: string,"description"?: string,"enabled_roles"?: (Database["public"]['Enums']["company_role"])[],"id"?: string,"input_fields"?: NonNullable<Json>,"instructions": string,"kind": string,"memory_scope"?: string,"name": string,"output_format"?: string,"publication"?: string,"source_conversation_id"?: string | null,"team_id"?: string | null,"tools"?: (string)[],"updated_at"?: string,"visibility"?: string
+                  }
+                  Update: {
+                    "allowed_models"?: (string)[],"builtin_key"?: string | null,"company_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"decided_at"?: string | null,"decided_by"?: string | null,"default_model"?: string | null,"department"?: string,"description"?: string,"enabled_roles"?: (Database["public"]['Enums']["company_role"])[],"id"?: string,"input_fields"?: NonNullable<Json>,"instructions"?: string,"kind"?: string,"memory_scope"?: string,"name"?: string,"output_format"?: string,"publication"?: string,"source_conversation_id"?: string | null,"team_id"?: string | null,"tools"?: (string)[],"updated_at"?: string,"visibility"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "agents_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "agents_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "agents_decided_by_fkey"
+      columns: ["decided_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "agents_source_conversation_id_fkey"
+      columns: ["source_conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "agents_team_id_fkey"
+      columns: ["team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ai_models": {
                   Row: {
                     "api_model_id": string,"cached_input_credits_per_mtok": number,"cached_input_usd_per_mtok": number,"context_window": number,"created_at": string,"default_allowed": boolean,"id": string,"input_credits_per_mtok": number,"input_usd_per_mtok": number,"is_enabled": boolean,"kind": string,"label": string,"max_output_tokens": number,"output_credits_per_mtok": number,"output_usd_per_mtok": number,"provider": Database["public"]['Enums']["ai_provider"],"sort_order": number,"strengths": (string)[],"supports_images": boolean,"tier": Database["public"]['Enums']["model_tier"],"updated_at": string
                   }
@@ -120,6 +164,38 @@ isOneToOne: false
       columns: ["plan_id"]
 isOneToOne: false
       referencedRelation: "plans"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"company_agent_settings": {
+                  Row: {
+                    "agent_id": string,"company_id": string,"default_model": string | null,"enabled": boolean,"enabled_roles": (Database["public"]['Enums']["company_role"])[],"instructions_addition": string,"memory_scope": string | null,"tone": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "agent_id": string,"company_id": string,"default_model"?: string | null,"enabled"?: boolean,"enabled_roles"?: (Database["public"]['Enums']["company_role"])[],"instructions_addition"?: string,"memory_scope"?: string | null,"tone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "agent_id"?: string,"company_id"?: string,"default_model"?: string | null,"enabled"?: boolean,"enabled_roles"?: (Database["public"]['Enums']["company_role"])[],"instructions_addition"?: string,"memory_scope"?: string | null,"tone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "company_agent_settings_agent_id_fkey"
+      columns: ["agent_id"]
+isOneToOne: false
+      referencedRelation: "agents"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "company_agent_settings_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "company_agent_settings_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -311,17 +387,23 @@ isOneToOne: false
                   ]
                 },"conversations": {
                   Row: {
-                    "client_id": string | null,"company_id": string,"created_at": string,"id": string,"is_group": boolean,"last_message_at": string | null,"last_seq": number,"model_choice": string,"owner_id": string,"title": string | null,"updated_at": string
+                    "agent_id": string | null,"client_id": string | null,"company_id": string,"created_at": string,"id": string,"is_group": boolean,"last_message_at": string | null,"last_seq": number,"model_choice": string,"owner_id": string,"title": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"title"?: string | null,"updated_at"?: string
+                    "agent_id"?: string | null,"client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"title"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"title"?: string | null,"updated_at"?: string
+                    "agent_id"?: string | null,"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"title"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "conversations_agent_id_fkey"
+      columns: ["agent_id"]
+isOneToOne: false
+      referencedRelation: "agents"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "conversations_client_id_company_id_fkey"
       columns: ["client_id","company_id"]
 isOneToOne: false
@@ -946,11 +1028,17 @@ isOneToOne: false
 "admin_save_category":
 { Args: { "p_category": string,"p_company": string,"p_description": string,"p_members": (string)[],"p_name": string }; Returns: string
                            },
+"admin_set_agent_settings":
+{ Args: { "p_agent": string,"p_company": string,"p_settings": Json }; Returns: undefined
+                           },
 "admin_set_default_user_quota":
 { Args: { "p_company": string,"p_credits": number }; Returns: undefined
                            },
 "admin_set_member_quota":
 { Args: { "p_company": string,"p_credits": number,"p_user": string }; Returns: undefined
+                           },
+"admin_set_member_team":
+{ Args: { "p_company": string,"p_team_name": string,"p_user": string }; Returns: undefined
                            },
 "admin_set_space_grants":
 { Args: { "p_read": (string)[],"p_space": string,"p_write": (string)[] }; Returns: undefined
@@ -980,6 +1068,12 @@ isOneToOne: false
                            },
 "decide_memory_suggestion":
 { Args: { "p_approve": boolean,"p_content"?: string,"p_suggestion": string,"p_title"?: string }; Returns: string
+                           },
+"decide_tool":
+{ Args: { "p_agent": string,"p_approve": boolean }; Returns: undefined
+                           },
+"delete_tool":
+{ Args: { "p_agent": string }; Returns: undefined
                            },
 "hide_assign_placeholders":
 { Args: { "p_conversation": string,"p_items"?: Json }; Returns: {
@@ -1046,10 +1140,16 @@ isOneToOne: false
 "revoke_invitation":
 { Args: { "p_invitation": string }; Returns: undefined
                            },
+"save_tool":
+{ Args: { "p_company": string,"p_id": string,"p_source_conversation"?: string,"p_tool": Json,"p_visibility": string }; Returns: string
+                           },
 "search_conversations":
 { Args: { "p_company": string,"p_limit"?: number,"p_query": string }; Returns: {
               "client_id": string,"conversation_id": string,"matched_at": string,"snippet": string,"title": string
             }[]
+                           },
+"set_tool_roles":
+{ Args: { "p_agent": string,"p_roles": (Database["public"]['Enums']["company_role"])[] }; Returns: undefined
                            },
 "share_conversation_history":
 { Args: { "p_conversation": string,"p_from_seq": number,"p_user": string }; Returns: undefined

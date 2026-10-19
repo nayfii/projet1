@@ -59,7 +59,8 @@
     "term_exists": "This term is already in the list.",
     "no_client_access": "One of the people involved has no access to this client.",
     "owner_must_transfer": "You are responsible for this conversation: transfer it instead of leaving.",
-    "not_restricted": "Only a restricted client can be transferred."
+    "not_restricted": "Only a restricted client can be transferred.",
+    "no_team": "You are not in a team: an administrator can assign you one (Administration → Employees)."
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -192,7 +193,9 @@
     "revoke": "Revoke",
     "revoked": "Invitation revoked",
     "scopesTitle": "{name}'s permissions",
-    "scopesDescription": "An admin only manages what you tick here."
+    "scopesDescription": "An admin only manages what you tick here.",
+    "team": "Team",
+    "teamHint": "Used to share “My team” tools. Type a new name to create a team; clear the field for none."
   },
   "clients": {
     "title": "Clients",
@@ -377,7 +380,15 @@
       "conversation_participant_left": "left a group conversation",
       "conversation_history_shared": "shared a conversation's history with {person}",
       "conversation_transferred": "transferred a conversation to {person}",
-      "client_transferred": "transferred {client} to {person}"
+      "client_transferred": "transferred {client} to {person}",
+      "agent_created": "created a tool ({visibility, select, private {for themselves} team {for their team} company {for the whole company} other {—}})",
+      "agent_updated": "edited a tool",
+      "agent_approved": "approved a tool for the whole company",
+      "agent_rejected": "rejected a tool proposed for the whole company",
+      "agent_roles_updated": "changed the roles allowed for a tool",
+      "agent_deleted": "deleted a tool",
+      "agent_settings_updated": "adapted a library agent",
+      "member_team_changed": "changed {person}'s team"
     }
   },
   "platformNav": {
@@ -997,7 +1008,8 @@
     "companyMemory": "the company memory",
     "clientMemory": "{client}'s memory",
     "addAnyway": "Add anyway",
-    "transferAnyway": "Transfer anyway"
+    "transferAnyway": "Transfer anyway",
+    "turnIntoTool": "Turn into a tool"
   },
   "confronter": {
     "title": "Confront",
@@ -1041,5 +1053,188 @@
     "progressAnswer": "Answer",
     "progressCritique": "Critique",
     "progressSynthesis": "Synthesis by {model}"
+  },
+  "tools": {
+    "libraryTitle": "Library",
+    "libraryDescription": "Your company's tools and agents, by department. Each one runs as a simple form.",
+    "howToCreate": "To create a tool, open a successful conversation, then the “…” menu → “Turn into a tool”.",
+    "emptyCompany": "No tools yet.",
+    "by": "By {name}",
+    "kindTool": "Tool",
+    "kindAgent": "Agent",
+    "pending": "Waiting for approval",
+    "rejected": "Rejected",
+    "departments": {
+      "marketing": "Marketing",
+      "sales": "Sales",
+      "accounting": "Accounting",
+      "finance": "Finance",
+      "hr": "Human resources",
+      "legal": "Legal",
+      "customer_service": "Customer service",
+      "management": "Management",
+      "general": "General"
+    },
+    "visibilities": {
+      "private": "Just me",
+      "team": "My team",
+      "company": "The whole company"
+    },
+    "visibilityHints": {
+      "private": "Only you see and use it.",
+      "team": "People in your team see and use it."
+    },
+    "noTeamHint": "You are not in a team: an administrator can assign you one.",
+    "companyApprovalHint": "Visible to the whole company once an administrator approves it.",
+    "companyDirectHint": "Visible to the whole company right away (you can approve tools).",
+    "name": "Name",
+    "department": "Department",
+    "description": "Description",
+    "descriptionHint": "One sentence: what the tool is for.",
+    "fields": "Form",
+    "fieldsHint": "What the person fills in each time (client, notes, date…).",
+    "fieldLabel": "Field label",
+    "fieldType": "Field type",
+    "fieldTypes": {
+      "text": "Short text",
+      "textarea": "Long text",
+      "client": "Client",
+      "select": "List of choices"
+    },
+    "fieldOptions": "Possible choices",
+    "fieldOptionsPlaceholder": "Choices separated by commas",
+    "required": "Required",
+    "removeField": "Remove the field “{label}”",
+    "newFieldLabel": "New field",
+    "addField": "Add a field",
+    "instructions": "Instructions for the AI",
+    "instructionsHint": "What the AI must do each time. The form's fields are replaced by what the person types.",
+    "model": "Model",
+    "modelAny": "The person's choice",
+    "modelAuto": "Auto",
+    "memory": "Memory used",
+    "memoryScopes": {
+      "none": "None",
+      "company": "Company memory",
+      "company_and_client": "Company and client"
+    },
+    "format": "Result format",
+    "formats": {
+      "text": "Text",
+      "table": "Table",
+      "email": "E-mail (draft)",
+      "document": "Structured document"
+    },
+    "attachments": "Accepts attached files",
+    "visibility": "Who can use it?",
+    "turnTitle": "Turn into a tool",
+    "turnBody": "The AI prepares a reusable tool from this conversation. Review and edit it before saving.",
+    "drafting": "The AI is preparing the tool…",
+    "draftManual": "The AI could not prepare the tool: fill it in yourself.",
+    "draftSpecific": "This draft contains details specific to this conversation (a name, an amount…). Replace them with a form field before sharing it.",
+    "save": "Save the tool",
+    "saveAndRequest": "Save and request approval",
+    "saved": "Tool saved.",
+    "savedPending": "Tool saved. The whole company will see it once an administrator approves it.",
+    "notUsable": "This tool is not available to you (waiting for approval, or disabled for your role).",
+    "noFields": "This tool has no form: run it directly.",
+    "noClient": "No client",
+    "choose": "Choose…",
+    "runHint": "The result opens in a conversation, with the usual protections.",
+    "run": "Run",
+    "showInstructions": "See the tool's instructions",
+    "edit": "Edit",
+    "editTitle": "Edit the tool",
+    "editHint": "Changes apply to the next runs.",
+    "editApprovedHint": "Shared with the whole company: a change needs a new approval.",
+    "delete": "Delete",
+    "deleteNamed": "Delete “{name}”",
+    "deleteTitle": "Delete the tool?",
+    "deleteBody": "It disappears from the library for everyone. Conversations already started stay.",
+    "deleted": "Tool deleted.",
+    "adminTitle": "Agents and tools",
+    "adminDescription": "Approve tools proposed for the whole company and choose who can use them.",
+    "adminPending": "To approve ({count})",
+    "adminNoPending": "No tool waiting for approval.",
+    "requestedBy": "Proposed by {name} on {date}",
+    "reviewContent": "See the content",
+    "fieldsList": "Fields: {fields}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Tool approved for the whole company.",
+    "rejectedToast": "Tool rejected.",
+    "adminShared": "Shared tools",
+    "adminSharedHint": "Team and company tools. Tick the roles that can use them. Personal tools stay private.",
+    "adminNoShared": "No shared tool yet.",
+    "enabledFor": "Roles allowed for {name}",
+    "rolesSaved": "Roles saved.",
+    "adminBuiltins": "Library agents",
+    "adminBuiltinsHint": "Ready-made agents by department. You will be able to adapt them (instructions, tone, memory) and enable them per role.",
+    "launch": {
+      "motion_design": {
+        "name": "Motion Design",
+        "description": "Brief and brand assets → animated MP4 (HyperFrames)."
+      },
+      "video_editor": {
+        "name": "Video Editor",
+        "description": "Your clips and a brief → edited video (cuts, order, captions, 16:9 / 9:16 / 1:1)."
+      },
+      "proposal_writer": {
+        "name": "Proposal Writer",
+        "description": "Client and needs → commercial proposal draft, exportable."
+      },
+      "meeting_prep": {
+        "name": "Meeting Prep",
+        "description": "Client → brief with context from its memory, history, talking points and questions."
+      },
+      "invoice_intake": {
+        "name": "Invoice Intake",
+        "description": "Invoices (PDF or images) → table of supplier, date, amounts, VAT, category, exportable."
+      },
+      "payment_reminders": {
+        "name": "Payment Reminders",
+        "description": "Unpaid invoices → reminder e-mail drafts with escalating tone."
+      },
+      "cash_flow_forecast": {
+        "name": "Cash-Flow Forecast",
+        "description": "Bank exports and recurring items → 3–12 month forecast, table and chart."
+      },
+      "margin_analysis": {
+        "name": "Margin Analysis",
+        "description": "Sales and costs → margins by product, client or project, with commentary."
+      },
+      "job_posting_writer": {
+        "name": "Job Posting Writer",
+        "description": "Role and context → job posting draft."
+      },
+      "application_review": {
+        "name": "Application Review Assistant",
+        "description": "Applications and the employer's criteria → structured summaries. A person decides."
+      },
+      "contract_review": {
+        "name": "Contract Review",
+        "description": "Contract → key clauses, risks, missing clauses, questions for a lawyer."
+      },
+      "template_drafter": {
+        "name": "Template Drafter",
+        "description": "Type of document → draft terms and conditions, NDA or other standard document."
+      },
+      "email_responder": {
+        "name": "Email Responder",
+        "description": "A client's e-mail → reply draft in the company's tone, using its memory."
+      },
+      "feedback_synthesis": {
+        "name": "Feedback Synthesis",
+        "description": "Reviews or e-mails → themes, sentiment, recommended actions."
+      },
+      "meeting_minutes": {
+        "name": "Meeting Minutes",
+        "description": "Notes, transcript or audio → minutes with decisions and action items."
+      },
+      "weekly_dashboard": {
+        "name": "Weekly Dashboard",
+        "description": "Data files and memory → one-page summary of KPIs, highlights and risks."
+      }
+    }
   }
 }

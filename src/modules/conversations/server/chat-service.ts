@@ -30,6 +30,8 @@ import { conversationScope, myMemorySpaces } from "@/modules/memory/server/retri
 import type { SuggestedColleague } from "../stream-events";
 import { planConfrontation } from "@/modules/confronter/server/plan";
 import { runConfrontation } from "@/modules/confronter/server/run";
+import { resolveRunAgent } from "@/modules/agents/server/queries";
+import { outputFormatInstruction } from "@/modules/agents/definitions";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -86,10 +88,14 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
 
   const { data: conversation } = await supabase
     .from("conversations")
-    .select("id, company_id, client_id, model_choice")
+    .select("id, company_id, client_id, model_choice, agent_id")
     .eq("id", input.conversationId)
     .maybeSingle();
   if (!conversation || conversation.company_id !== companyId) return fail("not_found", 404);
+  // A conversation started from a tool or agent runs with its instructions, models and memory scope,
+  // only while this person may still use it (CLAUDE.md §4.6, §4.7).
+  const agent = conversation.agent_id ? await resolveRunAgent(supabase, ctx, conversation.agent_id) : null;
+  if (conversation.agent_id && !agent) return fail("forbidden", 403);
 
   // Group conversation: several participants (CLAUDE.md §4.4).
   const { data: participantRows } = await supabase
@@ -136,6 +142,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         .in("id", ids);
       pending = data ?? [];
       if (pending.length !== ids.length) return fail("attachment_invalid", 400);
+      if (agent && !agent.tools.includes("attachments")) return fail("attachment_invalid", 400);
     }
     if (!newText && pending.length === 0) return fail("validation", 400);
   }
@@ -148,9 +155,12 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   // Model: the mentioned provider, else the explicit choice, else the conversation's. Auto routes with simple rules.
   const models = await getCompanyModels(companyId);
   let choice = input.modelChoice ?? conversation.model_choice;
+  if (agent?.allowedModels.length && !agent.allowedModels.includes(choice)) {
+    choice = agent.defaultModel && agent.allowedModels.includes(agent.defaultModel) ? agent.defaultModel : agent.allowedModels[0];
+  }
   if (mention && mention !== "selected") {
     const mentioned = modelForProvider(mention, models.allowed, models.configured);
-    if (!mentioned) return fail("model_not_allowed", 409);
+    if (!mentioned || (agent?.allowedModels.length && !agent.allowedModels.includes(mentioned.id))) return fail("model_not_allowed", 409);
     choice = mentioned.id;
   }
   const lastUser = [...base].reverse().find((r) => r.author_type === "user");
@@ -246,6 +256,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     companyDescription: companyRes.data?.description ?? null,
     client: clientRes.data ? { name: clientRes.data.name, sector: clientRes.data.sector, description: clientRes.data.description } : null,
     people: [...colleagues.map((c) => c.name), ...authors.map((a) => a.name)],
+    toolInstructions: agent?.instructions ?? null,
   };
   const turn = masker
     ? await maskTurn(masker, {
@@ -330,10 +341,16 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     const mine = conversationScope(await myMemorySpaces(supabase, companyId), conversation.client_id);
     memoryLimited = mine.some((space) => !restrictTo!.has(space.spaceId));
   }
+  // A tool may use only the company memory, or no memory at all.
+  if (agent?.memoryScope === "company") {
+    const companySpaces = (await myMemorySpaces(supabase, companyId)).filter((space) => space.kind === "company").map((space) => space.spaceId);
+    restrictTo = new Set(companySpaces.filter((id) => !restrictTo || restrictTo.has(id)));
+  }
   // Memory passages, filtered by permissions before any model sees them. The search by meaning uses
   // the masked question: the embeddings provider gets no more than the chat model.
   const embeddingQuery = input.message ? (turn?.message ?? newText) : (lastUser?.masked_content ?? routedText);
-  const knowledge = await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText, embeddingQuery, restrictTo });
+  const knowledge =
+    agent?.memoryScope === "none" ? [] : await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText, embeddingQuery, restrictTo });
   const promptKnowledge = masker ? await maskPassages(masker, knowledge, hideModes, autoCategories) : knowledge;
   const system = buildSystemPrompt({
     company: { name: companyRes.data?.name ?? ctx.active.companyName, industry: companyRes.data?.industry, description: promptFacts.companyDescription },
@@ -345,6 +362,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     protectedValues: masker !== null,
     colleagues: colleagues.map((c, i) => ({ name: people[i] ?? c.name, expertise: c.expertise })),
     group,
+    tool: agent ? { name: agent.name, instructions: promptFacts.toolInstructions ?? agent.instructions, format: outputFormatInstruction(agent.outputFormat) } : null,
   });
   const context = buildChatContext({ system, history, budgetTokens: contextBudget(models.allowed) });
   // In a group, only values the model was shown are put back: a placeholder it invents can never

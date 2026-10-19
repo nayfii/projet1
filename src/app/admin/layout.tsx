@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       label: t("ai"),
       items: [
         ...item("models", { href: "/admin/models", label: t("models"), icon: "models" }),
-        ...item("agents", { href: "/admin/agents", label: t("agents"), icon: "agents", soon: true }),
+        ...item("agents", { href: "/admin/agents", label: t("agents"), icon: "agents" }),
         ...item("hide", { href: "/admin/hide", label: t("hide"), icon: "hide" }),
       ],
     },

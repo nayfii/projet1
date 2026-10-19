@@ -10,6 +10,8 @@ type Facts = {
   client: { name: string; sector: string | null; description: string | null } | null;
   /** Colleagues' names given to the model (message authors in a group, Who Can Help), in order. */
   people: string[];
+  /** A tool's or agent's instructions (and the company's adaptations), when the conversation runs one. */
+  toolInstructions?: string | null;
 };
 
 export type MaskedTurn = {
@@ -71,6 +73,7 @@ export async function maskTurn(
         clientSector: facts.client?.sector ? add(facts.client.sector, autoSpans(masker.detect(facts.client.sector), auto)) : -1,
         clientDescription: facts.client?.description ? add(facts.client.description, autoSpans(masker.detect(facts.client.description), auto)) : -1,
         people: facts.people.map((name) => (name && auto.has("person") ? add(name, whole(name, "person")) : -1)),
+        toolInstructions: facts.toolInstructions ? add(facts.toolInstructions, autoSpans(masker.detect(facts.toolInstructions), auto)) : -1,
       }
     : null;
 
@@ -103,6 +106,7 @@ export async function maskTurn(
               }
             : null,
           people: facts.people.map((name, i) => at(factIndex.people[i], name)),
+          toolInstructions: facts.toolInstructions ? at(factIndex.toolInstructions, facts.toolInstructions) : null,
         }
       : facts,
   };

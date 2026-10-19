@@ -59,7 +59,8 @@
     "term_exists": "Ce terme est déjà dans la liste.",
     "no_client_access": "Une des personnes concernées n'a pas accès à ce client.",
     "owner_must_transfer": "Vous êtes responsable de cette conversation : transférez-la plutôt que de la quitter.",
-    "not_restricted": "Seul un client restreint peut être transféré."
+    "not_restricted": "Seul un client restreint peut être transféré.",
+    "no_team": "Vous n'êtes dans aucune équipe : un administrateur peut vous en attribuer une (Administration → Employés)."
   },
   "auth": {
     "signInTitle": "Connexion",
@@ -192,7 +193,9 @@
     "revoke": "Annuler",
     "revoked": "Invitation annulée",
     "scopesTitle": "Droits de {name}",
-    "scopesDescription": "Un administrateur ne gère que ce que vous cochez ici."
+    "scopesDescription": "Un administrateur ne gère que ce que vous cochez ici.",
+    "team": "Équipe",
+    "teamHint": "Pour partager des outils « Mon équipe ». Tapez un nouveau nom pour créer une équipe, videz le champ pour n'en mettre aucune."
   },
   "clients": {
     "title": "Clients",
@@ -377,7 +380,15 @@
       "conversation_participant_left": "a quitté une conversation de groupe",
       "conversation_history_shared": "a partagé l'historique d'une conversation avec {person}",
       "conversation_transferred": "a transféré une conversation à {person}",
-      "client_transferred": "a transféré {client} à {person}"
+      "client_transferred": "a transféré {client} à {person}",
+      "agent_created": "a créé un outil ({visibility, select, private {pour soi} team {pour son équipe} company {pour toute l'entreprise} other {—}})",
+      "agent_updated": "a modifié un outil",
+      "agent_approved": "a validé un outil pour toute l'entreprise",
+      "agent_rejected": "a refusé un outil proposé pour toute l'entreprise",
+      "agent_roles_updated": "a changé les rôles autorisés pour un outil",
+      "agent_deleted": "a supprimé un outil",
+      "agent_settings_updated": "a adapté un agent de la bibliothèque",
+      "member_team_changed": "a changé l'équipe de {person}"
     }
   },
   "platformNav": {
@@ -997,7 +1008,8 @@
     "companyMemory": "la mémoire de l'entreprise",
     "clientMemory": "la mémoire de {client}",
     "addAnyway": "Ajouter quand même",
-    "transferAnyway": "Transférer quand même"
+    "transferAnyway": "Transférer quand même",
+    "turnIntoTool": "Transformer en outil"
   },
   "confronter": {
     "title": "Confronter",
@@ -1041,5 +1053,188 @@
     "progressAnswer": "Réponse",
     "progressCritique": "Critique",
     "progressSynthesis": "Synthèse par {model}"
+  },
+  "tools": {
+    "libraryTitle": "Bibliothèque",
+    "libraryDescription": "Les outils et agents de votre entreprise, par service. Chacun se lance comme un simple formulaire.",
+    "howToCreate": "Pour créer un outil, ouvrez une conversation réussie, puis menu « … » → « Transformer en outil ».",
+    "emptyCompany": "Aucun outil pour l'instant.",
+    "by": "Par {name}",
+    "kindTool": "Outil",
+    "kindAgent": "Agent",
+    "pending": "En attente de validation",
+    "rejected": "Refusé",
+    "departments": {
+      "marketing": "Marketing",
+      "sales": "Ventes",
+      "accounting": "Comptabilité",
+      "finance": "Finance",
+      "hr": "Ressources humaines",
+      "legal": "Juridique",
+      "customer_service": "Service client",
+      "management": "Direction",
+      "general": "Général"
+    },
+    "visibilities": {
+      "private": "Moi seul(e)",
+      "team": "Mon équipe",
+      "company": "Toute l'entreprise"
+    },
+    "visibilityHints": {
+      "private": "Vous seul(e) le voyez et l'utilisez.",
+      "team": "Les personnes de votre équipe le voient et l'utilisent."
+    },
+    "noTeamHint": "Vous n'êtes dans aucune équipe : un administrateur peut vous en attribuer une.",
+    "companyApprovalHint": "Visible par toute l'entreprise après validation par un administrateur.",
+    "companyDirectHint": "Visible tout de suite par toute l'entreprise (vous pouvez valider les outils).",
+    "name": "Nom",
+    "department": "Service",
+    "description": "Description",
+    "descriptionHint": "Une phrase : à quoi sert l'outil.",
+    "fields": "Formulaire",
+    "fieldsHint": "Ce que la personne remplit à chaque fois (client, notes, date…).",
+    "fieldLabel": "Intitulé du champ",
+    "fieldType": "Type de champ",
+    "fieldTypes": {
+      "text": "Texte court",
+      "textarea": "Texte long",
+      "client": "Client",
+      "select": "Liste de choix"
+    },
+    "fieldOptions": "Choix possibles",
+    "fieldOptionsPlaceholder": "Choix séparés par des virgules",
+    "required": "Obligatoire",
+    "removeField": "Retirer le champ « {label} »",
+    "newFieldLabel": "Nouveau champ",
+    "addField": "Ajouter un champ",
+    "instructions": "Instructions pour l'IA",
+    "instructionsHint": "Ce que l'IA doit faire à chaque fois. Les champs du formulaire sont remplacés par ce que la personne saisit.",
+    "model": "Modèle",
+    "modelAny": "Au choix de la personne",
+    "modelAuto": "Auto",
+    "memory": "Mémoire utilisée",
+    "memoryScopes": {
+      "none": "Aucune",
+      "company": "Mémoire de l'entreprise",
+      "company_and_client": "Entreprise et client"
+    },
+    "format": "Format du résultat",
+    "formats": {
+      "text": "Texte",
+      "table": "Tableau",
+      "email": "E-mail (brouillon)",
+      "document": "Document structuré"
+    },
+    "attachments": "Accepte des fichiers joints",
+    "visibility": "Qui peut l'utiliser ?",
+    "turnTitle": "Transformer en outil",
+    "turnBody": "L'IA prépare un outil réutilisable à partir de cette conversation. Relisez-le et modifiez-le avant de l'enregistrer.",
+    "drafting": "L'IA prépare l'outil…",
+    "draftManual": "L'IA n'a pas pu préparer l'outil : complétez-le vous-même.",
+    "draftSpecific": "Ce brouillon contient des éléments propres à cette conversation (nom, montant…). Remplacez-les par un champ du formulaire avant de le partager.",
+    "save": "Enregistrer l'outil",
+    "saveAndRequest": "Enregistrer et demander la validation",
+    "saved": "Outil enregistré.",
+    "savedPending": "Outil enregistré. Il sera visible par toute l'entreprise après validation par un administrateur.",
+    "notUsable": "Cet outil n'est pas disponible pour vous (en attente de validation, ou désactivé pour votre rôle).",
+    "noFields": "Cet outil n'a pas de formulaire : lancez-le directement.",
+    "noClient": "Aucun client",
+    "choose": "Choisir…",
+    "runHint": "Le résultat s'ouvre dans une conversation, avec les protections habituelles.",
+    "run": "Lancer",
+    "showInstructions": "Voir les instructions de l'outil",
+    "edit": "Modifier",
+    "editTitle": "Modifier l'outil",
+    "editHint": "Les changements s'appliquent aux prochaines utilisations.",
+    "editApprovedHint": "Partagé avec toute l'entreprise : une modification demande une nouvelle validation.",
+    "delete": "Supprimer",
+    "deleteNamed": "Supprimer « {name} »",
+    "deleteTitle": "Supprimer l'outil ?",
+    "deleteBody": "Il disparaît de la bibliothèque pour tout le monde. Les conversations déjà lancées restent.",
+    "deleted": "Outil supprimé.",
+    "adminTitle": "Agents et outils",
+    "adminDescription": "Validez les outils proposés pour toute l'entreprise et choisissez qui peut les utiliser.",
+    "adminPending": "À valider ({count})",
+    "adminNoPending": "Aucun outil en attente de validation.",
+    "requestedBy": "Proposé par {name} le {date}",
+    "reviewContent": "Voir le contenu",
+    "fieldsList": "Champs : {fields}",
+    "approve": "Valider",
+    "reject": "Refuser",
+    "approved": "Outil validé pour toute l'entreprise.",
+    "rejectedToast": "Outil refusé.",
+    "adminShared": "Outils partagés",
+    "adminSharedHint": "Outils d'équipe et d'entreprise. Cochez les rôles qui peuvent les utiliser. Les outils personnels restent privés.",
+    "adminNoShared": "Aucun outil partagé pour l'instant.",
+    "enabledFor": "Rôles autorisés pour {name}",
+    "rolesSaved": "Rôles enregistrés.",
+    "adminBuiltins": "Agents de la bibliothèque",
+    "adminBuiltinsHint": "Les agents prêts à l'emploi par service. Vous pourrez les adapter (instructions, ton, mémoire) et les activer par rôle.",
+    "launch": {
+      "motion_design": {
+        "name": "Motion design",
+        "description": "Brief et éléments de marque → animation MP4 (HyperFrames)."
+      },
+      "video_editor": {
+        "name": "Montage vidéo",
+        "description": "Vos clips et un brief → vidéo montée (coupes, ordre, sous-titres, formats 16:9 / 9:16 / 1:1)."
+      },
+      "proposal_writer": {
+        "name": "Proposition commerciale",
+        "description": "Client et besoins → brouillon de proposition commerciale, exportable."
+      },
+      "meeting_prep": {
+        "name": "Préparation de rendez-vous",
+        "description": "Client → fiche avec le contexte de sa mémoire, l'historique, les points à aborder et les questions."
+      },
+      "invoice_intake": {
+        "name": "Saisie de factures",
+        "description": "Factures (PDF ou images) → tableau fournisseur, date, montants, TVA, catégorie, exportable."
+      },
+      "payment_reminders": {
+        "name": "Relances de paiement",
+        "description": "Factures impayées → brouillons d'e-mails de relance au ton progressif."
+      },
+      "cash_flow_forecast": {
+        "name": "Prévision de trésorerie",
+        "description": "Relevés bancaires et récurrents → prévision sur 3 à 12 mois, tableau et graphique."
+      },
+      "margin_analysis": {
+        "name": "Analyse de marge",
+        "description": "Ventes et coûts → marges par produit, client ou projet, commentées."
+      },
+      "job_posting_writer": {
+        "name": "Offre d'emploi",
+        "description": "Poste et contexte → brouillon d'offre d'emploi."
+      },
+      "application_review": {
+        "name": "Aide à la lecture de candidatures",
+        "description": "Candidatures et critères de l'employeur → synthèses structurées. Une personne décide."
+      },
+      "contract_review": {
+        "name": "Relecture de contrat",
+        "description": "Contrat → clauses clés, risques, clauses manquantes, questions pour un avocat."
+      },
+      "template_drafter": {
+        "name": "Modèles juridiques",
+        "description": "Type de document → brouillon de CGV, NDA ou autre document standard."
+      },
+      "email_responder": {
+        "name": "Réponse aux e-mails",
+        "description": "E-mail d'un client → brouillon de réponse dans le ton de l'entreprise, avec sa mémoire."
+      },
+      "feedback_synthesis": {
+        "name": "Synthèse des retours",
+        "description": "Avis ou e-mails → thèmes, ressenti, actions recommandées."
+      },
+      "meeting_minutes": {
+        "name": "Compte rendu de réunion",
+        "description": "Notes, transcription ou audio → compte rendu avec décisions et actions."
+      },
+      "weekly_dashboard": {
+        "name": "Tableau de bord hebdo",
+        "description": "Fichiers de données et mémoire → synthèse d'une page : indicateurs, faits marquants, risques."
+      }
+    }
   }
 }

@@ -21,6 +21,8 @@ export type SystemPromptInput = {
   colleagues?: { name: string; expertise: string[] }[];
   /** Group conversation: several people talk; the AI was mentioned by one of them. */
   group?: boolean;
+  /** A tool or agent of the company: its instructions (masked by Hide like other facts) and output format. */
+  tool?: { name: string; instructions: string; format: string | null } | null;
 };
 
 export const WHO_CAN_HELP_RULES = [
@@ -61,6 +63,17 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     "## Format\nUse Markdown when it helps (short headings, lists, tables). Be concise and practical.",
   ];
   if (input.protectedValues) sections.push(`## Protected values\n${PROTECTED_VALUES_RULES}`);
+  if (input.tool) {
+    sections.push(
+      [
+        `## Tool: ${input.tool.name}`,
+        "The person is using a tool set up by their company. Its first message is the filled form. Follow the tool's instructions below, within the rules above; ask one short question only if something indispensable is missing.",
+        "",
+        input.tool.instructions,
+        ...(input.tool.format ? ["", input.tool.format] : []),
+      ].join("\n"),
+    );
+  }
   if (input.group) {
     sections.push(
       "## Group conversation\nSeveral colleagues take part in this conversation; their messages are labelled with their names. You were mentioned by the author of the latest message: answer them, and stay brief.",

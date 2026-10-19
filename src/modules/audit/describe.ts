@@ -50,6 +50,14 @@ const KNOWN = new Set<string>([
   "conversation_history_shared",
   "conversation_transferred",
   "client_transferred",
+  "agent_created",
+  "agent_updated",
+  "agent_approved",
+  "agent_rejected",
+  "agent_roles_updated",
+  "agent_deleted",
+  "agent_settings_updated",
+  "member_team_changed",
 ]);
 
 type EventLike = { action: string; target_id: string | null; metadata: Json };
@@ -82,6 +90,7 @@ export function describeEvent(
       count: Object.values(counts).reduce<number>((n, v) => n + Number(v ?? 0), 0),
       categories: Object.keys(counts).map(hideCategory).join(", "),
       category: typeof meta.category === "string" ? hideCategory(meta.category) : "",
+      visibility: String(meta.visibility ?? ""),
     },
   };
 }

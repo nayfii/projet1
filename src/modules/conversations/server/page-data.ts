@@ -9,18 +9,20 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { myMemorySpaces } from "@/modules/memory/server/retrieval";
 import { getHideSettings } from "@/modules/hide/server/masker";
+import { hasScope } from "@/lib/auth/context";
 
 /** What the chat screen needs besides the conversation itself. */
 export async function getChatPageData(ctx: MemberContext) {
   const companyId = ctx.active.companyId;
   const supabase = await createClient();
-  const [models, clients, quota, spaces, tMemory, hide] = await Promise.all([
+  const [models, clients, quota, spaces, tMemory, hide, { data: membership }] = await Promise.all([
     getCompanyModels(companyId),
     listClients(companyId),
     getMyQuota(companyId),
     myMemorySpaces(supabase, companyId),
     getTranslations("memory"),
     getHideSettings(supabase, companyId),
+    supabase.from("company_members").select("team_id").eq("company_id", companyId).eq("user_id", ctx.user.id).maybeSingle(),
   ]);
   const clientName = new Map(clients.map((c) => [c.id, c.name]));
   const picker: PickerModel[] = models.allowed.map((m) => ({
@@ -51,5 +53,7 @@ export async function getChatPageData(ctx: MemberContext) {
     // Hide: the company's default modes and the categories Automatic masks.
     hide,
     me: { id: ctx.user.id, name: ctx.profile.fullName },
+    // "Turn into a tool": what the tool editor needs.
+    toolEditor: { models: picker, autoEnabled: models.autoEnabled, hasTeam: Boolean(membership?.team_id), canApprove: hasScope(ctx.active, "agents") },
   };
 }

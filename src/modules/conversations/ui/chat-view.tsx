@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import {
   BriefcaseIcon,
   LightbulbIcon,
   LogOutIcon,
+  WandSparklesIcon,
   MoreHorizontalIcon,
   PaperclipIcon,
   PencilIcon,
@@ -62,6 +64,8 @@ import { useConversationRealtime } from "@/modules/collaboration/ui/use-conversa
 import { ConfrontDialog } from "@/modules/confronter/ui/confront-dialog";
 import type { ConfrontEstimate } from "@/modules/confronter/server/actions";
 import type { Confrontation, ConfrontationProgress } from "@/modules/confronter/types";
+import { TurnIntoToolDialog, type ToolEditorContext } from "@/modules/agents/ui/turn-into-tool-dialog";
+import { RUN_STORAGE_PREFIX } from "@/modules/agents/ui/run-form";
 
 type PendingAttachment = {
   key: string;
@@ -99,6 +103,9 @@ type Props = {
   participants: Participant[];
   colleagues: Colleague[];
   handover: Handover | null;
+  /** The tool or agent this conversation runs (CLAUDE.md §4.6, §4.7). */
+  agent: { id: string; name: string; attachments: boolean; allowedModels: string[] } | null;
+  toolEditor: ToolEditorContext;
 };
 
 // Shared by the input and the Manual-mode overlay drawn under it: they must wrap text identically.
@@ -134,6 +141,10 @@ export function ChatView(props: Props) {
   const [adding, setAdding] = React.useState<string[] | null>(null);
   const [transferring, setTransferring] = React.useState(false);
   const [leaving, setLeaving] = React.useState(false);
+  const [turning, setTurning] = React.useState(false);
+  // A tool's models only, when it is limited to some.
+  const pickerModels = props.agent?.allowedModels.length ? props.models.filter((m) => props.agent!.allowedModels.includes(m.id)) : props.models;
+  const canAttach = !props.agent || props.agent.attachments;
   const [caret, setCaret] = React.useState(0);
   const [mentionIndex, setMentionIndex] = React.useState(0);
   const [mentionDismissed, setMentionDismissed] = React.useState<number | null>(null);
@@ -207,6 +218,27 @@ export function ChatView(props: Props) {
   React.useEffect(() => {
     if (props.conversation === null && /^\/chat\/[0-9a-f-]{36}$/i.test(window.location.pathname)) router.replace(window.location.pathname);
   }, [props.conversation, router]);
+
+  // A tool run: its first message (the filled form) was prepared by the library page. With auto-protect
+  // on it is sent right away; otherwise it waits in the input so the person can protect what they want.
+  const runKey = props.conversation && props.conversation.messages.length === 0 ? `${RUN_STORAGE_PREFIX}${props.conversation.id}` : null;
+  const pendingRun = React.useSyncExternalStore(noSubscription, () => (runKey ? readSession(runKey) : null), () => null);
+  const [runText, setRunText] = React.useState<string | null>(null);
+  if (pendingRun && runText === null) {
+    setRunText(pendingRun);
+    setInput(pendingRun);
+  }
+  const runSent = React.useRef(false);
+  React.useEffect(() => {
+    if (!runKey || runText === null || runSent.current || input !== runText) return;
+    runSent.current = true;
+    try {
+      sessionStorage.removeItem(runKey);
+    } catch {
+      // Storage unavailable: nothing to clean.
+    }
+    if (hide.auto) void send();
+  });
 
   // Refresh until the answer started elsewhere is done (the page then reloads its messages).
   React.useEffect(() => {
@@ -658,6 +690,15 @@ export function ChatView(props: Props) {
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col md:h-dvh">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sm:px-6">
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{title ?? t("newConversation")}</h1>
+        {props.agent ? (
+          <Link
+            href={`/library/${props.agent.id}`}
+            className="hidden max-w-48 items-center gap-1.5 rounded-md px-2 py-1 text-[13px] text-muted-foreground hover:bg-accent hover:text-foreground sm:inline-flex"
+          >
+            <WandSparklesIcon className="size-3.5 shrink-0 text-brand" />
+            <span className="truncate">{props.agent.name}</span>
+          </Link>
+        ) : null}
         <ParticipantsBar participants={participants} online={online} onAdd={() => void openAdd([])} />
         {isOwner ? (
           <DropdownMenu>
@@ -696,6 +737,10 @@ export function ChatView(props: Props) {
               <DropdownMenuItem onSelect={() => setSuggesting(true)} disabled={busy || messages.length === 0}>
                 <LightbulbIcon />
                 {t("proposeMemory")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setTurning(true)} disabled={busy || !messages.some((m) => m.role === "assistant" && m.status === "complete")}>
+                <WandSparklesIcon />
+                {tCollab("turnIntoTool")}
               </DropdownMenuItem>
               {isOwner ? (
                 <>
@@ -785,7 +830,7 @@ export function ChatView(props: Props) {
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              if (!blocked) void addFiles(e.dataTransfer.files);
+              if (!blocked && canAttach) void addFiles(e.dataTransfer.files);
             }}
           >
             {mentionMatches.length > 0 ? <MentionMenu options={mentionMatches} active={activeMention} onPick={pickMention} /> : null}
@@ -875,17 +920,19 @@ export function ChatView(props: Props) {
               />
             </div>
             <div className="flex items-center gap-1 px-2 pb-2">
-              <Tooltip content={t("attach")}>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t("attach")}
-                  disabled={blocked || busy || attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE}
-                  onClick={() => fileInput.current?.click()}
-                >
-                  <PaperclipIcon />
-                </Button>
-              </Tooltip>
+              {canAttach ? (
+                <Tooltip content={t("attach")}>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t("attach")}
+                    disabled={blocked || busy || attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE}
+                    onClick={() => fileInput.current?.click()}
+                  >
+                    <PaperclipIcon />
+                  </Button>
+                </Tooltip>
+              ) : null}
               {group ? (
                 <Tooltip content={tCollab("mentionButton")}>
                   <Button variant="ghost" size="icon-sm" aria-label={tCollab("mentionButton")} disabled={inputBlocked} onClick={startMention}>
@@ -904,7 +951,13 @@ export function ChatView(props: Props) {
                   e.target.value = "";
                 }}
               />
-              <ModelPicker value={modelChoice} onChange={changeModel} models={props.models} autoEnabled={props.autoEnabled} disabled={busy} />
+              <ModelPicker
+                value={modelChoice}
+                onChange={changeModel}
+                models={pickerModels}
+                autoEnabled={props.autoEnabled && !props.agent?.allowedModels.length}
+                disabled={busy}
+              />
               <div className="flex-1" />
               <AutoSwitch state={hide} disabled={inputBlocked} />
               {busy ? (
@@ -925,6 +978,7 @@ export function ChatView(props: Props) {
       <ConfrontDialog target={confrontTarget} onOpenChange={(open) => !open && setConfrontTarget(null)} onRun={confront} />
       <FilePreview file={hide.files.find((f) => f.key === previewKey) ?? null} state={hide} onClose={() => setPreviewKey(null)} />
       {conversationId ? <ConversationSuggestions open={suggesting} onOpenChange={setSuggesting} conversationId={conversationId} /> : null}
+      {conversationId ? <TurnIntoToolDialog conversationId={conversationId} open={turning} onOpenChange={setTurning} editor={props.toolEditor} /> : null}
       <AddPeopleDialog
         open={adding !== null}
         onOpenChange={(open) => {
@@ -1128,4 +1182,14 @@ function mergeMessages(list: TimelineMessage[], requested: string[], fresh: Time
     }
   }
   return next.sort((a, b) => a.seq - b.seq);
+}
+
+const noSubscription = () => () => {};
+
+function readSession(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
 }
