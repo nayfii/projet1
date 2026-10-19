@@ -31,6 +31,7 @@ import type { PickerModel } from "./model-picker";
 import { ModelName, ProviderDot } from "./provider-mark";
 import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
 import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
+import { MaskedView } from "@/modules/hide/ui/masked-view";
 
 type MemoryProps = { memoryTargets: MemoryTarget[]; conversationId: string | null };
 
@@ -114,6 +115,7 @@ function UserMessage({ message, memoryTargets, conversationId }: { message: Time
           </div>
         </div>
       ) : null}
+      <MaskedView kind="message" maskedContent={message.maskedContent} counts={message.hideCounts} align="end" />
     </div>
   );
 }
@@ -219,6 +221,7 @@ function AssistantMessage({
       {message.status === "streaming" && !live ? (
         <p className="text-[13px] text-muted-foreground">{t("inProgressElsewhere")}</p>
       ) : null}
+      {!live ? <MaskedView kind="answer" maskedContent={message.maskedContent} counts={null} /> : null}
       <SourceList sources={message.sources} onOpen={setOpenSource} />
       <SourceSheet source={message.sources.find((x) => x.position === openSource) ?? null} onClose={() => setOpenSource(null)} />
       {message.omittedMessages > 0 ? (

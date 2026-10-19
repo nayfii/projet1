@@ -8,16 +8,19 @@ import type { PickerModel } from "../ui/model-picker";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { myMemorySpaces } from "@/modules/memory/server/retrieval";
+import { getHideSettings } from "@/modules/hide/server/masker";
 
 /** What the chat screen needs besides the conversation itself. */
 export async function getChatPageData(ctx: MemberContext) {
   const companyId = ctx.active.companyId;
-  const [models, clients, quota, spaces, tMemory] = await Promise.all([
+  const supabase = await createClient();
+  const [models, clients, quota, spaces, tMemory, hide] = await Promise.all([
     getCompanyModels(companyId),
     listClients(companyId),
     getMyQuota(companyId),
-    createClient().then((supabase) => myMemorySpaces(supabase, companyId)),
+    myMemorySpaces(supabase, companyId),
     getTranslations("memory"),
+    getHideSettings(supabase, companyId),
   ]);
   const clientName = new Map(clients.map((c) => [c.id, c.name]));
   const picker: PickerModel[] = models.allowed.map((m) => ({
@@ -45,5 +48,7 @@ export async function getChatPageData(ctx: MemberContext) {
         label: sp.kind === "company" ? tMemory("companyMemory") : tMemory("clientMemoryNamed", { client: clientName.get(sp.clientId!) ?? "" }),
       })),
     fakeMode: fakeProviderEnabled(),
+    // Hide: the company's default modes and the categories Automatic masks.
+    hide,
   };
 }

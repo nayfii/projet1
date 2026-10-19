@@ -19,6 +19,12 @@ import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMe
 import { retrievePassages } from "@/modules/memory/server/retrieval";
 import { citedPositions } from "@/modules/memory/citations";
 import type { KnowledgePassage, SourceProof } from "@/modules/memory/types";
+import { HIDE_MODES, isHideMode, totalCount, type HideMode } from "@/modules/hide/categories";
+import type { StreamRestorer } from "@/modules/hide/mask";
+import { hideConfigured } from "@/modules/hide/server/crypto";
+import { createConversationMasker, getHideSettings, loadDetectionLists, type Masker } from "@/modules/hide/server/masker";
+import { logMaskingEvent, saveAttachmentMasks, saveMessageMask } from "@/modules/hide/server/store";
+import { maskPassages, maskTurn } from "@/modules/hide/server/turn";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -33,6 +39,14 @@ export const chatRequestSchema = z
       })
       .optional(),
     regenerate: z.object({ messageId: z.uuid() }).optional(),
+    // Hide: modes for this message and, in Manual mode, the values blurred or left visible.
+    hide: z
+      .object({
+        modes: z.array(z.enum(HIDE_MODES)).max(3),
+        blur: z.array(z.string().min(1).max(500)).max(100).default([]),
+        unblur: z.array(z.string().min(1).max(500)).max(100).default([]),
+      })
+      .optional(),
   })
   .refine((v) => Boolean(v.message) !== Boolean(v.regenerate));
 
@@ -50,6 +64,7 @@ type AttachmentRow = {
   storage_path: string;
   extracted_text: string | null;
   text_truncated: boolean;
+  masked_text: string | null;
 };
 
 const fail = (error: ChatRequestError, status: number): Prepared => ({ ok: false, error, status });
@@ -72,7 +87,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   const { data: rows } = await supabase
     .from("messages")
     .select(
-      "id, seq, author_type, content, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated)",
+      "id, seq, author_type, content, masked_content, hide_modes, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text)",
     )
     .eq("conversation_id", conversation.id)
     .order("seq");
@@ -95,7 +110,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     if (ids.length > 0) {
       const { data } = await supabase
         .from("conversation_attachments")
-        .select("id, filename, kind, mime_type, storage_path, extracted_text, text_truncated")
+        .select("id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text")
         .eq("conversation_id", conversation.id)
         .eq("uploaded_by", ctx.user.id)
         .is("message_id", null)
@@ -138,8 +153,45 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     await supabase.from("conversations").update({ model_choice: input.modelChoice }).eq("id", conversation.id);
   }
 
+  const [companyRes, clientRes, locale, hideSettings] = await Promise.all([
+    supabase.from("companies").select("name, industry, description").eq("id", companyId).single(),
+    conversation.client_id
+      ? supabase.from("clients").select("name, sector, description").eq("id", conversation.client_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    resolveLocale(),
+    getHideSettings(supabase, companyId),
+  ]);
+
+  // Hide: masking happens here, on our server, before anything is saved or sent. A new message uses
+  // the modes chosen above the input (company defaults otherwise); Regenerate reuses the question's.
+  const hideModes: HideMode[] = input.message
+    ? [...new Set(input.hide?.modes ?? hideSettings.defaultModes)]
+    : (lastUser?.hide_modes ?? []).filter(isHideMode);
+  const autoCategories = new Set(hideSettings.autoCategories);
+  let masker: Masker | null = null;
+  if (hideModes.length > 0 || base.some((r) => r.masked_content !== null)) {
+    if (!hideConfigured()) return fail("hide_unavailable", 503);
+    masker = await createConversationMasker(conversation.id, await loadDetectionLists(supabase, ctx));
+  }
+  const facts = {
+    userName: ctx.profile.fullName,
+    companyDescription: companyRes.data?.description ?? null,
+    client: clientRes.data ? { name: clientRes.data.name, sector: clientRes.data.sector, description: clientRes.data.description } : null,
+  };
+  const turn = masker
+    ? await maskTurn(masker, {
+        modes: hideModes,
+        autoCategories,
+        choices: { blur: input.hide?.blur ?? [], unblur: input.hide?.unblur ?? [] },
+        text: input.message ? newText : null,
+        attachments: pending,
+        facts,
+      })
+    : null;
+  const promptFacts = turn?.facts ?? facts;
+
   // Save the user's message with their own session (RLS proves they may write here).
-  let userMessage: { id: string; seq: number } | null = null;
+  let userMessage: Extract<ChatStreamEvent, { type: "meta" }>["userMessage"] = null;
   if (input.message) {
     const { data, error } = await supabase
       .from("messages")
@@ -147,7 +199,6 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
       .select("id, seq")
       .single();
     if (error || !data) return fail("server_error", 500);
-    userMessage = data;
     if (pending.length > 0) {
       const { error: linkError } = await supabase
         .from("conversation_attachments")
@@ -158,26 +209,45 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         );
       if (linkError) return fail("server_error", 500);
     }
-    base = [...base, { id: data.id, seq: data.seq, author_type: "user", content: newText, status: "complete", superseded_at: null, attachments: pending }];
+    const counts = turn && totalCount(turn.counts) > 0 ? turn.counts : null;
+    if (hideModes.length > 0) {
+      // What the model receives is stored by the server only, never by the browser.
+      await saveMessageMask(data.id, { maskedContent: turn?.message ?? null, modes: hideModes, counts });
+      if (turn?.attachments.length) await saveAttachmentMasks(turn.attachments);
+      if (counts) await logMaskingEvent({ companyId, userId: ctx.user.id, conversationId: conversation.id, counts, modes: hideModes });
+    }
+    const maskedAttachments = new Map((turn?.attachments ?? []).map((a) => [a.id, a.maskedText]));
+    userMessage = { id: data.id, seq: data.seq, masked: counts ? { content: turn?.message ?? null, counts } : null };
+    base = [
+      ...base,
+      {
+        id: data.id,
+        seq: data.seq,
+        author_type: "user",
+        content: newText,
+        masked_content: turn?.message ?? null,
+        hide_modes: hideModes,
+        status: "complete",
+        superseded_at: null,
+        attachments: pending.map((a) => ({ ...a, masked_text: maskedAttachments.get(a.id) ?? null })),
+      },
+    ];
   }
 
   const history = await toHistory(supabase, base);
-  // Memory passages, filtered by the user's permissions before any model sees them.
-  const knowledge = await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText });
-  const [companyRes, clientRes, locale] = await Promise.all([
-    supabase.from("companies").select("name, industry, description").eq("id", companyId).single(),
-    conversation.client_id
-      ? supabase.from("clients").select("name, sector, description").eq("id", conversation.client_id).maybeSingle()
-      : Promise.resolve({ data: null }),
-    resolveLocale(),
-  ]);
+  // Memory passages, filtered by the user's permissions before any model sees them. The search by
+  // meaning uses the masked question: the embeddings provider gets no more than the chat model.
+  const embeddingQuery = input.message ? (turn?.message ?? newText) : (lastUser?.masked_content ?? routedText);
+  const knowledge = await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText, embeddingQuery });
+  const promptKnowledge = masker ? await maskPassages(masker, knowledge, hideModes, autoCategories) : knowledge;
   const system = buildSystemPrompt({
-    company: { name: companyRes.data?.name ?? ctx.active.companyName, industry: companyRes.data?.industry, description: companyRes.data?.description },
-    client: clientRes.data,
-    user: { name: ctx.profile.fullName },
+    company: { name: companyRes.data?.name ?? ctx.active.companyName, industry: companyRes.data?.industry, description: promptFacts.companyDescription },
+    client: promptFacts.client,
+    user: { name: promptFacts.userName },
     locale,
     today: new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()),
-    knowledge,
+    knowledge: promptKnowledge,
+    protectedValues: masker !== null,
   });
   const context = buildChatContext({ system, history, budgetTokens: contextBudget(models.allowed) });
 
@@ -197,6 +267,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         knowledge,
         userMessage,
         target: target ? { id: target.id, complete: target.status === "complete" } : null,
+        restorer: masker?.restorer() ?? null,
       }),
   };
 }
@@ -209,8 +280,10 @@ async function* runTurn(p: {
   routing: RoutingInfo | null;
   context: ReturnType<typeof buildChatContext>;
   knowledge: KnowledgePassage[];
-  userMessage: { id: string; seq: number } | null;
+  userMessage: Extract<ChatStreamEvent, { type: "meta" }>["userMessage"];
   target: { id: string; complete: boolean } | null;
+  /** Hide: puts real values back in place of placeholders as the answer streams. */
+  restorer: StreamRestorer | null;
 }): AsyncGenerator<ChatStreamEvent> {
   const started = Date.now();
   // A failed or stopped answer is replaced right away; a good one only once the new one succeeds.
@@ -240,7 +313,9 @@ async function* runTurn(p: {
     omittedMessages: p.context.omittedMessages,
   };
 
+  // `text` is what the model wrote (with placeholders); `shown` has the real values restored.
   let text = "";
+  let shown = "";
   let usage: ChatUsage | null = null;
   let providerError: ProviderError | null = null;
   // The answer is written to the end even if the browser goes away (reload, closed tab):
@@ -266,7 +341,11 @@ async function* runTurn(p: {
     )) {
       if (event.type === "text") {
         text += event.delta;
-        yield { type: "delta", text: event.delta };
+        const out = p.restorer ? p.restorer.push(event.delta) : event.delta;
+        if (out) {
+          shown += out;
+          yield { type: "delta", text: out };
+        }
       } else if (event.type === "usage") {
         usage = event.usage;
       } else if (event.type === "error") {
@@ -276,6 +355,12 @@ async function* runTurn(p: {
   } finally {
     clearInterval(watcher);
   }
+  const rest = p.restorer?.flush();
+  if (rest) {
+    shown += rest;
+    yield { type: "delta", text: rest };
+  }
+  const masked = p.restorer && shown !== text ? text : null;
 
   const aborted = stop.signal.aborted && !providerError;
   const status = providerError ? "error" : aborted ? "stopped" : "complete";
@@ -288,7 +373,8 @@ async function* runTurn(p: {
   const charge = computeCharge(p.model.pricing, counted);
 
   await finishAssistantMessage(assistant.id, {
-    content: text,
+    content: shown,
+    maskedContent: masked,
     status,
     errorCode: providerError?.code ?? null,
     inputTokens: usage?.inputTokens ?? null,
@@ -325,7 +411,7 @@ async function* runTurn(p: {
   }
   if (aborted) return;
   const quota = await getMyQuota(p.ctx.active.companyId);
-  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources };
+  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources, masked };
 }
 
 function toSourceProofs(knowledge: KnowledgePassage[], positions: number[]): SourceProof[] {
@@ -353,7 +439,7 @@ function toSourceProofs(knowledge: KnowledgePassage[], positions: number[]): Sou
 /** Turns stored messages into context messages; images are re-sent only for recent messages. */
 async function toHistory(
   supabase: UserClient,
-  rows: { author_type: string; content: string; status: string; attachments?: unknown }[],
+  rows: { author_type: string; content: string; masked_content?: string | null; status: string; attachments?: unknown }[],
 ): Promise<HistoryMessage[]> {
   const usable = rows.filter(
     (r) => r.author_type === "user" || (r.status === "complete" && r.content) || (r.status === "stopped" && r.content),
@@ -364,7 +450,8 @@ async function toHistory(
       const attachments: HistoryAttachment[] = await Promise.all(
         ((r.attachments ?? []) as AttachmentRow[]).map(async (a) => {
           if (a.kind !== "image") {
-            return { filename: a.filename, kind: "document" as const, text: a.extracted_text, truncated: a.text_truncated };
+            // Hide: the masked text when Documents mode masked something in this file.
+            return { filename: a.filename, kind: "document" as const, text: a.masked_text ?? a.extracted_text, truncated: a.text_truncated };
           }
           let image: HistoryAttachment["image"] = null;
           if (index >= firstImageIndex) {
@@ -374,7 +461,8 @@ async function toHistory(
           return { filename: a.filename, kind: "image" as const, image };
         }),
       );
-      return { role: r.author_type === "assistant" ? ("assistant" as const) : ("user" as const), text: r.content, attachments };
+      // Hide: models always receive the masked version of earlier messages.
+      return { role: r.author_type === "assistant" ? ("assistant" as const) : ("user" as const), text: r.masked_content ?? r.content, attachments };
     }),
   );
 }

@@ -52,6 +52,9 @@ export function isAutoCategory(value: string): value is AutoCategory {
 
 export type HideCounts = Partial<Record<HideCategory, number>>;
 
+/** Company settings: default modes for new conversations and the categories Automatic masks. */
+export type HideSettings = { defaultModes: HideMode[]; autoCategories: AutoCategory[] };
+
 export function addCounts(a: HideCounts, b: HideCounts): HideCounts {
   const out: HideCounts = { ...a };
   for (const [k, v] of Object.entries(b) as [HideCategory, number][]) out[k] = (out[k] ?? 0) + v;

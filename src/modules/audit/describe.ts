@@ -41,14 +41,18 @@ const KNOWN = new Set<string>([
   "permissions_category_saved",
   "permissions_category_deleted",
   "permissions_grants_updated",
+  "hide_masked",
+  "hide_settings_updated",
+  "hide_term_added",
+  "hide_term_removed",
 ]);
 
 type EventLike = { action: string; target_id: string | null; metadata: Json };
 
 export function describeEvent(
   event: EventLike,
-  names: { people?: Map<string, string>; clientNames?: Map<string, string> },
-): { key: ActivityKey; values: Record<string, string> } {
+  names: { people?: Map<string, string>; clientNames?: Map<string, string>; hideCategory?: (category: string) => string },
+): { key: ActivityKey; values: Record<string, string | number> } {
   const key = event.action.replace(/\./g, "_");
   const meta = (event.metadata && typeof event.metadata === "object" && !Array.isArray(event.metadata) ? event.metadata : {}) as Record<string, Json>;
   const client = (event.target_id && names.clientNames?.get(event.target_id)) || "—";
@@ -56,6 +60,9 @@ export function describeEvent(
     (typeof meta.user_id === "string" && names.people?.get(meta.user_id)) ||
     (event.target_id && names.people?.get(event.target_id)) ||
     "—";
+  // Hide events carry counts per category only, never values.
+  const counts = (meta.counts && typeof meta.counts === "object" && !Array.isArray(meta.counts) ? meta.counts : {}) as Record<string, Json>;
+  const hideCategory = names.hideCategory ?? ((c: string) => c);
   return {
     key: KNOWN.has(key) ? (key as ActivityKey) : "other",
     values: {
@@ -67,6 +74,9 @@ export function describeEvent(
       reason: String(meta.reason ?? ""),
       kind: String(meta.kind ?? meta.source_type ?? ""),
       code: event.action,
+      count: Object.values(counts).reduce<number>((n, v) => n + Number(v ?? 0), 0),
+      categories: Object.keys(counts).map(hideCategory).join(", "),
+      category: typeof meta.category === "string" ? hideCategory(meta.category) : "",
     },
   };
 }

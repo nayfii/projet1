@@ -30,6 +30,7 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
         clientId: conversation.client_id,
         modelChoice: conversation.model_choice,
         messages: conversation.messages,
+        lastHideModes: conversation.lastHideModes,
       }}
       initialClientId={null}
       {...data}

@@ -9,6 +9,9 @@ import { listCompanyActivity } from "@/modules/audit/server/queries";
 import { listMembers } from "@/modules/organizations/server/queries";
 import { listClients } from "@/modules/clients/server/queries";
 import { describeEvent } from "@/modules/audit/describe";
+import { AUTO_CATEGORIES, type HideCategory } from "@/modules/hide/categories";
+
+const HIDE_CATEGORY_KEYS: string[] = [...AUTO_CATEGORIES, "redacted"];
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("adminNav");
@@ -18,6 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AdminActivityPage() {
   const ctx = await requireScope("activity");
   const t = await getTranslations("activity");
+  const tHide = await getTranslations("hide");
   const format = await getFormatter();
   const [events, members, clients] = await Promise.all([
     listCompanyActivity(ctx.active.companyId),
@@ -36,7 +40,7 @@ export default async function AdminActivityPage() {
       ) : (
         <Card className="divide-y overflow-hidden">
           {events.map((e) => {
-            const d = describeEvent(e, { people, clientNames });
+            const d = describeEvent(e, { people, clientNames, hideCategory: (c) => (HIDE_CATEGORY_KEYS.includes(c) ? tHide(`category.${c as HideCategory}`) : c) });
             return (
               <div key={e.id} className="flex items-start gap-3 px-4 py-3">
                 <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand/60" />

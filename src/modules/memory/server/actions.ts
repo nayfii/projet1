@@ -9,6 +9,10 @@ import { parseModelJson } from "../json";
 import { PROMOTE_SYSTEM, runMemoryTask, SUGGEST_ENTRIES_SYSTEM, type MemoryTaskError } from "./ai-tasks";
 import { indexEntry } from "./indexer";
 import { myMemorySpaces } from "./retrieval";
+import { PLACEHOLDER_PATTERN } from "@/modules/hide/categories";
+import { autoSpans, restorePlaceholders } from "@/modules/hide/mask";
+import { hideConfigured } from "@/modules/hide/server/crypto";
+import { conversationValues, createEphemeralMasker, getHideSettings, loadDetectionLists } from "@/modules/hide/server/masker";
 
 const entrySchema = z.object({
   title: z.string().trim().min(1).max(200),
@@ -168,13 +172,14 @@ export async function suggestFromConversationAction(input: { conversationId: str
 
   const { data: messages } = await supabase
     .from("messages")
-    .select("author_type, content, status")
+    .select("author_type, content, masked_content, status")
     .eq("conversation_id", conversation.id)
     .is("superseded_at", null)
     .order("seq");
   const transcript = (messages ?? [])
     .filter((m) => m.content && m.status !== "error")
-    .map((m) => `${m.author_type === "assistant" ? "Assistant" : "User"}: ${m.content}`)
+    // Hide: the AI reads the conversation as the chat models received it (with placeholders).
+    .map((m) => `${m.author_type === "assistant" ? "Assistant" : "User"}: ${m.masked_content ?? m.content}`)
     .join("\n\n")
     .slice(-24_000);
   if (!transcript) return { ok: true, suggestions: [] };
@@ -182,8 +187,16 @@ export async function suggestFromConversationAction(input: { conversationId: str
   const result = await runMemoryTask(supabase, ctx, { system: SUGGEST_ENTRIES_SYSTEM, user: transcript, modelChoice: conversation.model_choice });
   if (!result.ok) return { ok: false, error: result.error };
   const items = parseModelJson(result.text);
+  // Placeholders in the proposals are turned back into real values for the person who reviews them.
+  const masked = (messages ?? []).some((m) => m.masked_content !== null);
+  const values = masked && hideConfigured() ? await conversationValues(conversation.id) : new Map<string, string>();
   const valid = (Array.isArray(items) ? items : [])
-    .map((i) => entrySchema.safeParse({ title: String((i as { title?: unknown }).title ?? "").slice(0, 200), content: String((i as { content?: unknown }).content ?? "") }))
+    .map((i) =>
+      entrySchema.safeParse({
+        title: restorePlaceholders(String((i as { title?: unknown }).title ?? ""), values).slice(0, 200),
+        content: restorePlaceholders(String((i as { content?: unknown }).content ?? ""), values),
+      }),
+    )
     .filter((r) => r.success)
     .map((r) => r.data!)
     .slice(0, 5);
@@ -215,11 +228,21 @@ export async function proposePromotionAction(input: { entryId: string }): Promis
   const company = spaces.find((s) => s.kind === "company");
   if (!source || source.kind !== "client" || !company) return { ok: false, error: "forbidden" };
 
-  const result = await runMemoryTask(supabase, ctx, { system: PROMOTE_SYSTEM, user: `Client note\nTitle: ${entry.title}\n${entry.content}` });
+  // Hide: with Automatic on by default, the note is masked before it goes to the AI.
+  const note = `Client note\nTitle: ${entry.title}\n${entry.content}`;
+  const settings = await getHideSettings(supabase, ctx.active.companyId);
+  let user = note;
+  if (settings.defaultModes.includes("automatic")) {
+    const masker = createEphemeralMasker(await loadDetectionLists(supabase, ctx));
+    [{ masked: user }] = await masker.mask([{ text: note, spans: autoSpans(masker.detect(note), new Set(settings.autoCategories)) }]);
+  }
+  const result = await runMemoryTask(supabase, ctx, { system: PROMOTE_SYSTEM, user });
   if (!result.ok) return { ok: false, error: result.error };
   const json = parseModelJson(result.text) as { general?: unknown; title?: unknown; content?: unknown } | null;
   const proposal = entrySchema.safeParse({ title: String(json?.title ?? "").slice(0, 200), content: String(json?.content ?? "") });
-  if (!json || json.general !== true || !proposal.success) return { ok: true, proposed: false };
+  // A placeholder left in the proposal means it still points at something specific: not a general learning.
+  const specific = new RegExp(PLACEHOLDER_PATTERN.source).test(`${proposal.data?.title ?? ""} ${proposal.data?.content ?? ""}`);
+  if (!json || json.general !== true || !proposal.success || specific) return { ok: true, proposed: false };
 
   const { error } = await supabase.from("memory_suggestions").insert({
     space_id: company.spaceId,

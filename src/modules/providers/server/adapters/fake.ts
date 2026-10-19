@@ -41,6 +41,8 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         `- Messages received: ${request.messages.length} (${userTurns} from people)`,
         `- Images received: ${images}`,
         `- Your last message had ${text.length} characters.`,
+        // Shows exactly what the model received (with Hide, placeholders instead of sensitive values).
+        `- Last message as received: «${text.slice(0, 300)}»`,
         ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
       ].join("\n");
       for (const word of answer.split(/(?<=\s)/)) {

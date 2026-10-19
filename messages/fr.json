@@ -55,7 +55,8 @@
     "invalid_models": "Choix de modèles invalide : gardez au moins un modèle autorisé et un modèle par défaut valide.",
     "system_category": "Ce groupe est automatique : il ne peut être ni modifié ni supprimé.",
     "category_exists": "Un groupe porte déjà ce nom.",
-    "already_decided": "Cette suggestion a déjà été traitée."
+    "already_decided": "Cette suggestion a déjà été traitée.",
+    "term_exists": "Ce terme est déjà dans la liste."
   },
   "auth": {
     "signInTitle": "Connexion",
@@ -364,7 +365,11 @@
       "memory_suggestion_rejected": "a refusé une suggestion de l'IA",
       "permissions_category_saved": "a modifié un groupe de droits",
       "permissions_category_deleted": "a supprimé un groupe de droits",
-      "permissions_grants_updated": "a modifié l'accès à une mémoire"
+      "permissions_grants_updated": "a modifié l'accès à une mémoire",
+      "hide_masked": "a envoyé un message à l'IA avec {count, plural, one {# élément masqué} other {# éléments masqués}} ({categories})",
+      "hide_settings_updated": "a modifié les réglages de protection des données",
+      "hide_term_added": "a ajouté un terme sensible ({category})",
+      "hide_term_removed": "a retiré un terme sensible ({category})"
     }
   },
   "platformNav": {
@@ -533,7 +538,8 @@
       "missing_key": "Ce modèle n'est pas encore configuré sur la plateforme. Choisissez-en un autre.",
       "attachment_invalid": "Un fichier joint n'est plus disponible. Retirez-le et réessayez.",
       "nothing_to_regenerate": "Il n'y a pas de réponse à régénérer.",
-      "server_error": "Une erreur s'est produite. Votre message n'a pas été perdu : réessayez."
+      "server_error": "Une erreur s'est produite. Votre message n'a pas été perdu : réessayez.",
+      "hide_unavailable": "La protection des données n'est pas configurée sur le serveur : rien n'a été envoyé. Désactivez la protection pour ce message ou prévenez votre administrateur."
     },
     "removeAttachment": "Retirer {name}",
     "placeholder": "Écrivez votre message…",
@@ -829,5 +835,89 @@
     "writeFor": "{name} peut écrire",
     "nobodyWarning": "Aucun groupe coché : seul le propriétaire aura accès à cette mémoire.",
     "accessSaved": "Accès enregistré."
+  },
+  "hide": {
+    "protection": "Protection",
+    "mode": {
+      "automatic": "Automatique",
+      "documents": "Documents",
+      "manual": "Manuel"
+    },
+    "modeHint": {
+      "automatic": "Masque les données sensibles de votre message avant l'envoi à l'IA",
+      "documents": "Masque les données sensibles des fichiers joints et des passages de mémoire",
+      "manual": "Surligne en rouge ce qui semble sensible : cliquez sur un élément pour le masquer ou l'afficher, ou sélectionnez un passage"
+    },
+    "off": "Protection désactivée",
+    "willMask": "{count, plural, one {# élément sera masqué} other {# éléments seront masqués}}",
+    "manualHelp": "Cliquez sur un élément pour le masquer",
+    "blurSelection": "Masquer la sélection",
+    "imagesNotMasked": "Les images ne peuvent pas être masquées",
+    "maskedCount": "{count, plural, one {# élément masqué} other {# éléments masqués}}",
+    "answerRestored": "Valeurs réelles rétablies",
+    "showReceived": "Voir ce que l'IA a reçu",
+    "showWritten": "Voir la réponse telle que l'IA l'a écrite",
+    "hideReceived": "Masquer",
+    "receivedTitle": "Ce que l'IA a reçu",
+    "writtenTitle": "Réponse telle que l'IA l'a écrite",
+    "filesOnly": "dans les fichiers joints",
+    "category": {
+      "iban": "IBAN",
+      "card": "Carte bancaire",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "amount": "Montant",
+      "person": "Nom de personne",
+      "client": "Client",
+      "project": "Projet",
+      "file": "Nom de fichier",
+      "term": "Terme sensible",
+      "redacted": "Passage masqué à la main"
+    }
+  },
+  "hideAdmin": {
+    "title": "Protection des données (Hide)",
+    "description": "Ce qui est masqué avant tout envoi aux IA. La détection a lieu sur nos serveurs : l'IA reçoit des repères comme [CLIENT_1], vos équipes voient les vraies valeurs.",
+    "modesTitle": "Modes activés par défaut",
+    "modesBody": "Chaque employé peut les changer pour une conversation, au-dessus de la zone de message.",
+    "modeBody": {
+      "automatic": "Masque automatiquement les catégories ci-dessous dans les messages.",
+      "documents": "Masque les mêmes catégories dans les fichiers joints et les passages de mémoire envoyés à l'IA.",
+      "manual": "Surligne en rouge ce qui semble sensible : l'employé choisit quoi masquer."
+    },
+    "categoriesTitle": "Ce que le mode Automatique masque",
+    "categoriesBody": "Les montants sont désactivés par défaut : l'IA en a besoin pour faire des calculs.",
+    "categoryExample": {
+      "iban": "FR76 3000 6000 0112 3456 7890 189 (vérifié par sa clé de contrôle)",
+      "card": "4111 1111 1111 1111 (vérifié par l'algorithme de Luhn)",
+      "email": "nathalie.petit@exemple.fr",
+      "phone": "06 12 34 56 78, +44 20 7946 0958",
+      "amount": "1 250,50 €, 12 k€, $2.5M",
+      "person": "Jean Dupont, Mme Martin, les noms de vos employés",
+      "client": "Les noms de vos clients",
+      "project": "Les noms de projets ajoutés ci-dessous",
+      "file": "Les noms de fichiers ajoutés ci-dessous",
+      "term": "Les autres termes ajoutés ci-dessous"
+    },
+    "recallNote": "La détection repose sur des règles, des clés de contrôle et vos propres listes : elle n'est jamais parfaite. Le mode Manuel permet de vérifier avant l'envoi.",
+    "save": "Enregistrer",
+    "saved": "Réglages de protection enregistrés.",
+    "termsTitle": "Termes sensibles",
+    "termsBody": "Noms de projets, de fichiers, surnoms de clients… Ils sont masqués comme le reste. Seuls les administrateurs voient cette liste.",
+    "termPlaceholder": "Par exemple : Projet Phoenix",
+    "termLabel": "Terme sensible",
+    "termCategory": "Catégorie",
+    "termCategories": {
+      "client": "Client",
+      "project": "Projet",
+      "file": "Fichier",
+      "term": "Autre terme"
+    },
+    "addTerm": "Ajouter",
+    "termAdded": "Terme ajouté.",
+    "termRemoved": "Terme retiré.",
+    "removeTerm": "Retirer {term}",
+    "noTerms": "Aucun terme pour l'instant.",
+    "listsNote": "Les noms de vos clients et de vos employés sont déjà pris en compte automatiquement."
   }
 }

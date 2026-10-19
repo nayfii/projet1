@@ -8,18 +8,15 @@ import {
   isAutoCategory,
   isHideMode,
   placeholderPrefix,
-  type AutoCategory,
   type HideCategory,
   type HideCounts,
-  type HideMode,
+  type HideSettings,
   type Span,
 } from "../categories";
 import { detectSensitive, type DetectionLists } from "../detect";
 import { applyPlaceholders, canonicalValue, restorePlaceholders, StreamRestorer } from "../mask";
 import { decryptValue, encryptValue, valueHash } from "./crypto";
 import { assignPlaceholders, loadCompanyLists } from "./store";
-
-export type HideSettings = { defaultModes: HideMode[]; autoCategories: AutoCategory[] };
 
 /** The company's defaults (members can read them: the mode control starts from them). */
 export async function getHideSettings(supabase: UserClient, companyId: string): Promise<HideSettings> {

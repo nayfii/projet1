@@ -15,7 +15,14 @@ export type SystemPromptInput = {
   today: string;
   /** Passages from memories the user may read, numbered [S1]… */
   knowledge?: KnowledgePassage[];
+  /** Hide is on: some values were replaced by placeholders such as [CLIENT_1]. */
+  protectedValues?: boolean;
 };
+
+export const PROTECTED_VALUES_RULES = [
+  "- Some values were replaced by placeholders such as [CLIENT_1], [PERSON_2] or [IBAN_1] to protect sensitive data. When you refer to these values, write the placeholders exactly as they are: the user will see the real values.",
+  "- Never guess, reconstruct or ask for the real values behind placeholders, and do not comment on the placeholders themselves.",
+].join("\n");
 
 export const KNOWLEDGE_RULES = [
   "- The numbered passages below come from the company's memory and documents that this user is allowed to see. Use them when they are relevant to the question.",
@@ -44,6 +51,7 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     ].join("\n"),
     "## Format\nUse Markdown when it helps (short headings, lists, tables). Be concise and practical.",
   ];
+  if (input.protectedValues) sections.push(`## Protected values\n${PROTECTED_VALUES_RULES}`);
 
   const context = [`Company: ${company.name}`];
   if (company.industry) context.push(`Industry: ${company.industry}`);

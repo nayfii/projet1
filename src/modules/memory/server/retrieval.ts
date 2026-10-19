@@ -47,7 +47,8 @@ export function conversationScope(spaces: MemorySpace[], clientId: string | null
 export async function retrievePassages(
   supabase: UserClient,
   ctx: MemberContext,
-  options: { clientId: string | null; query: string },
+  /** `embeddingQuery`: the text sent to the embeddings provider (the masked question when Hide is on). */
+  options: { clientId: string | null; query: string; embeddingQuery?: string },
 ): Promise<KnowledgePassage[]> {
   const query = options.query.trim();
   if (!query) return [];
@@ -62,7 +63,7 @@ export async function retrievePassages(
   ]);
   if (!entries.data?.length && !chunks.data?.length) return [];
 
-  const embedding = await embedQuery(supabase, ctx, query);
+  const embedding = await embedQuery(supabase, ctx, options.embeddingQuery?.trim() || query);
   const { data } = await supabase.rpc("match_memory", {
     p_space_ids: ids,
     p_keywords: keywordQuery(query),

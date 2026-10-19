@@ -23,6 +23,7 @@ export const ERROR_CODES = [
   "system_category",
   "category_exists",
   "already_decided",
+  "term_exists",
   "unknown",
 ] as const;
 

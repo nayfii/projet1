@@ -43,6 +43,8 @@ export async function finishAssistantMessage(
   id: string,
   result: {
     content: string;
+    /** Hide: the answer as the model wrote it, with placeholders (null when nothing was restored). */
+    maskedContent?: string | null;
     status: "complete" | "error" | "stopped";
     errorCode: string | null;
     inputTokens: number | null;
@@ -53,6 +55,7 @@ export async function finishAssistantMessage(
     .from("messages")
     .update({
       content: result.content,
+      masked_content: result.maskedContent ?? null,
       status: result.status,
       error_code: result.errorCode,
       input_tokens: result.inputTokens,

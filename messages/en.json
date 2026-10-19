@@ -55,7 +55,8 @@
     "invalid_models": "Invalid model choice: keep at least one allowed model and a valid default model.",
     "system_category": "This group is automatic: it cannot be changed or deleted.",
     "category_exists": "A group already has this name.",
-    "already_decided": "This suggestion has already been handled."
+    "already_decided": "This suggestion has already been handled.",
+    "term_exists": "This term is already in the list."
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -364,7 +365,11 @@
       "memory_suggestion_rejected": "rejected an AI suggestion",
       "permissions_category_saved": "changed a permission group",
       "permissions_category_deleted": "deleted a permission group",
-      "permissions_grants_updated": "changed access to a memory"
+      "permissions_grants_updated": "changed access to a memory",
+      "hide_masked": "sent a message to the AI with {count, plural, one {# item masked} other {# items masked}} ({categories})",
+      "hide_settings_updated": "changed the data protection settings",
+      "hide_term_added": "added a sensitive term ({category})",
+      "hide_term_removed": "removed a sensitive term ({category})"
     }
   },
   "platformNav": {
@@ -533,7 +538,8 @@
       "missing_key": "This model is not configured on the platform yet. Choose another one.",
       "attachment_invalid": "An attached file is no longer available. Remove it and try again.",
       "nothing_to_regenerate": "There is no answer to regenerate.",
-      "server_error": "Something went wrong. Your message was not lost: please try again."
+      "server_error": "Something went wrong. Your message was not lost: please try again.",
+      "hide_unavailable": "Data protection is not configured on the server: nothing was sent. Turn protection off for this message or tell your administrator."
     },
     "removeAttachment": "Remove {name}",
     "placeholder": "Write your message…",
@@ -829,5 +835,89 @@
     "writeFor": "{name} can write",
     "nobodyWarning": "No group ticked: only the Owner will have access to this memory.",
     "accessSaved": "Access saved."
+  },
+  "hide": {
+    "protection": "Protection",
+    "mode": {
+      "automatic": "Automatic",
+      "documents": "Documents",
+      "manual": "Manual"
+    },
+    "modeHint": {
+      "automatic": "Masks sensitive data in your message before it is sent to the AI",
+      "documents": "Masks sensitive data in attached files and memory passages",
+      "manual": "Underlines in red what looks sensitive: click an item to blur or show it, or select a passage"
+    },
+    "off": "Protection off",
+    "willMask": "{count, plural, one {# item will be masked} other {# items will be masked}}",
+    "manualHelp": "Click an item to blur it",
+    "blurSelection": "Blur selection",
+    "imagesNotMasked": "Images cannot be masked",
+    "maskedCount": "{count, plural, one {# item masked} other {# items masked}}",
+    "answerRestored": "Real values restored",
+    "showReceived": "See what the AI received",
+    "showWritten": "See the answer as the AI wrote it",
+    "hideReceived": "Hide",
+    "receivedTitle": "What the AI received",
+    "writtenTitle": "Answer as the AI wrote it",
+    "filesOnly": "in the attached files",
+    "category": {
+      "iban": "IBAN",
+      "card": "Card number",
+      "email": "Email",
+      "phone": "Phone",
+      "amount": "Amount",
+      "person": "Person name",
+      "client": "Client",
+      "project": "Project",
+      "file": "File name",
+      "term": "Sensitive term",
+      "redacted": "Passage blurred by hand"
+    }
+  },
+  "hideAdmin": {
+    "title": "Data protection (Hide)",
+    "description": "What is masked before anything is sent to AI models. Detection runs on our servers: the AI receives placeholders such as [CLIENT_1], your team sees the real values.",
+    "modesTitle": "Modes on by default",
+    "modesBody": "Each employee can change them for a conversation, above the message box.",
+    "modeBody": {
+      "automatic": "Automatically masks the categories below in messages.",
+      "documents": "Masks the same categories in attached files and memory passages sent to the AI.",
+      "manual": "Underlines in red what looks sensitive: the employee chooses what to mask."
+    },
+    "categoriesTitle": "What Automatic mode masks",
+    "categoriesBody": "Amounts are off by default: the AI needs them to calculate.",
+    "categoryExample": {
+      "iban": "FR76 3000 6000 0112 3456 7890 189 (checked with its check digits)",
+      "card": "4111 1111 1111 1111 (checked with the Luhn algorithm)",
+      "email": "nathalie.petit@example.com",
+      "phone": "06 12 34 56 78, +44 20 7946 0958",
+      "amount": "€1,250.50, 12 k€, $2.5M",
+      "person": "John Smith, Mrs Martin, your employees' names",
+      "client": "Your clients' names",
+      "project": "Project names added below",
+      "file": "File names added below",
+      "term": "Other terms added below"
+    },
+    "recallNote": "Detection relies on rules, check digits and your own lists: it is never perfect. Manual mode lets people check before sending.",
+    "save": "Save",
+    "saved": "Protection settings saved.",
+    "termsTitle": "Sensitive terms",
+    "termsBody": "Project names, file names, client nicknames… They are masked like the rest. Only administrators can see this list.",
+    "termPlaceholder": "For example: Project Phoenix",
+    "termLabel": "Sensitive term",
+    "termCategory": "Category",
+    "termCategories": {
+      "client": "Client",
+      "project": "Project",
+      "file": "File",
+      "term": "Other term"
+    },
+    "addTerm": "Add",
+    "termAdded": "Term added.",
+    "termRemoved": "Term removed.",
+    "removeTerm": "Remove {term}",
+    "noTerms": "No terms yet.",
+    "listsNote": "Your clients' and employees' names are already included automatically."
   }
 }

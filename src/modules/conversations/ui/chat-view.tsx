@@ -45,6 +45,8 @@ import { titleFromMessage, useChatList } from "./chat-list";
 import { AttachmentChip, MessageItem, ModelSwitchDivider } from "./message-item";
 import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
+import { HideBar, HideOverlay, useHideComposer } from "@/modules/hide/ui/hide-composer";
+import type { HideMode, HideSettings } from "@/modules/hide/categories";
 
 type PendingAttachment = {
   key: string;
@@ -56,7 +58,14 @@ type PendingAttachment = {
 };
 
 type Props = {
-  conversation: { id: string; title: string | null; clientId: string | null; modelChoice: string; messages: TimelineMessage[] } | null;
+  conversation: {
+    id: string;
+    title: string | null;
+    clientId: string | null;
+    modelChoice: string;
+    messages: TimelineMessage[];
+    lastHideModes?: HideMode[];
+  } | null;
   models: PickerModel[];
   autoEnabled: boolean;
   defaultChoice: string;
@@ -65,7 +74,11 @@ type Props = {
   quota: QuotaState | null;
   fakeMode: boolean;
   memoryTargets: { spaceId: string; clientId: string | null; label: string }[];
+  hide: HideSettings;
 };
+
+// Shared by the input and the Manual-mode overlay drawn under it: they must wrap text identically.
+const TEXTAREA_LAYOUT = "px-4 pt-3.5 pb-2 text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:break-word]";
 
 export function ChatView(props: Props) {
   const t = useTranslations("chat");
@@ -96,6 +109,13 @@ export function ChatView(props: Props) {
   const fileInput = React.useRef<HTMLInputElement>(null);
   const textarea = React.useRef<HTMLTextAreaElement>(null);
   const creating = React.useRef<Promise<string | null> | null>(null);
+  const [inputScroll, setInputScroll] = React.useState(0);
+  // Hide: modes of the last message sent in this conversation, else the company's defaults.
+  const hide = useHideComposer({
+    text: input,
+    initialModes: props.conversation?.lastHideModes?.length ? props.conversation.lastHideModes : props.hide.defaultModes,
+    autoCategories: props.hide.autoCategories,
+  });
 
   const blocked = quota?.state === "blocked";
   const clientName = props.clients.find((c) => c.id === clientId)?.name ?? null;
@@ -210,7 +230,12 @@ export function ChatView(props: Props) {
               controller.abort();
             }
             setMessages((list) => {
-              let next = list.map((m) => (m.id === "pending-user" && event.userMessage ? { ...m, id: event.userMessage.id, seq: event.userMessage.seq } : m));
+              const saved = event.userMessage;
+              let next = list.map((m) =>
+                m.id === "pending-user" && saved
+                  ? { ...m, id: saved.id, seq: saved.seq, maskedContent: saved.masked?.content ?? null, hideCounts: saved.masked?.counts ?? null }
+                  : m,
+              );
               if (event.replaces) next = next.filter((m) => m.id !== event.replaces);
               return [
                 ...next,
@@ -228,6 +253,8 @@ export function ChatView(props: Props) {
                   omittedMessages: event.omittedMessages,
                   attachments: [],
                   sources: [],
+                  maskedContent: null,
+                  hideCounts: null,
                 },
               ];
             });
@@ -237,7 +264,7 @@ export function ChatView(props: Props) {
           } else if (event.type === "done") {
             const id = currentLive;
             restoreReplaced = null;
-            setMessages((list) => list.map((m) => (m.id === id ? { ...m, status: "complete", sources: event.sources ?? [] } : m)));
+            setMessages((list) => list.map((m) => (m.id === id ? { ...m, status: "complete", sources: event.sources ?? [], maskedContent: event.masked ?? null } : m)));
             if (event.quota) setQuota(event.quota);
           } else if (event.type === "error") {
             const id = currentLive;
@@ -295,6 +322,8 @@ export function ChatView(props: Props) {
         omittedMessages: 0,
         attachments: ready.map((a) => ({ id: a.id!, filename: a.filename, kind: a.kind, truncated: Boolean(a.truncated) })),
         sources: [],
+        maskedContent: null,
+        hideCounts: null,
       },
     ]);
     if (!title && text) {
@@ -304,7 +333,7 @@ export function ChatView(props: Props) {
     }
 
     await stream(
-      { conversationId: id, modelChoice, message: { content: text, attachmentIds: ready.map((a) => a.id) } },
+      { conversationId: id, modelChoice, message: { content: text, attachmentIds: ready.map((a) => a.id) }, hide: hide.payload },
       {
         // Refused before anything was saved: give the user their text and files back.
         onRefused: () => {
@@ -500,6 +529,7 @@ export function ChatView(props: Props) {
               {t(`requestErrors.${requestError}`)}
             </p>
           ) : null}
+          <HideBar state={hide} hasImages={attachments.some((a) => a.kind === "image")} disabled={blocked} />
           <div
             className={cn(
               "rounded-2xl border bg-card shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
@@ -524,22 +554,40 @@ export function ChatView(props: Props) {
                 ))}
               </div>
             ) : null}
-            <textarea
-              ref={textarea}
-              value={input}
-              disabled={blocked}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  void send();
-                }
-              }}
-              rows={1}
-              placeholder={t("placeholder")}
-              aria-label={t("placeholder")}
-              className="block max-h-60 w-full resize-none bg-transparent px-4 pt-3.5 pb-2 text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/80 disabled:cursor-not-allowed"
-            />
+            <div className="relative">
+              {hide.manual ? <HideOverlay text={input} state={hide} scrollTop={inputScroll} className={TEXTAREA_LAYOUT} /> : null}
+              <textarea
+                ref={textarea}
+                value={input}
+                disabled={blocked}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    void send();
+                  }
+                }}
+                onScroll={(e) => setInputScroll(e.currentTarget.scrollTop)}
+                // Manual mode: a click on an underlined item blurs it (or shows it again); a selection can be blurred.
+                onClick={(e) => {
+                  const el = e.currentTarget;
+                  if (hide.manual && el.selectionStart === el.selectionEnd) hide.toggleAt(el.selectionStart);
+                }}
+                onSelect={(e) => {
+                  const el = e.currentTarget;
+                  const selected = input.slice(el.selectionStart, el.selectionEnd).trim();
+                  hide.setSelection(hide.manual && selected.length >= 2 ? selected : null);
+                }}
+                rows={1}
+                placeholder={t("placeholder")}
+                aria-label={t("placeholder")}
+                className={cn(
+                  TEXTAREA_LAYOUT,
+                  "relative block max-h-60 w-full resize-none bg-transparent outline-none placeholder:text-muted-foreground/80 disabled:cursor-not-allowed",
+                  hide.manual && "text-transparent caret-foreground [scrollbar-width:none] selection:bg-brand/25 selection:text-transparent",
+                )}
+              />
+            </div>
             <div className="flex items-center gap-1 px-2 pb-2">
               <Tooltip content={t("attach")}>
                 <Button

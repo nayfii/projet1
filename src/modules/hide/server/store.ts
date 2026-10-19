@@ -81,6 +81,6 @@ export async function logMaskingEvent(input: { companyId: string; userId: string
       action: "hide.masked",
       target_type: "conversation",
       target_id: input.conversationId,
-      metadata: { counts: input.counts, modes: input.modes } as Json,
+      metadata: { counts: input.counts as { [key: string]: number }, modes: input.modes },
     });
 }
