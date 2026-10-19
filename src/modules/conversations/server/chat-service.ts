@@ -15,7 +15,7 @@ import { logBlockedRequest, recordUsage } from "@/modules/usage/server/record";
 import { buildChatContext, contextBudget, IMAGE_LOOKBACK_MESSAGES, type HistoryAttachment, type HistoryMessage } from "../context";
 import { buildSystemPrompt } from "../system-prompt";
 import type { ChatRequestError, ChatStreamEvent, RoutingInfo } from "../stream-events";
-import { createAssistantMessage, finishAssistantMessage, supersedeMessage } from "./assistant-writer";
+import { createAssistantMessage, finishAssistantMessage, isStopRequested, supersedeMessage } from "./assistant-writer";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -37,7 +37,7 @@ export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
 
 type Prepared =
   | { ok: false; error: ChatRequestError; status: number }
-  | { ok: true; run: (signal: AbortSignal) => AsyncGenerator<ChatStreamEvent> };
+  | { ok: true; run: () => AsyncGenerator<ChatStreamEvent> };
 
 type AttachmentRow = {
   id: string;
@@ -180,7 +180,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
 
   return {
     ok: true,
-    run: (signal) =>
+    run: () =>
       runTurn({
         supabase,
         ctx,
@@ -190,7 +190,6 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         context,
         userMessage,
         target: target ? { id: target.id, complete: target.status === "complete" } : null,
-        signal,
       }),
   };
 }
@@ -204,7 +203,6 @@ async function* runTurn(p: {
   context: ReturnType<typeof buildChatContext>;
   userMessage: { id: string; seq: number } | null;
   target: { id: string; complete: boolean } | null;
-  signal: AbortSignal;
 }): AsyncGenerator<ChatStreamEvent> {
   const started = Date.now();
   // A failed or stopped answer is replaced right away; a good one only once the new one succeeds.
@@ -237,27 +235,41 @@ async function* runTurn(p: {
   let text = "";
   let usage: ChatUsage | null = null;
   let providerError: ProviderError | null = null;
+  // The answer is written to the end even if the browser goes away (reload, closed tab):
+  // only the Stop button stops it, through a flag checked every second.
+  const stop = new AbortController();
+  const watcher = setInterval(() => {
+    if (stop.signal.aborted) return;
+    isStopRequested(assistant.id)
+      .then((requested) => requested && stop.abort())
+      // A failed check is retried a second later; it must never crash the server.
+      .catch(() => {});
+  }, 1000);
   const provider = getProvider(p.model.provider);
-  for await (const event of provider.stream(
-    {
-      apiModelId: p.model.apiModelId,
-      system: p.context.system,
-      messages: p.context.messages,
-      maxOutputTokens: Math.min(p.model.maxOutputTokens, 16_000),
-    },
-    p.signal,
-  )) {
-    if (event.type === "text") {
-      text += event.delta;
-      yield { type: "delta", text: event.delta };
-    } else if (event.type === "usage") {
-      usage = event.usage;
-    } else if (event.type === "error") {
-      providerError = event.error;
+  try {
+    for await (const event of provider.stream(
+      {
+        apiModelId: p.model.apiModelId,
+        system: p.context.system,
+        messages: p.context.messages,
+        maxOutputTokens: Math.min(p.model.maxOutputTokens, 16_000),
+      },
+      stop.signal,
+    )) {
+      if (event.type === "text") {
+        text += event.delta;
+        yield { type: "delta", text: event.delta };
+      } else if (event.type === "usage") {
+        usage = event.usage;
+      } else if (event.type === "error") {
+        providerError = event.error;
+      }
     }
+  } finally {
+    clearInterval(watcher);
   }
 
-  const aborted = p.signal.aborted && !providerError;
+  const aborted = stop.signal.aborted && !providerError;
   const status = providerError ? "error" : aborted ? "stopped" : "complete";
   // Real provider counts whenever they exist. Otherwise (stopped, or failed mid-answer) estimate
   // from the text, so stopping an answer is never a way around the quota.

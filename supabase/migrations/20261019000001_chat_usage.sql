@@ -236,6 +236,8 @@ create table public.messages (
   error_code text,
   -- Set when "Regenerate" replaced this answer: hidden from the timeline and from the AI context.
   superseded_at timestamptz,
+  -- The user pressed Stop. The server checks it while writing the answer (closing the tab does not stop it).
+  stop_requested_at timestamptz,
   context_meta jsonb,
   input_tokens integer,
   output_tokens integer,

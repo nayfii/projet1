@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **Step 1 implemented** (identity, companies, roles, invitations, clients, audit, the three spaces). Later sections describe the plan for Steps 2–10. Updated at the end of every step.
+Status: **Steps 1–2 implemented** (identity, companies, roles, invitations, clients, audit, the three spaces; multi-model chat, Smart Router, usage, credits and quotas). Later sections describe the plan for Steps 3–10. Updated at the end of every step; §12–13 record what was actually built.
 Source of truth for product decisions: `CLAUDE.md`. Open questions live in `docs/STATUS.md`.
 
 ---
@@ -132,11 +132,11 @@ Embeddings: one fixed dimension per deployment (planned **1536**: OpenAI `text-e
 
 | Table | Key columns | company_id | client_id |
 |---|---|---|---|
-| `conversations` | `owner_id`, `title`, `model_mode` (auto / fixed), `current_model`, `is_group`, `hide_modes` (json) | ✓ | ✓ (optional link to a client) |
+| `conversations` | `owner_id`, `title` (first message by default), `model_choice` ('auto' or a model id), `is_group`, `last_seq`, `last_message_at` (*Step 4 adds Hide modes*) | ✓ | ✓ (optional link to a client) |
 | `conversation_participants` | `user_id`, `role` (owner / participant), `visible_from_seq`, `added_by`, `joined_at`, `left_at` | ✓ | – |
-| `messages` | `seq` (per conversation), `author_type` (user / assistant / system), `author_id`, `content` (as typed, real values), `model_content` (masked version sent to providers), `provider`, `model`, `routing_reason`, `mentions`, `context_limited` (bool), `status` | ✓ | ✓ |
+| `messages` | `seq` (per conversation, set by trigger), `author_type` (user / assistant), `author_id`, `content` (as typed, real values), `model_content` (masked version, Step 4), `provider`, `model_id`, `api_model_id`, `model_label` (snapshot), `routing` (Auto reason as codes), `status` (streaming / complete / error / stopped), `error_code`, `superseded_at` (Regenerate), `stop_requested_at` (Stop button), `context_meta`, token counts. *Planned for Step 5: `mentions`, `context_limited`. `client_id` is read from the conversation, not copied.* | ✓ | – |
 | `message_sources` | `message_id`, `source_type` (document_chunk / memory_entry), `source_id`, `excerpt`, `source_date` — Source Proof | ✓ | ✓ |
-| `message_attachments` | `message_id`, `document_id` | ✓ | – |
+| `conversation_attachments` | `conversation_id`, `message_id` (null until sent), `uploaded_by`, `filename`, `mime_type`, `size_bytes`, `storage_path`, `kind` (image / document), `extracted_text`, `text_truncated` — *built in Step 2 instead of `message_attachments` → `documents`: chat files are not memory documents; Step 3 can copy one into memory* | ✓ | – |
 | `transfers` | `subject_type` (conversation / client), `subject_id`, `from_user`, `to_user`, `handover_id` | ✓ | ✓ |
 | `handovers` | `subject_type`, `subject_id`, `content` (editable Markdown), `status` (draft / final), `edited_by` | ✓ | ✓ |
 
@@ -166,12 +166,12 @@ Built-in agents (the 16 of the launch set) are **defined in code** (versioned, t
 
 | Table | Key columns | company_id |
 |---|---|---|
-| `ai_models` | catalogue: `provider`, `model_id`, `label`, `tier`, `capabilities`, `enabled` (platform-level) | – |
-| `model_pricing` | `model_id`, input / output / cached price per million tokens, `effective_from` (platform-managed, used for **estimates**) | – |
-| `credit_rules` | how many credits per token per model tier, per video second, Confronter multiplier — all configurable | – |
-| `usage_events` | `user_id`, `feature` (chat / confronter / agent / embedding / handover / router / render), `provider`, `model`, `input_tokens`, `output_tokens`, `cached_tokens` (from the provider response), `credits`, `estimated_cost_micros`, `status`, `error_code`. **No content.** | ✓ |
-| `quotas` | `user_id` (null = company-wide), `period`, `credit_limit`, `video_credit_limit` | ✓ |
-| `credit_grants` | manual top-ups by the platform admin | ✓ |
+| `ai_models` | catalogue (built in Step 2): `id`, `provider`, `api_model_id`, `label`, `tier`, `context_window`, `max_output_tokens`, `supports_images`, `strengths` (router), USD price **estimates** and credit rates per million input / output / cached tokens, `is_enabled`, `default_allowed`. *Replaces the planned `model_pricing` + `credit_rules`: each usage row stores the credits and estimated cost computed at that moment, so history never changes. Video and Confronter rules come in Steps 6 and 8.* | – |
+| `company_ai_settings` | `auto_enabled`, `default_model_id` (null = Auto), `default_user_monthly_credits` | ✓ |
+| `company_allowed_models` | `model_id` (rows created from `default_allowed` models when the company is created) | ✓ |
+| `usage_events` | `user_id`, `feature` (chat / confronter / agent / embedding / handover / router / render), `conversation_id`, `message_id`, `provider`, `model_id`, `api_model_id`, `auto_routed`, `input_tokens`, `output_tokens`, `cached_input_tokens` (from the provider response), `tokens_estimated`, `credits`, `estimated_cost_usd`, `credit_pool` (standard / video), `status`, `error_code`, `latency_ms`. **No content.** | ✓ |
+| `member_quotas` | personal monthly credit limit overriding the company default (*replaces the planned `quotas` table: the company limit is the plan's monthly credits + grants*) | ✓ |
+| `credit_grants` | extra credits for one month, granted by the platform admin | ✓ |
 | `audit_log` | `actor_id`, `action`, `target_type`, `target_id`, `metadata` (no content), `scope` (company / platform) | ✓ (null for platform events) |
 | `render_jobs` | `kind` (motion / video_edit), `status` (queued / running / succeeded / failed / cancelled), `progress`, `input` (composition or edit plan), `output_paths`, `error`, `attempts`, `locked_by`, `heartbeat_at`, `credits_reserved`, `credits_charged` | ✓ |
 
@@ -195,12 +195,14 @@ Built-in agents (the 16 of the launch set) are **defined in code** (versioned, t
    - `usage_events`, `audit_log`: company admins with the right scope; members see their own usage.
 4. **Platform admin isolation:** platform admins are not members of any company, and **no content-table policy mentions `is_platform_admin()`**. The platform console reads only plan, company, seat, usage-aggregate and audit data, through dedicated views / `SECURITY DEFINER` functions that return non-content columns only. pgTAP tests assert that a platform admin reads zero rows from every content table (`clients`, `conversations`, `messages`, `documents`, `document_chunks`, `memory_entries`, `memory_suggestions`, `handovers`, `agent_runs`, `confronter_runs`, `tools` content).
    Honest limit: anyone with direct database credentials (service role, our infrastructure) can technically read data. The guarantee is enforced in application code and policies, not cryptographically. This will be stated in `docs/SECURITY.md`.
-5. **Service role** (bypasses RLS) is used only in a few audited server modules: Hide vault, usage logging, audit writes, invitation acceptance, platform aggregates, and the render worker. It is wrapped in one helper marked `server-only`; a lint rule forbids importing it elsewhere.
+5. **Service role** (bypasses RLS) is used only in a few audited server modules: Hide vault, usage logging (`usage/server/record.ts`, built), AI answers (`conversations/server/assistant-writer.ts`, built), audit writes, invitation emails, platform aggregates, and the render worker. It is wrapped in one helper marked `server-only`; a lint rule forbids importing it elsewhere.
 6. Server code uses the **user's JWT** client by default, so RLS applies even to server reads.
 
 ---
 
 ## 6. Provider interface
+
+As built in Step 2 (`src/modules/providers/types.ts`; `complete()` and embeddings come when a feature needs them):
 
 ```ts
 type ProviderId = 'openai' | 'anthropic' | 'google'
@@ -208,8 +210,7 @@ type ProviderId = 'openai' | 'anthropic' | 'google'
 interface ChatProvider {
   id: ProviderId
   isConfigured(): boolean                       // key present?
-  stream(req: ChatRequest, signal: AbortSignal): AsyncIterable<ChatEvent>
-  complete(req: ChatRequest): Promise<ChatResult>
+  stream(req: ChatRequest, signal: AbortSignal): AsyncIterable<ChatEvent>   // never throws
 }
 
 interface ChatRequest {
@@ -226,9 +227,11 @@ type ChatEvent =
   | { type: 'done'; finishReason: string }
   | { type: 'error'; error: ProviderError }
 
-class ProviderError {
-  code: 'missing_key' | 'rate_limited' | 'unavailable' | 'context_too_long' | 'content_filtered' | 'invalid_request' | 'unknown'
+type ProviderError = {
+  code: 'missing_key' | 'auth_failed' | 'rate_limited' | 'provider_quota' | 'unavailable' | 'model_not_found'
+      | 'context_too_long' | 'content_filtered' | 'invalid_request' | 'unknown'
   retryable: boolean
+  status?: number        // HTTP status only: provider error bodies can contain the prompt and are never kept
 }
 
 interface EmbeddingProvider {
@@ -356,3 +359,21 @@ typed message / attachments / retrieved excerpts
 - **Service-role client** (`src/lib/supabase/admin.ts`): a lint rule restricts its import to the audited files (sign-in bootstrap of platform admins, invitation emails).
 - **i18n**: `next-intl` without locale in the URL; `react/jsx-no-literals` blocks hardcoded text in JSX; a unit test checks that `fr.json` and `en.json` have identical keys.
 - **UI kit**: shadcn/ui-style components written by hand on `radix-ui` (the shadcn registry is unreachable from the development container).
+
+---
+
+## 13. Implementation notes (Step 2)
+
+- **Module map.** `providers` (types, catalogue, router, error mapping, AI SDK adapters, registry, company model settings), `conversations` (system prompt, context builder, chat service, queries, actions, UI), `usage` (credits, quotas, usage recording, dashboards), `documents/file-types` + `documents/server/extract` (attachment text extraction, reused in Step 3).
+- **Chat request flow** (`POST /api/chat` → `prepareChatTurn` → `runTurn`): (1) active member; (2) conversation read with the user's JWT (RLS = participant + client access); (3) model resolved (`resolveModel`: allowed + enabled + key present; Auto → `routeRequest`); (4) quota checked with `my_quota_status` (blocked → 402 + activity log entry); (5) user message inserted with the user's JWT; (6) history + attachments loaded, system prompt and context built **once, independently of the model**; (7) assistant message created by the server, provider stream forwarded as NDJSON; (8) answer saved, usage row written, quota re-read. Errors before step 5 return JSON and save nothing.
+- **Answers survive the browser.** The provider call is not tied to the HTTP request: reloading or closing the tab does not stop it (`after()` keeps the work alive on serverless hosts, `maxDuration = 300`). The Stop button calls `POST /api/chat/stop`, which sets `messages.stop_requested_at`; the running turn checks it every second. A page opened while an answer is still being written refreshes every 3 seconds until it is done; answers stuck in "streaming" for more than 5 minutes are shown as stopped.
+- **Who writes what.** Users insert only `messages(conversation_id, content)` and attachments (column grants + RLS). AI answers, `superseded_at`, `stop_requested_at` and usage rows are written by two audited service-role modules: `conversations/server/assistant-writer.ts` and `usage/server/record.ts` (lint allowlist). So a user can neither fake an answer from "Claude" nor fake or erase usage.
+- **Context builder** (`conversations/context.ts`): newest message always included (documents shortened if needed), then older messages until the budget is reached; consecutive same-role turns merged; images re-sent only for the last 6 messages; budget = smallest (context window − max output) among the company's allowed models, capped at 60,000 estimated tokens.
+- **Smart Router v1** (`providers/router.ts`): deterministic rules on French and English cues → task (quick, writing, analysis, code, long content, image) → preferred tier and strength → score = tier fit + strength − relative cost. Returns codes (`task`, `basis`) stored on the message and translated in the UI.
+- **Credits** (`usage/credits.ts`): `(input − cached) × input rate + cached × cached rate + output × output rate`, per million tokens, from the catalogue at request time; same formula in USD for the estimate. Stopped answers without provider counts are estimated from text length (`tokens_estimated = true`).
+- **Quotas** (`private.quota_status`): company limit = plan monthly credits + credit grants of the month; personal limit = member override, else company default; month in UTC. Warning ≥ 80 %, stop ≥ 100 % (`usage/quota.ts`).
+- **Search** (`search_conversations`, security invoker so RLS applies): GIN index on `to_tsvector('simple', unaccent(content))`, title match, highlights marked with U+0002/U+0003 and rendered as `<mark>` without HTML injection.
+- **Attachments**: `POST /api/conversations/[id]/attachments` checks extension, size (10 MB) and magic bytes, extracts text on our server (unpdf, mammoth, exceljs, UTF-8/Windows-1252), stores the file with the user's JWT in the private `chat-attachments` bucket (path `<conversation_id>/<uuid>.<ext>`, Storage RLS = participants). Downloads go through `GET /api/attachments/[id]` (RLS check, 60-second signed link).
+- **Test provider**: `AI_FAKE_PROVIDER=true` replaces every provider with a simulated one whose answers start with "[TEST]" and the UI shows a test-mode notice; `[[fail:<code>@<provider>]]` and `[[slow]]` in a message simulate failures and slow answers. Real providers: `pnpm test:smoke`.
+- **AI SDK v7** notes: `instructions` (not `system`), `result.stream` (not `fullStream`), images as `file` parts, usage in `inputTokenDetails` / `outputTokenDetails`. The SDK's default `onError` logs the full error (which can include the prompt): it is replaced by a no-op. Provider base URLs are set explicitly so a `*_BASE_URL` variable on the host can never redirect customer data.
+

@@ -94,7 +94,9 @@ export function ChatView(props: Props) {
   const blocked = quota?.state === "blocked";
   const clientName = props.clients.find((c) => c.id === clientId)?.name ?? null;
   const uploading = attachments.some((a) => a.uploading);
-  const canSend = !busy && !blocked && !uploading && (input.trim().length > 0 || attachments.some((a) => a.id));
+  // An answer started before this page was opened is still being written: wait for it.
+  const pendingElsewhere = props.conversation?.messages.some((m) => m.status === "streaming") ?? false;
+  const canSend = !busy && !pendingElsewhere && !blocked && !uploading && (input.trim().length > 0 || attachments.some((a) => a.id));
 
   // Keep the newest message in view while the answer streams, unless the user scrolled up.
   React.useEffect(() => {
@@ -119,8 +121,7 @@ export function ChatView(props: Props) {
     };
   }, []);
 
-  // An answer still being written (started before this page was opened): refresh until it is done.
-  const pendingElsewhere = props.conversation?.messages.some((m) => m.status === "streaming") ?? false;
+  // Refresh until the answer started elsewhere is done (the page then reloads its messages).
   React.useEffect(() => {
     if (!pendingElsewhere) return;
     const timer = setInterval(() => router.refresh(), 3000);
@@ -295,6 +296,18 @@ export function ChatView(props: Props) {
     );
   }
 
+  /** Stop button: the server stops writing (and saves what was written), then the local stream closes. */
+  function stopAnswer() {
+    if (liveId) {
+      void fetch("/api/chat/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId: liveId }),
+      });
+    }
+    abortRef.current?.abort();
+  }
+
   function regenerate(message: TimelineMessage, choice?: string) {
     if (!conversationId || busy || blocked) return;
     if (choice) setModelChoice(choice);
@@ -433,7 +446,7 @@ export function ChatView(props: Props) {
                       message={m}
                       live={m.id === liveId}
                       isLastAnswer={m.id === lastAnswerId && lastIsAnswer}
-                      busy={busy}
+                      busy={busy || pendingElsewhere}
                       models={props.models}
                       onRegenerate={(choice) => regenerate(m, choice)}
                     />
@@ -519,7 +532,7 @@ export function ChatView(props: Props) {
               <ModelPicker value={modelChoice} onChange={changeModel} models={props.models} autoEnabled={props.autoEnabled} disabled={busy} />
               <div className="flex-1" />
               {busy ? (
-                <Button size="icon-sm" variant="secondary" aria-label={t("stop")} onClick={() => abortRef.current?.abort()} className="rounded-full">
+                <Button size="icon-sm" variant="secondary" aria-label={t("stop")} onClick={stopAnswer} className="rounded-full">
                   <SquareIcon className="size-3 fill-current" />
                 </Button>
               ) : (

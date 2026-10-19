@@ -130,6 +130,36 @@ test("search finds conversations by their content", async () => {
   await expect(page).toHaveURL(conversationUrl);
 });
 
+test("leaving the conversation while the AI writes does not stop the answer", async () => {
+  await page.goto(conversationUrl);
+  const before = await answers().count();
+  await composer().fill("[[slow]] Donne trois idées d'objet pour cet e-mail");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(page.locator('article[aria-busy="true"]')).toHaveCount(1);
+  await page.getByRole("link", { name: "Clients", exact: true }).click();
+  await expect(page).toHaveURL(/\/clients$/);
+
+  await page.goto(conversationUrl);
+  await expect(answers()).toHaveCount(before + 1);
+  // Opened while the answer is still being written: the page refreshes itself until it is complete.
+  await expect(answers().last()).toContainText("Your last message had", { timeout: 15_000 });
+  await expect(page.getByText("Réponse interrompue.")).toHaveCount(0);
+});
+
+test("the Stop button stops the answer, on the server too", async () => {
+  await page.goto(conversationUrl);
+  await composer().fill("[[slow]] Liste toutes les étapes d'un devis");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(answers().last()).toContainText("[TEST]");
+  await page.getByRole("button", { name: "Arrêter la réponse" }).click();
+  await expect(answers().last()).toContainText("Réponse interrompue.");
+  // Saved as stopped, with only the part written before Stop.
+  await page.waitForTimeout(2_000);
+  await page.reload();
+  await expect(answers().last()).toContainText("Réponse interrompue.");
+  await expect(answers().last()).not.toContainText("Your last message had");
+});
+
 test("a conversation can be linked to a client and is listed on the client's page", async () => {
   await page.goto("/admin/clients");
   await page.getByRole("button", { name: "Nouveau client" }).click();

@@ -7,6 +7,7 @@ import { estimateTokens } from "../../tokens";
  * Its answers start with "[TEST]" so a simulated answer can never be mistaken for a real one.
  * Writing "[[fail:<code>]]" in a message simulates that provider error (e.g. [[fail:rate_limited]]);
  * "[[fail:<code>@<provider>]]" fails only with that provider (e.g. [[fail:unavailable@google]]).
+ * "[[slow]]" writes the answer slowly (about 3 seconds), to test what happens mid-answer.
  */
 export function createFakeProvider(id: ProviderId): ChatProvider {
   return {
@@ -32,7 +33,7 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
       ].join("\n");
       for (const word of answer.split(/(?<=\s)/)) {
         if (signal.aborted) return;
-        await new Promise((resolve) => setTimeout(resolve, 8));
+        await new Promise((resolve) => setTimeout(resolve, text.includes("[[slow]]") ? 80 : 8));
         yield { type: "text", delta: word };
       }
       const input = estimateTokens(request.system) + request.messages.reduce((sum, m) => sum + estimateTokens(m.content.map((p) => (p.type === "text" ? p.text : "")).join("")), 0);

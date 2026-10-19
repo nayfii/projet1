@@ -72,3 +72,21 @@ export async function supersedeMessage(id: string, conversationId: string): Prom
     .eq("author_type", "assistant");
   if (error) console.error("supersede failed", { code: error.code });
 }
+
+/** Stop button: flags the answer; the server writing it checks the flag and stops within a second. */
+export async function requestStop(id: string, conversationId: string): Promise<boolean> {
+  const { data, error } = await createAdminClient()
+    .from("messages")
+    .update({ stop_requested_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("conversation_id", conversationId)
+    .eq("author_type", "assistant")
+    .eq("status", "streaming")
+    .select("id");
+  return !error && (data?.length ?? 0) > 0;
+}
+
+export async function isStopRequested(id: string): Promise<boolean> {
+  const { data } = await createAdminClient().from("messages").select("stop_requested_at").eq("id", id).maybeSingle();
+  return Boolean(data?.stop_requested_at);
+}

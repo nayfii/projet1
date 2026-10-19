@@ -1,6 +1,6 @@
 # AI Workspace for SMEs (working name)
 
-One minimalist workspace where a small company's employees use ChatGPT, Claude and Gemini with a shared company memory and per-client memories. Product spec: [`CLAUDE.md`](CLAUDE.md). Progress: [`docs/STATUS.md`](docs/STATUS.md). Design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+One minimalist workspace where a small company's employees use ChatGPT, Claude and Gemini with a shared company memory and per-client memories. Product spec: [`CLAUDE.md`](CLAUDE.md). Progress: [`docs/STATUS.md`](docs/STATUS.md). Design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Security and data flows to AI providers: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## Run it locally
 
@@ -22,8 +22,11 @@ Emails listed in `PLATFORM_ADMIN_EMAILS` get the platform console (`/platform`) 
 pnpm typecheck && pnpm lint      # types and lint
 pnpm test                        # unit tests
 pnpm test:integration            # isolation tests against local Supabase
-pnpm build && pnpm start &       # then:
+pnpm build && AI_FAKE_PROVIDER=true pnpm start &       # simulated AI answers ("[TEST]"), then:
 PLAYWRIGHT_CHROMIUM_PATH=/path/to/chromium npx playwright test   # end-to-end
+pnpm test:smoke                  # one tiny real request per configured AI provider (uses the API keys)
 ```
+
+AI keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`) are optional: a provider without a key shows its models as "Not configured".
 
 `pnpm db:reset` re-applies the migrations and the DEMO seed. `pnpm db:types` regenerates database types.

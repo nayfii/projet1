@@ -29,12 +29,12 @@ export async function POST(request: Request) {
         try {
           controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
         } catch {
-          // The browser went away (Stop button, closed tab): the answer is still saved as stopped.
+          // The browser went away (reload, closed tab): the answer keeps being written and saved.
         }
       };
       task = (async () => {
         try {
-          for await (const event of prepared.run(request.signal)) send(event);
+          for await (const event of prepared.run()) send(event);
         } catch {
           send({ type: "error", code: "server_error", retryable: true });
         } finally {
