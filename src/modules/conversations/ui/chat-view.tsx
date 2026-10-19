@@ -109,7 +109,23 @@ export function ChatView(props: Props) {
     el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
   }, [input]);
 
-  React.useEffect(() => () => abortRef.current?.abort(), []);
+  // Leaving the page does not stop an answer: it keeps being written and saved on the server
+  // (only the Stop button or closing the tab stops it). Track whether this view is still shown.
+  const mounted = React.useRef(true);
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  // An answer still being written (started before this page was opened): refresh until it is done.
+  const pendingElsewhere = props.conversation?.messages.some((m) => m.status === "streaming") ?? false;
+  React.useEffect(() => {
+    if (!pendingElsewhere) return;
+    const timer = setInterval(() => router.refresh(), 3000);
+    return () => clearInterval(timer);
+  }, [pendingElsewhere, router]);
 
   /** Creates the conversation on the first message or attachment. */
   const ensureConversation = React.useCallback(async (): Promise<string | null> => {
@@ -125,7 +141,7 @@ export function ChatView(props: Props) {
         const id = result.data.id;
         setConversationId(id);
         // Same page, new address: no reload, so the answer can stream without interruption.
-        window.history.replaceState(null, "", `/chat/${id}`);
+        if (mounted.current) window.history.replaceState(null, "", `/chat/${id}`);
         chatList.upsert({ id, title: null, clientId, clientName });
         return id;
       })();

@@ -5,7 +5,8 @@ import { estimateTokens } from "../../tokens";
 /**
  * SIMULATED provider for automated tests (AI_FAKE_PROVIDER=true). It never calls a real API.
  * Its answers start with "[TEST]" so a simulated answer can never be mistaken for a real one.
- * Writing "[[fail:<code>]]" in a message simulates that provider error (e.g. [[fail:rate_limited]]).
+ * Writing "[[fail:<code>]]" in a message simulates that provider error (e.g. [[fail:rate_limited]]);
+ * "[[fail:<code>@<provider>]]" fails only with that provider (e.g. [[fail:unavailable@google]]).
  */
 export function createFakeProvider(id: ProviderId): ChatProvider {
   return {
@@ -14,7 +15,8 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
     async *stream(request: ChatRequest, signal: AbortSignal): AsyncIterable<ChatEvent> {
       const last = request.messages.at(-1);
       const text = last?.content.map((p) => (p.type === "text" ? p.text : "[image]")).join(" ") ?? "";
-      const failure = /\[\[fail:([a-z_]+)\]\]/.exec(text)?.[1];
+      const match = /\[\[fail:([a-z_]+)(?:@([a-z]+))?\]\]/.exec(text);
+      const failure = match && (!match[2] || match[2] === id) ? match[1] : null;
       if (failure) {
         yield { type: "error", error: { code: failure as ProviderErrorCode, retryable: failure === "rate_limited" } };
         return;

@@ -22,7 +22,8 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
   const data = await getChatPageData(ctx);
   return (
     <ChatView
-      key={conversation.id}
+      // A new key once an answer that was in progress elsewhere is finished: the view reloads its messages.
+      key={`${conversation.id}:${conversation.messages.some((m) => m.status === "streaming") ? "pending" : "settled"}`}
       conversation={{
         id: conversation.id,
         title: conversation.title,
