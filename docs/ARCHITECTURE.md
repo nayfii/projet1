@@ -147,9 +147,13 @@ Embeddings: one fixed dimension per deployment (planned **1536**: OpenAI `text-e
 
 | Table | Key columns | company_id |
 |---|---|---|
-| `hide_mappings` | `conversation_id`, `placeholder` (e.g. `[IBAN_1]`), `category`, `value_hash` (HMAC, for stable reuse), `value_ciphertext` (AES-GCM, app-level key) | ✓ |
-| `sensitive_terms` | `term`, `category` (client / project / file / custom), `created_by` | ✓ |
-| `hide_events` | `conversation_id`, `user_id`, `mode`, `counts` (json: category → count). **No values.** | ✓ |
+| `company_hide_settings` | `default_modes` (automatic / documents / manual), `auto_categories` | ✓ (primary key) |
+| `hide_mappings` | `conversation_id`, `category`, `placeholder` (e.g. `[IBAN_1]`), `value_hash` (HMAC, stable reuse), `value_ciphertext` (AES-256-GCM, app-level key) | ✓ |
+| `sensitive_terms` | `term`, `category` (client / project / file / term), `created_by` | ✓ |
+| `messages` (+ columns) | `masked_content` (what the model received or wrote), `hide_modes`, `hide_counts` (category → count) | ✓ |
+| `conversation_attachments` (+ column) | `masked_text` | ✓ |
+
+As built in Step 4: there is no separate `hide_events` table; masking events go to `audit_log` (`hide.masked`, counts per category only).
 
 `hide_mappings` has RLS enabled with **no policy for authenticated users**: only the server (service role, inside the `hide` module) can read it.
 
@@ -389,4 +393,14 @@ typed message / attachments / retrieved excerpts
 - **Source Proof.** The model is asked to cite with [Sn]; after the answer, `citedPositions` keeps only the numbers really cited and present, and the service-role writer stores them in `message_sources` (excerpt copied). The UI turns [Sn] into badges; "Sources" cards open a side panel with the exact passage, then `/memory/documents/[id]?from=&to=` with the passage highlighted, or the entry in its memory.
 - **AI tasks** (`runMemoryTask`: quota check, model resolution, usage row with feature "memory"): extract entries from a conversation (JSON, at most 5, saved as pending suggestions in the linked client's memory or the company memory) and generalise a client entry (JSON `{general, title, content}`; nothing proposed when `general` is false). Approval goes through `decide_memory_suggestion`, which re-checks write rights and creates the entry with source `ai_suggestion` or `promotion`.
 - **Test mode.** With `AI_FAKE_PROVIDER=true`, embeddings are a deterministic hashed bag of words (`fake-embedding`), the simulated chat model cites [S1] when passages are present and answers the memory tasks in JSON.
+
+## 15. Implementation notes (Step 4)
+
+- **Module map** (`src/modules/hide`): `categories.ts` (modes, categories, placeholders), `normalize.ts` (accent- and case-folding with a map back to the original text), `detectors/` (patterns with checksums, phones, company lists, person names), `detect.ts`, `spans.ts` (overlaps: longest, then most specific), `mask.ts` (what to mask for given modes, placeholders, restoring, `StreamRestorer`), `server/` (crypto, the audited service-role `store.ts`, `masker.ts`, `turn.ts`, admin actions), `ui/` (mode control, Manual overlay, "what the AI received"). The browser imports only the pure parts.
+- **Detection** runs only on our server: `POST /api/hide/detect` while typing (positions and categories only, for Manual highlights and the count), and again inside `prepareChatTurn` when the message is sent. The browser sends its choices (modes, values blurred or left visible), never a masked text.
+- **Person names**: no ML model (the model hub is blocked here and a model would add a heavy runtime). compromise for English names, plus French rules (titles, ~600 first names, capitalised surnames, particles, surnames in capitals) and the employees' names. An ONNX NER model could be added behind the same function later.
+- **Turn flow** (`prepareChatTurn`): settings and modes → `createConversationMasker` (loads lists through `store.ts`, decrypts the conversation's mappings) → `maskTurn` (message: Automatic + Manual; files: Documents; person and client names and descriptions in the instructions: Automatic) → one `hide_assign_placeholders` call gives new values their numbers under an advisory lock → user message inserted with the user's JWT, then `masked_content`, `hide_modes`, `hide_counts` and attachments' `masked_text` written by the service role → audit entry with counts → memory search (keywords on the real text, embeddings on the masked text) → `maskPassages` (Documents) → history built from `masked_content ?? content` → the answer streams through `StreamRestorer` (placeholders that arrive in pieces are held back), `content` stores the restored answer and `masked_content` what the model wrote.
+- **System prompt**: a "Protected values" section asks the model to keep placeholders exactly and never guess the values (checked with the real GPT-6 Luna in `pnpm test:smoke`).
+- **Memory tasks**: suggestions read `masked_content` and their output is restored with the conversation's values; promotion masks the client note with an in-memory masker and drops any proposal that still contains a placeholder.
+- **Key**: `HIDE_ENCRYPTION_KEY` (≥ 32 characters); HKDF derives one key for AES-256-GCM and one for the HMAC. Without it, a message with protection on is refused (`hide_unavailable`) before anything is saved or sent.
 

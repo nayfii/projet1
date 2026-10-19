@@ -1,6 +1,6 @@
 # Security and data flows
 
-Status: **Step 3** (2026-10-19). Updated at every step. This document describes what is actually implemented and tested; it is not a compliance statement. We do not claim GDPR compliance, end-to-end encryption, zero data retention or any certification.
+Status: **Step 4** (2026-10-19). Updated at every step. This document describes what is actually implemented and tested; it is not a compliance statement. We do not claim GDPR compliance, end-to-end encryption, zero data retention or any certification.
 
 ---
 
@@ -24,6 +24,7 @@ Status: **Step 3** (2026-10-19). Updated at every step. This document describes 
 | Passages given to the AI | Only passages from memories the person may read reach the prompt; the search runs with the user's JWT, so a forged memory id returns nothing | `memory/server/retrieval.ts`, integration tests |
 | Source Proof | Cited sources are written by the audited server module only (users cannot insert or edit them); a source stays visible only to participants who can still read its memory | `assistant-writer.ts` (`saveMessageSources`), `message_sources` RLS, integration tests |
 | Memory documents | Same checks as attachments (extension, 20 MB, magic bytes, text read on our server); private bucket `memory-documents`, Storage RLS = people who can read that memory; downloads through `GET /api/documents/[id]/file` (RLS check, short signed link) | `api/memory/[spaceId]/documents`, integration tests |
+| Hide (sensitive data) | Detection on our server only (patterns with checksums, company lists, a local name library and rules; nothing is sent to an external AI to detect). Placeholders to the model, real values restored for people who can see the conversation. Mappings encrypted with AES-256-GCM (key outside the database), in a table no user can read; what the model received is written by the server only. Masking events logged as counts per category | `hide/server/*`, `tests/integration/hide.test.ts`, `tests/unit/hide.test.ts`, `e2e/hide.spec.ts` |
 | AI suggestions | Nothing is saved without a person's approval; pending suggestions are visible only to their author and to people who can write in the target memory; approval re-checks write rights in SQL | `decide_memory_suggestion`, integration tests |
 
 ## 2. Data sent to AI providers
@@ -32,19 +33,20 @@ Every AI call is built by our server. Providers receive one self-contained reque
 
 | Flow | Content sent | Recipient | When |
 |---|---|---|---|
-| Chat answer | System prompt: company name, industry and description; name, sector and description of the client linked to the conversation (if any); the user's full name; today's date; behaviour rules; **up to 6 memory passages** the user may read (1,600 characters each, with their title or file name, origin — company memory or the client's name — page and date). Conversation history the user can see (oldest messages dropped beyond about 60,000 estimated tokens). Text extracted from attached documents (up to 40,000 characters each). Attached images from the last 6 messages, as images. | The provider of the chosen model: **OpenAI** (Responses API, `store: false`), **Anthropic** (Messages API) or **Google** (Gemini API) | Each message, each "Regenerate" |
+| Chat answer | **With Hide on (default: Automatic + Documents), the values of the masked categories are replaced by placeholders in everything below** (message, attached files, memory passages, the person's and client's names and descriptions); what is not detected is sent as written. System prompt: company name, industry and description; name, sector and description of the client linked to the conversation (if any); the user's full name; today's date; behaviour rules; **up to 6 memory passages** the user may read (1,600 characters each, with their title or file name, origin — company memory or the client's name — page and date). Conversation history the user can see (oldest messages dropped beyond about 60,000 estimated tokens). Text extracted from attached documents (up to 40,000 characters each). Attached images from the last 6 messages, as images. | The provider of the chosen model: **OpenAI** (Responses API, `store: false`), **Anthropic** (Messages API) or **Google** (Gemini API) | Each message, each "Regenerate" |
 | Auto mode (Smart Router) | Nothing: rules run on our server | – | – |
 | Attachment reading | Nothing: PDF, Word, Excel and text files are read on our server | – | – |
 | Embeddings: memory | Text of every passage of a document added to a memory; title and content of every memory entry | The embeddings provider: **OpenAI** (`text-embedding-3-small`) by default, or **Google** (`gemini-embedding-001`) if configured — whichever chat model the person uses | When a document is added, an entry is saved or edited |
-| Embeddings: question | The person's message (first 8,000 characters), to search the memory by meaning | Same embeddings provider | Each message, when the memories it may search are not empty |
-| Memory suggestions | The conversation (last 24,000 characters) | The conversation's model (or the one Auto picks) | When someone clicks "Proposer des entrées de mémoire" |
-| Promotion | Title and content of the client memory entry | The company's default model (or the one Auto picks) | When someone clicks "Proposer pour la mémoire de l'entreprise" |
+| Embeddings: question | The person's message (first 8,000 characters), **masked when Hide masked it**, to search the memory by meaning | Same embeddings provider | Each message, when the memories it may search are not empty |
+| Memory suggestions | The conversation (last 24,000 characters) as the chat models received it (masked when Hide was on) | The conversation's model (or the one Auto picks) | When someone clicks "Proposer des entrées de mémoire" |
+| Promotion | Title and content of the client memory entry, masked when Automatic is on by default | The company's default model (or the one Auto picks) | When someone clicks "Proposer pour la mémoire de l'entreprise" |
 | Document reading | Nothing: memory documents are read on our server | – | – |
+| Hide detection | Nothing: detection runs on our server | – | – |
 
 **Important limits today**
 
-- **No masking yet.** Until Hide (Step 4) is built, messages, document text and memory passages are sent **as typed**, including names, amounts, IBANs or anything else they contain. Images can never be masked by Hide's text detection.
-- **Embeddings are not masked, even after Step 4**: masking would break search by meaning. Memory content is therefore sent in clear to the embeddings provider (open question 5 in `docs/STATUS.md`: a local embeddings model would avoid it).
+- **Hide reduces what providers receive, it does not guarantee it.** Detection is imperfect (uncommon names, client names not entered in the app, unusual formats), a person can turn modes off for a message, amounts are not masked by default, and **images are never masked**.
+- **Memory documents and entries are embedded unmasked** (masking would break search by meaning; the question itself is masked since Step 4). Memory content is therefore sent in clear to the embeddings provider (open question 5 in `docs/STATUS.md`: a local embeddings model would avoid it).
 - **No EU data residency is configured** with any provider. Data sent to OpenAI, Anthropic or Google may be processed outside the EU.
 - **Provider retention** follows each provider's API terms. `store: false` (OpenAI) stops responses being stored for later retrieval; it does not mean zero retention (providers may keep API data for a limited time, e.g. for abuse monitoring, as described in their own terms).
 - **Gemini**: the API key must belong to a billing-enabled Google project; on the free tier Google may use the data to improve its products.
@@ -59,12 +61,15 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Memory documents | Storage bucket `memory-documents` (private), `documents` (extracted text), `document_chunks` (passages with exact positions and vectors) | Deleted with the document |
 | AI suggestions | `memory_suggestions` | Proposed title and content, status, who decided |
 | Source Proof | `message_sources` | A **copy** of each cited passage, with its date, kept with the answer. Deleting a document or entry does not delete the copies cited in past answers |
+| Hide mappings | `hide_mappings` | Real values behind placeholders, encrypted (AES-256-GCM, key `HIDE_ENCRYPTION_KEY` outside the database), per conversation, deleted with it. No user can read the table |
+| What the AI received | `messages.masked_content`, `conversation_attachments.masked_text` | Masked versions, readable by the conversation's participants |
+| Sensitive terms | `sensitive_terms` | Visible to the Owner and Hide admins only |
 | Usage | `usage_events` | Token counts, credits, estimated cost, model, status (chat, embeddings, memory tasks). No content |
 | Activity | `audit_log` | Ids and settings only (e.g. "request blocked: personal limit"). No content |
 
 ## 4. Remaining risks before accepting real customer data
 
-1. Hide (sensitive data masking) is not built: do not use real confidential data yet.
+1. Hide is imperfect by nature (see section 2). Real values remain in our database (messages as typed): Hide protects what goes to AI providers, not our own storage.
 2. No production hosting yet: the EU hosting of the app, database and storage is still to be set up (Step 10).
 3. No per-user rate limiting on the API routes beyond monthly credit quotas.
 4. Prompt injection: a document or message can try to steer the model. Impact is limited today (the model has no tools and cannot act), but answers can be misleading.
@@ -75,3 +80,5 @@ Every AI call is built by our server. Providers receive one self-contained reque
 9. Memory content goes to the embeddings provider in clear (see section 2). Decide between a cloud provider and a local embeddings model before real customer data.
 10. Source Proof keeps copies of cited passages after the original is deleted. A request to erase a person's data will also have to remove these copies (no tool for that yet).
 11. Prompt injection through memory: a document added to a memory can contain instructions that the AI reads every time the passage is retrieved. Same limited impact as point 4 today, but more persistent.
+12. Losing `HIDE_ENCRYPTION_KEY` makes earlier placeholders impossible to restore; leaking it, together with database access, reveals the mapped values (which are also in the messages).
+13. Typing a word and seeing it masked tells a member it is on the company's sensitive list (inherent to masking; the list itself is not readable).

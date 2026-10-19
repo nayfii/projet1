@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 3 (company and client memories, documents, Source Proof, memory rights), 2026-10-19.
+Last update: Step 4 (Hide: sensitive data protection), 2026-10-19.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -46,15 +46,16 @@ Legend: **done** · **partial** · **not started** · **known issue**
 ## 4.3 Hide
 | Feature | Status |
 |---|---|
-| Automatic mode (typed message) | not started |
-| Documents mode (attachments) | not started |
-| Manual mode (red highlights, click to blur, free selection) | not started |
-| Pattern detection with checksums (IBAN, cards, emails, phones, amounts) | not started |
-| Company lists (client names, employee names, custom terms) | not started |
-| Local NER for person names | not started |
-| Reversible pseudonymisation, server-side mapping per conversation | not started |
-| Admin settings: default mode, custom sensitive terms | not started |
-| Metadata-only masking event logging | not started |
+| Mode control above the input (Automatic, Documents, Manual, combinable) | **done** (Step 4): starts from the company defaults (or the modes of the last message sent), shows how many items will be masked |
+| Automatic mode (typed message) | **done**: detection on our server while typing and again at send time (the server decides, never the browser); categories chosen by the company |
+| Documents mode (attachments) | **done**: text read from attached files and memory passages sent to the AI is masked with the same categories. **Images cannot be masked** (warning shown) |
+| Manual mode (red highlights, click to blur, free selection) | **done**: detected items underlined in red, click to blur or show again, "Masquer la sélection" for any passage |
+| Pattern detection with checksums (IBAN, cards, emails, phones, amounts) | **done**: IBAN with country length + mod 97, cards with Luhn and card prefixes, emails, phones with libphonenumber (French, British, American formats + any international number), amounts in French and English formats |
+| Company lists (client names, employee names, custom terms) | **done**: ignoring accents and case (a term with a very short word, like "Client A", must match its capitals so "le client a payé" is not masked); a restricted client is masked for people without access as a plain "sensitive term", so its existence is not revealed |
+| Local NER for person names | **done, as a local library plus rules** (not a machine-learning model): compromise (English names, MIT licence) + French rules (titles M./Mme/Maître…, a list of about 600 common French and English first names, capitalised surnames, particles, surnames in capitals) + employees' names. Nothing leaves our servers for detection. Recall is imperfect: uncommon names without a title can be missed |
+| Reversible pseudonymisation, server-side mapping per conversation | **done**: stable placeholders per conversation ([IBAN_1], [CLIENT_1]…), values encrypted with AES-256-GCM in `hide_mappings` (no user can read the table), real values put back while the answer streams. The person can open "Voir ce que l'IA a reçu" under each message. Verified with the real GPT-6 Luna: it keeps placeholders exactly |
+| Admin settings: default mode, custom sensitive terms | **done** (`/admin/hide`, "hide" scope): default modes, categories Automatic masks (amounts off by default), custom terms (client, project, file, other), visible to Hide admins only |
+| Metadata-only masking event logging | **done**: one activity-log entry per message with masking (counts per category, modes); custom terms are logged by category, never by value |
 
 ## 4.4 Collaboration
 | Feature | Status |
@@ -118,10 +119,10 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Permissions: memory categories, client visibility and assignments | **done**: client visibility and assignments (Step 1), memory groups and rights (Step 3, `/admin/permissions`) |
 | Models: enable / disable, default, Auto mode | **done** (Step 2) |
 | Agents and tools: enable per role, approve company-wide tools | not started |
-| Hide policies | not started |
+| Hide policies | **done** (Step 4, `/admin/hide`) |
 | Usage dashboards (real provider data; costs labelled as estimates) | **done** (Step 2, `/admin/usage`): requests, tokens, credits, estimated cost by person, by model and per day, month picker. A richer dashboard comes in Step 9 |
 | Quotas | **done** (Step 2, `/admin/quotas`): company credits this month, default limit per person, personal limits per member |
-| Activity log | partial: sign-ins, invitations, member changes, client creation / visibility / access, model settings, quota changes, blocked AI requests (Step 2), memory entries and documents added / edited / deleted, memory groups and rights (Step 3); transfers and masking events come with their features |
+| Activity log | partial: sign-ins, invitations, member changes, client creation / visibility / access, model settings, quota changes, blocked AI requests (Step 2), memory entries and documents added / edited / deleted, memory groups and rights (Step 3), masking events (counts per category), Hide settings and sensitive terms (Step 4); transfers come with Step 5 |
 
 ## 4.9 Platform admin console
 | Feature | Status |
@@ -132,7 +133,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Usage and estimated AI cost per company (margin view) | partial: requests and estimated AI cost this month per company on the companies list; full margin view in Step 9 |
 | Provider health | not started |
 | Platform audit log | **done** (Step 1) |
-| No access to customer content (DB policies + server + tests) | **done** for Step 1–3 tables (conversations, messages, attachments, usage rows, quotas, memory entries, documents, passages, suggestions, sources: zero rows, tested); every new content table must be added to the test list |
+| No access to customer content (DB policies + server + tests) | **done** for Step 1–4 tables (conversations, messages, attachments, usage rows, quotas, memory entries, documents, passages, suggestions, sources, Hide mappings, sensitive terms, Hide settings: zero rows, tested); every new content table must be added to the test list |
 | Model catalogue, price estimates, credit rates | **done** (Step 2, `/platform/models`): editable, nothing hardcoded; default prices are placeholders to verify |
 
 ## 4.10 Onboarding
@@ -152,7 +153,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Three spaces (platform admin, company admin, member app) | **done**: `/platform`, `/admin`, member app at `/` |
 | Quotas per company and per user (80 % warning, 100 % stop) | **done** (Step 2): checked on the server before every AI call (hard stop, logged), warning banner from 80 %, monthly reset (UTC) |
 | Configurable plans, quotas, credit costs (no hardcoded prices) | **done**: plans, credit rates per model and price estimates are edited by the platform admin; usage rows keep the rates in force at the time |
-| Isolation tests (companies, clients, group intersection, platform admin) | partial: 104 integration tests (Steps 1–3: private conversations, restricted clients, unforgeable AI answers, usage and sources, storage, quotas, model settings, memory rights by every route including AI retrieval and search, platform admin); group intersection in Step 5 |
+| Isolation tests (companies, clients, group intersection, platform admin) | partial: 111 integration tests (Steps 1–4: private conversations, restricted clients, unforgeable AI answers, usage and sources, storage, quotas, model settings, memory rights by every route including AI retrieval and search, Hide mappings and terms, platform admin); group intersection in Step 5 |
 | Model-independent knowledge: single context builder, stateless providers, identical context across models (test) | **done** for chat history, attachments and memory passages (retrieved once per message, before the model is chosen, so every model receives the same passages); context budget = smallest window among the company's models, capped at 60,000 estimated tokens |
 | Usage logging from real provider token counts | **done**: one metadata-only row per AI call (tokens, cached tokens, credits, estimated cost, model, status). Only a stopped answer (or one cut by an error) without provider counts is estimated, and flagged as such |
 
@@ -187,17 +188,17 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
-## Tests (Step 3)
+## Tests (Step 4)
 
 | Suite | Command | Result |
 |---|---|---|
-| Unit (router, system prompt, context builder, credits, quotas, provider errors, file reading, passage splitting with exact positions, keyword search, citations, translations, helpers) | `pnpm test` | 95 passed |
-| Integration: isolation with real users and JWTs (Steps 1–3) | `pnpm test:integration` | 104 passed (33 new for memories: default rights, no access to a restricted client's memory by any route — entries, documents, passages, storage, search with a forced memory id, AI retrieval —, search by meaning limited to the embeddings model in use, unforgeable Source Proof, suggestions and promotion, groups and rights, platform admin) |
-| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 29 passed: memory 8 (new), chat 16 (new: Stop clicked before the first word), foundation 5 |
-| Real provider smoke test | `pnpm test:smoke` | 4 passed, 4 skipped: GPT-6 Luna answers with real token counts; GPT-6.1 Sol and OpenAI embeddings refused by the provider account ("no credits remaining", reported, not a code failure); Anthropic and Google skipped (no key) |
+| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, **Hide: IBAN, cards, emails, phones, amounts, person names, company lists in French and English, overlaps, modes, placeholders, restoring while streaming, a PDF masked, a 40,000-character document in under a second**) | `pnpm test` | 123 passed |
+| Integration: isolation with real users and JWTs (Steps 1–4) | `pnpm test:integration` | 111 passed (7 new for Hide: values stored encrypted, stable placeholders, no user can read or write mappings, restricted client masked as a plain term, terms visible to Hide admins only and logged without the value, settings changed by Hide admins only, masked versions not writable by users, nothing for the platform admin) |
+| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 34 passed: Hide 5 (new), memory 8, chat 16, foundation 5 |
+| Real provider smoke test | `pnpm test:smoke` | 5 passed, 4 skipped: GPT-6 Luna answers with real token counts **and keeps Hide placeholders exactly as written** (new); GPT-6.1 Sol and OpenAI embeddings refused by the provider account (reported, not a code failure); Anthropic and Google skipped (no key) |
 | Type check, lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
 
-Screenshots for the founder: `docs/screenshots/step-3/` (automated run, simulated answers marked "[TEST]").
+Screenshots for the founder: `docs/screenshots/step-4/` (automated run, simulated answers marked "[TEST]").
 
 ## Known issues
 
@@ -208,7 +209,10 @@ Screenshots for the founder: `docs/screenshots/step-3/` (automated run, simulate
 - No ownership transfer (Owner → someone else) and no company switcher for people in several companies (the database supports several memberships, the UI uses the first active one).
 - A platform admin who is also a member of a company sees that company's content as a member. Our team should use separate accounts.
 - Product name ("Workspace") and accent colour are placeholders until the branding is chosen.
-- **No sensitive-data protection yet (Hide comes in Step 4):** messages, the text of attached documents and memory passages are sent to the AI provider as typed. Do not use real confidential data before Step 4.
+- **Hide is a safety net, not a guarantee.** Detection relies on rules, checksums and the company's lists: uncommon names without a title, client names not entered in the app, data inside images and anything a person turns off are sent as typed. Never present it as 100 % detection.
+- **Hide needs `HIDE_ENCRYPTION_KEY` on the server.** Without it, messages with protection on are refused with a clear message (nothing is sent unmasked). Losing or changing the key makes earlier placeholders impossible to restore in old conversations.
+- With Hide on, some answers are less precise: the AI does not know who [PERSON_1] or [CLIENT_1] is (by design), and amounts become [AMOUNT_1] if the company turns amounts on.
+- Someone can test whether a word is a sensitive term by typing it and seeing it masked. This is inherent to any masking tool; the list itself stays hidden.
 - **Embeddings refused by the current OpenAI account** (HTTP 429 "no credits remaining"). Memory still works: entries and documents are saved and found by their exact words ("Recherche par mots uniquement" on documents), but search by meaning only starts once the account has credit, or once embeddings are switched to Google (`EMBEDDINGS_PROVIDER=google` with a Gemini key). Documents read while embeddings were unavailable (or before a change of embeddings provider) are not re-indexed automatically yet: they are found by their words only until they are deleted and added again.
 - **Memory is sent in clear to the embeddings provider** (documents, entries, and each question to search them). Hide will not apply there (see open question 5).
 - Promotion relies on a person: the AI is asked to remove client details, but the approver must reread the proposal before approving it.
@@ -235,6 +239,14 @@ Screenshots for the founder: `docs/screenshots/step-3/` (automated run, simulate
   - company admins see the *estimated* AI cost in US dollars (CLAUDE.md §4.8), which reveals our approximate cost to customers: to confirm commercially;
   - the person who started a conversation can delete it permanently (with its files);
   - images are sent to the AI provider as images: Hide (Step 4) will not be able to mask text inside images.
+- Ad-hoc decisions taken in Step 4, to confirm:
+  - defaults for every company: Automatic and Documents on, Manual off; amounts not masked (open question 4);
+  - employees can change the modes for each message (no locked policy yet);
+  - with Automatic on, the person's own name and the linked client's name are also masked in the instructions sent to the AI;
+  - memory passages are masked in Documents mode; the question used for the search by meaning is sent in its masked form; memory documents themselves are indexed unmasked (open question 5);
+  - the person who typed a message, and anyone who can see it, sees the real values (open question 6, relevant for group conversations in Step 5);
+  - in Manual mode a click leaves visible or blurs every occurrence of the same value;
+  - a general learning proposed by the AI is dropped if it still contains a placeholder (it points at something specific).
 - Ad-hoc decisions taken in Step 3, to confirm:
   - default rights: everyone reads the company memory, the Owner and Admins write in it; everyone who has access to a client reads and writes that client's memory; the Owner can always read and write every memory;
   - a conversation linked to a client searches the company memory and that client's memory only (no mixing of clients); a conversation without a client searches the company memory and every client memory the person can read;
@@ -253,8 +265,8 @@ The founder asked to proceed ("je suis prêt à construire le tout") without ans
 1. **Permission categories** — *applied in Step 3 as proposed below.* Proposed meaning: named groups of people (e.g. "All employees", "Management", "Finance") that are granted read and/or write on each memory. Defaults: everyone reads company memory, Owner + Admins write it; anyone with access to a client reads and writes its memory. To confirm.
 2. **"Project"** appears in Smart Handover ("a conversation, a restricted client or a project is transferred") but no project object exists elsewhere in the spec. Proposal: no "project" object at launch; handover for conversations and clients only. To confirm.
 3. **Client transfer** — when Client A moves from Olivier to Nathalie, what happens to Olivier's conversations linked to Client A? Proposal: they move to Nathalie together with the client (Olivier loses them too), and the Smart Handover summarises them. To confirm.
-4. **Hide and amounts** — masking every amount breaks finance questions (the model cannot compute on `[AMOUNT_1]`). Proposal: amounts are a category the company can switch off, off by default in Automatic mode. To confirm.
-5. **Embeddings and sensitive data** — *now concrete (Step 3 is built this way).* documents saved to memory are sent in clear to the embeddings provider (OpenAI or Google) to build the search index; Hide does not apply there (masking would break search). Alternative: a local embeddings model (data stays on our servers, lower search quality, more server cost). Decision needed before real customer data.
+4. **Hide and amounts** — *applied in Step 4 as proposed below (switch in Administration → Protection).* masking every amount breaks finance questions (the model cannot compute on `[AMOUNT_1]`). Proposal: amounts are a category the company can switch off, off by default in Automatic mode. To confirm.
+5. **Embeddings and sensitive data** — *now concrete (Step 3 is built this way; since Step 4 the question is masked, the documents are not).* documents saved to memory are sent in clear to the embeddings provider (OpenAI or Google) to build the search index; Hide does not apply there (masking would break search). Alternative: a local embeddings model (data stays on our servers, lower search quality, more server cost). Decision needed before real customer data.
 6. **Who sees real values in a group chat** — proposal: every participant who can see a message sees the real values typed in it (they were shared by a colleague); the AI only ever sees placeholders. To confirm.
 7. **Gemini terms** — the free tier of the Gemini API allows Google to use data to improve its products. The production key must be on a paid (billing-enabled) Google project, or on Vertex AI in an EU region.
 8. **Meeting Minutes with audio** — needs a speech-to-text model (e.g. OpenAI or Gemini audio input). This is another data flow to document; to confirm it is acceptable.
