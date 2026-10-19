@@ -39,6 +39,25 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         );
         return;
       }
+      if (request.system.startsWith("Task: critique answers.")) {
+        const reviewed = [...text.matchAll(/^Answer from (.+?):$/gm)].map((m) => m[1]);
+        yield* simulated(`[TEST] Critique of ${reviewed.join(" and ")}: one claim needs checking; the reasoning is otherwise sound.`);
+        return;
+      }
+      if (request.system.startsWith("Task: synthesise a confrontation.")) {
+        const answered = [...text.matchAll(/^Answer from (.+?):$/gm)].map((m) => m[1]);
+        const question = /^Question:\n([\s\S]*?)\n\n---/m.exec(text)?.[1] ?? "";
+        yield* simulated(
+          JSON.stringify({
+            agreements: [`[TEST] ${answered.join(", ")} agree on the main point.`],
+            divergences: ["[TEST] They differ on the level of detail."],
+            errors: ["[TEST] One answer gives a figure without a source."],
+            to_verify: ["[TEST] Check the figures before using them."],
+            recommended: `[TEST] Recommended answer combining ${answered.length} answers to: «${question.slice(0, 200)}»`,
+          }),
+        );
+        return;
+      }
       if (request.system.startsWith("Task: generalise a client note.")) {
         yield* simulated(JSON.stringify({ general: true, title: "[TEST] Enseignement général", content: "[TEST] Les clients de ce secteur préfèrent des points courts et réguliers." }));
         return;

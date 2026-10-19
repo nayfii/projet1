@@ -17,8 +17,8 @@ import { buildSystemPrompt } from "../system-prompt";
 import type { ChatRequestError, ChatStreamEvent, RoutingInfo } from "../stream-events";
 import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMessageSources, supersedeMessage } from "./assistant-writer";
 import { retrievePassages } from "@/modules/memory/server/retrieval";
-import { citedPositions } from "@/modules/memory/citations";
-import type { KnowledgePassage, SourceProof } from "@/modules/memory/types";
+import { citedPositions, toSourceProofs } from "@/modules/memory/citations";
+import type { KnowledgePassage } from "@/modules/memory/types";
 import { HIDE_MODES, isHideMode, MAX_BLUR_CHARS, PLACEHOLDER_PATTERN, totalCount, type HideMode } from "@/modules/hide/categories";
 import type { StreamRestorer } from "@/modules/hide/mask";
 import { hideConfigured } from "@/modules/hide/server/crypto";
@@ -28,6 +28,8 @@ import { maskPassages, maskTurn } from "@/modules/hide/server/turn";
 import { modelForProvider, parseMention, suggestedColleagues } from "@/modules/collaboration/mentions";
 import { conversationScope, myMemorySpaces } from "@/modules/memory/server/retrieval";
 import type { SuggestedColleague } from "../stream-events";
+import { planConfrontation } from "@/modules/confronter/server/plan";
+import { runConfrontation } from "@/modules/confronter/server/run";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -42,6 +44,8 @@ export const chatRequestSchema = z
       })
       .optional(),
     regenerate: z.object({ messageId: z.uuid() }).optional(),
+    // Confronter: the question (a person's message) the models answer, critique and synthesise.
+    confront: z.object({ messageId: z.uuid() }).optional(),
     // Hide: modes for this message and, in Manual mode, the values blurred or left visible.
     hide: z
       .object({
@@ -51,7 +55,7 @@ export const chatRequestSchema = z
       })
       .optional(),
   })
-  .refine((v) => Boolean(v.message) !== Boolean(v.regenerate));
+  .refine((v) => [v.message, v.regenerate, v.confront].filter(Boolean).length === 1);
 
 export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
 
@@ -109,7 +113,11 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   let target: (typeof visible)[number] | null = null;
   let pending: AttachmentRow[] = [];
   const newText = input.message?.content.trim() ?? "";
-  if (input.regenerate) {
+  if (input.confront) {
+    const question = visible.find((r) => r.id === input.confront!.messageId);
+    if (!question || question.author_type !== "user" || !question.content.trim()) return fail("not_found", 404);
+    base = visible.filter((r) => r.seq <= question.seq && r.status !== "streaming");
+  } else if (input.regenerate) {
     target = visible.find((r) => r.id === input.regenerate!.messageId) ?? null;
     if (!target || target.author_type !== "assistant" || visible.at(-1)?.id !== target.id || target.status === "streaming") {
       return fail("nothing_to_regenerate", 409);
@@ -135,7 +143,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   // In a group, the AI answers only when mentioned (@Claude, @ChatGPT, @Gemini, @IA); Regenerate is
   // an explicit request too. Otherwise the message is simply posted for the others.
   const mention = input.message && group ? parseMention(newText) : null;
-  const aiRequested = !group || Boolean(input.regenerate) || mention !== null;
+  const aiRequested = !group || Boolean(input.regenerate) || Boolean(input.confront) || mention !== null;
 
   // Model: the mentioned provider, else the explicit choice, else the conversation's. Auto routes with simple rules.
   const models = await getCompanyModels(companyId);
@@ -146,10 +154,25 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     choice = mentioned.id;
   }
   const lastUser = [...base].reverse().find((r) => r.author_type === "user");
-  const routedText = input.regenerate ? (lastUser?.content ?? "") : newText;
-  const routedAttachments = (input.regenerate ? (lastUser?.attachments ?? []) : pending) as AttachmentRow[];
+  const routedText = input.message ? newText : (lastUser?.content ?? "");
+  const routedAttachments = (input.message ? pending : (lastUser?.attachments ?? [])) as AttachmentRow[];
   let resolution: Extract<ReturnType<typeof resolveModel>, { ok: true }> | null = null;
-  if (aiRequested) {
+  // Confronter: one model per allowed provider; the cost is estimated and checked before any call.
+  let confrontation: Extract<Awaited<ReturnType<typeof planConfrontation>>, { ok: true }> | null = null;
+  if (input.confront) {
+    const historyChars = base.reduce(
+      (n, r) => n + r.content.length + ((r.attachments ?? []) as AttachmentRow[]).reduce((m, a) => m + (a.extracted_text?.length ?? 0), 0),
+      0,
+    );
+    const plan = await planConfrontation(companyId, historyChars);
+    if (!plan.ok) {
+      if (plan.reason === "not_enough_models") return fail("confront_unavailable", 409);
+      await logBlockedRequest(companyId, ctx.user.id, plan.reason);
+      return fail(plan.reason === "quota_user" ? "quota_exceeded_user" : "quota_exceeded_company", 402);
+    }
+    if (!plan.enough) return fail("confront_too_expensive", 402);
+    confrontation = plan;
+  } else if (aiRequested) {
     const resolved = resolveModel(choice, models, {
       text: routedText,
       imageCount: routedAttachments.filter((a) => a.kind === "image").length,
@@ -281,7 +304,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     ];
   }
 
-  if (!aiRequested || !resolution) {
+  if (!aiRequested || (!resolution && !confrontation)) {
     const posted = userMessage!;
     return {
       ok: true,
@@ -324,8 +347,36 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     group,
   });
   const context = buildChatContext({ system, history, budgetTokens: contextBudget(models.allowed) });
+  // In a group, only values the model was shown are put back: a placeholder it invents can never
+  // reveal a value from history that some participants cannot see.
+  const shownPlaceholders = group ? contextPlaceholders(context) : undefined;
 
-  const { model, routing } = resolution;
+  if (confrontation) {
+    const question = lastUser!;
+    // The question must be part of what everyone here can see (a group may have joined later).
+    if (question.seq < contextFrom) return fail("confront_unavailable", 409);
+    return {
+      ok: true,
+      run: () =>
+        runConfrontation({
+          ctx,
+          conversationId: conversation.id,
+          question: { id: question.id, text: question.masked_content ?? question.content, excerpt: question.content.slice(0, 200) },
+          models: confrontation.models,
+          judge: confrontation.judge,
+          context,
+          knowledge,
+          restore: (text) => {
+            if (!masker) return text;
+            const restorer = masker.restorer(shownPlaceholders);
+            return restorer.push(text) + restorer.flush();
+          },
+          contextLimited: group && (historyLimited || memoryLimited),
+        }),
+    };
+  }
+
+  const { model, routing } = resolution!;
   const routingInfo: RoutingInfo | null = routing ? { mode: "auto", task: routing.task, basis: routing.basis } : null;
 
   return {
@@ -341,9 +392,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         knowledge,
         userMessage,
         target: target ? { id: target.id, complete: target.status === "complete" } : null,
-        // In a group, only values the model was shown are put back: a placeholder it invents can never
-        // reveal a value from history that some participants cannot see.
-        restorer: masker?.restorer(group ? contextPlaceholders(context) : undefined) ?? null,
+        restorer: masker?.restorer(shownPlaceholders) ?? null,
         contextLimited: group && (historyLimited || memoryLimited),
         colleagues: colleagues.map((c) => ({ userId: c.userId, name: c.name })),
       }),
@@ -510,28 +559,6 @@ function contextMeta(omitted: number, limited: boolean, suggested: SuggestedColl
   if (limited) meta.context_limited = true;
   if (suggested.length) meta.suggested_colleagues = suggested;
   return Object.keys(meta).length ? meta : null;
-}
-
-function toSourceProofs(knowledge: KnowledgePassage[], positions: number[]): SourceProof[] {
-  return positions.map((position) => {
-    const k = knowledge[position - 1];
-    return {
-      position,
-      sourceType: k.sourceType,
-      title: k.title,
-      excerpt: k.content,
-      page: k.page,
-      sourceDate: k.sourceDate,
-      spaceId: k.spaceId,
-      spaceKind: k.spaceKind,
-      clientName: k.clientName,
-      documentId: k.documentId,
-      entryId: k.sourceType === "memory_entry" ? k.id : null,
-      chunkId: k.sourceType === "document_chunk" ? k.id : null,
-      charStart: k.charStart,
-      charEnd: k.charEnd,
-    };
-  });
 }
 
 /**

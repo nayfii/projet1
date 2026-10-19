@@ -59,6 +59,9 @@ import { TransferDialog } from "@/modules/collaboration/ui/transfer-dialog";
 import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
 import { filterMentions, MentionMenu, mentionAt, PROVIDER_TOKENS, type MentionOption } from "@/modules/collaboration/ui/mention-menu";
 import { useConversationRealtime } from "@/modules/collaboration/ui/use-conversation-realtime";
+import { ConfrontDialog } from "@/modules/confronter/ui/confront-dialog";
+import type { ConfrontEstimate } from "@/modules/confronter/server/actions";
+import type { Confrontation, ConfrontationProgress } from "@/modules/confronter/types";
 
 type PendingAttachment = {
   key: string;
@@ -140,6 +143,9 @@ export function ChatView(props: Props) {
   const participantIds = new Set(participants.map((p) => p.userId));
   // The answer this browser is streaming: real-time reloads leave it alone.
   const liveRef = React.useRef<string | null>(null);
+  // Confronter: the question being confirmed, and live progress of running confrontations.
+  const [confrontTarget, setConfrontTarget] = React.useState<{ conversationId: string; messageId: string; excerpt: string } | null>(null);
+  const [confrontProgress, setConfrontProgress] = React.useState<Record<string, ConfrontationProgress>>({});
 
   const abortRef = React.useRef<AbortController | null>(null);
   // Stop clicked before the server said which answer it is writing: stop it as soon as it does.
@@ -322,7 +328,7 @@ export function ChatView(props: Props) {
     insertAtCaret(at, at, at > 0 && !/\s/.test(input[at - 1]) ? " @" : "@");
   }
 
-  async function stream(payload: Record<string, unknown>, options: { replaced?: TimelineMessage; onRefused?: () => void } = {}) {
+  async function stream(payload: Record<string, unknown>, options: { replaced?: TimelineMessage; onRefused?: () => void; confrontation?: Confrontation } = {}) {
     setBusy(true);
     setRequestError(null);
     stickToBottom.current = true;
@@ -361,7 +367,17 @@ export function ChatView(props: Props) {
         buffer = rest;
         for (const line of lines) {
           const event = JSON.parse(line) as ChatStreamEvent;
-          if (event.type === "posted") {
+          if (event.type === "confront") {
+            const id = currentLive;
+            if (!id) continue;
+            setConfrontProgress((all) => {
+              const list = (all[id] ?? []).filter((p) => !(p.stage === event.stage && p.modelId === event.modelId));
+              return { ...all, [id]: [...list, { stage: event.stage, modelId: event.modelId, status: event.status }] };
+            });
+          } else if (event.type === "confrontation") {
+            const id = currentLive;
+            setMessages((list) => list.map((m) => (m.id === id ? { ...m, confrontation: event.confrontation } : m)));
+          } else if (event.type === "posted") {
             // Group conversation without a mention: posted for the others, no answer.
             setMessages((list) => confirmPending(list, event.userMessage));
           } else if (event.type === "meta") {
@@ -398,6 +414,7 @@ export function ChatView(props: Props) {
                   hideSpans: [],
                   contextLimited: event.contextLimited,
                   suggestedColleagues: [],
+                  confrontation: options.confrontation ?? null,
                 },
               ];
             });
@@ -491,6 +508,7 @@ export function ChatView(props: Props) {
         hideSpans: [],
         contextLimited: false,
         suggestedColleagues: [],
+        confrontation: null,
       },
     ]);
     if (!title && text) {
@@ -535,6 +553,36 @@ export function ChatView(props: Props) {
     if (!conversationId || busy || blocked) return;
     if (choice) setModelChoice(choice);
     void stream({ conversationId, modelChoice: choice ?? modelChoice, regenerate: { messageId: message.id } }, { replaced: message });
+  }
+
+  /** Confronter, once confirmed: the models answer, critique each other, then the synthesis. */
+  function confront(estimate: Extract<ConfrontEstimate, { ok: true }>) {
+    const target = confrontTarget;
+    setConfrontTarget(null);
+    if (!conversationId || !target || busy) return;
+    void stream(
+      { conversationId, confront: { messageId: target.messageId } },
+      {
+        confrontation: {
+          questionId: target.messageId,
+          questionExcerpt: target.excerpt,
+          models: estimate.models,
+          judge: estimate.judge,
+          answers: [],
+          critiques: [],
+          synthesis: null,
+          credits: 0,
+        },
+      },
+    );
+  }
+
+  /** The question a "Confronter" button refers to: the message itself, or the question an answer replies to. */
+  function confrontHandler(index: number): (() => void) | undefined {
+    const m = messages[index];
+    const question = m.role === "user" ? m : messages.slice(0, index).reverse().find((x) => x.role === "user");
+    if (!conversationId || !question || question.id === "pending-user" || !question.content.trim() || busy || pendingElsewhere) return undefined;
+    return () => setConfrontTarget({ conversationId, messageId: question.id, excerpt: question.content.slice(0, 200) });
   }
 
   function changeModel(choice: string) {
@@ -690,8 +738,8 @@ export function ChatView(props: Props) {
           ) : (
             <div className="space-y-8">
               {messages.map((m, index) => {
-                const previousAnswer = messages.slice(0, index).reverse().find((x) => x.role === "assistant" && x.model);
-                const switched = m.role === "assistant" && m.model && previousAnswer?.model && previousAnswer.model.id !== m.model.id;
+                const previousAnswer = messages.slice(0, index).reverse().find((x) => x.role === "assistant" && x.model && !x.confrontation);
+                const switched = m.role === "assistant" && m.model && !m.confrontation && previousAnswer?.model && previousAnswer.model.id !== m.model.id;
                 return (
                   <React.Fragment key={m.id}>
                     {switched ? <ModelSwitchDivider provider={m.model!.provider} label={m.model!.label} /> : null}
@@ -708,6 +756,8 @@ export function ChatView(props: Props) {
                       // Who Can Help: colleagues not here yet who may join (access to the linked client).
                       invitable={m.suggestedColleagues.filter((c) => !participantIds.has(c.userId) && props.colleagues.some((x) => x.userId === c.userId))}
                       onInvite={(userId) => void openAdd([userId])}
+                      onConfront={confrontHandler(index)}
+                      confrontProgress={confrontProgress[m.id]}
                     />
                   </React.Fragment>
                 );
@@ -872,6 +922,7 @@ export function ChatView(props: Props) {
         </div>
       </div>
 
+      <ConfrontDialog target={confrontTarget} onOpenChange={(open) => !open && setConfrontTarget(null)} onRun={confront} />
       <FilePreview file={hide.files.find((f) => f.key === previewKey) ?? null} state={hide} onClose={() => setPreviewKey(null)} />
       {conversationId ? <ConversationSuggestions open={suggesting} onOpenChange={setSuggesting} conversationId={conversationId} /> : null}
       <AddPeopleDialog

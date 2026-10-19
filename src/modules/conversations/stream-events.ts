@@ -3,6 +3,7 @@ import type { ProviderErrorCode, ProviderId } from "@/modules/providers/types";
 import type { RoutingBasis, TaskType } from "@/modules/providers/router";
 import type { SourceProof } from "@/modules/memory/types";
 import type { HideCounts, Span } from "@/modules/hide/categories";
+import type { Confrontation, ConfrontationStage } from "@/modules/confronter/types";
 
 /**
  * Wire format of POST /api/chat: one JSON object per line (NDJSON).
@@ -43,7 +44,11 @@ export type ChatStreamEvent =
       /** Who Can Help: colleagues the answer suggests asking (Invite button). */
       suggestedColleagues: SuggestedColleague[];
     }
-  | { type: "error"; code: ProviderErrorCode | "server_error"; retryable: boolean };
+  /** Confronter: a model started or finished a stage. */
+  | { type: "confront"; stage: ConfrontationStage; modelId: string; status: "running" | "complete" | "error" }
+  /** Confronter: the answers, critiques and synthesis, once done (also when some parts failed). */
+  | { type: "confrontation"; confrontation: Confrontation }
+  | { type: "error"; code: ProviderErrorCode | "server_error" | "confront_failed"; retryable: boolean };
 
 export const CHAT_REQUEST_ERRORS = [
   "validation",
@@ -58,6 +63,8 @@ export const CHAT_REQUEST_ERRORS = [
   "attachment_invalid",
   "nothing_to_regenerate",
   "hide_unavailable",
+  "confront_unavailable",
+  "confront_too_expensive",
   "server_error",
 ] as const;
 export type ChatRequestError = (typeof CHAT_REQUEST_ERRORS)[number];

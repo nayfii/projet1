@@ -16,6 +16,8 @@ export async function createAssistantMessage(input: {
   model: CatalogModel;
   routing: Json | null;
   contextMeta: Json | null;
+  /** Confronter: the models taking part, before anything is written (others see it in progress). */
+  confrontation?: Json;
 }): Promise<{ id: string; seq: number }> {
   const { data, error } = await createAdminClient()
     .from("messages")
@@ -31,6 +33,7 @@ export async function createAssistantMessage(input: {
       model_label: input.model.label,
       routing: input.routing,
       context_meta: input.contextMeta,
+      confrontation: input.confrontation ?? null,
       status: "streaming",
     })
     .select("id, seq")
@@ -47,6 +50,8 @@ export async function finishAssistantMessage(
     maskedContent?: string | null;
     /** Replaces the context metadata set at creation (e.g. adds Who Can Help suggestions). */
     contextMeta?: Json | null;
+    /** Confronter: the models' answers, critiques and synthesis. */
+    confrontation?: Json;
     status: "complete" | "error" | "stopped";
     errorCode: string | null;
     inputTokens: number | null;
@@ -59,6 +64,7 @@ export async function finishAssistantMessage(
       content: result.content,
       masked_content: result.maskedContent ?? null,
       ...(result.contextMeta !== undefined ? { context_meta: result.contextMeta } : {}),
+      ...(result.confrontation !== undefined ? { confrontation: result.confrontation } : {}),
       status: result.status,
       error_code: result.errorCode,
       input_tokens: result.inputTokens,

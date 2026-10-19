@@ -2,6 +2,7 @@ import type { ProviderId } from "@/modules/providers/types";
 import type { RoutingInfo, SuggestedColleague } from "./stream-events";
 import type { SourceProof } from "@/modules/memory/types";
 import type { HideCounts, Span } from "@/modules/hide/categories";
+import type { Confrontation } from "@/modules/confronter/types";
 
 /** A message as shown in the conversation timeline (server and browser). */
 export type TimelineMessage = {
@@ -30,4 +31,6 @@ export type TimelineMessage = {
   contextLimited: boolean;
   /** Who Can Help: colleagues the answer suggests asking. */
   suggestedColleagues: SuggestedColleague[];
+  /** Confronter: this answer is the synthesis of a confrontation. */
+  confrontation: Confrontation | null;
 };

@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   ImageIcon,
   RefreshCwIcon,
+  ScaleIcon,
   ShieldCheckIcon,
   SparklesIcon,
   UserPlusIcon,
@@ -38,11 +39,16 @@ import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
 import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
 import { MaskedView } from "@/modules/hide/ui/masked-view";
 import { ProtectedText } from "@/modules/hide/ui/hide-composer";
+import { ConfrontationView } from "@/modules/confronter/ui/confrontation-view";
+import type { ConfrontationProgress } from "@/modules/confronter/types";
 
 type MemoryProps = { memoryTargets: MemoryTarget[]; conversationId: string | null };
 
 /** Who Can Help: colleagues the answer suggests who are not in the conversation yet. */
 type InviteProps = { invitable?: SuggestedColleague[]; onInvite?: (userId: string) => void };
+
+/** Confronter: opens the confirmation for this question (or the question this answer replies to). */
+type ConfrontProps = { onConfront?: () => void; confrontProgress?: ConfrontationProgress };
 
 export function MessageItem({
   message,
@@ -56,6 +62,8 @@ export function MessageItem({
   meId,
   invitable,
   onInvite,
+  onConfront,
+  confrontProgress,
 }: {
   message: TimelineMessage;
   /** The answer is streaming right now in this browser. */
@@ -67,10 +75,11 @@ export function MessageItem({
   /** The viewer: their messages are on the right, colleagues' on the left with their name. */
   meId: string;
 } & MemoryProps &
-  InviteProps) {
+  InviteProps &
+  ConfrontProps) {
   if (message.role === "user") {
     const mine = !message.author || message.author.id === meId;
-    return <UserMessage message={message} mine={mine} memoryTargets={memoryTargets} conversationId={conversationId} />;
+    return <UserMessage message={message} mine={mine} memoryTargets={memoryTargets} conversationId={conversationId} onConfront={onConfront} />;
   }
   return (
     <AssistantMessage
@@ -84,7 +93,21 @@ export function MessageItem({
       conversationId={conversationId}
       invitable={invitable}
       onInvite={onInvite}
+      onConfront={onConfront}
+      confrontProgress={confrontProgress}
     />
+  );
+}
+
+function ConfrontButton({ onConfront, className }: { onConfront?: () => void; className?: string }) {
+  const t = useTranslations("confronter");
+  if (!onConfront) return null;
+  return (
+    <Tooltip content={t("buttonHint")}>
+      <Button variant="ghost" size="icon-sm" aria-label={t("button")} className={className} onClick={onConfront}>
+        <ScaleIcon />
+      </Button>
+    </Tooltip>
   );
 }
 
@@ -112,7 +135,8 @@ function SaveToMemory({ message, memoryTargets, conversationId, className }: { m
   );
 }
 
-function UserMessage({ message, mine, memoryTargets, conversationId }: { message: TimelineMessage; mine: boolean } & MemoryProps) {
+function UserMessage({ message, mine, memoryTargets, conversationId, onConfront }: { message: TimelineMessage; mine: boolean } & MemoryProps & ConfrontProps) {
+  const hover = "mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100";
   const t = useTranslations("collaboration");
   if (!mine) {
     // A colleague's message (group conversation, or a conversation taken over after a transfer).
@@ -135,12 +159,8 @@ function UserMessage({ message, mine, memoryTargets, conversationId }: { message
             <div className="whitespace-pre-wrap break-words rounded-2xl rounded-tl-md border bg-card px-4 py-2.5 text-[15px] leading-relaxed">
               <ProtectedText text={message.content} spans={message.hideSpans} />
             </div>
-            <SaveToMemory
-              message={message}
-              memoryTargets={memoryTargets}
-              conversationId={conversationId}
-              className="mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100"
-            />
+            <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
+            <ConfrontButton onConfront={onConfront} className={hover} />
           </div>
         ) : null}
         <MaskedView kind="message" maskedContent={message.maskedContent} counts={message.hideCounts} />
@@ -158,12 +178,8 @@ function UserMessage({ message, mine, memoryTargets, conversationId }: { message
       ) : null}
       {message.content ? (
         <div className="flex max-w-[85%] items-start gap-1">
-          <SaveToMemory
-            message={message}
-            memoryTargets={memoryTargets}
-            conversationId={conversationId}
-            className="mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100"
-          />
+          <ConfrontButton onConfront={onConfront} className={hover} />
+          <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
           <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-4 py-2.5 text-[15px] leading-relaxed">
             <ProtectedText text={message.content} spans={message.hideSpans} />
           </div>
@@ -249,6 +265,8 @@ function AssistantMessage({
   conversationId,
   invitable,
   onInvite,
+  onConfront,
+  confrontProgress,
 }: {
   message: TimelineMessage;
   live?: boolean;
@@ -257,7 +275,8 @@ function AssistantMessage({
   models: PickerModel[];
   onRegenerate: (modelChoice?: string) => void;
 } & MemoryProps &
-  InviteProps) {
+  InviteProps &
+  ConfrontProps) {
   const t = useTranslations("chat");
   const tCollab = useTranslations("collaboration");
   const [copied, setCopied] = React.useState(false);
@@ -268,12 +287,13 @@ function AssistantMessage({
   const errorKey: ProviderErrorCode = PROVIDER_ERROR_CODES.includes(message.errorCode as ProviderErrorCode)
     ? (message.errorCode as ProviderErrorCode)
     : "unknown";
-  const canRegenerate = isLastAnswer && !live && !busy && message.status !== "streaming";
+  const confrontation = message.confrontation;
+  const canRegenerate = !confrontation && isLastAnswer && !live && !busy && message.status !== "streaming";
 
   return (
     <article className="group/answer space-y-2" aria-busy={live}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
-        {message.model ? <ModelName provider={message.model.provider} label={message.model.label} /> : null}
+        {message.model && !confrontation ? <ModelName provider={message.model.provider} label={message.model.label} /> : null}
         {message.routing ? (
           <span className="inline-flex items-center gap-1 text-muted-foreground">
             <SparklesIcon className="size-3 text-brand" />
@@ -282,7 +302,15 @@ function AssistantMessage({
         ) : null}
       </header>
 
-      {waiting ? (
+      {confrontation ? (
+        <ConfrontationView
+          confrontation={confrontation}
+          progress={confrontProgress}
+          running={message.status === "streaming"}
+          failed={message.status === "error"}
+          onCite={message.sources.length ? setOpenSource : undefined}
+        />
+      ) : waiting ? (
         <div className="flex h-7 items-center gap-1" aria-label={t("thinking")}>
           {[0, 1, 2].map((i) => (
             <span key={i} className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60" style={{ animationDelay: `${i * 150}ms` }} />
@@ -292,13 +320,13 @@ function AssistantMessage({
         <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
       ) : null}
 
-      {message.status === "error" ? (
+      {message.status === "error" && !confrontation ? (
         <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive-soft/60 px-3 py-2.5 text-sm">
           <AlertCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>{t(`providerErrors.${errorKey}`, { model: brand })}</span>
         </div>
       ) : null}
-      {message.status === "stopped" ? <p className="text-[13px] text-muted-foreground">{t("stopped")}</p> : null}
+      {message.status === "stopped" && !confrontation ? <p className="text-[13px] text-muted-foreground">{t("stopped")}</p> : null}
       {message.status === "streaming" && !live ? (
         <p className="text-[13px] text-muted-foreground">{t("inProgressElsewhere")}</p>
       ) : null}
@@ -346,6 +374,7 @@ function AssistantMessage({
             </Tooltip>
           ) : null}
           {message.status === "complete" ? <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} /> : null}
+          {!confrontation && message.status === "complete" ? <ConfrontButton onConfront={onConfront} /> : null}
           {canRegenerate ? (
             <>
               <Tooltip content={t("regenerate")}>

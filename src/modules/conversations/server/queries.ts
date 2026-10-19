@@ -4,6 +4,7 @@ import type { RoutingInfo, SuggestedColleague } from "../stream-events";
 import type { TimelineMessage } from "../types";
 import { isHideMode, type HideCounts, type Span } from "@/modules/hide/categories";
 import type { SourceProof } from "@/modules/memory/types";
+import { isConfrontation } from "@/modules/confronter/types";
 
 const STALE_STREAM_MS = 5 * 60 * 1000;
 
@@ -55,7 +56,7 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
   const { data: allRows } = await supabase
     .from("messages")
     .select(
-      "id, seq, author_type, content, masked_content, hide_counts, hide_modes, hide_spans, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated)",
+      "id, seq, author_type, content, masked_content, hide_counts, hide_modes, hide_spans, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, confrontation, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated)",
     )
     .eq("conversation_id", conversationId)
     .is("superseded_at", null)
@@ -123,6 +124,7 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
     suggestedColleagues: ((m.context_meta as { suggested_colleagues?: SuggestedColleague[] } | null)?.suggested_colleagues ?? []).filter(
       (c) => typeof c?.userId === "string" && typeof c?.name === "string",
     ),
+    confrontation: isConfrontation(m.confrontation) ? m.confrontation : null,
   }));
 
   return { rows, messages };
