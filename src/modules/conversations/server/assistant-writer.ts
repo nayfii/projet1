@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
 import type { CatalogModel } from "@/modules/providers/catalog";
+import type { SourceProof } from "@/modules/memory/types";
 
 /**
  * AUDITED service-role module (docs/ARCHITECTURE.md §5). Only the server writes AI answers:
@@ -89,4 +90,29 @@ export async function requestStop(id: string, conversationId: string): Promise<b
 export async function isStopRequested(id: string): Promise<boolean> {
   const { data } = await createAdminClient().from("messages").select("stop_requested_at").eq("id", id).maybeSingle();
   return Boolean(data?.stop_requested_at);
+}
+
+/** Source Proof rows for an answer (users cannot write them: an answer's sources are always genuine). */
+export async function saveMessageSources(messageId: string, conversationId: string, sources: SourceProof[]): Promise<void> {
+  const { error } = await createAdminClient()
+    .from("message_sources")
+    .insert(
+      sources.map((s) => ({
+        message_id: messageId,
+        conversation_id: conversationId,
+        position: s.position,
+        source_type: s.sourceType,
+        space_id: s.spaceId,
+        document_id: s.documentId,
+        chunk_id: s.chunkId ?? null,
+        entry_id: s.entryId,
+        title: s.title,
+        excerpt: s.excerpt,
+        page: s.page,
+        char_start: s.charStart,
+        char_end: s.charEnd,
+        source_date: s.sourceDate,
+      })),
+    );
+  if (error) console.error("message_sources insert failed", { code: error.code });
 }

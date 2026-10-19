@@ -5,11 +5,21 @@ import { listClients } from "@/modules/clients/server/queries";
 import { defaultChoice, getCompanyModels } from "@/modules/providers/server/models";
 import { getMyQuota } from "@/modules/usage/server/quota";
 import type { PickerModel } from "../ui/model-picker";
+import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
+import { myMemorySpaces } from "@/modules/memory/server/retrieval";
 
 /** What the chat screen needs besides the conversation itself. */
 export async function getChatPageData(ctx: MemberContext) {
   const companyId = ctx.active.companyId;
-  const [models, clients, quota] = await Promise.all([getCompanyModels(companyId), listClients(companyId), getMyQuota(companyId)]);
+  const [models, clients, quota, spaces, tMemory] = await Promise.all([
+    getCompanyModels(companyId),
+    listClients(companyId),
+    getMyQuota(companyId),
+    createClient().then((supabase) => myMemorySpaces(supabase, companyId)),
+    getTranslations("memory"),
+  ]);
+  const clientName = new Map(clients.map((c) => [c.id, c.name]));
   const picker: PickerModel[] = models.allowed.map((m) => ({
     id: m.id,
     provider: m.provider,
@@ -26,6 +36,14 @@ export async function getChatPageData(ctx: MemberContext) {
       .filter((c) => c.visibility === "open" || ctx.active.role === "owner" || c.assignees.some((a) => a.userId === ctx.user.id))
       .map((c) => ({ id: c.id, name: c.name })),
     quota: quota?.state ?? null,
+    // Memories this person can write into ("Save to memory").
+    memoryTargets: spaces
+      .filter((sp) => sp.canWrite && (sp.kind === "company" || clientName.has(sp.clientId!)))
+      .map((sp) => ({
+        spaceId: sp.spaceId,
+        clientId: sp.clientId,
+        label: sp.kind === "company" ? tMemory("companyMemory") : tMemory("clientMemoryNamed", { client: clientName.get(sp.clientId!) ?? "" }),
+      })),
     fakeMode: fakeProviderEnabled(),
   };
 }

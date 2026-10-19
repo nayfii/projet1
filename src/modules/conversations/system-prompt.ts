@@ -1,6 +1,9 @@
+import type { KnowledgePassage } from "@/modules/memory/types";
+
 /**
  * The platform's system prompt, identical for every model (ChatGPT, Claude, Gemini).
  * AI Clarification (CLAUDE.md §4.1) lives here: no button, it is how the assistant behaves.
+ * Memory passages (CLAUDE.md §4.2) are added here too, already filtered by the user's permissions.
  */
 
 export type SystemPromptInput = {
@@ -10,7 +13,15 @@ export type SystemPromptInput = {
   locale: "fr" | "en";
   /** ISO date (YYYY-MM-DD) in the company's time zone. */
   today: string;
+  /** Passages from memories the user may read, numbered [S1]… */
+  knowledge?: KnowledgePassage[];
 };
+
+export const KNOWLEDGE_RULES = [
+  "- The numbered passages below come from the company's memory and documents that this user is allowed to see. Use them when they are relevant to the question.",
+  "- Right after a sentence that relies on a passage, cite it with its number in square brackets, for example [S1] or [S1][S3]. Cite only passages you actually used. Never invent a passage number.",
+  "- If the question is about an internal rule, price, procedure, decision or client fact and these passages do not contain the answer, say that the company's memory does not contain it. Do not guess.",
+].join("\n");
 
 export const CLARIFICATION_RULES = [
   "- If a piece of information is indispensable and missing, so that any answer would be wrong or uselessly generic (for example: which client, which budget, which deadline, which recipient, which product), ask ONE short question to get it and stop there. Do not produce the deliverable yet.",
@@ -43,5 +54,15 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     if (client.description) context.push(`About the client: ${client.description}`);
   }
   sections.push(`## Context\n${context.join("\n")}`);
+
+  if (input.knowledge?.length) {
+    const passages = input.knowledge.map((p) => {
+      const where = p.spaceKind === "company" ? "Company memory" : `Client memory "${p.clientName ?? "client"}"`;
+      const what = p.sourceType === "document_chunk" ? `document "${p.title}"${p.page ? `, page ${p.page}` : ""}` : `memory entry "${p.title}"`;
+      const when = p.sourceDate ? ` · ${p.sourceDate.slice(0, 10)}` : "";
+      return `[S${p.position}] ${where} · ${what}${when}\n"""\n${p.content}\n"""`;
+    });
+    sections.push(`## Company knowledge\n${KNOWLEDGE_RULES}\n\n${passages.join("\n\n")}`);
+  }
   return sections.join("\n\n");
 }

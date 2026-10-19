@@ -51,3 +51,10 @@ export function aiProviderKey(provider: "openai" | "anthropic" | "google"): stri
 export function fakeProviderEnabled(): boolean {
   return process.env.AI_FAKE_PROVIDER === "true";
 }
+
+/** Embeddings (search index of memory and documents). The vector size must match the database (1536). */
+export function embeddingsConfig(): { provider: "openai" | "google"; model: string; dimensions: number } {
+  const provider = process.env.EMBEDDINGS_PROVIDER === "google" ? "google" : "openai";
+  const model = process.env.EMBEDDINGS_MODEL?.trim() || (provider === "google" ? "gemini-embedding-001" : "text-embedding-3-small");
+  return { provider, model, dimensions: 1536 };
+}

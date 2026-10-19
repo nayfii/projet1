@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertCircleIcon,
+  BookmarkPlusIcon,
   CheckIcon,
   ChevronDownIcon,
   CopyIcon,
@@ -28,6 +29,10 @@ import type { TimelineMessage } from "../types";
 import { Markdown } from "./markdown";
 import type { PickerModel } from "./model-picker";
 import { ModelName, ProviderDot } from "./provider-mark";
+import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
+import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
+
+type MemoryProps = { memoryTargets: MemoryTarget[]; conversationId: string | null };
 
 export function MessageItem({
   message,
@@ -36,6 +41,8 @@ export function MessageItem({
   busy,
   models,
   onRegenerate,
+  memoryTargets,
+  conversationId,
 }: {
   message: TimelineMessage;
   /** The answer is streaming right now in this browser. */
@@ -44,8 +51,8 @@ export function MessageItem({
   busy: boolean;
   models: PickerModel[];
   onRegenerate: (modelChoice?: string) => void;
-}) {
-  if (message.role === "user") return <UserMessage message={message} />;
+} & MemoryProps) {
+  if (message.role === "user") return <UserMessage message={message} memoryTargets={memoryTargets} conversationId={conversationId} />;
   return (
     <AssistantMessage
       message={message}
@@ -54,13 +61,39 @@ export function MessageItem({
       busy={busy}
       models={models}
       onRegenerate={onRegenerate}
+      memoryTargets={memoryTargets}
+      conversationId={conversationId}
     />
   );
 }
 
-function UserMessage({ message }: { message: TimelineMessage }) {
+/** "Save to memory": a person deliberately keeps a message (edited if needed) in a memory they can write. */
+function SaveToMemory({ message, memoryTargets, conversationId, className }: { message: TimelineMessage } & MemoryProps & { className?: string }) {
+  const t = useTranslations("chat");
+  const [open, setOpen] = React.useState(false);
+  if (!conversationId || memoryTargets.length === 0 || !message.content || message.id === "pending-user") return null;
+  const firstLine = message.content.split("\n").find((l) => l.trim())?.replace(/^[#>*\-\s]+/, "").slice(0, 80) ?? "";
   return (
-    <div className="flex flex-col items-end gap-2">
+    <>
+      <Tooltip content={t("saveToMemory")}>
+        <Button variant="ghost" size="icon-sm" aria-label={t("saveToMemory")} className={className} onClick={() => setOpen(true)}>
+          <BookmarkPlusIcon />
+        </Button>
+      </Tooltip>
+      <EntryDialog
+        open={open}
+        onOpenChange={setOpen}
+        targets={memoryTargets}
+        initial={{ title: firstLine, content: message.content.replace(/\[S\d{1,2}\]/g, "") }}
+        source={{ conversationId, messageId: message.id }}
+      />
+    </>
+  );
+}
+
+function UserMessage({ message, memoryTargets, conversationId }: { message: TimelineMessage } & MemoryProps) {
+  return (
+    <div className="group/user flex flex-col items-end gap-2">
       {message.attachments.length > 0 ? (
         <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
           {message.attachments.map((a) => (
@@ -69,8 +102,16 @@ function UserMessage({ message }: { message: TimelineMessage }) {
         </div>
       ) : null}
       {message.content ? (
-        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-4 py-2.5 text-[15px] leading-relaxed">
-          {message.content}
+        <div className="flex max-w-[85%] items-start gap-1">
+          <SaveToMemory
+            message={message}
+            memoryTargets={memoryTargets}
+            conversationId={conversationId}
+            className="mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100"
+          />
+          <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-4 py-2.5 text-[15px] leading-relaxed">
+            {message.content}
+          </div>
         </div>
       ) : null}
     </div>
@@ -126,6 +167,8 @@ function AssistantMessage({
   busy,
   models,
   onRegenerate,
+  memoryTargets,
+  conversationId,
 }: {
   message: TimelineMessage;
   live?: boolean;
@@ -133,9 +176,10 @@ function AssistantMessage({
   busy: boolean;
   models: PickerModel[];
   onRegenerate: (modelChoice?: string) => void;
-}) {
+} & MemoryProps) {
   const t = useTranslations("chat");
   const [copied, setCopied] = React.useState(false);
+  const [openSource, setOpenSource] = React.useState<number | null>(null);
   const waiting = live && !message.content;
   const brand = message.model ? modelDisplay(message.model.provider, message.model.label).brand : "";
   const errorKey: ProviderErrorCode = PROVIDER_ERROR_CODES.includes(message.errorCode as ProviderErrorCode)
@@ -162,7 +206,7 @@ function AssistantMessage({
           ))}
         </div>
       ) : message.content ? (
-        <Markdown>{message.content}</Markdown>
+        <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
       ) : null}
 
       {message.status === "error" ? (
@@ -175,6 +219,8 @@ function AssistantMessage({
       {message.status === "streaming" && !live ? (
         <p className="text-[13px] text-muted-foreground">{t("inProgressElsewhere")}</p>
       ) : null}
+      <SourceList sources={message.sources} onOpen={setOpenSource} />
+      <SourceSheet source={message.sources.find((x) => x.position === openSource) ?? null} onClose={() => setOpenSource(null)} />
       {message.omittedMessages > 0 ? (
         <p className="text-xs text-muted-foreground">{t("omitted", { count: message.omittedMessages })}</p>
       ) : null}
@@ -197,6 +243,7 @@ function AssistantMessage({
               </Button>
             </Tooltip>
           ) : null}
+          {message.status === "complete" ? <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} /> : null}
           {canRegenerate ? (
             <>
               <Tooltip content={t("regenerate")}>

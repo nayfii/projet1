@@ -3,37 +3,68 @@ import { MAX_EXTRACTED_CHARS, type AttachmentExtension } from "../file-types";
 
 /**
  * Text extraction, entirely on our server (nothing is sent to an AI provider to read a file).
- * Returns at most MAX_EXTRACTED_CHARS characters and says whether the text was cut.
+ * Chat attachments keep MAX_EXTRACTED_CHARS characters; memory documents keep more (see MAX_DOCUMENT_CHARS).
  */
 export async function extractText(bytes: Uint8Array, ext: AttachmentExtension): Promise<{ text: string; truncated: boolean }> {
-  let text = "";
+  const { text, truncated } = await extractDocument(bytes, ext, MAX_EXTRACTED_CHARS);
+  return { text, truncated };
+}
+
+export type ExtractedDocument = {
+  text: string;
+  /** Where each PDF page sits in `text` (empty for other formats). */
+  pages: { page: number; start: number; end: number }[];
+  pageCount: number | null;
+  truncated: boolean;
+};
+
+export async function extractDocument(bytes: Uint8Array, ext: AttachmentExtension, maxChars: number): Promise<ExtractedDocument> {
+  let parts: string[];
+  let pageCount: number | null = null;
   switch (ext) {
     case "pdf": {
       const { extractText: pdfText, getDocumentProxy } = await import("unpdf");
       const pdf = await getDocumentProxy(new Uint8Array(bytes));
-      text = (await pdfText(pdf, { mergePages: true })).text;
+      const result = await pdfText(pdf, { mergePages: false });
+      parts = result.text;
+      pageCount = result.totalPages;
       break;
     }
     case "docx": {
       const mammoth = (await import("mammoth")).default;
-      text = (await mammoth.extractRawText({ buffer: Buffer.from(bytes) })).value;
+      parts = [(await mammoth.extractRawText({ buffer: Buffer.from(bytes) })).value];
       break;
     }
     case "xlsx":
-      text = await spreadsheetText(bytes);
+      parts = [await spreadsheetText(bytes)];
       break;
     case "csv":
     case "txt":
     case "md":
-      text = decodeText(bytes);
+      parts = [decodeText(bytes)];
       break;
     default:
-      return { text: "", truncated: false };
+      return { text: "", pages: [], pageCount: null, truncated: false };
   }
-  const clean = text.replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  return clean.length > MAX_EXTRACTED_CHARS
-    ? { text: clean.slice(0, MAX_EXTRACTED_CHARS), truncated: true }
-    : { text: clean, truncated: false };
+
+  // Clean each page, then join, recording where each page starts and ends.
+  let text = "";
+  const pages: ExtractedDocument["pages"] = [];
+  parts.forEach((part, i) => {
+    const clean = part.replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (!clean) return;
+    if (text) text += "\n\n";
+    const start = text.length;
+    text += clean;
+    if (ext === "pdf") pages.push({ page: i + 1, start, end: text.length });
+  });
+  if (text.length <= maxChars) return { text, pages, pageCount, truncated: false };
+  return {
+    text: text.slice(0, maxChars),
+    pages: pages.filter((p) => p.start < maxChars).map((p) => ({ ...p, end: Math.min(p.end, maxChars) })),
+    pageCount,
+    truncated: true,
+  };
 }
 
 /** UTF-8 first (with or without BOM), Windows-1252 as a fallback for older French exports. */

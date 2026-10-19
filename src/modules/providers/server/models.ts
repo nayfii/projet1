@@ -21,7 +21,7 @@ export type CompanyModels = {
 export async function getCompanyModels(companyId: string): Promise<CompanyModels> {
   const supabase = await createClient();
   const [catalogRes, allowedRes, settingsRes] = await Promise.all([
-    supabase.from("ai_models").select("*").eq("is_enabled", true).order("sort_order"),
+    supabase.from("ai_models").select("*").eq("is_enabled", true).eq("kind", "chat").order("sort_order"),
     supabase.from("company_allowed_models").select("model_id").eq("company_id", companyId),
     supabase.from("company_ai_settings").select("auto_enabled, default_model_id").eq("company_id", companyId).maybeSingle(),
   ]);

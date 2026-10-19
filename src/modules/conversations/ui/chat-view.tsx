@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   ArrowUpIcon,
   BriefcaseIcon,
+  LightbulbIcon,
   MoreHorizontalIcon,
   PaperclipIcon,
   PencilIcon,
@@ -43,6 +44,7 @@ import {
 import { titleFromMessage, useChatList } from "./chat-list";
 import { AttachmentChip, MessageItem, ModelSwitchDivider } from "./message-item";
 import { ModelPicker, type PickerModel } from "./model-picker";
+import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
 
 type PendingAttachment = {
   key: string;
@@ -62,6 +64,7 @@ type Props = {
   initialClientId: string | null;
   quota: QuotaState | null;
   fakeMode: boolean;
+  memoryTargets: { spaceId: string; clientId: string | null; label: string }[];
 };
 
 export function ChatView(props: Props) {
@@ -82,6 +85,7 @@ export function ChatView(props: Props) {
   const [quota, setQuota] = React.useState(props.quota);
   const [requestError, setRequestError] = React.useState<ChatRequestError | null>(null);
   const [renaming, setRenaming] = React.useState(false);
+  const [suggesting, setSuggesting] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
   const abortRef = React.useRef<AbortController | null>(null);
@@ -209,6 +213,7 @@ export function ChatView(props: Props) {
                   routing: event.routing,
                   omittedMessages: event.omittedMessages,
                   attachments: [],
+                  sources: [],
                 },
               ];
             });
@@ -218,7 +223,7 @@ export function ChatView(props: Props) {
           } else if (event.type === "done") {
             const id = currentLive;
             restoreReplaced = null;
-            setMessages((list) => list.map((m) => (m.id === id ? { ...m, status: "complete" } : m)));
+            setMessages((list) => list.map((m) => (m.id === id ? { ...m, status: "complete", sources: event.sources ?? [] } : m)));
             if (event.quota) setQuota(event.quota);
           } else if (event.type === "error") {
             const id = currentLive;
@@ -275,6 +280,7 @@ export function ChatView(props: Props) {
         routing: null,
         omittedMessages: 0,
         attachments: ready.map((a) => ({ id: a.id!, filename: a.filename, kind: a.kind, truncated: Boolean(a.truncated) })),
+        sources: [],
       },
     ]);
     if (!title && text) {
@@ -377,6 +383,7 @@ export function ChatView(props: Props) {
     if (a.id) await removePendingAttachmentAction({ attachmentId: a.id });
   }
 
+  const memoryTargets = [...props.memoryTargets].sort((a, b) => Number(b.clientId === clientId) - Number(a.clientId === clientId));
   const lastAnswerId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
   const lastIsAnswer = messages.at(-1)?.role === "assistant";
 
@@ -410,6 +417,10 @@ export function ChatView(props: Props) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setSuggesting(true)} disabled={busy || messages.length === 0}>
+                <LightbulbIcon />
+                {t("proposeMemory")}
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setRenaming(true)}>
                 <PencilIcon />
                 {t("rename")}
@@ -449,6 +460,8 @@ export function ChatView(props: Props) {
                       busy={busy || pendingElsewhere}
                       models={props.models}
                       onRegenerate={(choice) => regenerate(m, choice)}
+                      memoryTargets={memoryTargets}
+                      conversationId={conversationId}
                     />
                   </React.Fragment>
                 );
@@ -546,6 +559,7 @@ export function ChatView(props: Props) {
         </div>
       </div>
 
+      {conversationId ? <ConversationSuggestions open={suggesting} onOpenChange={setSuggesting} conversationId={conversationId} /> : null}
       <RenameDialog
         open={renaming}
         onOpenChange={setRenaming}

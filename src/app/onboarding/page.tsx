@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { getCompany, getMyPendingInvitations, listMembers } from "@/modules/organizations/server/queries";
 import { OnboardingWizard, type OnboardingStep } from "@/modules/organizations/ui/onboarding-wizard";
+import { listMemorySpaces } from "@/modules/memory/server/queries";
+import type { MemberContext } from "@/lib/auth/guards";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("onboarding");
@@ -43,6 +45,8 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
   const step = COMPANY_STEPS.includes(requested) ? requested : "company";
   const company = await getCompany(ctx.active.companyId);
   const members = step === "client" ? await listMembers(ctx.active.companyId) : [];
+  const companySpaceId =
+    step === "document" ? ((await listMemorySpaces(ctx as MemberContext)).find((s) => s.kind === "company" && s.canWrite)?.spaceId ?? null) : null;
 
   return (
     <OnboardingWizard
@@ -59,6 +63,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
       members={members
         .filter((m) => m.status === "active" && m.role !== "owner")
         .map((m) => ({ userId: m.userId, name: m.fullName ?? m.email }))}
+      companySpaceId={companySpaceId}
     />
   );
 }

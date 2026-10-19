@@ -31,6 +31,16 @@ const KNOWN = new Set<string>([
   "model_updated",
   "model_deleted",
   "credits_granted",
+  "memory_entry_created",
+  "memory_entry_updated",
+  "memory_entry_deleted",
+  "memory_document_added",
+  "memory_document_deleted",
+  "memory_suggestion_approved",
+  "memory_suggestion_rejected",
+  "permissions_category_saved",
+  "permissions_category_deleted",
+  "permissions_grants_updated",
 ]);
 
 type EventLike = { action: string; target_id: string | null; metadata: Json };
@@ -55,6 +65,7 @@ export function describeEvent(
       to: String(meta.to ?? ""),
       role: String(meta.role ?? ""),
       reason: String(meta.reason ?? ""),
+      kind: String(meta.kind ?? meta.source_type ?? ""),
       code: event.action,
     },
   };

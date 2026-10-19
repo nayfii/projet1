@@ -7,14 +7,14 @@ export type Database = {
           Tables: {
             "ai_models": {
                   Row: {
-                    "api_model_id": string,"cached_input_credits_per_mtok": number,"cached_input_usd_per_mtok": number,"context_window": number,"created_at": string,"default_allowed": boolean,"id": string,"input_credits_per_mtok": number,"input_usd_per_mtok": number,"is_enabled": boolean,"label": string,"max_output_tokens": number,"output_credits_per_mtok": number,"output_usd_per_mtok": number,"provider": Database["public"]['Enums']["ai_provider"],"sort_order": number,"strengths": (string)[],"supports_images": boolean,"tier": Database["public"]['Enums']["model_tier"],"updated_at": string
+                    "api_model_id": string,"cached_input_credits_per_mtok": number,"cached_input_usd_per_mtok": number,"context_window": number,"created_at": string,"default_allowed": boolean,"id": string,"input_credits_per_mtok": number,"input_usd_per_mtok": number,"is_enabled": boolean,"kind": string,"label": string,"max_output_tokens": number,"output_credits_per_mtok": number,"output_usd_per_mtok": number,"provider": Database["public"]['Enums']["ai_provider"],"sort_order": number,"strengths": (string)[],"supports_images": boolean,"tier": Database["public"]['Enums']["model_tier"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "api_model_id": string,"cached_input_credits_per_mtok"?: number,"cached_input_usd_per_mtok"?: number,"context_window": number,"created_at"?: string,"default_allowed"?: boolean,"id": string,"input_credits_per_mtok"?: number,"input_usd_per_mtok"?: number,"is_enabled"?: boolean,"label": string,"max_output_tokens": number,"output_credits_per_mtok"?: number,"output_usd_per_mtok"?: number,"provider": Database["public"]['Enums']["ai_provider"],"sort_order"?: number,"strengths"?: (string)[],"supports_images"?: boolean,"tier": Database["public"]['Enums']["model_tier"],"updated_at"?: string
+                    "api_model_id": string,"cached_input_credits_per_mtok"?: number,"cached_input_usd_per_mtok"?: number,"context_window": number,"created_at"?: string,"default_allowed"?: boolean,"id": string,"input_credits_per_mtok"?: number,"input_usd_per_mtok"?: number,"is_enabled"?: boolean,"kind"?: string,"label": string,"max_output_tokens": number,"output_credits_per_mtok"?: number,"output_usd_per_mtok"?: number,"provider": Database["public"]['Enums']["ai_provider"],"sort_order"?: number,"strengths"?: (string)[],"supports_images"?: boolean,"tier": Database["public"]['Enums']["model_tier"],"updated_at"?: string
                   }
                   Update: {
-                    "api_model_id"?: string,"cached_input_credits_per_mtok"?: number,"cached_input_usd_per_mtok"?: number,"context_window"?: number,"created_at"?: string,"default_allowed"?: boolean,"id"?: string,"input_credits_per_mtok"?: number,"input_usd_per_mtok"?: number,"is_enabled"?: boolean,"label"?: string,"max_output_tokens"?: number,"output_credits_per_mtok"?: number,"output_usd_per_mtok"?: number,"provider"?: Database["public"]['Enums']["ai_provider"],"sort_order"?: number,"strengths"?: (string)[],"supports_images"?: boolean,"tier"?: Database["public"]['Enums']["model_tier"],"updated_at"?: string
+                    "api_model_id"?: string,"cached_input_credits_per_mtok"?: number,"cached_input_usd_per_mtok"?: number,"context_window"?: number,"created_at"?: string,"default_allowed"?: boolean,"id"?: string,"input_credits_per_mtok"?: number,"input_usd_per_mtok"?: number,"is_enabled"?: boolean,"kind"?: string,"label"?: string,"max_output_tokens"?: number,"output_credits_per_mtok"?: number,"output_usd_per_mtok"?: number,"provider"?: Database["public"]['Enums']["ai_provider"],"sort_order"?: number,"strengths"?: (string)[],"supports_images"?: boolean,"tier"?: Database["public"]['Enums']["model_tier"],"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -341,6 +341,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"document_chunks": {
+                  Row: {
+                    "char_end": number,"char_start": number,"chunk_index": number,"company_id": string,"content": string,"created_at": string,"document_id": string,"embedding": string | null,"embedding_model": string | null,"id": string,"page": number | null,"space_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "char_end": number,"char_start": number,"chunk_index": number,"company_id"?: string,"content": string,"created_at"?: string,"document_id": string,"embedding"?: string | null,"embedding_model"?: string | null,"id"?: string,"page"?: number | null,"space_id": string
+                  }
+                  Update: {
+                    "char_end"?: number,"char_start"?: number,"chunk_index"?: number,"company_id"?: string,"content"?: string,"created_at"?: string,"document_id"?: string,"embedding"?: string | null,"embedding_model"?: string | null,"id"?: string,"page"?: number | null,"space_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "document_chunks_document_id_space_id_fkey"
+      columns: ["document_id","space_id"]
+isOneToOne: false
+      referencedRelation: "documents"
+      referencedColumns: ["id","space_id"]
+    }
+                  ]
+                },"documents": {
+                  Row: {
+                    "chunk_count": number | null,"company_id": string,"created_at": string,"error_code": string | null,"extracted_text": string | null,"filename": string,"id": string,"mime_type": string,"page_count": number | null,"size_bytes": number,"space_id": string,"status": string,"storage_path": string,"text_truncated": boolean,"updated_at": string,"uploaded_by": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "chunk_count"?: number | null,"company_id"?: string,"created_at"?: string,"error_code"?: string | null,"extracted_text"?: string | null,"filename": string,"id"?: string,"mime_type": string,"page_count"?: number | null,"size_bytes": number,"space_id": string,"status"?: string,"storage_path": string,"text_truncated"?: boolean,"updated_at"?: string,"uploaded_by"?: string
+                  }
+                  Update: {
+                    "chunk_count"?: number | null,"company_id"?: string,"created_at"?: string,"error_code"?: string | null,"extracted_text"?: string | null,"filename"?: string,"id"?: string,"mime_type"?: string,"page_count"?: number | null,"size_bytes"?: number,"space_id"?: string,"status"?: string,"storage_path"?: string,"text_truncated"?: boolean,"updated_at"?: string,"uploaded_by"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "documents_space_id_company_id_fkey"
+      columns: ["space_id","company_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "documents_uploaded_by_fkey"
+      columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invitations": {
                   Row: {
                     "accepted_at": string | null,"accepted_by": string | null,"admin_scopes": (string)[],"company_id": string,"created_at": string,"email": string,"expertise": (string)[],"expires_at": string,"id": string,"invited_by": string | null,"job_title": string | null,"revoked_at": string | null,"role": Database["public"]['Enums']["company_role"],"token_hash": string
@@ -399,6 +445,178 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"memory_entries": {
+                  Row: {
+                    "author_id": string | null,"company_id": string,"content": string,"created_at": string,"embedding": string | null,"embedding_model": string | null,"id": string,"source_ref": NonNullable<Json>,"source_type": string,"space_id": string,"title": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id"?: string | null,"company_id"?: string,"content": string,"created_at"?: string,"embedding"?: string | null,"embedding_model"?: string | null,"id"?: string,"source_ref"?: NonNullable<Json>,"source_type"?: string,"space_id": string,"title": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "author_id"?: string | null,"company_id"?: string,"content"?: string,"created_at"?: string,"embedding"?: string | null,"embedding_model"?: string | null,"id"?: string,"source_ref"?: NonNullable<Json>,"source_type"?: string,"space_id"?: string,"title"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "memory_entries_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "memory_entries_space_id_company_id_fkey"
+      columns: ["space_id","company_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "memory_entries_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"memory_space_grants": {
+                  Row: {
+                    "can_read": boolean,"can_write": boolean,"category_id": string,"company_id": string,"space_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "can_read"?: boolean,"can_write"?: boolean,"category_id": string,"company_id": string,"space_id": string
+                  }
+                  Update: {
+                    "can_read"?: boolean,"can_write"?: boolean,"category_id"?: string,"company_id"?: string,"space_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "memory_space_grants_category_id_company_id_fkey"
+      columns: ["category_id","company_id"]
+isOneToOne: false
+      referencedRelation: "permission_categories"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "memory_space_grants_space_id_company_id_fkey"
+      columns: ["space_id","company_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id","company_id"]
+    }
+                  ]
+                },"memory_spaces": {
+                  Row: {
+                    "client_id": string | null,"company_id": string,"created_at": string,"id": string,"kind": Database["public"]['Enums']["memory_kind"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["memory_kind"]
+                  }
+                  Update: {
+                    "client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["memory_kind"]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "memory_spaces_client_id_company_id_fkey"
+      columns: ["client_id","company_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "memory_spaces_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"memory_suggestions": {
+                  Row: {
+                    "company_id": string,"content": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"entry_id": string | null,"id": string,"kind": string,"proposed_by": string | null,"source_ref": NonNullable<Json>,"source_space_id": string | null,"space_id": string,"status": string,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id"?: string,"content": string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"entry_id"?: string | null,"id"?: string,"kind": string,"proposed_by"?: string | null,"source_ref"?: NonNullable<Json>,"source_space_id"?: string | null,"space_id": string,"status"?: string,"title": string
+                  }
+                  Update: {
+                    "company_id"?: string,"content"?: string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"entry_id"?: string | null,"id"?: string,"kind"?: string,"proposed_by"?: string | null,"source_ref"?: NonNullable<Json>,"source_space_id"?: string | null,"space_id"?: string,"status"?: string,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "memory_suggestions_decided_by_fkey"
+      columns: ["decided_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "memory_suggestions_entry_id_fkey"
+      columns: ["entry_id"]
+isOneToOne: false
+      referencedRelation: "memory_entries"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "memory_suggestions_proposed_by_fkey"
+      columns: ["proposed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "memory_suggestions_source_space_id_fkey"
+      columns: ["source_space_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "memory_suggestions_space_id_company_id_fkey"
+      columns: ["space_id","company_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id","company_id"]
+    }
+                  ]
+                },"message_sources": {
+                  Row: {
+                    "char_end": number | null,"char_start": number | null,"chunk_id": string | null,"company_id": string,"conversation_id": string,"created_at": string,"document_id": string | null,"entry_id": string | null,"excerpt": string,"id": string,"message_id": string,"page": number | null,"position": number,"source_date": string | null,"source_type": string,"space_id": string | null,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "char_end"?: number | null,"char_start"?: number | null,"chunk_id"?: string | null,"company_id"?: string,"conversation_id": string,"created_at"?: string,"document_id"?: string | null,"entry_id"?: string | null,"excerpt": string,"id"?: string,"message_id": string,"page"?: number | null,"position": number,"source_date"?: string | null,"source_type": string,"space_id"?: string | null,"title": string
+                  }
+                  Update: {
+                    "char_end"?: number | null,"char_start"?: number | null,"chunk_id"?: string | null,"company_id"?: string,"conversation_id"?: string,"created_at"?: string,"document_id"?: string | null,"entry_id"?: string | null,"excerpt"?: string,"id"?: string,"message_id"?: string,"page"?: number | null,"position"?: number,"source_date"?: string | null,"source_type"?: string,"space_id"?: string | null,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "message_sources_chunk_id_fkey"
+      columns: ["chunk_id"]
+isOneToOne: false
+      referencedRelation: "document_chunks"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "message_sources_document_id_fkey"
+      columns: ["document_id"]
+isOneToOne: false
+      referencedRelation: "documents"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "message_sources_entry_id_fkey"
+      columns: ["entry_id"]
+isOneToOne: false
+      referencedRelation: "memory_entries"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "message_sources_message_id_conversation_id_fkey"
+      columns: ["message_id","conversation_id"]
+isOneToOne: false
+      referencedRelation: "messages"
+      referencedColumns: ["id","conversation_id"]
+    },{
+      foreignKeyName: "message_sources_space_id_fkey"
+      columns: ["space_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"messages": {
                   Row: {
                     "api_model_id": string | null,"author_id": string | null,"author_type": string,"company_id": string,"content": string,"context_meta": Json | null,"conversation_id": string,"created_at": string,"error_code": string | null,"id": string,"input_tokens": number | null,"model_content": string | null,"model_id": string | null,"model_label": string | null,"output_tokens": number | null,"provider": Database["public"]['Enums']["ai_provider"] | null,"routing": Json | null,"seq": number,"status": string,"stop_requested_at": string | null,"superseded_at": string | null
@@ -423,6 +641,58 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "conversations"
       referencedColumns: ["id","company_id"]
+    }
+                  ]
+                },"permission_categories": {
+                  Row: {
+                    "company_id": string,"created_at": string,"description": string | null,"id": string,"name": string,"system_key": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": string,"created_at"?: string,"description"?: string | null,"id"?: string,"name": string,"system_key"?: string | null
+                  }
+                  Update: {
+                    "company_id"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"name"?: string,"system_key"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "permission_categories_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"permission_category_members": {
+                  Row: {
+                    "added_at": string,"category_id": string,"company_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "added_at"?: string,"category_id": string,"company_id": string,"user_id": string
+                  }
+                  Update: {
+                    "added_at"?: string,"category_id"?: string,"company_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "permission_category_members_category_id_company_id_fkey"
+      columns: ["category_id","company_id"]
+isOneToOne: false
+      referencedRelation: "permission_categories"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "permission_category_members_company_id_user_id_fkey"
+      columns: ["company_id","user_id"]
+isOneToOne: false
+      referencedRelation: "company_members"
+      referencedColumns: ["company_id","user_id"]
+    },{
+      foreignKeyName: "permission_category_members_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
                   ]
                 },"plans": {
@@ -540,16 +810,25 @@ isOneToOne: false
             "accept_invitation":
 { Args: { "p_invitation"?: string,"p_token"?: string }; Returns: string
                            },
+"admin_delete_category":
+{ Args: { "p_category": string,"p_company": string }; Returns: undefined
+                           },
 "admin_member_credits":
 { Args: { "p_company": string }; Returns: {
               "credits_used": number,"has_override": boolean,"personal_limit": number,"user_id": string
             }[]
+                           },
+"admin_save_category":
+{ Args: { "p_category": string,"p_company": string,"p_description": string,"p_members": (string)[],"p_name": string }; Returns: string
                            },
 "admin_set_default_user_quota":
 { Args: { "p_company": string,"p_credits": number }; Returns: undefined
                            },
 "admin_set_member_quota":
 { Args: { "p_company": string,"p_credits": number,"p_user": string }; Returns: undefined
+                           },
+"admin_set_space_grants":
+{ Args: { "p_read": (string)[],"p_space": string,"p_write": (string)[] }; Returns: undefined
                            },
 "admin_update_member":
 { Args: { "p_admin_scopes"?: (string)[],"p_company": string,"p_expertise"?: (string)[],"p_job_title"?: string,"p_role"?: Database["public"]['Enums']["company_role"],"p_status"?: Database["public"]['Enums']["member_status"],"p_team"?: string,"p_user": string }; Returns: undefined
@@ -568,9 +847,22 @@ isOneToOne: false
               "invitation_id": string,"token": string
             }[]
                            },
+"decide_memory_suggestion":
+{ Args: { "p_approve": boolean,"p_content"?: string,"p_suggestion": string,"p_title"?: string }; Returns: string
+                           },
+"match_memory":
+{ Args: { "p_embedding"?: string,"p_keywords": string,"p_limit"?: number,"p_min_similarity"?: number,"p_space_ids": (string)[] }; Returns: {
+              "char_end": number,"char_start": number,"content": string,"document_id": string,"id": string,"page": number,"score": number,"source_date": string,"source_type": string,"space_id": string,"title": string
+            }[]
+                           },
 "my_memberships":
 { Args: Record<PropertyKey, never>; Returns: {
               "admin_scopes": (string)[],"company_id": string,"company_name": string,"company_status": Database["public"]['Enums']["company_status"],"member_status": Database["public"]['Enums']["member_status"],"onboarding_completed_at": string,"role": Database["public"]['Enums']["company_role"]
+            }[]
+                           },
+"my_memory_spaces":
+{ Args: { "p_company": string }; Returns: {
+              "can_write": boolean,"client_id": string,"document_count": number,"entry_count": number,"kind": Database["public"]['Enums']["memory_kind"],"space_id": string
             }[]
                            },
 "my_pending_invitations":
@@ -620,7 +912,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "ai_provider": "openai"|"anthropic"|"google","client_visibility": "open"|"restricted","company_role": "owner"|"admin"|"member","company_status": "active"|"suspended","member_status": "active"|"deactivated","model_tier": "fast"|"balanced"|"advanced"
+            "ai_provider": "openai"|"anthropic"|"google","client_visibility": "open"|"restricted","company_role": "owner"|"admin"|"member","company_status": "active"|"suspended","member_status": "active"|"deactivated","memory_kind": "company"|"client","model_tier": "fast"|"balanced"|"advanced"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -736,7 +1028,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "ai_provider": ["openai", "anthropic", "google"],"client_visibility": ["open", "restricted"],"company_role": ["owner", "admin", "member"],"company_status": ["active", "suspended"],"member_status": ["active", "deactivated"],"model_tier": ["fast", "balanced", "advanced"]
+            "ai_provider": ["openai", "anthropic", "google"],"client_visibility": ["open", "restricted"],"company_role": ["owner", "admin", "member"],"company_status": ["active", "suspended"],"member_status": ["active", "deactivated"],"memory_kind": ["company", "client"],"model_tier": ["fast", "balanced", "advanced"]
           }
         }
 } as const

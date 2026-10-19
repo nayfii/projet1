@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FormMessage, SubmitButton } from "@/components/ui/form";
 import { ComingSoon } from "@/components/ui/coming-soon";
+import { DocumentUploader } from "@/modules/memory/ui/document-uploader";
 import { ClientForm } from "@/modules/clients/ui/client-form";
 import { acceptInvitationAction, completeOnboardingAction, createCompanyAction } from "../server/actions";
 import { CompanyProfileForm, type CompanyProfileValues } from "./company-profile-form";
@@ -27,6 +28,8 @@ type Props = {
   invitations?: { id: string; companyName: string; invitedBy: string | null }[];
   company?: CompanyProfileValues | null;
   members?: { userId: string; name: string }[];
+  /** Company memory, where the first document goes. */
+  companySpaceId?: string | null;
 };
 
 export function OnboardingWizard(props: Props) {
@@ -87,8 +90,9 @@ export function OnboardingWizard(props: Props) {
 
         {props.step === "document" ? (
           <StepFrame title={t("documentTitle")} subtitle={t("documentSubtitle")}>
-            <SoonCard icon={<FileTextIcon />} text={t("documentSoon")} />
-            <div className="mt-8 flex justify-end">
+            <FirstDocument spaceId={props.companySpaceId ?? null} />
+            <div className="mt-8 flex justify-end gap-2">
+              {skip("conversation")}
               <Button onClick={() => go("conversation")}>
                 {t("continue")}
                 <ArrowRightIcon />
@@ -228,6 +232,19 @@ function StepFrame({ title, subtitle, children }: { title: string; subtitle?: st
     <div className="space-y-8">
       <StepHeading title={title} subtitle={subtitle} />
       {children}
+    </div>
+  );
+}
+
+function FirstDocument({ spaceId }: { spaceId: string | null }) {
+  const t = useTranslations("onboarding");
+  const [added, setAdded] = useState(false);
+  if (!spaceId) return <SoonCard icon={<FileTextIcon />} text={t("documentUnavailable")} />;
+  return (
+    <div className="flex flex-col items-start gap-3 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+      <p>{t("documentBody")}</p>
+      <DocumentUploader spaceId={spaceId} onUploaded={() => setAdded(true)} />
+      {added ? <p className="text-success">{t("documentAdded")}</p> : null}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { RoutingInfo } from "../stream-events";
 import type { TimelineMessage } from "../types";
+import type { SourceProof } from "@/modules/memory/types";
 
 const STALE_STREAM_MS = 5 * 60 * 1000;
 
@@ -46,6 +47,36 @@ export async function getConversation(conversationId: string) {
     .is("superseded_at", null)
     .order("seq");
 
+  // RLS shows a source only to participants who can still read its memory.
+  const { data: sourceRows } = await supabase
+    .from("message_sources")
+    .select(
+      "message_id, position, source_type, title, excerpt, page, source_date, space_id, document_id, entry_id, chunk_id, char_start, char_end, space:memory_spaces(kind, client:clients(name))",
+    )
+    .eq("conversation_id", conversationId)
+    .order("position");
+  const sourcesByMessage = new Map<string, SourceProof[]>();
+  for (const r of sourceRows ?? []) {
+    const list = sourcesByMessage.get(r.message_id) ?? [];
+    list.push({
+      position: r.position,
+      sourceType: r.source_type as SourceProof["sourceType"],
+      title: r.title,
+      excerpt: r.excerpt,
+      page: r.page,
+      sourceDate: r.source_date,
+      spaceId: r.space_id,
+      spaceKind: r.space?.kind ?? null,
+      clientName: r.space?.client?.name ?? null,
+      documentId: r.document_id,
+      entryId: r.entry_id,
+      chunkId: r.chunk_id,
+      charStart: r.char_start,
+      charEnd: r.char_end,
+    });
+    sourcesByMessage.set(r.message_id, list);
+  }
+
   const now = Date.now();
   const messages: TimelineMessage[] = (rows ?? []).map((m) => ({
     id: m.id,
@@ -69,6 +100,7 @@ export async function getConversation(conversationId: string) {
       kind: a.kind as "image" | "document",
       truncated: a.text_truncated,
     })),
+    sources: sourcesByMessage.get(m.id) ?? [],
   }));
 
   return { ...conversation, messages };

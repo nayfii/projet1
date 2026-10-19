@@ -15,7 +15,10 @@ import { logBlockedRequest, recordUsage } from "@/modules/usage/server/record";
 import { buildChatContext, contextBudget, IMAGE_LOOKBACK_MESSAGES, type HistoryAttachment, type HistoryMessage } from "../context";
 import { buildSystemPrompt } from "../system-prompt";
 import type { ChatRequestError, ChatStreamEvent, RoutingInfo } from "../stream-events";
-import { createAssistantMessage, finishAssistantMessage, isStopRequested, supersedeMessage } from "./assistant-writer";
+import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMessageSources, supersedeMessage } from "./assistant-writer";
+import { retrievePassages } from "@/modules/memory/server/retrieval";
+import { citedPositions } from "@/modules/memory/citations";
+import type { KnowledgePassage, SourceProof } from "@/modules/memory/types";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -159,6 +162,8 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   }
 
   const history = await toHistory(supabase, base);
+  // Memory passages, filtered by the user's permissions before any model sees them.
+  const knowledge = await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText });
   const [companyRes, clientRes, locale] = await Promise.all([
     supabase.from("companies").select("name, industry, description").eq("id", companyId).single(),
     conversation.client_id
@@ -172,6 +177,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     user: { name: ctx.profile.fullName },
     locale,
     today: new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()),
+    knowledge,
   });
   const context = buildChatContext({ system, history, budgetTokens: contextBudget(models.allowed) });
 
@@ -188,6 +194,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         model,
         routing: routingInfo,
         context,
+        knowledge,
         userMessage,
         target: target ? { id: target.id, complete: target.status === "complete" } : null,
       }),
@@ -201,6 +208,7 @@ async function* runTurn(p: {
   model: CatalogModel;
   routing: RoutingInfo | null;
   context: ReturnType<typeof buildChatContext>;
+  knowledge: KnowledgePassage[];
   userMessage: { id: string; seq: number } | null;
   target: { id: string; complete: boolean } | null;
 }): AsyncGenerator<ChatStreamEvent> {
@@ -286,6 +294,9 @@ async function* runTurn(p: {
     inputTokens: usage?.inputTokens ?? null,
     outputTokens: usage?.outputTokens ?? null,
   });
+  // Source Proof: the passages the answer actually cited.
+  const sources = toSourceProofs(p.knowledge, citedPositions(text, p.knowledge.length));
+  if (sources.length > 0) await saveMessageSources(assistant.id, p.conversationId, sources);
   await recordUsage({
     companyId: p.ctx.active.companyId,
     userId: p.ctx.user.id,
@@ -314,7 +325,29 @@ async function* runTurn(p: {
   }
   if (aborted) return;
   const quota = await getMyQuota(p.ctx.active.companyId);
-  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null };
+  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources };
+}
+
+function toSourceProofs(knowledge: KnowledgePassage[], positions: number[]): SourceProof[] {
+  return positions.map((position) => {
+    const k = knowledge[position - 1];
+    return {
+      position,
+      sourceType: k.sourceType,
+      title: k.title,
+      excerpt: k.content,
+      page: k.page,
+      sourceDate: k.sourceDate,
+      spaceId: k.spaceId,
+      spaceKind: k.spaceKind,
+      clientName: k.clientName,
+      documentId: k.documentId,
+      entryId: k.sourceType === "memory_entry" ? k.id : null,
+      chunkId: k.sourceType === "document_chunk" ? k.id : null,
+      charStart: k.charStart,
+      charEnd: k.charEnd,
+    };
+  });
 }
 
 /** Turns stored messages into context messages; images are re-sent only for recent messages. */

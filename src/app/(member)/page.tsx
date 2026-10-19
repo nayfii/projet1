@@ -19,7 +19,7 @@ export default async function HomePage() {
   const tiles = [
     { icon: MessageSquareIcon, title: t("askTitle"), body: t("askBody"), href: "/chat" },
     { icon: BriefcaseIcon, title: t("clientsTitle"), body: t("clientsBody", { count: clients.length }), href: "/clients" },
-    { icon: BrainIcon, title: t("memoryTitle"), body: t("memoryBody"), soon: true },
+    { icon: BrainIcon, title: t("memoryTitle"), body: t("memoryBody"), href: "/memory" },
     { icon: BookOpenIcon, title: t("libraryTitle"), body: t("libraryBody"), soon: true },
   ];
 

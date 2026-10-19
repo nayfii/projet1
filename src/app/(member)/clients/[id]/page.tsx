@@ -6,9 +6,9 @@ import { ArrowLeftIcon, BrainIcon, FileTextIcon, MessageSquareIcon, SquarePenIco
 import { requireMember } from "@/lib/auth/guards";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
-import { ComingSoon } from "@/components/ui/coming-soon";
 import { Button } from "@/components/ui/button";
 import { listConversations } from "@/modules/conversations/server/queries";
+import { listMemorySpaces } from "@/modules/memory/server/queries";
 import { getClientById, listClients } from "@/modules/clients/server/queries";
 import { AvatarStack, VisibilityBadge } from "@/modules/clients/ui/client-badges";
 
@@ -30,9 +30,11 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
   const conversations = await listConversations(ctx.active.companyId, { clientId: id, limit: 20 });
   const format = await getFormatter();
 
+  // The client's memory, if this person can read it (same rights as everywhere else).
+  const space = (await listMemorySpaces(ctx)).find((s) => s.clientId === id);
   const sections = [
-    { icon: BrainIcon, title: t("memorySection"), body: t("memorySectionBody") },
-    { icon: FileTextIcon, title: t("documentsSection"), body: t("documentsSectionBody") },
+    { icon: BrainIcon, title: t("memorySection"), body: t("memorySectionBody"), value: space ? t("entriesCount", { count: space.entryCount }) : null },
+    { icon: FileTextIcon, title: t("documentsSection"), body: t("documentsSectionBody"), value: space ? t("documentsCount", { count: space.documentCount }) : null },
   ];
 
   return (
@@ -82,16 +84,25 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
         )}
       </section>
       <div className="grid gap-3 sm:grid-cols-2">
-        {sections.map(({ icon: Icon, title, body }) => (
-          <Card key={title} className="p-5">
-            <div className="flex items-start justify-between">
-              <Icon className="size-4 text-muted-foreground" />
-              <ComingSoon />
-            </div>
-            <p className="mt-4 text-sm font-medium">{title}</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">{body}</p>
-          </Card>
-        ))}
+        {sections.map(({ icon: Icon, title, body, value }) => {
+          const card = (
+            <Card className="h-full p-5 transition-colors hover:border-foreground/20">
+              <div className="flex items-start justify-between">
+                <Icon className="size-4 text-muted-foreground" />
+                {value ? <span className="text-xs text-muted-foreground">{value}</span> : null}
+              </div>
+              <p className="mt-4 text-sm font-medium">{title}</p>
+              <p className="mt-1 text-[13px] text-muted-foreground">{body}</p>
+            </Card>
+          );
+          return space ? (
+            <Link key={title} href={`/memory/${space.spaceId}`} className="rounded-xl">
+              {card}
+            </Link>
+          ) : (
+            <div key={title}>{card}</div>
+          );
+        })}
       </div>
     </PageContainer>
   );

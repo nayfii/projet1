@@ -1,6 +1,7 @@
 import type { QuotaState } from "@/modules/usage/quota";
 import type { ProviderErrorCode, ProviderId } from "@/modules/providers/types";
 import type { RoutingBasis, TaskType } from "@/modules/providers/router";
+import type { SourceProof } from "@/modules/memory/types";
 
 /**
  * Wire format of POST /api/chat: one JSON object per line (NDJSON).
@@ -24,7 +25,7 @@ export type ChatStreamEvent =
       omittedMessages: number;
     }
   | { type: "delta"; text: string }
-  | { type: "done"; credits: number; quota: QuotaState | null }
+  | { type: "done"; credits: number; quota: QuotaState | null; sources: SourceProof[] }
   | { type: "error"; code: ProviderErrorCode | "server_error"; retryable: boolean };
 
 export const CHAT_REQUEST_ERRORS = [

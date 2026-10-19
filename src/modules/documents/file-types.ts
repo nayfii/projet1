@@ -20,8 +20,14 @@ export type AttachmentExtension = keyof typeof ATTACHMENT_TYPES;
 
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const MAX_ATTACHMENTS_PER_MESSAGE = 5;
-/** Text kept per document. Longer documents are cut and flagged as partially read. */
+/** Text kept per chat attachment. Longer documents are cut and flagged as partially read. */
 export const MAX_EXTRACTED_CHARS = 40_000;
+/** Memory documents: larger files (20 MB) and more text, split into passages for the search index. */
+export const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024;
+export const MAX_DOCUMENT_CHARS = 400_000;
+/** Memory documents are text sources: images are not accepted (no OCR). */
+export const DOCUMENT_EXTENSIONS = ["pdf", "docx", "xlsx", "csv", "txt", "md"] as const;
+export const DOCUMENT_ACCEPT = DOCUMENT_EXTENSIONS.map((ext) => `.${ext}`).join(",");
 
 export const ATTACHMENT_ACCEPT = Object.keys(ATTACHMENT_TYPES)
   .map((ext) => `.${ext}`)

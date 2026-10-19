@@ -12,15 +12,18 @@ function SheetContent({
   className,
   children,
   title,
+  side = "left",
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Content> & { title: string }) {
+}: React.ComponentProps<typeof SheetPrimitive.Content> & { title: string; side?: "left" | "right" }) {
   return (
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay className="fixed inset-0 z-50 bg-black/25 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
       <SheetPrimitive.Content
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-sidebar shadow-xl duration-200",
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left",
+          "fixed inset-y-0 z-50 flex flex-col shadow-xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out",
+          side === "left"
+            ? "left-0 w-72 max-w-[85vw] bg-sidebar data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left"
+            : "right-0 w-[30rem] max-w-[94vw] border-l bg-background data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
           className,
         )}
         {...props}

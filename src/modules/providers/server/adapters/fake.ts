@@ -22,7 +22,18 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         yield { type: "error", error: { code: failure as ProviderErrorCode, retryable: failure === "rate_limited" } };
         return;
       }
+      // Memory tasks expect JSON.
+      if (request.system.startsWith("Task: extract memory entries.")) {
+        yield* simulated(JSON.stringify([{ title: "[TEST] Point clé", content: `[TEST] ${text.slice(0, 160)}` }]));
+        return;
+      }
+      if (request.system.startsWith("Task: generalise a client note.")) {
+        yield* simulated(JSON.stringify({ general: true, title: "[TEST] Enseignement général", content: "[TEST] Les clients de ce secteur préfèrent des points courts et réguliers." }));
+        return;
+      }
       const userTurns = request.messages.filter((m) => m.role === "user").length;
+      // Memory passages are numbered "[S1] …" in the system prompt: cite the first one, like a real model would.
+      const passages = [...request.system.matchAll(/^\[S(\d+)\] /gm)].length;
       const images = request.messages.flatMap((m) => m.content).filter((p) => p.type === "image").length;
       const answer = [
         `[TEST] Simulated answer from **${request.apiModelId}**.`,
@@ -30,6 +41,7 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         `- Messages received: ${request.messages.length} (${userTurns} from people)`,
         `- Images received: ${images}`,
         `- Your last message had ${text.length} characters.`,
+        ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
       ].join("\n");
       for (const word of answer.split(/(?<=\s)/)) {
         if (signal.aborted) return;
@@ -41,4 +53,10 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
       yield { type: "done", finishReason: "stop" };
     },
   };
+}
+
+async function* simulated(answer: string): AsyncIterable<ChatEvent> {
+  yield { type: "text", delta: answer };
+  yield { type: "usage", usage: { inputTokens: 100, outputTokens: estimateTokens(answer), cachedInputTokens: 0 } };
+  yield { type: "done", finishReason: "stop" };
 }

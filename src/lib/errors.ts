@@ -20,6 +20,9 @@ export const ERROR_CODES = [
   "validation",
   "email_send_failed",
   "invalid_models",
+  "system_category",
+  "category_exists",
+  "already_decided",
   "unknown",
 ] as const;
 
