@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 5 (collaboration), 2026-10-19.
+Last update: Step 6 (Confronter, tools and the agent framework), 2026-10-19.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -73,27 +73,27 @@ Legend: **done** · **partial** · **not started** · **known issue**
 ## 4.5 Confronter
 | Feature | Status |
 |---|---|
-| Parallel answers from allowed models | not started |
-| Cross-critique | not started |
-| Synthesis (agreements, divergences, errors, claims to verify, recommended answer) | not started |
-| Hide + permission rules applied | not started |
-| Credit cost shown before running, counted against quota | not started |
+| Parallel answers from allowed models | **done** (Step 6): a "Confronter" button on every question and answer; one model per allowed and configured provider (ChatGPT, Claude, Gemini, balanced tier first), at least two needed; all answer in parallel with the same context. **Tested with the simulated provider only**: the current OpenAI account refuses GPT-6.1 Sol and there are no Claude or Gemini keys, so a real confrontation is not possible yet |
+| Cross-critique | **done**: each model critiques the others' answers (errors, weak reasoning, claims to check) |
+| Synthesis (agreements, divergences, errors, claims to verify, recommended answer) | **done**: written by the model of the company default's provider; shown as four short lists and the recommended answer, with tabs for the answers and the critiques; live progress while it runs; saved with the conversation, visible live to the other participants of a group conversation. The recommended answer becomes the conversation's answer (copy, save to memory, Source Proof) |
+| Hide + permission rules applied | **done**: same path as a normal answer (Hide masking and restoring, permission-filtered memory, group rules); the critiques and the synthesis only see what the models wrote |
+| Credit cost shown before running, counted against quota | **done**: the confirmation shows the models, the judge, the estimated credits, "about N times a normal question" and the credits left; refused before any call if the quota is blocked or too low; every call is charged as "confronter" with real token counts |
 
 ## 4.6 Turn into a tool
 | Feature | Status |
 |---|---|
-| Extraction of a tool from a conversation | not started |
-| Review and edit by the creator | not started |
-| Visibility: me / team / company | not started |
-| Company-wide publication with Admin approval | not started |
-| Tools run as a simple form from the library | not started |
+| Extraction of a tool from a conversation | **done** (Step 6): conversation menu "…" → "Transformer en outil"; the AI drafts name, description, department, form fields, instructions, output format and memory scope from the conversation as the models saw it (Hide placeholders kept); a warning if the draft still contains something specific to the conversation |
+| Review and edit by the creator | **done**: full editor (fields with type and "required", instructions, model, memory used, result format, attached files allowed); the creator can edit or delete it later from its page |
+| Visibility: me / team / company | **done**: "Moi seul(e)", "Mon équipe" (needs a team: Administration → Employees now has a Team field), "Toute l'entreprise". Personal tools stay invisible to everyone else, Owner included |
+| Company-wide publication with Admin approval | **done**: waits in Administration → Agents et outils until an Owner or an Admin with the "agents" scope approves or rejects it; published directly when its creator may approve; editing an approved tool asks for approval again |
+| Tools run as a simple form from the library | **done**: the form starts a conversation whose first message is the filled form; the tool's instructions (masked by Hide when auto-protect is on), models, memory scope, output format and attachment rule apply; it then continues as a normal conversation. A "client" field offers only the person's clients and links the conversation to it |
 
 ## 4.7 Agent library by department
 | Feature | Status |
 |---|---|
-| Shared agent/tool framework | not started |
-| Library organised by department | not started |
-| Company customisation (instructions, tone, defaults, memory) and enable per role | not started |
+| Shared agent/tool framework | **done** (Step 6): one `agents` table for tools and built-in agents (instructions, form, allowed models, capabilities, memory scope, output format, visibility, roles); every write goes through checked SQL functions; the database refuses a conversation started from a tool the person may not use |
+| Library organised by department | **done**: Marketing, Ventes, Comptabilité, Finance, RH, Juridique, Service client, Direction (and Général); the 16 launch agents are listed as "Bientôt" until Step 7 |
+| Company customisation (instructions, tone, defaults, memory) and enable per role | **partial**: company tools are enabled per role in Administration → Agents et outils (done). For built-in agents, the database part is done and tested (extra instructions, tone, default model, memory, on/off, roles per company), but the screen to adapt them comes with the agents themselves in Step 7 |
 | Marketing — Motion Design (HyperFrames → MP4) | not started |
 | Marketing — Video Editor (clips + brief → MP4, 16:9 / 9:16 / 1:1) | not started |
 | Sales — Proposal Writer | not started |
@@ -119,7 +119,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Employees: invite, deactivate, roles, expertise | **done** (Step 1) |
 | Permissions: memory categories, client visibility and assignments | **done**: client visibility and assignments (Step 1), memory groups and rights (Step 3, `/admin/permissions`) |
 | Models: enable / disable, default, Auto mode | **done** (Step 2) |
-| Agents and tools: enable per role, approve company-wide tools | not started |
+| Agents and tools: enable per role, approve company-wide tools | **done** (Step 6): pending tools with their full content to review, approve / reject, roles per shared tool, delete; built-in agents listed as coming in Step 7 |
 | Hide policies | **done** (Step 4, `/admin/hide`) |
 | Usage dashboards (real provider data; costs labelled as estimates) | **done** (Step 2, `/admin/usage`): requests, tokens, credits, estimated cost by person, by model and per day, month picker. A richer dashboard comes in Step 9 |
 | Quotas | **done** (Step 2, `/admin/quotas`): company credits this month, default limit per person, personal limits per member |
@@ -189,17 +189,18 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
-## Tests (Step 5)
+## Tests (Step 6)
 
 | Suite | Command | Result |
 |---|---|---|
-| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, Hide, **mentions, the mention menu, Who Can Help name matching, restoring only placeholders the model saw, AI mentions not masked**) | `pnpm test` | 142 passed |
-| Integration: isolation with real users and JWTs (Steps 1–5) | `pnpm test:integration` | 138 passed (27 new for collaboration: history on join for messages, files, sources, stored files and search; sharing history never beyond what one sees; outsiders and non-participants refused; leaving; client-link guard; the AI's memory = intersection of participants' rights; the history warning; conversation transfer (sender loses access, others stay); handover visible and editable by the recipient only, not forgeable; client transfer (assignment, conversations, memory); audit entries with ids only; nothing for the platform admin or another company) |
-| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 41 passed: collaboration 7 (two browsers: Who Can Help, add with chosen history and warning, live messages and "écrit…", @Claude with limited context, transfer with handover, client transfer, activity log), Hide 5, memory 8, chat 16, foundation 5 |
+| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, Hide, collaboration, **Confronter: who takes part, who writes the synthesis, credit estimate, prompts, reading the synthesis; a guard that "use server" files export only functions**) | `pnpm test` | 161 passed |
+| Integration: isolation with real users and JWTs (Steps 1–6) | `pnpm test:integration` | 155 passed (17 new for tools and agents: personal, team and company visibility; approval by "agents" Admins only; approval again after an edit; roles per tool; who may delete; no direct writes; built-in agents adapted per company and per role; nothing for another company or the platform admin; confrontations not writable by users) |
+| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 51 passed: Confronter 1 (cost first, three answers, critiques, synthesis, Hide), tools 5 (Turn into a tool, library by department, approval, run as a form with Hide), tour 4, collaboration 7, Hide 5, memory 8, chat 16, foundation 5 |
 | Real provider smoke test | `pnpm test:smoke` | 5 passed, 4 skipped (unchanged: GPT-6.1 Sol and OpenAI embeddings refused by the provider account; Anthropic and Google skipped, no key) |
+| Database rebuilt from the migrations | `pnpm db:reset`, then the integration and Step 6 e2e tests | OK |
 | Type check, lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
 
-Screenshots for the founder: `docs/screenshots/step-5/` (automated run, simulated answers marked "[TEST]").
+Screenshots for the founder: `docs/screenshots/step-6/` (automated run, simulated answers marked "[TEST]").
 
 ## Known issues
 
@@ -256,6 +257,20 @@ Screenshots for the founder: `docs/screenshots/step-5/` (automated run, simulate
   - the person who typed a message, and anyone who can see it, sees the real values (open question 6, relevant for group conversations in Step 5);
   - a click protects or leaves visible every occurrence of the same value, in the message and in its files;
   - a general learning proposed by the AI is dropped if it still contains a placeholder (it points at something specific).
+- **Confronter and tools (Step 6):**
+  - Confronter has only been run with the simulated provider; with the current keys (OpenAI only, GPT-6.1 Sol refused) the button explains that two different AIs are needed;
+  - the credit estimate is rough (expected answer lengths, about 3.5 characters per token); the real cost is what the providers report;
+  - stopping a confrontation takes effect between its stages (answers, critiques, synthesis), not in the middle of one;
+  - a tool's draft is only as good as the AI's extraction: the creator must reread it, and the approver must read it before publishing it to everyone;
+  - a tool run sends its first message automatically only when auto-protect is on; otherwise the filled form waits in the input so the person can protect what they want;
+  - the screen to adapt built-in agents (instructions, tone, memory, roles) arrives with the agents in Step 7.
+- Ad-hoc decisions taken in Step 6, to confirm:
+  - Confronter uses one model per provider (balanced tier first) and lets the company default's provider write the synthesis; it is refused if the estimate exceeds the credits left this month;
+  - the confrontation is placed at the end of the conversation (with the question it confronts shown above it) and its recommended answer becomes the AI's answer for what follows;
+  - any participant can confront a question in a group conversation, if everyone there can see that question;
+  - "Model" in a tool means: the person's choice, Auto, or one fixed model; "Mon équipe" uses the team set by an Admin on the employee;
+  - an Owner or an Admin with the "agents" scope publishes company-wide directly; any approved tool is enabled for every role until an Admin unticks one;
+  - Admins with the "agents" scope see team and company tools (to approve them and set roles), never personal ones.
 - Ad-hoc decisions taken in Step 5, to confirm:
   - any participant can add colleagues and share up to the history they see themselves; only the person responsible transfers, renames, links to a client or deletes;
   - in a group, people can talk without credits; only messages that mention the AI count against the quota;

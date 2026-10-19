@@ -157,17 +157,16 @@ As built in Step 4: there is no separate `hide_events` table; masking events go 
 
 `hide_mappings` has RLS enabled with **no policy for authenticated users**: only the server (service role, inside the `hide` module) can read it.
 
-### 4.5 Agents, tools, Confronter
+### 4.5 Agents, tools, Confronter (as built in Step 6)
 
 | Table | Key columns | company_id |
 |---|---|---|
-| `agent_settings` | per company customisation of a **built-in** agent: `agent_key`, `enabled`, `enabled_roles`, `custom_instructions`, `tone`, `defaults`, `memory_scope` | ✓ |
-| `tools` | user-created tools: `name`, `description`, `department`, `instructions`, `input_schema` (form fields), `allowed_models`, `memory_scope`, `output_format`, `visibility` (me / team / company), `owner_id`, `team_id`, `status` (draft / pending_approval / published / disabled), `source_conversation_id` | ✓ |
-| `tool_approvals` | `tool_id`, `requested_by`, `decided_by`, `decision`, `comment` | ✓ |
-| `agent_runs` | `agent_key` or `tool_id`, `user_id`, `inputs` (json), `output` (json / Markdown), `files`, `status`, `credits` | ✓ (+ `client_id`) |
-| `confronter_runs` | `message_id`, `answers` (json per model), `critiques`, `synthesis`, `credits_estimated`, `credits_charged` | ✓ (+ `client_id`) |
+| `agents` | tools made by employees and built-in agents (`company_id` null, `builtin_key`): `kind` (agent / tool), `department`, `name`, `description`, `instructions`, `input_fields` (form), `allowed_models`, `default_model`, `tools` (capabilities, e.g. attachments), `memory_scope`, `output_format`, `visibility` (private / team / company), `team_id`, `publication` (none / pending / approved / rejected), `enabled_roles`, `created_by`, `source_conversation_id`, `decided_by` | ✓ (null for built-ins) |
+| `company_agent_settings` | a company's adaptation of a **built-in** agent: `enabled`, `enabled_roles`, `instructions_addition`, `tone`, `default_model`, `memory_scope` | ✓ |
+| `conversations.agent_id` | a conversation started from a tool or agent ("a run") | ✓ |
+| `messages.confrontation` | a confrontation: models, judge, each model's answer and critique, the synthesis, credits | ✓ |
 
-Built-in agents (the 16 of the launch set) are **defined in code** (versioned, tested); companies customise them through `agent_settings`. User tools live in `tools`. Both run through the same `AgentRunner`.
+A run is a conversation: its first message is the filled form, so Hide, memory permissions, Source Proof, usage and quotas apply without a separate runner. Built-in agents (Step 7) will be rows of `agents` defined from code at deployment. Approval history lives in `audit_log` (`agent.created`, `agent.approved`, `agent.rejected`…).
 
 ### 4.6 Usage, quotas, pricing, audit, render
 
@@ -412,4 +411,12 @@ typed message / attachments / retrieved excerpts
 - **Migration** `20261023000001_collaboration.sql`: Realtime publication and channel policies; `handovers` (recipient-only RLS, update limited to `sections` and `edited_at`); RPCs for adding, sharing history, leaving, transferring a conversation or a client, the shared memories and the history warning; a trigger refusing to link a group conversation to a client one participant cannot access; history-on-join policies for attachments, sources and stored files.
 - **Turn flow additions** (`prepareChatTurn`): participants → mention → if not mentioned in a group, the message is saved and the turn ends; otherwise the model (mentioned provider, else the person's choice), quota, Hide (colleagues' and authors' names masked), shared history and shared memories, then the answer as before. `context_meta` stores `context_limited` and `suggested_colleagues`. Sources are saved before the answer is marked finished, so colleagues reloading it in real time see them.
 - **Browser merge rules** (`chat-view.tsx`): the stream's own messages win over real-time reloads; reloaded ids that come back empty are removed (an answer replaced by Regenerate); a group conversation keeps a stable page key so a server refresh never resets what is being typed.
+
+## 17. Implementation notes (Step 6)
+
+- **Confronter** (`src/modules/confronter`): `prompts.ts` (who takes part, who writes the synthesis, the credit estimate, the critique and synthesis prompts, reading the judge's JSON), `server/plan.ts` (models, estimate and credits left, checked again when it runs), `server/run.ts` (the three stages, usage per call as "confronter", Stop between stages), `ui/` (confirmation dialog, result card). It enters through `prepareChatTurn` with `confront: { messageId }`, so the context is built exactly as for a normal answer (history up to the question, Hide, permission-filtered memory, group rules); NDJSON events `confront` (progress) and `confrontation` (result) are added to the chat stream.
+- **Tools and agents** (`src/modules/agents`): `definitions.ts` (departments, field types, formats, memory scopes, the form → first message, the launch list), `prompts.ts` ("Turn into a tool"), `server/queries.ts` (library, admin lists, `resolveRunAgent`), `server/actions.ts` (draft, save, approve, roles, delete, start a run), `ui/` (editor, "Turn into a tool" dialog, run form, admin page). SQL: `save_tool`, `decide_tool`, `set_tool_roles`, `delete_tool`, `admin_set_agent_settings`, `admin_set_member_team`; `private.can_see_agent` (RLS) and `private.can_use_agent` (checked by a trigger when a run's conversation is created).
+- **A run in `prepareChatTurn`**: the conversation's agent is resolved with the person's session (null → refused); its instructions (plus the company's adaptations) are a prompt fact masked by Hide; models outside its list are replaced by its default; memory scope "none" skips retrieval and "company" narrows it to the company memory (intersected with the group rule); attachments are refused unless allowed.
+- **Starting a run**: the library page calls `startRunAction`, which creates the conversation (linked to the client chosen in the form) and returns the first message; the conversation screen reads it from `sessionStorage` (`useSyncExternalStore`, so nothing differs between server and browser rendering) and sends it when auto-protect is on.
+- **Guard**: a unit test checks that "use server" files export only functions (Next.js only refuses other exports at run time).
 

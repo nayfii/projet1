@@ -5,7 +5,6 @@ import { requireMember } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { PageContainer } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
-import { ComingSoon } from "@/components/ui/coming-soon";
 import { Button } from "@/components/ui/button";
 import { listClients } from "@/modules/clients/server/queries";
 
@@ -20,7 +19,7 @@ export default async function HomePage() {
     { icon: MessageSquareIcon, title: t("askTitle"), body: t("askBody"), href: "/chat" },
     { icon: BriefcaseIcon, title: t("clientsTitle"), body: t("clientsBody", { count: clients.length }), href: "/clients" },
     { icon: BrainIcon, title: t("memoryTitle"), body: t("memoryBody"), href: "/memory" },
-    { icon: BookOpenIcon, title: t("libraryTitle"), body: t("libraryBody"), soon: true },
+    { icon: BookOpenIcon, title: t("libraryTitle"), body: t("libraryBody"), href: "/library" },
   ];
 
   return (
@@ -45,27 +44,20 @@ export default async function HomePage() {
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {tiles.map(({ icon: Icon, title, body, soon, href }) => {
-          const content = (
-            <Card className={soon ? "h-full p-5" : "h-full p-5 transition-colors hover:border-foreground/20"}>
+        {tiles.map(({ icon: Icon, title, body, href }) => (
+          <Link key={title} href={href} className="rounded-xl">
+            <Card className="h-full p-5 transition-colors hover:border-foreground/20">
               <div className="flex items-start justify-between">
                 <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                   <Icon className="size-4" />
                 </div>
-                {soon ? <ComingSoon /> : <ArrowRightIcon className="size-4 text-muted-foreground" />}
+                <ArrowRightIcon className="size-4 text-muted-foreground" />
               </div>
               <p className="mt-4 text-[15px] font-medium">{title}</p>
               <p className="mt-1 text-sm text-muted-foreground">{body}</p>
             </Card>
-          );
-          return href ? (
-            <Link key={title} href={href} className="rounded-xl">
-              {content}
-            </Link>
-          ) : (
-            <div key={title}>{content}</div>
-          );
-        })}
+          </Link>
+        ))}
       </div>
     </PageContainer>
   );
