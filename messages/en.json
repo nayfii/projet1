@@ -1057,7 +1057,7 @@
   "tools": {
     "libraryTitle": "Library",
     "libraryDescription": "Your company's tools and agents, by department. Each one runs as a simple form.",
-    "howToCreate": "To create a tool, open a successful conversation, then the “…” menu → “Turn into a tool”.",
+    "howToCreate": "To create a tool: in a successful conversation, open the “…” menu and choose “Turn into a tool”.",
     "emptyCompany": "No tools yet.",
     "by": "By {name}",
     "kindTool": "Tool",

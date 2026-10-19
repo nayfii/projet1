@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { addMember, createCompany, createUser, makePlatformAdmin, sql, type TestUser } from "../helpers/supabase";
 
 /**
@@ -61,6 +61,11 @@ beforeAll(async () => {
       [`test_${Date.now()}`],
     )
   )[0].id;
+});
+
+// Built-in agents are offered to every company: the test one must not stay in the shared database.
+afterAll(async () => {
+  await sql("delete from public.agents where id = $1", [builtin]);
 });
 
 describe("teams", () => {

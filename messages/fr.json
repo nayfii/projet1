@@ -1057,7 +1057,7 @@
   "tools": {
     "libraryTitle": "Bibliothèque",
     "libraryDescription": "Les outils et agents de votre entreprise, par service. Chacun se lance comme un simple formulaire.",
-    "howToCreate": "Pour créer un outil, ouvrez une conversation réussie, puis menu « … » → « Transformer en outil ».",
+    "howToCreate": "Pour créer un outil : dans une conversation réussie, ouvrez le menu « … » puis choisissez « Transformer en outil ».",
     "emptyCompany": "Aucun outil pour l'instant.",
     "by": "Par {name}",
     "kindTool": "Outil",
