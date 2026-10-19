@@ -58,3 +58,12 @@ export function embeddingsConfig(): { provider: "openai" | "google"; model: stri
   const model = process.env.EMBEDDINGS_MODEL?.trim() || (provider === "google" ? "gemini-embedding-001" : "text-embedding-3-small");
   return { provider, model, dimensions: 1536 };
 }
+
+/**
+ * Secret used to encrypt the real values behind Hide placeholders (and to give them stable hashes).
+ * At least 32 characters; losing or changing it makes stored mappings unreadable.
+ */
+export function hideSecret(): string | undefined {
+  const value = process.env.HIDE_ENCRYPTION_KEY?.trim();
+  return value && value.length >= 32 ? value : undefined;
+}

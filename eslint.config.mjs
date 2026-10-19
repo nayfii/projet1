@@ -24,6 +24,7 @@ const eslintConfig = defineConfig([
       "src/modules/organizations/server/invitation-email.ts",
       "src/modules/usage/server/record.ts",
       "src/modules/conversations/server/assistant-writer.ts",
+      "src/modules/hide/server/store.ts",
     ],
     rules: {
       "no-restricted-imports": [

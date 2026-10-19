@@ -181,6 +181,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"company_hide_settings": {
+                  Row: {
+                    "auto_categories": (string)[],"company_id": string,"default_modes": (string)[],"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auto_categories"?: (string)[],"company_id": string,"default_modes"?: (string)[],"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "auto_categories"?: (string)[],"company_id"?: string,"default_modes"?: (string)[],"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "company_hide_settings_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: true
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "company_hide_settings_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"company_members": {
                   Row: {
                     "admin_scopes": (string)[],"company_id": string,"deactivated_at": string | null,"expertise": (string)[],"job_title": string | null,"joined_at": string,"role": Database["public"]['Enums']["company_role"],"status": Database["public"]['Enums']["member_status"],"team_id": string | null,"updated_at": string,"user_id": string,"who_can_help_opt_out": boolean
@@ -215,14 +241,14 @@ isOneToOne: false
                   ]
                 },"conversation_attachments": {
                   Row: {
-                    "company_id": string,"conversation_id": string,"created_at": string,"extracted_text": string | null,"filename": string,"id": string,"kind": string,"message_id": string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated": boolean,"uploaded_by": string
+                    "company_id": string,"conversation_id": string,"created_at": string,"extracted_text": string | null,"filename": string,"id": string,"kind": string,"masked_text": string | null,"message_id": string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated": boolean,"uploaded_by": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "company_id"?: string,"conversation_id": string,"created_at"?: string,"extracted_text"?: string | null,"filename": string,"id"?: string,"kind": string,"message_id"?: string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated"?: boolean,"uploaded_by"?: string
+                    "company_id"?: string,"conversation_id": string,"created_at"?: string,"extracted_text"?: string | null,"filename": string,"id"?: string,"kind": string,"masked_text"?: string | null,"message_id"?: string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated"?: boolean,"uploaded_by"?: string
                   }
                   Update: {
-                    "company_id"?: string,"conversation_id"?: string,"created_at"?: string,"extracted_text"?: string | null,"filename"?: string,"id"?: string,"kind"?: string,"message_id"?: string | null,"mime_type"?: string,"size_bytes"?: number,"storage_path"?: string,"text_truncated"?: boolean,"uploaded_by"?: string
+                    "company_id"?: string,"conversation_id"?: string,"created_at"?: string,"extracted_text"?: string | null,"filename"?: string,"id"?: string,"kind"?: string,"masked_text"?: string | null,"message_id"?: string | null,"mime_type"?: string,"size_bytes"?: number,"storage_path"?: string,"text_truncated"?: boolean,"uploaded_by"?: string
                   }
                   Relationships: [
                     {
@@ -384,6 +410,32 @@ isOneToOne: false
       columns: ["uploaded_by"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"hide_mappings": {
+                  Row: {
+                    "category": string,"company_id": string,"conversation_id": string,"created_at": string,"id": string,"placeholder": string,"value_ciphertext": string,"value_hash": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category": string,"company_id": string,"conversation_id": string,"created_at"?: string,"id"?: string,"placeholder": string,"value_ciphertext": string,"value_hash": string
+                  }
+                  Update: {
+                    "category"?: string,"company_id"?: string,"conversation_id"?: string,"created_at"?: string,"id"?: string,"placeholder"?: string,"value_ciphertext"?: string,"value_hash"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "hide_mappings_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "hide_mappings_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversations"
       referencedColumns: ["id"]
     }
                   ]
@@ -619,14 +671,14 @@ isOneToOne: false
                   ]
                 },"messages": {
                   Row: {
-                    "api_model_id": string | null,"author_id": string | null,"author_type": string,"company_id": string,"content": string,"context_meta": Json | null,"conversation_id": string,"created_at": string,"error_code": string | null,"id": string,"input_tokens": number | null,"model_content": string | null,"model_id": string | null,"model_label": string | null,"output_tokens": number | null,"provider": Database["public"]['Enums']["ai_provider"] | null,"routing": Json | null,"seq": number,"status": string,"stop_requested_at": string | null,"superseded_at": string | null
+                    "api_model_id": string | null,"author_id": string | null,"author_type": string,"company_id": string,"content": string,"context_meta": Json | null,"conversation_id": string,"created_at": string,"error_code": string | null,"hide_counts": Json | null,"hide_modes": (string)[],"id": string,"input_tokens": number | null,"masked_content": string | null,"model_content": string | null,"model_id": string | null,"model_label": string | null,"output_tokens": number | null,"provider": Database["public"]['Enums']["ai_provider"] | null,"routing": Json | null,"seq": number,"status": string,"stop_requested_at": string | null,"superseded_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"content"?: string,"context_meta"?: Json | null,"conversation_id": string,"created_at"?: string,"error_code"?: string | null,"id"?: string,"input_tokens"?: number | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
+                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"content"?: string,"context_meta"?: Json | null,"conversation_id": string,"created_at"?: string,"error_code"?: string | null,"hide_counts"?: Json | null,"hide_modes"?: (string)[],"id"?: string,"input_tokens"?: number | null,"masked_content"?: string | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
                   }
                   Update: {
-                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"content"?: string,"context_meta"?: Json | null,"conversation_id"?: string,"created_at"?: string,"error_code"?: string | null,"id"?: string,"input_tokens"?: number | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
+                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"content"?: string,"context_meta"?: Json | null,"conversation_id"?: string,"created_at"?: string,"error_code"?: string | null,"hide_counts"?: Json | null,"hide_modes"?: (string)[],"id"?: string,"input_tokens"?: number | null,"masked_content"?: string | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -743,6 +795,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"sensitive_terms": {
+                  Row: {
+                    "category": string,"company_id": string,"created_at": string,"created_by": string | null,"id": string,"term": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category": string,"company_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"term": string
+                  }
+                  Update: {
+                    "category"?: string,"company_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"term"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "sensitive_terms_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "sensitive_terms_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"teams": {
                   Row: {
                     "company_id": string,"created_at": string,"id": string,"name": string
@@ -830,6 +908,9 @@ isOneToOne: false
 "admin_set_space_grants":
 { Args: { "p_read": (string)[],"p_space": string,"p_write": (string)[] }; Returns: undefined
                            },
+"admin_update_hide_settings":
+{ Args: { "p_categories": (string)[],"p_company": string,"p_modes": (string)[] }; Returns: undefined
+                           },
 "admin_update_member":
 { Args: { "p_admin_scopes"?: (string)[],"p_company": string,"p_expertise"?: (string)[],"p_job_title"?: string,"p_role"?: Database["public"]['Enums']["company_role"],"p_status"?: Database["public"]['Enums']["member_status"],"p_team"?: string,"p_user": string }; Returns: undefined
                            },
@@ -849,6 +930,11 @@ isOneToOne: false
                            },
 "decide_memory_suggestion":
 { Args: { "p_approve": boolean,"p_content"?: string,"p_suggestion": string,"p_title"?: string }; Returns: string
+                           },
+"hide_assign_placeholders":
+{ Args: { "p_conversation": string,"p_items"?: Json }; Returns: {
+              "category": string,"placeholder": string,"value_ciphertext": string,"value_hash": string
+            }[]
                            },
 "match_memory":
 { Args: { "p_embedding"?: string,"p_embedding_model"?: string,"p_keywords": string,"p_limit"?: number,"p_min_similarity"?: number,"p_space_ids": (string)[] }; Returns: {
