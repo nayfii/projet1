@@ -25,7 +25,8 @@ export function PermissionsManager({ categories, spaces, members }: { categories
   const [busy, startBusy] = React.useTransition();
 
   const categoryName = (c: Category) => (c.systemKey ? t(`system.${c.systemKey}`) : c.name);
-  const byId = new Map(categories.map((c) => [c.id, c]));
+  // Groups in the same order as the list above (automatic groups first).
+  const groupList = (ids: string[]) => categories.filter((c) => ids.includes(c.id)).map(categoryName).join(", ") || t("nobody");
   const spaceName = (s: Space) => (s.kind === "company" ? t("companyMemory") : s.clientName ? t("clientMemory", { client: s.clientName }) : t("restrictedClient"));
 
   return (
@@ -93,9 +94,9 @@ export function PermissionsManager({ categories, spaces, members }: { categories
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{spaceName(s)}</p>
                 <p className="text-[13px] text-muted-foreground">
-                  {t("readers")}: {s.read.length ? s.read.map((id) => (byId.get(id) ? categoryName(byId.get(id)!) : "—")).join(", ") : t("nobody")}
+                  {t("readLine", { groups: groupList(s.read) })}
                   {" · "}
-                  {t("writers")}: {s.write.length ? s.write.map((id) => (byId.get(id) ? categoryName(byId.get(id)!) : "—")).join(", ") : t("nobody")}
+                  {t("writeLine", { groups: groupList(s.write) })}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setEditingSpace(s)} aria-label={t("editAccess", { name: spaceName(s) })}>

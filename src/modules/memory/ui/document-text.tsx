@@ -19,7 +19,7 @@ export function DocumentText({ text, highlight }: { text: string; highlight: { s
         {range ? (
           <>
             {text.slice(0, range.start)}
-            <mark ref={mark} className="rounded bg-brand-soft px-0.5 text-foreground ring-1 ring-brand/30" aria-label={t("citedPassage")}>
+            <mark ref={mark} className="rounded-sm bg-brand-soft py-0.5 text-foreground box-decoration-clone" aria-label={t("citedPassage")}>
               {text.slice(range.start, range.end)}
             </mark>
             {text.slice(range.end)}

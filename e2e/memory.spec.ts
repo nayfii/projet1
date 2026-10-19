@@ -230,7 +230,7 @@ test("the owner gives the Finance group the right to write in the company memory
   await shot(page, "41-admin-permissions-grants");
   await grants.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.getByText("Accès enregistré.")).toBeVisible();
-  await expect(page.getByText(/Écriture: Direction, Finance|Écriture: Finance, Direction/)).toBeVisible();
+  await expect(page.getByText("Écriture : Direction, Finance")).toBeVisible();
   await shot(page, "42-admin-permissions");
 
   const nathalieContext = await browser.newContext({ locale: "fr-FR" });
