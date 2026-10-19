@@ -31,4 +31,6 @@ AI keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`) 
 Memory search by meaning uses the embeddings provider set by `EMBEDDINGS_PROVIDER` (OpenAI by default, or Google); without a working key, memory is searched by exact words only.
 Hide (sensitive data masking) needs `HIDE_ENCRYPTION_KEY` (at least 32 characters, e.g. `openssl rand -base64 32`); without it, messages with protection on are refused rather than sent unmasked.
 
+Group conversations use Supabase Realtime (Postgres Changes and private Presence channels). The migrations add `messages` and `conversation_participants` to the `supabase_realtime` publication and authorise the channels; on a hosted project, Realtime must be enabled.
+
 `pnpm db:reset` re-applies the migrations and the DEMO seed. `pnpm db:types` regenerates database types.

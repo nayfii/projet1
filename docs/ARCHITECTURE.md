@@ -322,15 +322,16 @@ typed message / attachments / retrieved excerpts
 
 ## 9. Group conversations
 
-- **Add** button → invite company members. Each participant row has `visible_from_seq` (default: the next message after joining). "Share history" lets the inviter pick a message on the timeline; `visible_from_seq` is set to it.
-- Realtime: Supabase Realtime **Postgres Changes** on `messages` (RLS applies, so each user only receives messages they may see) and a **Presence** channel per conversation (private channel, authorised through `realtime.messages` policies).
-- The AI answers **only when mentioned** (`@Claude`, `@ChatGPT`, `@Gemini`, `@AI`). Mention parsing is server-side.
+- **Add** button → invite company members (any participant can; for a conversation about a client, only people with access to it). Each participant row has `visible_from_seq` (default: the next message after joining). The inviter picks "from now", "the whole conversation" or a message on the timeline; nobody can share more than they see (`add_conversation_participants`, `share_conversation_history`). History on join covers messages, attachments, cited sources, stored files and search (RLS).
+- Realtime: Supabase Realtime **Postgres Changes** on `messages` and `conversation_participants` (RLS applies, so each user only receives what they may see; the browser then reloads those messages through a server action) and a **Presence** channel per conversation (`conversation:<id>`, private, authorised through `realtime.messages` policies) for "who is here" and "is typing". A second subscription adds a conversation to the sidebar when someone adds you.
+- The AI answers **only when mentioned** (`@Claude`, `@ChatGPT`, `@Gemini`, `@AI`/`@IA`). Mention parsing is server-side (`collaboration/mentions.ts`); without a mention the message is posted (NDJSON `posted` event) and nothing is sent to a provider.
 - **AI context rule:**
-  - history = messages with `seq >= max(visible_from_seq of all current participants)`;
-  - memory / documents = **intersection** of the readable spaces of all current participants;
-  - if the context is narrower than what the person who mentioned the AI could see, the answer carries `context_limited = true` → subtle indicator ("Context limited to what everyone here can see").
-- **Transfer:** confirmation dialog → owner changes, sender's participant row removed, `transfers` + `audit_log` rows written, Smart Handover drafted for the recipient (editable).
-- **Who Can Help:** candidates come only from declared `expertise` and from authorship of entries in memory spaces the asker can read; never from private conversations. Opted-out members are excluded. The suggestion carries an "Invite" button.
+  - history = messages with `seq >= max(visible_from_seq of all current participants)`; people's messages are labelled with their (masked) names;
+  - memory / documents = **intersection** of the readable spaces of all current participants (`conversation_shared_spaces`, passed to `retrievePassages` as `restrictTo`);
+  - if that removed history or memories the person who mentioned the AI could see, the answer carries `context_meta.context_limited` → indicator "Contexte limité à ce que tout le monde ici peut voir";
+  - Hide restores only placeholders present in the context the model received.
+- **Transfer:** confirmation dialog → `transfer_conversation` (owner changes, recipient sees the whole history, sender's participant row removed, `handovers` + `audit_log` rows). A restricted client is transferred with `transfer_client` (assignment and the sender's own conversations about it move). The Smart Handover is drafted by the AI before the RPC (`collaboration/server/handover.ts`) and is readable and editable by the recipient only. Before sharing history or transferring, `history_unreadable_sources` lists memories cited in the shared messages that a recipient cannot read, and the dialog warns.
+- **Who Can Help:** candidates come only from declared `expertise` (members who did not opt out, not already in the conversation); never from private conversations. Their names (masked by Hide) and expertise go into the system prompt; when the answer names one, `context_meta.suggested_colleagues` drives an "Inviter …" button. (Authorship of memory entries is not used yet.)
 
 ---
 
@@ -404,4 +405,11 @@ typed message / attachments / retrieved excerpts
 - **Memory tasks**: suggestions read `masked_content` and their output is restored with the conversation's values; promotion masks the client note with an in-memory masker and drops any proposal that still contains a placeholder.
 - **Key**: `HIDE_ENCRYPTION_KEY` (≥ 32 characters); HKDF derives one key for AES-256-GCM and one for the HMAC. Without it, a message with protection on is refused (`hide_unavailable`) before anything is saved or sent.
 - **Experience v2 (validated with the founder on a clickable mock-up).** One "Masquage auto" switch; red = visible to the AI, green struck = protected; a click switches an item (value-based: every occurrence, message and files). The browser sends `modes` = `["automatic","manual"]` (switch on) or `["manual"]` (off) plus the values protected / left visible; files follow the same `spansToMask` rule as the message; memory passages are masked when `automatic` is on. The attachment upload returns the file's text and detected spans for the preview. The server stores `messages.hide_spans` (positions of protected values in what was typed, service role only) so the sent message shows them struck in green. Without auto-protect, `needsConfirmation` awaits detection of the exact text before sending.
+
+## 16. Implementation notes (Step 5)
+
+- **Module map** (`src/modules/collaboration`): `mentions.ts` (mention parsing, the model for "@Claude", Who Can Help name matching), `handover-sections.ts`, `server/` (`handover.ts` drafts with Hide, `actions.ts`, `queries.ts`), `ui/` (participants bar, Add dialog with the history timeline and warnings, transfer dialog, handover card, mention menu, the two real-time hooks).
+- **Migration** `20261023000001_collaboration.sql`: Realtime publication and channel policies; `handovers` (recipient-only RLS, update limited to `sections` and `edited_at`); RPCs for adding, sharing history, leaving, transferring a conversation or a client, the shared memories and the history warning; a trigger refusing to link a group conversation to a client one participant cannot access; history-on-join policies for attachments, sources and stored files.
+- **Turn flow additions** (`prepareChatTurn`): participants → mention → if not mentioned in a group, the message is saved and the turn ends; otherwise the model (mentioned provider, else the person's choice), quota, Hide (colleagues' and authors' names masked), shared history and shared memories, then the answer as before. `context_meta` stores `context_limited` and `suggested_colleagues`. Sources are saved before the answer is marked finished, so colleagues reloading it in real time see them.
+- **Browser merge rules** (`chat-view.tsx`): the stream's own messages win over real-time reloads; reloaded ids that come back empty are removed (an answer replaced by Regenerate); a group conversation keeps a stable page key so a server refresh never resets what is being typed.
 

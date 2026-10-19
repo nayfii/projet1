@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 4 (Hide: sensitive data protection), 2026-10-19.
+Last update: Step 5 (collaboration), 2026-10-19.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -60,14 +60,15 @@ Legend: **done** · **partial** · **not started** · **known issue**
 ## 4.4 Collaboration
 | Feature | Status |
 |---|---|
-| Group conversation ("Add" button) | not started |
-| Real-time updates, presence, authorship | not started |
-| AI answers only when mentioned (@Claude, @ChatGPT, @Gemini, @AI) | not started |
-| History on join (from arrival by default) + "Share history" selector | not started |
-| AI context = history visible to all + intersection of permissions, with indicator | not started |
-| Conversation transfer (ownership change, sender loses access, logged) | not started |
-| Smart Handover (conversation, restricted client, project) | not started |
-| Who Can Help (expertise, suggestions, invite button, opt-out) | partial: expertise and opt-out are captured in profiles (Step 1); suggestions come in Step 5 |
+| Group conversation ("Add" button) | **done** (Step 5): "Ajouter" in the conversation header invites active colleagues (only those with access to the conversation's client). Any participant can invite and leave; the person responsible transfers instead of leaving. A group conversation cannot be linked to a client one of its participants cannot access |
+| Real-time updates, presence, authorship | **done**: messages and answers appear live for everyone (Supabase Realtime, RLS applies to each person); avatars with a green dot for who is here; "Nathalie écrit…"; colleagues' messages on the left with their name; a conversation appears in the sidebar as soon as someone adds you |
+| AI answers only when mentioned (@Claude, @ChatGPT, @Gemini, @AI) | **done**: "@" opens a menu (@IA = the selected model or Auto, @Claude, @ChatGPT, @Gemini, only allowed providers; keyboard or click); without a mention the message is simply posted, at no cost. The mention is decided on the server. Hide never masks the mention itself |
+| History on join (from arrival by default) + "Share history" selector | **done**: by default "À partir de maintenant"; or "Toute la conversation"; or a chosen message on a timeline. Nobody can share more than they see. Enforced in SQL for messages, files, cited sources, stored files and search. **The conversation's title is visible to everyone who joins** (the dialog shows it, with a hint to rename) |
+| AI context = history visible to all + intersection of permissions, with indicator | **done**: the AI gets only the messages every current participant can see and only the memories all of them may read (`conversation_shared_spaces`); "Contexte limité à ce que tout le monde ici peut voir" under the answer when that removed something. Placeholders are restored only if the model was shown them |
+| Conversation transfer (ownership change, sender loses access, logged) | **done**: "Transférer…" (person responsible only), confirmation dialog saying it is final; the recipient sees the whole history; the sender loses access; other participants stay; logged |
+| Smart Handover (conversation, restricted client, project) | **done for conversations and restricted clients** (no "project" object, open question 2): the AI drafts summary, decisions, useful documents, remaining tasks and next actions (through Hide, real values restored for the recipient); the recipient finds it at the top of the conversation or client page and can edit it; only the recipient can read it. If the AI fails, the transfer still happens and the recipient writes the file. **Before sharing history or transferring, the app warns when the shared messages cite a memory the recipient cannot read** ("Ajouter quand même" / "Transférer quand même") |
+| Client transfer (restricted client) | **done**: "Transférer ce client" on the client page for an assigned employee; the assignment and the sender's conversations about that client move to the recipient (open question 3), the sender loses all access; logged |
+| Who Can Help (expertise, suggestions, invite button, opt-out) | **done**: colleagues with declared expertise who did not opt out are listed to the AI (names masked by Hide); when the answer names one, an "Inviter Nathalie Durand" button opens the Add dialog with her preselected. Never based on private conversations; people already in the conversation are not suggested. With a real model the suggestion depends on the model following the rule (tested with the simulated provider only) |
 
 ## 4.5 Confronter
 | Feature | Status |
@@ -122,7 +123,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Hide policies | **done** (Step 4, `/admin/hide`) |
 | Usage dashboards (real provider data; costs labelled as estimates) | **done** (Step 2, `/admin/usage`): requests, tokens, credits, estimated cost by person, by model and per day, month picker. A richer dashboard comes in Step 9 |
 | Quotas | **done** (Step 2, `/admin/quotas`): company credits this month, default limit per person, personal limits per member |
-| Activity log | partial: sign-ins, invitations, member changes, client creation / visibility / access, model settings, quota changes, blocked AI requests (Step 2), memory entries and documents added / edited / deleted, memory groups and rights (Step 3), masking events (counts per category), Hide settings and sensitive terms (Step 4); transfers come with Step 5 |
+| Activity log | partial: sign-ins, invitations, member changes, client creation / visibility / access, model settings, quota changes, blocked AI requests (Step 2), memory entries and documents added / edited / deleted, memory groups and rights (Step 3), masking events (counts per category), Hide settings and sensitive terms (Step 4), people added to or leaving a conversation, history shared, conversation and client transfers (Step 5) |
 
 ## 4.9 Platform admin console
 | Feature | Status |
@@ -188,17 +189,17 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
-## Tests (Step 4)
+## Tests (Step 5)
 
 | Suite | Command | Result |
 |---|---|---|
-| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, **Hide: IBAN, cards, emails, phones, amounts, person names, company lists in French and English, overlaps, modes, placeholders, restoring while streaming, a PDF masked, a 40,000-character document in under a second**) | `pnpm test` | 123 passed |
-| Integration: isolation with real users and JWTs (Steps 1–4) | `pnpm test:integration` | 111 passed (7 new for Hide: values stored encrypted, stable placeholders, no user can read or write mappings, restricted client masked as a plain term, terms visible to Hide admins only and logged without the value, settings changed by Hide admins only, masked versions not writable by users, nothing for the platform admin) |
-| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 34 passed: Hide 5 (new experience: auto green, click to red, manual with confirmation, file preview, admin, phone), memory 8, chat 16, foundation 5 |
-| Real provider smoke test | `pnpm test:smoke` | 5 passed, 4 skipped: GPT-6 Luna answers with real token counts **and keeps Hide placeholders exactly as written** (new); GPT-6.1 Sol and OpenAI embeddings refused by the provider account (reported, not a code failure); Anthropic and Google skipped (no key) |
+| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, Hide, **mentions, the mention menu, Who Can Help name matching, restoring only placeholders the model saw, AI mentions not masked**) | `pnpm test` | 142 passed |
+| Integration: isolation with real users and JWTs (Steps 1–5) | `pnpm test:integration` | 138 passed (27 new for collaboration: history on join for messages, files, sources, stored files and search; sharing history never beyond what one sees; outsiders and non-participants refused; leaving; client-link guard; the AI's memory = intersection of participants' rights; the history warning; conversation transfer (sender loses access, others stay); handover visible and editable by the recipient only, not forgeable; client transfer (assignment, conversations, memory); audit entries with ids only; nothing for the platform admin or another company) |
+| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 41 passed: collaboration 7 (two browsers: Who Can Help, add with chosen history and warning, live messages and "écrit…", @Claude with limited context, transfer with handover, client transfer, activity log), Hide 5, memory 8, chat 16, foundation 5 |
+| Real provider smoke test | `pnpm test:smoke` | 5 passed, 4 skipped (unchanged: GPT-6.1 Sol and OpenAI embeddings refused by the provider account; Anthropic and Google skipped, no key) |
 | Type check, lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
 
-Screenshots for the founder: `docs/screenshots/step-4/` (automated run, simulated answers marked "[TEST]").
+Screenshots for the founder: `docs/screenshots/step-5/` (automated run, simulated answers marked "[TEST]").
 
 ## Known issues
 
@@ -224,7 +225,14 @@ Screenshots for the founder: `docs/screenshots/step-4/` (automated run, simulate
 - Quotas are checked before each request: several requests sent at the same moment can go slightly over a limit.
 - Context budget uses an estimate of 3.5 characters per token; providers bill with their own counts.
 - DOCX text extraction (mammoth) is not covered by an automated test yet (PDF, XLSX and text are).
-- The Owner cannot read employees' private conversations (see decisions below). Group conversations, transfer and Smart Handover arrive in Step 5.
+- The Owner cannot read employees' private conversations (see decisions below), unless someone adds them to a conversation.
+- **Collaboration (Step 5):**
+  - real time and presence were tested on the local Supabase only; they need Realtime enabled on the hosted project (the migration adds the tables to the publication and the channel policies);
+  - sharing history or transferring a conversation shows earlier AI answers as they were written: an answer that used a memory the recipient cannot read can carry its content. The app warns when such an answer **cites** that memory, but cannot detect an answer that used it without citing it, nor what people typed themselves;
+  - the conversation's title (by default the start of the first message) is visible to everyone who joins;
+  - transferring a client moves only the sender's own conversations about it; conversations about that client where the sender was only a participant lose the sender;
+  - a participant who is not responsible for the conversation cannot rename it, link it to a client or delete it; their model choice is used for their own "@IA" but not saved for the conversation;
+  - the Smart Handover is drafted from at most the last 24,000 characters of the conversation (or, for a client, its memory entries, document names and the last messages of the sender's conversations about it).
 - Ad-hoc decisions taken in Step 1, to confirm:
   - only the Owner and Admins with the "clients" scope create clients (members cannot);
   - an Admin with the "clients" scope sees the name of restricted clients in order to manage them (their memory will stay restricted);
@@ -248,6 +256,14 @@ Screenshots for the founder: `docs/screenshots/step-4/` (automated run, simulate
   - the person who typed a message, and anyone who can see it, sees the real values (open question 6, relevant for group conversations in Step 5);
   - a click protects or leaves visible every occurrence of the same value, in the message and in its files;
   - a general learning proposed by the AI is dropped if it still contains a placeholder (it points at something specific).
+- Ad-hoc decisions taken in Step 5, to confirm:
+  - any participant can add colleagues and share up to the history they see themselves; only the person responsible transfers, renames, links to a client or deletes;
+  - in a group, people can talk without credits; only messages that mention the AI count against the quota;
+  - "@IA" answers with the model selected by the person who wrote it (or Auto); "@Claude" uses the company's balanced Claude model when allowed;
+  - the AI context in a group starts at the most recent "joined from" point among current participants, so adding someone with no history also narrows what the AI sees for everyone;
+  - Who Can Help suggests only colleagues who are not in the conversation yet and, for a client conversation, who can access that client;
+  - an employee assigned to a restricted client can hand it over to any active colleague (the Owner and client admins keep their access anyway);
+  - the handover file stays attached to the conversation or client; a later transfer creates a new file for the new recipient.
 - Ad-hoc decisions taken in Step 3, to confirm:
   - default rights: everyone reads the company memory, the Owner and Admins write in it; everyone who has access to a client reads and writes that client's memory; the Owner can always read and write every memory;
   - a conversation linked to a client searches the company memory and that client's memory only (no mixing of clients); a conversation without a client searches the company memory and every client memory the person can read;
@@ -264,11 +280,11 @@ The founder asked to proceed ("je suis prêt à construire le tout") without ans
 
 
 1. **Permission categories** — *applied in Step 3 as proposed below.* Proposed meaning: named groups of people (e.g. "All employees", "Management", "Finance") that are granted read and/or write on each memory. Defaults: everyone reads company memory, Owner + Admins write it; anyone with access to a client reads and writes its memory. To confirm.
-2. **"Project"** appears in Smart Handover ("a conversation, a restricted client or a project is transferred") but no project object exists elsewhere in the spec. Proposal: no "project" object at launch; handover for conversations and clients only. To confirm.
-3. **Client transfer** — when Client A moves from Olivier to Nathalie, what happens to Olivier's conversations linked to Client A? Proposal: they move to Nathalie together with the client (Olivier loses them too), and the Smart Handover summarises them. To confirm.
+2. **"Project"** — *applied in Step 5 as proposed below.* It appears in Smart Handover ("a conversation, a restricted client or a project is transferred") but no project object exists elsewhere in the spec. Proposal: no "project" object at launch; handover for conversations and clients only. To confirm.
+3. **Client transfer** — *applied in Step 5 as proposed below.* When Client A moves from Olivier to Nathalie, what happens to Olivier's conversations linked to Client A? Proposal: they move to Nathalie together with the client (Olivier loses them too), and the Smart Handover summarises them. To confirm.
 4. **Hide and amounts** — *applied in Step 4 as proposed below (switch in Administration → Protection).* masking every amount breaks finance questions (the model cannot compute on `[AMOUNT_1]`). Proposal: amounts are a category the company can switch off, off by default in Automatic mode. To confirm.
 5. **Embeddings and sensitive data** — *now concrete (Step 3 is built this way; since Step 4 the question is masked, the documents are not).* documents saved to memory are sent in clear to the embeddings provider (OpenAI or Google) to build the search index; Hide does not apply there (masking would break search). Alternative: a local embeddings model (data stays on our servers, lower search quality, more server cost). Decision needed before real customer data.
-6. **Who sees real values in a group chat** — proposal: every participant who can see a message sees the real values typed in it (they were shared by a colleague); the AI only ever sees placeholders. To confirm.
+6. **Who sees real values in a group chat** — *applied in Step 5 as proposed below.* Proposal: every participant who can see a message sees the real values typed in it (they were shared by a colleague); the AI only ever sees placeholders. To confirm.
 7. **Gemini terms** — the free tier of the Gemini API allows Google to use data to improve its products. The production key must be on a paid (billing-enabled) Google project, or on Vertex AI in an EU region.
 8. **Meeting Minutes with audio** — needs a speech-to-text model (e.g. OpenAI or Gemini audio input). This is another data flow to document; to confirm it is acceptable.
 9. **Knowledge export** — a company could export its whole memory (entries + documents) in open formats, which proves it is not locked in. Not in the launch spec; to confirm whether to add it.

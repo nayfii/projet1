@@ -25,6 +25,8 @@ Status: **Step 4** (2026-10-19). Updated at every step. This document describes 
 | Source Proof | Cited sources are written by the audited server module only (users cannot insert or edit them); a source stays visible only to participants who can still read its memory | `assistant-writer.ts` (`saveMessageSources`), `message_sources` RLS, integration tests |
 | Memory documents | Same checks as attachments (extension, 20 MB, magic bytes, text read on our server); private bucket `memory-documents`, Storage RLS = people who can read that memory; downloads through `GET /api/documents/[id]/file` (RLS check, short signed link) | `api/memory/[spaceId]/documents`, integration tests |
 | Hide (sensitive data) | Detection on our server only (patterns with checksums, company lists, a local name library and rules; nothing is sent to an external AI to detect). Placeholders to the model, real values restored for people who can see the conversation. Mappings encrypted with AES-256-GCM (key outside the database), in a table no user can read; what the model received is written by the server only. Masking events logged as counts per category | `hide/server/*`, `tests/integration/hide.test.ts`, `tests/unit/hide.test.ts`, `e2e/hide.spec.ts` |
+| Group conversations | Only active colleagues can be added (and for a client conversation, only those with access to the client); each sees messages, files, cited sources, stored files and search results from their own starting point only; the AI gets only the history every participant sees and the memories all of them may read; a group conversation cannot be linked to a client one participant cannot access; real-time events and presence channels follow the same rules (RLS, `realtime.messages` policies) | `collaboration` migration, `tests/integration/collaboration.test.ts`, `e2e/collab.spec.ts` |
+| Transfers and Smart Handover | Only the person responsible transfers a conversation; only an employee assigned to a restricted client transfers it; the sender loses access in the same transaction; the handover file is readable and editable by the recipient only and cannot be created by users; transfers and additions are logged with ids only. Before sharing history or transferring, the app warns when the shared answers cite a memory a recipient cannot read | `transfer_conversation`, `transfer_client`, `handovers` RLS, `history_unreadable_sources`, integration tests |
 | AI suggestions | Nothing is saved without a person's approval; pending suggestions are visible only to their author and to people who can write in the target memory; approval re-checks write rights in SQL | `decide_memory_suggestion`, integration tests |
 
 ## 2. Data sent to AI providers
@@ -40,6 +42,10 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Embeddings: question | The person's message (first 8,000 characters), **masked when Hide masked it**, to search the memory by meaning | Same embeddings provider | Each message, when the memories it may search are not empty |
 | Memory suggestions | The conversation (last 24,000 characters) as the chat models received it (masked when Hide was on) | The conversation's model (or the one Auto picks) | When someone clicks "Proposer des entrées de mémoire" |
 | Promotion | Title and content of the client memory entry, masked when Automatic is on by default | The company's default model (or the one Auto picks) | When someone clicks "Proposer pour la mémoire de l'entreprise" |
+| Group conversation answer | Same as a chat answer, limited to the history every participant can see and the memories all of them may read; each person's message is prefixed with their name (masked by Hide when Automatic is on) | The mentioned provider (or the model chosen by the person who wrote "@IA") | Only when a message mentions the AI |
+| Who Can Help | Names (masked when Automatic is on) and declared areas of expertise of colleagues who did not opt out, in the system prompt | The chat model | Each chat answer |
+| Smart Handover: conversation | The conversation (last 24,000 characters) as the models received it (masked when Hide was on), people numbered rather than named, the number of attached files | The conversation's model (or the one Auto picks) | When a conversation is transferred |
+| Smart Handover: client | Client name, sector and description, its memory entries (titles and content, up to 30), its document names, the last messages of the sender's conversations about it — masked when Automatic is on by default | The company's default model (or the one Auto picks) | When a restricted client is transferred |
 | Document reading | Nothing: memory documents are read on our server | – | – |
 | Hide detection | Nothing: detection runs on our server | – | – |
 
@@ -64,6 +70,8 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Hide mappings | `hide_mappings` | Real values behind placeholders, encrypted (AES-256-GCM, key `HIDE_ENCRYPTION_KEY` outside the database), per conversation, deleted with it. No user can read the table |
 | What the AI received | `messages.masked_content`, `conversation_attachments.masked_text` | Masked versions, readable by the conversation's participants |
 | Sensitive terms | `sensitive_terms` | Visible to the Owner and Hide admins only |
+| Participants | `conversation_participants` | Who takes part, their role and the first message they may see |
+| Handover files | `handovers` | Text drafted by the AI (real values restored) and edited by the recipient; readable by the recipient only; deleted with the conversation or client |
 | Usage | `usage_events` | Token counts, credits, estimated cost, model, status (chat, embeddings, memory tasks). No content |
 | Activity | `audit_log` | Ids and settings only (e.g. "request blocked: personal limit"). No content |
 
@@ -82,3 +90,6 @@ Every AI call is built by our server. Providers receive one self-contained reque
 11. Prompt injection through memory: a document added to a memory can contain instructions that the AI reads every time the passage is retrieved. Same limited impact as point 4 today, but more persistent.
 12. Losing `HIDE_ENCRYPTION_KEY` makes earlier placeholders impossible to restore; leaking it, together with database access, reveals the mapped values (which are also in the messages).
 13. Typing a word and seeing it masked tells a member it is on the company's sensitive list (inherent to masking; the list itself is not readable).
+14. Sharing history or transferring a conversation shows earlier answers as written: an answer that used a memory the recipient cannot read can carry its content. The app warns only when that answer cited the memory; what people typed themselves is their own decision.
+15. The conversation's title (by default the start of its first message) is visible to everyone added to it.
+
