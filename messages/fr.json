@@ -837,23 +837,7 @@
     "accessSaved": "Accès enregistré."
   },
   "hide": {
-    "protection": "Protection",
-    "mode": {
-      "automatic": "Automatique",
-      "documents": "Documents",
-      "manual": "Manuel"
-    },
-    "modeHint": {
-      "automatic": "Masque les données sensibles de votre message avant l'envoi à l'IA",
-      "documents": "Masque les données sensibles des fichiers joints et des passages de mémoire",
-      "manual": "Surligne en rouge ce qui semble sensible : cliquez sur un élément pour le masquer ou l'afficher, ou sélectionnez un passage"
-    },
-    "off": "Protection désactivée",
-    "willMask": "{count, plural, one {# élément sera masqué} other {# éléments seront masqués}}",
-    "manualHelp": "Cliquez sur un élément pour le masquer",
-    "blurSelection": "Masquer la sélection",
-    "imagesNotMasked": "Les images ne peuvent pas être masquées",
-    "maskedCount": "{count, plural, one {# élément masqué} other {# éléments masqués}}",
+    "maskedCount": "{count, plural, one {# élément protégé} other {# éléments protégés}}",
     "answerRestored": "Valeurs réelles rétablies",
     "showReceived": "Voir ce que l'IA a reçu",
     "showWritten": "Voir la réponse telle que l'IA l'a écrite",
@@ -873,19 +857,31 @@
       "file": "Nom de fichier",
       "term": "Terme sensible",
       "redacted": "Passage masqué à la main"
-    }
+    },
+    "auto": "Masquage auto",
+    "barProtected": "{count, plural, one {# élément protégé : l’IA ne le verra pas} other {# éléments protégés : l’IA ne les verra pas}} — cliquez dessus pour en laisser un visible",
+    "barVisible": "{count, plural, one {# élément sensible repéré — cliquez dessus pour le protéger} other {# éléments sensibles repérés — cliquez dessus pour les protéger}}",
+    "barMixed": "{protected, plural, one {# protégé} other {# protégés}}, {visible, plural, one {# visible par l’IA} other {# visibles par l’IA}} — cliquez sur un élément pour changer",
+    "protectAll": "Tout protéger",
+    "protectSelection": "Protéger « {text} »",
+    "confirm": "{count, plural, one {# élément sensible n’est pas protégé.} other {# éléments sensibles ne sont pas protégés.}}",
+    "protectAndSend": "Protéger et envoyer",
+    "sendAnyway": "Envoyer tel quel",
+    "fileToCheck": "{count} à vérifier",
+    "fileProtected": "{count, plural, one {# protégé} other {# protégés}}",
+    "imageNotMasked": "image non masquable",
+    "filePreview": "Aperçu du fichier",
+    "previewAuto": "Ce que l’IA recevra. Vert barré = protégé ; cliquez sur un élément pour le laisser visible.",
+    "previewManual": "Ce que l’IA recevra. Cliquez sur ce qui est en rouge pour le protéger.",
+    "protectItem": "Protéger : {text}",
+    "showItem": "Laisser visible : {text}",
+    "done": "Terminé",
+    "protectedTitle": "Protégé : l’IA ne l’a pas vu"
   },
   "hideAdmin": {
     "title": "Protection des données (Hide)",
     "description": "Ce qui est masqué avant tout envoi aux IA. La détection a lieu sur nos serveurs : l'IA reçoit des repères comme [CLIENT_1], vos équipes voient les vraies valeurs.",
-    "modesTitle": "Modes activés par défaut",
-    "modesBody": "Chaque employé peut les changer pour une conversation, au-dessus de la zone de message.",
-    "modeBody": {
-      "automatic": "Masque automatiquement les catégories ci-dessous dans les messages.",
-      "documents": "Masque les mêmes catégories dans les fichiers joints et les passages de mémoire envoyés à l'IA.",
-      "manual": "Surligne en rouge ce qui semble sensible : l'employé choisit quoi masquer."
-    },
-    "categoriesTitle": "Ce que le mode Automatique masque",
+    "categoriesTitle": "Ce que le masquage automatique protège",
     "categoriesBody": "Les montants sont désactivés par défaut : l'IA en a besoin pour faire des calculs.",
     "categoryExample": {
       "iban": "FR76 3000 6000 0112 3456 7890 189 (vérifié par sa clé de contrôle)",
@@ -899,7 +895,7 @@
       "file": "Les noms de fichiers ajoutés ci-dessous",
       "term": "Les autres termes ajoutés ci-dessous"
     },
-    "recallNote": "La détection repose sur des règles, des clés de contrôle et vos propres listes : elle n'est jamais parfaite. Le mode Manuel permet de vérifier avant l'envoi.",
+    "recallNote": "La détection repose sur des règles, des clés de contrôle et vos propres listes : elle n’est jamais parfaite. Chaque employé voit ce qui est repéré avant l’envoi et peut protéger n’importe quel passage.",
     "save": "Enregistrer",
     "saved": "Réglages de protection enregistrés.",
     "termsTitle": "Termes sensibles",
@@ -918,6 +914,8 @@
     "termRemoved": "Terme retiré.",
     "removeTerm": "Retirer {term}",
     "noTerms": "Aucun terme pour l'instant.",
-    "listsNote": "Les noms de vos clients et de vos employés sont déjà pris en compte automatiquement."
+    "listsNote": "Les noms de vos clients et de vos employés sont déjà pris en compte automatiquement.",
+    "autoTitle": "Masquage automatique par défaut",
+    "autoBody": "Ce qui est repéré arrive protégé (barré en vert) avant l’envoi. Chaque employé voit en rouge ce qui reste visible par l’IA, peut cliquer pour changer, ou désactiver le masquage auto pour une conversation."
   }
 }

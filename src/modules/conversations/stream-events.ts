@@ -2,7 +2,7 @@ import type { QuotaState } from "@/modules/usage/quota";
 import type { ProviderErrorCode, ProviderId } from "@/modules/providers/types";
 import type { RoutingBasis, TaskType } from "@/modules/providers/router";
 import type { SourceProof } from "@/modules/memory/types";
-import type { HideCounts } from "@/modules/hide/categories";
+import type { HideCounts, Span } from "@/modules/hide/categories";
 
 /**
  * Wire format of POST /api/chat: one JSON object per line (NDJSON).
@@ -18,7 +18,7 @@ export type ChatStreamEvent =
       type: "meta";
       conversationId: string;
       /** The saved user message; `masked` = what the AI received when Hide masked something. */
-      userMessage: { id: string; seq: number; masked: { content: string | null; counts: HideCounts | null } | null } | null;
+      userMessage: { id: string; seq: number; masked: { content: string | null; counts: HideCounts | null; spans: Span[] } | null } | null;
       assistantMessage: { id: string; seq: number };
       model: StreamModel;
       routing: RoutingInfo | null;

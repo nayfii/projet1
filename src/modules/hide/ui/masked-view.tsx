@@ -30,7 +30,7 @@ export function MaskedView({
   return (
     <div className={cn("flex max-w-[85%] flex-col gap-1.5", align === "end" ? "items-end self-end" : "items-start")}>
       <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-        <ShieldCheckIcon className="size-3.5 text-brand" />
+        <ShieldCheckIcon className="size-3.5 text-success" />
         {kind === "message" ? <span title={categories}>{t("maskedCount", { count: total })}</span> : <span>{t("answerRestored")}</span>}
         {maskedContent ? (
           <>

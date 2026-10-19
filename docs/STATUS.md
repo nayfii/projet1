@@ -46,15 +46,15 @@ Legend: **done** · **partial** · **not started** · **known issue**
 ## 4.3 Hide
 | Feature | Status |
 |---|---|
-| Mode control above the input (Automatic, Documents, Manual, combinable) | **done** (Step 4): starts from the company defaults (or the modes of the last message sent), shows how many items will be masked |
-| Automatic mode (typed message) | **done**: detection on our server while typing and again at send time (the server decides, never the browser); categories chosen by the company |
-| Documents mode (attachments) | **done**: text read from attached files and memory passages sent to the AI is masked with the same categories. **Images cannot be masked** (warning shown) |
-| Manual mode (red highlights, click to blur, free selection) | **done**: detected items underlined in red, click to blur or show again, "Masquer la sélection" for any passage |
+| Mode control above the input (Automatic, Documents, Manual, combinable) | **done, redesigned with the founder** (clickable mock-up validated): one "Masquage auto" switch in the input's toolbar (on by default); what looks sensitive is **red** (the AI would see it), a click strikes it through in **green** (protected) and back; a bar above the input says what is protected or still visible, with "Tout protéger". Documents follow the same rule; Manual is no longer a separate mode (the click always works) |
+| Automatic mode (typed message) | **done**: detected items arrive green (protected); a click leaves one visible (red) and stays in automatic mode. Detection on our server while typing and again at send time (the server decides, never the browser); only the company's categories are highlighted |
+| Documents mode (attachments) | **done**: the file chip says "3 protégés" or "2 à vérifier"; a click opens a preview of the file's text with the same red / green click. Memory passages are masked when auto-protect is on. **Images cannot be masked** ("image non masquable" on the chip) |
+| Manual mode (red highlights, click to blur, free selection) | **done**: with auto-protect off everything detected arrives red, a click protects it, "Protéger « … »" protects any selected passage, and red items are confirmed before sending ("Protéger et envoyer" / "Envoyer tel quel"); the check waits for detection of the exact text being sent. The sent message shows protected values struck in green |
 | Pattern detection with checksums (IBAN, cards, emails, phones, amounts) | **done**: IBAN with country length + mod 97, cards with Luhn and card prefixes, emails, phones with libphonenumber (French, British, American formats + any international number), amounts in French and English formats |
 | Company lists (client names, employee names, custom terms) | **done**: ignoring accents and case (a term with a very short word, like "Client A", must match its capitals so "le client a payé" is not masked); a restricted client is masked for people without access as a plain "sensitive term", so its existence is not revealed |
 | Local NER for person names | **done, as a local library plus rules** (not a machine-learning model): compromise (English names, MIT licence) + French rules (titles M./Mme/Maître…, a list of about 600 common French and English first names, capitalised surnames, particles, surnames in capitals) + employees' names. Nothing leaves our servers for detection. Recall is imperfect: uncommon names without a title can be missed |
 | Reversible pseudonymisation, server-side mapping per conversation | **done**: stable placeholders per conversation ([IBAN_1], [CLIENT_1]…), values encrypted with AES-256-GCM in `hide_mappings` (no user can read the table), real values put back while the answer streams. The person can open "Voir ce que l'IA a reçu" under each message. Verified with the real GPT-6 Luna: it keeps placeholders exactly |
-| Admin settings: default mode, custom sensitive terms | **done** (`/admin/hide`, "hide" scope): default modes, categories Automatic masks (amounts off by default), custom terms (client, project, file, other), visible to Hide admins only |
+| Admin settings: default mode, custom sensitive terms | **done** (`/admin/hide`, "hide" scope): "Masquage automatique par défaut" (on by default), categories it protects (amounts off by default), custom terms (client, project, file, other), visible to Hide admins only |
 | Metadata-only masking event logging | **done**: one activity-log entry per message with masking (counts per category, modes); custom terms are logged by category, never by value |
 
 ## 4.4 Collaboration
@@ -194,7 +194,7 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 |---|---|---|
 | Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, **Hide: IBAN, cards, emails, phones, amounts, person names, company lists in French and English, overlaps, modes, placeholders, restoring while streaming, a PDF masked, a 40,000-character document in under a second**) | `pnpm test` | 123 passed |
 | Integration: isolation with real users and JWTs (Steps 1–4) | `pnpm test:integration` | 111 passed (7 new for Hide: values stored encrypted, stable placeholders, no user can read or write mappings, restricted client masked as a plain term, terms visible to Hide admins only and logged without the value, settings changed by Hide admins only, masked versions not writable by users, nothing for the platform admin) |
-| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 34 passed: Hide 5 (new), memory 8, chat 16, foundation 5 |
+| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 34 passed: Hide 5 (new experience: auto green, click to red, manual with confirmation, file preview, admin, phone), memory 8, chat 16, foundation 5 |
 | Real provider smoke test | `pnpm test:smoke` | 5 passed, 4 skipped: GPT-6 Luna answers with real token counts **and keeps Hide placeholders exactly as written** (new); GPT-6.1 Sol and OpenAI embeddings refused by the provider account (reported, not a code failure); Anthropic and Google skipped (no key) |
 | Type check, lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
 
@@ -240,12 +240,13 @@ Screenshots for the founder: `docs/screenshots/step-4/` (automated run, simulate
   - the person who started a conversation can delete it permanently (with its files);
   - images are sent to the AI provider as images: Hide (Step 4) will not be able to mask text inside images.
 - Ad-hoc decisions taken in Step 4, to confirm:
-  - defaults for every company: Automatic and Documents on, Manual off; amounts not masked (open question 4);
-  - employees can change the modes for each message (no locked policy yet);
+  - **decided by the founder**: auto-protect on by default; red = visible to the AI, green struck = protected; a click switches an item, also in automatic mode;
+  - amounts not masked by default (open question 4), and categories the company turned off are not highlighted at all;
+  - employees can turn auto-protect off for a conversation (no locked policy yet); a choice made on a value (protect / leave visible) is remembered while the page is open;
   - with Automatic on, the person's own name and the linked client's name are also masked in the instructions sent to the AI;
   - memory passages are masked in Documents mode; the question used for the search by meaning is sent in its masked form; memory documents themselves are indexed unmasked (open question 5);
   - the person who typed a message, and anyone who can see it, sees the real values (open question 6, relevant for group conversations in Step 5);
-  - in Manual mode a click leaves visible or blurs every occurrence of the same value;
+  - a click protects or leaves visible every occurrence of the same value, in the message and in its files;
   - a general learning proposed by the AI is dropped if it still contains a placeholder (it points at something specific).
 - Ad-hoc decisions taken in Step 3, to confirm:
   - default rights: everyone reads the company memory, the Owner and Admins write in it; everyone who has access to a client reads and writes that client's memory; the Owner can always read and write every memory;

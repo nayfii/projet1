@@ -3,6 +3,8 @@ import { memberOrNull } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { ATTACHMENT_TYPES, extensionOf, MAX_ATTACHMENT_BYTES } from "@/modules/documents/file-types";
 import { contentMatchesExtension, extractText } from "@/modules/documents/server/extract";
+import { detectSensitive } from "@/modules/hide/detect";
+import { loadDetectionLists } from "@/modules/hide/server/masker";
 
 /**
  * Uploads one file to a conversation. Checks type, size and content on our server, extracts the
@@ -70,6 +72,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/conversatio
     return Response.json({ error: "upload_failed" }, { status: 500 });
   }
 
+  // Hide: the file's text and what looks sensitive in it, so the person can check it before sending.
+  // Detection runs here, on our server; the decision is taken again when the message is sent.
+  const text = data.extracted_text ?? "";
+  const spans = text ? detectSensitive(text, await loadDetectionLists(supabase, member)) : [];
   return Response.json({
     id: data.id,
     filename: data.filename,
@@ -77,5 +83,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/conversatio
     sizeBytes: data.size_bytes,
     truncated: data.text_truncated,
     hasText: data.kind === "image" || Boolean(data.extracted_text),
+    text,
+    spans,
   });
 }

@@ -1,7 +1,7 @@
 import type { ProviderId } from "@/modules/providers/types";
 import type { RoutingInfo } from "./stream-events";
 import type { SourceProof } from "@/modules/memory/types";
-import type { HideCounts } from "@/modules/hide/categories";
+import type { HideCounts, Span } from "@/modules/hide/categories";
 
 /** A message as shown in the conversation timeline (server and browser). */
 export type TimelineMessage = {
@@ -24,4 +24,6 @@ export type TimelineMessage = {
   maskedContent: string | null;
   /** Hide: what was masked in a user message and its files, per category. */
   hideCounts: HideCounts | null;
+  /** Hide: where the protected values are in a user message (shown struck through in green). */
+  hideSpans: Span[];
 };

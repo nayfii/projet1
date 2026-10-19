@@ -45,8 +45,8 @@ import { titleFromMessage, useChatList } from "./chat-list";
 import { AttachmentChip, MessageItem, ModelSwitchDivider } from "./message-item";
 import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
-import { HideBar, HideOverlay, useHideComposer } from "@/modules/hide/ui/hide-composer";
-import type { HideMode, HideSettings } from "@/modules/hide/categories";
+import { AutoSwitch, FilePreview, HideBar, HideOverlay, useHideComposer, type HidePayload } from "@/modules/hide/ui/hide-composer";
+import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
 
 type PendingAttachment = {
   key: string;
@@ -55,6 +55,9 @@ type PendingAttachment = {
   kind: "image" | "document";
   truncated?: boolean;
   uploading: boolean;
+  /** Hide: the file's text and what looks sensitive in it (from the server), for the preview. */
+  text?: string;
+  spans?: Span[];
 };
 
 type Props = {
@@ -83,6 +86,7 @@ const TEXTAREA_LAYOUT = "px-4 pt-3.5 pb-2 text-[15px] leading-relaxed whitespace
 export function ChatView(props: Props) {
   const t = useTranslations("chat");
   const tCommon = useTranslations("common");
+  const tHide = useTranslations("hide");
   const router = useRouter();
   const chatList = useChatList();
 
@@ -111,9 +115,13 @@ export function ChatView(props: Props) {
   const creating = React.useRef<Promise<string | null> | null>(null);
   const [inputScroll, setInputScroll] = React.useState(0);
   // Hide: modes of the last message sent in this conversation, else the company's defaults.
+  const [previewKey, setPreviewKey] = React.useState<string | null>(null);
+  // A click on "Envoyer" while Hide checks the text (a fraction of a second) is ignored.
+  const checking = React.useRef(false);
   const hide = useHideComposer({
     text: input,
-    initialModes: props.conversation?.lastHideModes?.length ? props.conversation.lastHideModes : props.hide.defaultModes,
+    files: attachments.filter((a) => a.id && a.kind === "document" && a.text).map((a) => ({ key: a.key, filename: a.filename, text: a.text!, spans: a.spans ?? [] })),
+    initialAuto: (props.conversation?.lastHideModes?.length ? props.conversation.lastHideModes : props.hide.defaultModes).includes("automatic"),
     autoCategories: props.hide.autoCategories,
   });
 
@@ -233,7 +241,14 @@ export function ChatView(props: Props) {
               const saved = event.userMessage;
               let next = list.map((m) =>
                 m.id === "pending-user" && saved
-                  ? { ...m, id: saved.id, seq: saved.seq, maskedContent: saved.masked?.content ?? null, hideCounts: saved.masked?.counts ?? null }
+                  ? {
+                      ...m,
+                      id: saved.id,
+                      seq: saved.seq,
+                      maskedContent: saved.masked?.content ?? null,
+                      hideCounts: saved.masked?.counts ?? null,
+                      hideSpans: saved.masked?.spans ?? [],
+                    }
                   : m,
               );
               if (event.replaces) next = next.filter((m) => m.id !== event.replaces);
@@ -255,6 +270,7 @@ export function ChatView(props: Props) {
                   sources: [],
                   maskedContent: null,
                   hideCounts: null,
+                  hideSpans: [],
                 },
               ];
             });
@@ -297,8 +313,21 @@ export function ChatView(props: Props) {
     }
   }
 
-  async function send() {
+  /** `hidePayload`: given once the person answered the confirmation ("Protéger et envoyer" / "Envoyer tel quel"). */
+  async function send(hidePayload?: HidePayload) {
     if (!canSend) return;
+    // Without "Masquage auto", items still in red are confirmed before anything is sent.
+    if (!hidePayload) {
+      if (checking.current) return;
+      checking.current = true;
+      const ask = await hide.needsConfirmation().finally(() => (checking.current = false));
+      if (ask) {
+        hide.setConfirming(true);
+        return;
+      }
+    }
+    hide.setConfirming(false);
+    const hideChoices = hidePayload ?? hide.payload();
     const text = input.trim();
     const ready = attachments.filter((a) => a.id);
     const id = await ensureConversation();
@@ -324,6 +353,7 @@ export function ChatView(props: Props) {
         sources: [],
         maskedContent: null,
         hideCounts: null,
+        hideSpans: [],
       },
     ]);
     if (!title && text) {
@@ -333,7 +363,7 @@ export function ChatView(props: Props) {
     }
 
     await stream(
-      { conversationId: id, modelChoice, message: { content: text, attachmentIds: ready.map((a) => a.id) }, hide: hide.payload },
+      { conversationId: id, modelChoice, message: { content: text, attachmentIds: ready.map((a) => a.id) }, hide: hideChoices },
       {
         // Refused before anything was saved: give the user their text and files back.
         onRefused: () => {
@@ -412,7 +442,7 @@ export function ChatView(props: Props) {
         form.append("file", file);
         const response = await fetch(`/api/conversations/${id}/attachments`, { method: "POST", body: form }).catch(() => null);
         const body = (await response?.json().catch(() => null)) as
-          | { id: string; filename: string; kind: "image" | "document"; truncated: boolean; hasText: boolean; error?: undefined }
+          | { id: string; filename: string; kind: "image" | "document"; truncated: boolean; hasText: boolean; text?: string; spans?: Span[]; error?: undefined }
           | { error: string }
           | null;
         if (!response?.ok || !body || "error" in body) {
@@ -423,7 +453,9 @@ export function ChatView(props: Props) {
           return;
         }
         if (!body.hasText) toast.warning(t("noTextFound", { name: file.name }));
-        setAttachments((current) => current.map((a) => (a.key === key ? { ...a, id: body.id, truncated: body.truncated, uploading: false } : a)));
+        setAttachments((current) =>
+          current.map((a) => (a.key === key ? { ...a, id: body.id, truncated: body.truncated, uploading: false, text: body.text, spans: body.spans } : a)),
+        );
       }),
     );
   }
@@ -529,7 +561,7 @@ export function ChatView(props: Props) {
               {t(`requestErrors.${requestError}`)}
             </p>
           ) : null}
-          <HideBar state={hide} hasImages={attachments.some((a) => a.kind === "image")} disabled={blocked} />
+          <HideBar state={hide} onProtectAndSend={() => void send(hide.payloadProtectingAll())} onSendAnyway={() => void send(hide.payload())} />
           <div
             className={cn(
               "rounded-2xl border bg-card shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
@@ -543,19 +575,32 @@ export function ChatView(props: Props) {
           >
             {attachments.length > 0 ? (
               <div className="flex flex-wrap gap-1.5 px-3 pt-3">
-                {attachments.map((a) => (
-                  <AttachmentChip
-                    key={a.key}
-                    attachment={a}
-                    pending={a.uploading}
-                    onRemove={a.uploading ? undefined : () => removeAttachment(a)}
-                    removeLabel={t("removeAttachment", { name: a.filename })}
-                  />
-                ))}
+                {attachments.map((a) => {
+                  const file = hide.files.find((f) => f.key === a.key);
+                  return (
+                    <AttachmentChip
+                      key={a.key}
+                      attachment={a}
+                      pending={a.uploading}
+                      onRemove={a.uploading ? undefined : () => removeAttachment(a)}
+                      removeLabel={t("removeAttachment", { name: a.filename })}
+                      hideBadge={
+                        a.kind === "image" && !a.uploading
+                          ? { tone: "muted", label: tHide("imageNotMasked") }
+                          : file && file.visible.length > 0
+                            ? { tone: "visible", label: tHide("fileToCheck", { count: file.visible.length }) }
+                            : file && file.masked.length > 0
+                              ? { tone: "protected", label: tHide("fileProtected", { count: file.masked.length }) }
+                              : undefined
+                      }
+                      onOpen={file ? () => setPreviewKey(a.key) : undefined}
+                    />
+                  );
+                })}
               </div>
             ) : null}
             <div className="relative">
-              {hide.manual ? <HideOverlay text={input} state={hide} scrollTop={inputScroll} className={TEXTAREA_LAYOUT} /> : null}
+              <HideOverlay text={input} state={hide} scrollTop={inputScroll} className={TEXTAREA_LAYOUT} />
               <textarea
                 ref={textarea}
                 value={input}
@@ -568,23 +613,24 @@ export function ChatView(props: Props) {
                   }
                 }}
                 onScroll={(e) => setInputScroll(e.currentTarget.scrollTop)}
-                // Manual mode: a click on an underlined item blurs it (or shows it again); a selection can be blurred.
+                // Hide: a click on a red item protects it (green, struck), on a green one leaves it visible;
+                // any selected passage can be protected.
                 onClick={(e) => {
                   const el = e.currentTarget;
-                  if (hide.manual && el.selectionStart === el.selectionEnd) hide.toggleAt(el.selectionStart);
+                  if (el.selectionStart === el.selectionEnd) hide.toggleAt(el.selectionStart);
                 }}
                 onSelect={(e) => {
                   const el = e.currentTarget;
                   const selected = input.slice(el.selectionStart, el.selectionEnd).trim();
-                  hide.setSelection(hide.manual && selected.length >= 2 ? selected : null);
+                  hide.setSelection(selected.length >= 2 ? selected : null);
                 }}
                 rows={1}
                 placeholder={t("placeholder")}
                 aria-label={t("placeholder")}
                 className={cn(
                   TEXTAREA_LAYOUT,
-                  "relative block max-h-60 w-full resize-none bg-transparent outline-none placeholder:text-muted-foreground/80 disabled:cursor-not-allowed",
-                  hide.manual && "text-transparent caret-foreground [scrollbar-width:none] selection:bg-brand/25 selection:text-transparent",
+                  // The visible text is drawn by HideOverlay underneath.
+                  "relative block max-h-60 w-full resize-none bg-transparent text-transparent caret-foreground outline-none [scrollbar-width:none] selection:bg-brand/25 selection:text-transparent placeholder:text-muted-foreground/80 disabled:cursor-not-allowed",
                 )}
               />
             </div>
@@ -613,6 +659,7 @@ export function ChatView(props: Props) {
               />
               <ModelPicker value={modelChoice} onChange={changeModel} models={props.models} autoEnabled={props.autoEnabled} disabled={busy} />
               <div className="flex-1" />
+              <AutoSwitch state={hide} disabled={blocked} />
               {busy ? (
                 <Button size="icon-sm" variant="secondary" aria-label={t("stop")} onClick={stopAnswer} className="rounded-full">
                   <SquareIcon className="size-3 fill-current" />
@@ -628,6 +675,7 @@ export function ChatView(props: Props) {
         </div>
       </div>
 
+      <FilePreview file={hide.files.find((f) => f.key === previewKey) ?? null} state={hide} onClose={() => setPreviewKey(null)} />
       {conversationId ? <ConversationSuggestions open={suggesting} onOpenChange={setSuggesting} conversationId={conversationId} /> : null}
       <RenameDialog
         open={renaming}

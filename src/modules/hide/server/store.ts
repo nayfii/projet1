@@ -1,7 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
-import type { HideCounts, HideMode } from "../categories";
+import type { HideCounts, HideMode, Span } from "../categories";
 import type { ListTerm } from "../detectors/lists";
 
 /**
@@ -54,10 +54,13 @@ export async function assignPlaceholders(
   return (data ?? []).map((r) => ({ valueHash: r.value_hash, placeholder: r.placeholder, category: r.category, ciphertext: r.value_ciphertext }));
 }
 
-export async function saveMessageMask(messageId: string, mask: { maskedContent: string | null; modes: HideMode[]; counts: HideCounts | null }): Promise<void> {
+export async function saveMessageMask(
+  messageId: string,
+  mask: { maskedContent: string | null; modes: HideMode[]; counts: HideCounts | null; spans: Span[] | null },
+): Promise<void> {
   const { error } = await createAdminClient()
     .from("messages")
-    .update({ masked_content: mask.maskedContent, hide_modes: mask.modes, hide_counts: mask.counts as Json | null })
+    .update({ masked_content: mask.maskedContent, hide_modes: mask.modes, hide_counts: mask.counts as Json | null, hide_spans: mask.spans as Json | null })
     .eq("id", messageId);
   if (error) throw new Error(`hide message update failed: ${error.code}`);
 }

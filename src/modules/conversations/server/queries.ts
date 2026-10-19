@@ -2,7 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { RoutingInfo } from "../stream-events";
 import type { TimelineMessage } from "../types";
-import { isHideMode, type HideCounts } from "@/modules/hide/categories";
+import { isHideMode, type HideCounts, type Span } from "@/modules/hide/categories";
 import type { SourceProof } from "@/modules/memory/types";
 
 const STALE_STREAM_MS = 5 * 60 * 1000;
@@ -42,7 +42,7 @@ export async function getConversation(conversationId: string) {
   const { data: rows } = await supabase
     .from("messages")
     .select(
-      "id, seq, author_type, content, masked_content, hide_counts, hide_modes, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated)",
+      "id, seq, author_type, content, masked_content, hide_counts, hide_modes, hide_spans, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated)",
     )
     .eq("conversation_id", conversationId)
     .is("superseded_at", null)
@@ -104,6 +104,7 @@ export async function getConversation(conversationId: string) {
     sources: sourcesByMessage.get(m.id) ?? [],
     maskedContent: m.masked_content,
     hideCounts: (m.hide_counts as HideCounts | null) ?? null,
+    hideSpans: Array.isArray(m.hide_spans) ? (m.hide_spans as Span[]) : [],
   }));
 
   // Hide modes of the last message sent: the mode control starts from them.

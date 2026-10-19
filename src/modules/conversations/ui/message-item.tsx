@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   ImageIcon,
   RefreshCwIcon,
+  ShieldCheckIcon,
   SparklesIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { ModelName, ProviderDot } from "./provider-mark";
 import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
 import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
 import { MaskedView } from "@/modules/hide/ui/masked-view";
+import { ProtectedText } from "@/modules/hide/ui/hide-composer";
 
 type MemoryProps = { memoryTargets: MemoryTarget[]; conversationId: string | null };
 
@@ -111,7 +113,7 @@ function UserMessage({ message, memoryTargets, conversationId }: { message: Time
             className="mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100"
           />
           <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-4 py-2.5 text-[15px] leading-relaxed">
-            {message.content}
+            <ProtectedText text={message.content} spans={message.hideSpans} />
           </div>
         </div>
       ) : null}
@@ -125,11 +127,17 @@ export function AttachmentChip({
   onRemove,
   removeLabel,
   pending,
+  hideBadge,
+  onOpen,
 }: {
   attachment: { id?: string; filename: string; kind: "image" | "document"; truncated?: boolean };
   onRemove?: () => void;
   removeLabel?: string;
   pending?: boolean;
+  /** Hide: "3 à vérifier" (red), "3 protégés" (green) or a neutral note. */
+  hideBadge?: { tone: "visible" | "protected" | "muted"; label: string };
+  /** Opens the file's Hide preview. */
+  onOpen?: () => void;
 }) {
   const t = useTranslations("chat");
   const Icon = attachment.kind === "image" ? ImageIcon : FileTextIcon;
@@ -138,6 +146,18 @@ export function AttachmentChip({
       <Icon className="size-3.5 shrink-0 text-muted-foreground" />
       <span className="max-w-44 truncate">{attachment.filename}</span>
       {attachment.truncated ? <span className="text-warning">{t("partiallyRead")}</span> : null}
+      {hideBadge ? (
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 font-medium",
+            hideBadge.tone === "visible" ? "text-destructive" : hideBadge.tone === "protected" ? "text-success" : "font-normal text-muted-foreground",
+          )}
+        >
+          {hideBadge.tone === "visible" ? <span className="size-1.5 rounded-full bg-destructive" /> : null}
+          {hideBadge.tone === "protected" ? <ShieldCheckIcon className="size-3.5" /> : null}
+          {hideBadge.label}
+        </span>
+      ) : null}
     </>
   );
   const className = cn(
@@ -146,7 +166,11 @@ export function AttachmentChip({
   );
   return (
     <span className={className}>
-      {attachment.id && !onRemove ? (
+      {onOpen ? (
+        <button type="button" onClick={onOpen} className="inline-flex items-center gap-1.5 hover:underline">
+          {body}
+        </button>
+      ) : attachment.id && !onRemove ? (
         <a href={`/api/attachments/${attachment.id}`} className="inline-flex items-center gap-1.5 hover:underline">
           {body}
         </a>

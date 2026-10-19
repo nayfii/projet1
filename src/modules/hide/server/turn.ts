@@ -13,6 +13,8 @@ type Facts = {
 export type MaskedTurn = {
   /** The new message as the model receives it (null: unchanged), and what was masked in it and its files. */
   message: string | null;
+  /** Where the protected values are in the typed message (positions only, shown struck through in green). */
+  messageSpans: Span[];
   counts: HideCounts;
   attachments: { id: string; maskedText: string }[];
   facts: Facts;
@@ -23,8 +25,8 @@ const whole = (text: string, category: Span["category"]): Span[] => (text ? [{ s
 /**
  * Masks what a new turn sends to the model, in one batch (so new values get their placeholders
  * in a single round trip):
- * - the typed message: Automatic (company categories) and Manual (the person's choices);
- * - attached documents: Documents mode, company categories;
+ * - the typed message and attached documents: Automatic (company categories) and the person's
+ *   choices (protect or leave visible), the same rule for both;
  * - facts in the instructions (person's name, linked client, descriptions) whenever Automatic is on,
  *   so the model cannot read in the instructions what is masked in the message.
  */
@@ -49,15 +51,14 @@ export async function maskTurn(
     return items.length - 1;
   };
 
-  const messageIndex =
-    input.text && (automatic || manual)
-      ? add(input.text, spansToMask(input.text, masker.detect(input.text), auto, { modes: input.modes, ...input.choices }))
-      : -1;
-  const attachmentIndexes = documents
-    ? input.attachments
-        .filter((a) => a.kind !== "image" && a.extracted_text)
-        .map((a) => ({ id: a.id, index: add(a.extracted_text!, autoSpans(masker.detect(a.extracted_text!), auto)) }))
-    : [];
+  const choices = { modes: input.modes, ...input.choices };
+  const messageIndex = input.text && (automatic || manual) ? add(input.text, spansToMask(input.text, masker.detect(input.text), auto, choices)) : -1;
+  // Files follow the message's rule; "documents" alone (older clients) masks the company categories.
+  const fileSpans = (text: string) => (automatic || manual ? spansToMask(text, masker.detect(text), auto, choices) : autoSpans(masker.detect(text), auto));
+  const attachmentIndexes =
+    automatic || manual || documents
+      ? input.attachments.filter((a) => a.kind !== "image" && a.extracted_text).map((a) => ({ id: a.id, index: add(a.extracted_text!, fileSpans(a.extracted_text!)) }))
+      : [];
 
   const facts = input.facts;
   const factIndex = automatic
@@ -84,6 +85,7 @@ export async function maskTurn(
 
   return {
     message,
+    messageSpans: messageIndex >= 0 && message !== null ? items[messageIndex].spans : [],
     counts,
     attachments,
     facts: factIndex
@@ -103,8 +105,8 @@ export async function maskTurn(
 }
 
 /**
- * Memory passages given to the model: their text and titles are masked in Documents mode; the
- * client's name in their origin is masked whenever Automatic or Documents is on.
+ * Memory passages given to the model: their text and titles are masked when Automatic is on (or
+ * Documents, for older clients); the client's name in their origin too.
  * Source Proof keeps the real passages (shown only to people allowed to read them).
  */
 export async function maskPassages(
@@ -113,8 +115,8 @@ export async function maskPassages(
   modes: HideMode[],
   autoCategories: ReadonlySet<AutoCategory>,
 ): Promise<KnowledgePassage[]> {
-  const documents = modes.includes("documents");
-  const maskClient = (documents || modes.includes("automatic")) && autoCategories.has("client");
+  const documents = modes.includes("documents") || modes.includes("automatic");
+  const maskClient = documents && autoCategories.has("client");
   if (passages.length === 0 || (!documents && !maskClient)) return passages;
   const items: MaskItem[] = [];
   const slots = passages.map((p) => {

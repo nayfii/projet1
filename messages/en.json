@@ -837,23 +837,7 @@
     "accessSaved": "Access saved."
   },
   "hide": {
-    "protection": "Protection",
-    "mode": {
-      "automatic": "Automatic",
-      "documents": "Documents",
-      "manual": "Manual"
-    },
-    "modeHint": {
-      "automatic": "Masks sensitive data in your message before it is sent to the AI",
-      "documents": "Masks sensitive data in attached files and memory passages",
-      "manual": "Underlines in red what looks sensitive: click an item to blur or show it, or select a passage"
-    },
-    "off": "Protection off",
-    "willMask": "{count, plural, one {# item will be masked} other {# items will be masked}}",
-    "manualHelp": "Click an item to blur it",
-    "blurSelection": "Blur selection",
-    "imagesNotMasked": "Images cannot be masked",
-    "maskedCount": "{count, plural, one {# item masked} other {# items masked}}",
+    "maskedCount": "{count, plural, one {# item protected} other {# items protected}}",
     "answerRestored": "Real values restored",
     "showReceived": "See what the AI received",
     "showWritten": "See the answer as the AI wrote it",
@@ -873,19 +857,31 @@
       "file": "File name",
       "term": "Sensitive term",
       "redacted": "Passage blurred by hand"
-    }
+    },
+    "auto": "Auto-protect",
+    "barProtected": "{count, plural, one {# item protected: the AI will not see it} other {# items protected: the AI will not see them}} — click one to leave it visible",
+    "barVisible": "{count, plural, one {# sensitive item found — click it to protect it} other {# sensitive items found — click them to protect them}}",
+    "barMixed": "{protected} protected, {visible} visible to the AI — click an item to change it",
+    "protectAll": "Protect all",
+    "protectSelection": "Protect “{text}”",
+    "confirm": "{count, plural, one {# sensitive item is not protected.} other {# sensitive items are not protected.}}",
+    "protectAndSend": "Protect and send",
+    "sendAnyway": "Send as is",
+    "fileToCheck": "{count} to check",
+    "fileProtected": "{count} protected",
+    "imageNotMasked": "image cannot be masked",
+    "filePreview": "File preview",
+    "previewAuto": "What the AI will receive. Green struck = protected; click an item to leave it visible.",
+    "previewManual": "What the AI will receive. Click what is red to protect it.",
+    "protectItem": "Protect: {text}",
+    "showItem": "Leave visible: {text}",
+    "done": "Done",
+    "protectedTitle": "Protected: the AI did not see it"
   },
   "hideAdmin": {
     "title": "Data protection (Hide)",
     "description": "What is masked before anything is sent to AI models. Detection runs on our servers: the AI receives placeholders such as [CLIENT_1], your team sees the real values.",
-    "modesTitle": "Modes on by default",
-    "modesBody": "Each employee can change them for a conversation, above the message box.",
-    "modeBody": {
-      "automatic": "Automatically masks the categories below in messages.",
-      "documents": "Masks the same categories in attached files and memory passages sent to the AI.",
-      "manual": "Underlines in red what looks sensitive: the employee chooses what to mask."
-    },
-    "categoriesTitle": "What Automatic mode masks",
+    "categoriesTitle": "What auto-protect covers",
     "categoriesBody": "Amounts are off by default: the AI needs them to calculate.",
     "categoryExample": {
       "iban": "FR76 3000 6000 0112 3456 7890 189 (checked with its check digits)",
@@ -899,7 +895,7 @@
       "file": "File names added below",
       "term": "Other terms added below"
     },
-    "recallNote": "Detection relies on rules, check digits and your own lists: it is never perfect. Manual mode lets people check before sending.",
+    "recallNote": "Detection relies on rules, check digits and your own lists: it is never perfect. Each employee sees what was detected before sending and can protect any passage.",
     "save": "Save",
     "saved": "Protection settings saved.",
     "termsTitle": "Sensitive terms",
@@ -918,6 +914,8 @@
     "termRemoved": "Term removed.",
     "removeTerm": "Remove {term}",
     "noTerms": "No terms yet.",
-    "listsNote": "Your clients' and employees' names are already included automatically."
+    "listsNote": "Your clients' and employees' names are already included automatically.",
+    "autoTitle": "Auto-protect by default",
+    "autoBody": "What is detected arrives protected (struck through in green) before sending. Each employee sees in red what remains visible to the AI, can click to change it, or turn auto-protect off for a conversation."
   }
 }

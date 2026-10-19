@@ -212,12 +212,12 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     const counts = turn && totalCount(turn.counts) > 0 ? turn.counts : null;
     if (hideModes.length > 0) {
       // What the model receives is stored by the server only, never by the browser.
-      await saveMessageMask(data.id, { maskedContent: turn?.message ?? null, modes: hideModes, counts });
+      await saveMessageMask(data.id, { maskedContent: turn?.message ?? null, modes: hideModes, counts, spans: turn?.messageSpans.length ? turn.messageSpans : null });
       if (turn?.attachments.length) await saveAttachmentMasks(turn.attachments);
       if (counts) await logMaskingEvent({ companyId, userId: ctx.user.id, conversationId: conversation.id, counts, modes: hideModes });
     }
     const maskedAttachments = new Map((turn?.attachments ?? []).map((a) => [a.id, a.maskedText]));
-    userMessage = { id: data.id, seq: data.seq, masked: counts ? { content: turn?.message ?? null, counts } : null };
+    userMessage = { id: data.id, seq: data.seq, masked: counts ? { content: turn?.message ?? null, counts, spans: turn?.messageSpans ?? [] } : null };
     base = [
       ...base,
       {

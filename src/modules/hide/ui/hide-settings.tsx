@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { EraserIcon, FileTextIcon, PlusIcon, Trash2Icon, WandSparklesIcon } from "lucide-react";
+import { PlusIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,23 +11,22 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AUTO_CATEGORIES, HIDE_MODES, type AutoCategory, type HideMode, type HideSettings } from "../categories";
+import { AUTO_CATEGORIES, type AutoCategory, type HideSettings } from "../categories";
 import { addSensitiveTermAction, removeSensitiveTermAction, saveHideSettingsAction } from "../server/actions";
 
 type Term = { id: string; term: string; category: "client" | "project" | "file" | "term" };
 const TERM_CATEGORIES = ["client", "project", "file", "term"] as const;
-const MODE_ICONS = { automatic: WandSparklesIcon, documents: FileTextIcon, manual: EraserIcon } as const;
 
 export function HideSettingsForm({ initial, terms }: { initial: HideSettings; terms: Term[] }) {
   const t = useTranslations("hideAdmin");
   const tHide = useTranslations("hide");
   const tErrors = useTranslations("errors");
-  const [modes, setModes] = React.useState<Set<HideMode>>(new Set(initial.defaultModes));
+  const initialAuto = initial.defaultModes.includes("automatic");
+  const [auto, setAuto] = React.useState(initialAuto);
   const [categories, setCategories] = React.useState<Set<AutoCategory>>(new Set(initial.autoCategories));
   const [saving, startSaving] = React.useTransition();
   const dirty =
-    modes.size !== initial.defaultModes.length ||
-    initial.defaultModes.some((m) => !modes.has(m)) ||
+    auto !== initialAuto ||
     categories.size !== initial.autoCategories.length ||
     initial.autoCategories.some((c) => !categories.has(c));
 
@@ -40,29 +39,18 @@ export function HideSettingsForm({ initial, terms }: { initial: HideSettings; te
 
   return (
     <div className="space-y-10">
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-sm font-medium">{t("modesTitle")}</h2>
-          <p className="text-[13px] text-muted-foreground">{t("modesBody")}</p>
-        </div>
-        <Card className="divide-y">
-          {HIDE_MODES.map((mode) => {
-            const Icon = MODE_ICONS[mode];
-            return (
-              <label key={mode} className="flex items-start justify-between gap-4 p-4">
-                <span className="flex items-start gap-3">
-                  <Icon className="mt-0.5 size-4 text-brand" />
-                  <span>
-                    <span className="block text-sm font-medium">{tHide(`mode.${mode}`)}</span>
-                    <span className="block text-[13px] text-muted-foreground">{t(`modeBody.${mode}`)}</span>
-                  </span>
-                </span>
-                <Switch checked={modes.has(mode)} onCheckedChange={(on) => setModes((m) => toggle(m, mode, on))} aria-label={tHide(`mode.${mode}`)} />
-              </label>
-            );
-          })}
-        </Card>
-      </section>
+      <Card>
+        <label className="flex items-start justify-between gap-4 p-4">
+          <span className="flex items-start gap-3">
+            <ShieldCheckIcon className="mt-0.5 size-4 text-success" />
+            <span>
+              <span className="block text-sm font-medium">{t("autoTitle")}</span>
+              <span className="block text-[13px] text-muted-foreground">{t("autoBody")}</span>
+            </span>
+          </span>
+          <Switch checked={auto} onCheckedChange={setAuto} aria-label={t("autoTitle")} />
+        </label>
+      </Card>
 
       <section className="space-y-3">
         <div>
@@ -92,7 +80,7 @@ export function HideSettingsForm({ initial, terms }: { initial: HideSettings; te
           disabled={!dirty || saving}
           onClick={() =>
             startSaving(async () => {
-              const result = await saveHideSettingsAction({ modes: [...modes], categories: [...categories] });
+              const result = await saveHideSettingsAction({ modes: auto ? ["automatic"] : [], categories: [...categories] });
               if (result.ok) toast.success(t("saved"));
               else toast.error(tErrors(result.error));
             })
