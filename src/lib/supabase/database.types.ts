@@ -851,7 +851,7 @@ isOneToOne: false
 { Args: { "p_approve": boolean,"p_content"?: string,"p_suggestion": string,"p_title"?: string }; Returns: string
                            },
 "match_memory":
-{ Args: { "p_embedding"?: string,"p_keywords": string,"p_limit"?: number,"p_min_similarity"?: number,"p_space_ids": (string)[] }; Returns: {
+{ Args: { "p_embedding"?: string,"p_embedding_model"?: string,"p_keywords": string,"p_limit"?: number,"p_min_similarity"?: number,"p_space_ids": (string)[] }; Returns: {
               "char_end": number,"char_start": number,"content": string,"document_id": string,"id": string,"page": number,"score": number,"source_date": string,"source_type": string,"space_id": string,"title": string
             }[]
                            },

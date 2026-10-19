@@ -148,14 +148,32 @@ test("leaving the conversation while the AI writes does not stop the answer", as
 
 test("the Stop button stops the answer, on the server too", async () => {
   await page.goto(conversationUrl);
+  const before = await answers().count();
   await composer().fill("[[slow]] Liste toutes les étapes d'un devis");
   await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(answers()).toHaveCount(before + 1);
   await expect(answers().last()).toContainText("[TEST]");
   await page.getByRole("button", { name: "Arrêter la réponse" }).click();
   await expect(answers().last()).toContainText("Réponse interrompue.");
   // Saved as stopped, with only the part written before Stop.
   await page.waitForTimeout(2_000);
   await page.reload();
+  await expect(answers().last()).toContainText("Réponse interrompue.");
+  await expect(answers().last()).not.toContainText("Your last message had");
+});
+
+test("Stop clicked before the first word also stops the answer on the server", async () => {
+  await page.goto(conversationUrl);
+  const before = await answers().count();
+  await composer().fill("[[slow]] Résume les étapes d'un devis");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  // Right away: usually before the server has started the answer (memory search, model choice).
+  await page.getByRole("button", { name: "Arrêter la réponse" }).click();
+  await expect(answers()).toHaveCount(before + 1);
+  await expect(answers().last()).toContainText("Réponse interrompue.");
+  await page.waitForTimeout(4_000);
+  await page.reload();
+  await expect(answers()).toHaveCount(before + 1);
   await expect(answers().last()).toContainText("Réponse interrompue.");
   await expect(answers().last()).not.toContainText("Your last message had");
 });

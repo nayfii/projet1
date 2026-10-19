@@ -317,6 +317,18 @@ describe("through the AI: the passages given to the model", () => {
     expect(passages.find((p) => p.spaceId === clientASpace)?.clientName).toBe("Client A");
   });
 
+  it("compares meanings only with vectors from the embeddings model in use", async () => {
+    const vector = `[${Array.from({ length: 1536 }, () => "0.1").join(",")}]`;
+    const entry = await owner.client.from("memory_entries").insert({ space_id: companySpace, title: "Vecteur", content: "Texte sans mot commun" }).select("id").single();
+    if (entry.error) throw entry.error;
+    await owner.client.from("memory_entries").update({ embedding: vector, embedding_model: "model-a" }).eq("id", entry.data.id);
+    const search = (model: string) =>
+      owner.client.rpc("match_memory", { p_space_ids: [companySpace], p_keywords: "introuvable", p_embedding: vector, p_embedding_model: model });
+    expect((await search("model-a")).data?.map((r) => r.id)).toContain(entry.data.id);
+    expect((await search("model-b")).data?.map((r) => r.id)).not.toContain(entry.data.id);
+    await owner.client.from("memory_entries").delete().eq("id", entry.data.id);
+  });
+
   it("gives Nathalie nothing from Client A, even if her request names the client", async () => {
     for (const clientId of [null, clientA]) {
       const passages = await retrievePassages(nathalie.client as unknown as UserClient, asMember(nathalie), { clientId, query: question });

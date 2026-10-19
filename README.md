@@ -28,5 +28,6 @@ pnpm test:smoke                  # one tiny real request per configured AI provi
 ```
 
 AI keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`) are optional: a provider without a key shows its models as "Not configured".
+Memory search by meaning uses the embeddings provider set by `EMBEDDINGS_PROVIDER` (OpenAI by default, or Google); without a working key, memory is searched by exact words only.
 
 `pnpm db:reset` re-applies the migrations and the DEMO seed. `pnpm db:types` regenerates database types.

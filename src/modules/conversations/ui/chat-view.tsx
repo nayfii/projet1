@@ -89,6 +89,8 @@ export function ChatView(props: Props) {
   const [deleting, setDeleting] = React.useState(false);
 
   const abortRef = React.useRef<AbortController | null>(null);
+  // Stop clicked before the server said which answer it is writing: stop it as soon as it does.
+  const stopPending = React.useRef(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const stickToBottom = React.useRef(true);
   const fileInput = React.useRef<HTMLInputElement>(null);
@@ -167,6 +169,7 @@ export function ChatView(props: Props) {
     stickToBottom.current = true;
     const controller = new AbortController();
     abortRef.current = controller;
+    stopPending.current = false;
     let currentLive: string | null = null;
     let restoreReplaced = options.replaced ?? null;
 
@@ -202,6 +205,10 @@ export function ChatView(props: Props) {
           if (event.type === "meta") {
             currentLive = event.assistantMessage.id;
             setLiveId(currentLive);
+            if (stopPending.current) {
+              requestStop(currentLive);
+              controller.abort();
+            }
             setMessages((list) => {
               let next = list.map((m) => (m.id === "pending-user" && event.userMessage ? { ...m, id: event.userMessage.id, seq: event.userMessage.seq } : m));
               if (event.replaces) next = next.filter((m) => m.id !== event.replaces);
@@ -311,14 +318,21 @@ export function ChatView(props: Props) {
 
   /** Stop button: the server stops writing (and saves what was written), then the local stream closes. */
   function stopAnswer() {
-    if (liveId) {
-      void fetch("/api/chat/stop", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messageId: liveId }),
-      });
+    if (!liveId) {
+      // The answer has not started yet (memory search, model choice): the server is told as soon as it starts.
+      stopPending.current = true;
+      return;
     }
+    requestStop(liveId);
     abortRef.current?.abort();
+  }
+
+  function requestStop(messageId: string) {
+    void fetch("/api/chat/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageId }),
+    });
   }
 
   function regenerate(message: TimelineMessage, choice?: string) {

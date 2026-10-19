@@ -3,6 +3,7 @@ import type { MemberContext } from "@/lib/auth/guards";
 import type { UserClient } from "@/lib/supabase/server";
 import { keywordQuery } from "../keywords";
 import type { KnowledgePassage } from "../types";
+import { embeddingModelName } from "@/modules/providers/server/embeddings";
 import { embedQuery } from "./indexer";
 
 export const MAX_PASSAGES = 6;
@@ -66,6 +67,7 @@ export async function retrievePassages(
     p_space_ids: ids,
     p_keywords: keywordQuery(query),
     p_embedding: embedding ?? undefined,
+    p_embedding_model: embeddingModelName(),
     p_limit: MAX_PASSAGES,
   });
   const rows = (data ?? []).filter((r) => ids.includes(r.space_id));
