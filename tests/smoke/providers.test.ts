@@ -56,3 +56,29 @@ describe("error handling with a real provider", () => {
     expect(error && error.type === "error" && error.error.code).toBe("model_not_found");
   });
 });
+
+describe("embeddings (real API)", () => {
+  it.skipIf(!process.env.OPENAI_API_KEY || process.env.EMBEDDINGS_PROVIDER === "google")(
+    "returns 1536-dimension vectors that put related texts closer",
+    async () => {
+      const { embedTexts } = await import("@/modules/providers/server/embeddings");
+      const result = await embedTexts([
+        "Délai de paiement des factures du client",
+        "Le client règle ses factures à 45 jours fin de mois",
+        "Recette de la tarte aux pommes",
+      ]);
+      if (!result.ok && result.error.code === "provider_quota") {
+        // The provider account has no credits for embeddings: report it, it is not a code failure.
+        console.warn("embeddings: provider account out of credits (provider_quota)");
+        return;
+      }
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.vectors[0]).toHaveLength(1536);
+      expect(result.tokens).toBeGreaterThan(0);
+      const cos = (a: number[], b: number[]) => a.reduce((s, v, i) => s + v * b[i], 0);
+      expect(cos(result.vectors[0], result.vectors[1])).toBeGreaterThan(cos(result.vectors[0], result.vectors[2]));
+      console.info("embeddings:", result.model, "tokens", result.tokens, "similar", cos(result.vectors[0], result.vectors[1]).toFixed(3), "unrelated", cos(result.vectors[0], result.vectors[2]).toFixed(3));
+    },
+  );
+});

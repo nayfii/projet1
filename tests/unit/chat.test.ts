@@ -12,6 +12,7 @@ import { evaluateQuota } from "@/modules/usage/quota";
 import { contentMatchesExtension, decodeText, extractText } from "@/modules/documents/server/extract";
 import { createFakeProvider } from "@/modules/providers/server/adapters/fake";
 import type { ChatEvent, ChatRequest } from "@/modules/providers/types";
+import { minimalPdf } from "../helpers/pdf";
 
 function model(id: string, provider: CatalogModel["provider"], tier: CatalogModel["tier"], strengths: string[], extra: Partial<CatalogModel> = {}): CatalogModel {
   const rates = { fast: [100, 500], balanced: [2000, 10000], advanced: [10000, 50000] }[tier];
@@ -346,27 +347,3 @@ describe("attachments are read on our server", () => {
     expect(text.length).toBe(40_000);
   });
 });
-
-/** Smallest valid one-page PDF with one line of text (built by hand, offsets computed). */
-function minimalPdf(line: string): Uint8Array {
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
-    null,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-  ];
-  const stream = `BT /F1 12 Tf 20 100 Td (${line}) Tj ET`;
-  objects[3] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
-  let out = "%PDF-1.4\n";
-  const offsets: number[] = [];
-  objects.forEach((body, i) => {
-    offsets.push(out.length);
-    out += `${i + 1} 0 obj\n${body}\nendobj\n`;
-  });
-  const xref = out.length;
-  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (const o of offsets) out += `${String(o).padStart(10, "0")} 00000 n \n`;
-  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return new TextEncoder().encode(out);
-}
