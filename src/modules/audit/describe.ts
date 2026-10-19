@@ -23,6 +23,14 @@ const KNOWN = new Set<string>([
   "plan_updated",
   "plan_deleted",
   "platform_admin_granted",
+  "models_updated",
+  "quota_default_updated",
+  "quota_member_updated",
+  "ai_request_blocked",
+  "model_created",
+  "model_updated",
+  "model_deleted",
+  "credits_granted",
 ]);
 
 type EventLike = { action: string; target_id: string | null; metadata: Json };
@@ -46,6 +54,7 @@ export function describeEvent(
       from: String(meta.from ?? ""),
       to: String(meta.to ?? ""),
       role: String(meta.role ?? ""),
+      reason: String(meta.reason ?? ""),
       code: event.action,
     },
   };

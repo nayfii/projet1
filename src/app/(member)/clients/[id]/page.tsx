@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
-import { ArrowLeftIcon, BrainIcon, FileTextIcon, MessageSquareIcon } from "lucide-react";
+import { getFormatter, getTranslations } from "next-intl/server";
+import { ArrowLeftIcon, BrainIcon, FileTextIcon, MessageSquareIcon, SquarePenIcon } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { ComingSoon } from "@/components/ui/coming-soon";
+import { Button } from "@/components/ui/button";
+import { listConversations } from "@/modules/conversations/server/queries";
 import { getClientById, listClients } from "@/modules/clients/server/queries";
 import { AvatarStack, VisibilityBadge } from "@/modules/clients/ui/client-badges";
 
@@ -24,11 +26,13 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
   const client = await getClientById(id);
   if (!client || client.company_id !== ctx.active.companyId) notFound();
   const withAssignees = (await listClients(ctx.active.companyId, { includeArchived: true })).find((c) => c.id === id);
+  // RLS: only the conversations this user takes part in.
+  const conversations = await listConversations(ctx.active.companyId, { clientId: id, limit: 20 });
+  const format = await getFormatter();
 
   const sections = [
     { icon: BrainIcon, title: t("memorySection"), body: t("memorySectionBody") },
     { icon: FileTextIcon, title: t("documentsSection"), body: t("documentsSectionBody") },
-    { icon: MessageSquareIcon, title: t("conversationsSection"), body: t("conversationsSectionBody") },
   ];
 
   return (
@@ -49,7 +53,35 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
           <span>{t("assignedCount", { count: withAssignees.assignees.length })}</span>
         </div>
       ) : null}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <section className="mb-8 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-medium">
+            <MessageSquareIcon className="size-4 text-muted-foreground" />
+            {t("conversationsSection")}
+          </h2>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/chat?client=${client.id}`}>
+              <SquarePenIcon />
+              {t("newConversation")}
+            </Link>
+          </Button>
+        </div>
+        {conversations.length === 0 ? (
+          <p className="rounded-xl border border-dashed px-4 py-6 text-center text-[13px] text-muted-foreground">{t("noConversations")}</p>
+        ) : (
+          <Card className="divide-y overflow-hidden">
+            {conversations.map((c) => (
+              <Link key={c.id} href={`/chat/${c.id}`} className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-accent/60">
+                <span className="min-w-0 flex-1 truncate">{c.title ?? t("untitledConversation")}</span>
+                <time className="shrink-0 text-xs text-muted-foreground" dateTime={c.lastMessageAt}>
+                  {format.dateTime(new Date(c.lastMessageAt), { dateStyle: "medium" })}
+                </time>
+              </Link>
+            ))}
+          </Card>
+        )}
+      </section>
+      <div className="grid gap-3 sm:grid-cols-2">
         {sections.map(({ icon: Icon, title, body }) => (
           <Card key={title} className="p-5">
             <div className="flex items-start justify-between">

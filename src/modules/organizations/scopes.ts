@@ -15,7 +15,7 @@ export const ADMIN_SCOPES = [
 export type AdminScope = (typeof ADMIN_SCOPES)[number];
 
 /** Scopes whose admin screens exist today. The others are shown as "Coming soon". */
-export const AVAILABLE_SCOPES: readonly AdminScope[] = ["company", "members", "clients", "activity"];
+export const AVAILABLE_SCOPES: readonly AdminScope[] = ["company", "members", "clients", "models", "usage", "quotas", "activity"];
 
 export type CompanyRole = "owner" | "admin" | "member";
 

@@ -36,3 +36,18 @@ export function platformAdminEmails(): Set<string> {
       .filter(Boolean),
   );
 }
+
+/** AI provider keys (server only). A missing key disables that provider's models with a clear message. */
+export function aiProviderKey(provider: "openai" | "anthropic" | "google"): string | undefined {
+  const value = {
+    openai: process.env.OPENAI_API_KEY,
+    anthropic: process.env.ANTHROPIC_API_KEY,
+    google: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  }[provider];
+  return value?.trim() || undefined;
+}
+
+/** Automated tests only: replaces every provider with a simulated one (answers are visibly labelled). */
+export function fakeProviderEnabled(): boolean {
+  return process.env.AI_FAKE_PROVIDER === "true";
+}

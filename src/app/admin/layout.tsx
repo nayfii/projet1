@@ -27,7 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       label: t("ai"),
       items: [
-        ...item("models", { href: "/admin/models", label: t("models"), icon: "models", soon: true }),
+        ...item("models", { href: "/admin/models", label: t("models"), icon: "models" }),
         ...item("agents", { href: "/admin/agents", label: t("agents"), icon: "agents", soon: true }),
         ...item("hide", { href: "/admin/hide", label: t("hide"), icon: "hide", soon: true }),
       ],
@@ -35,8 +35,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       label: t("usageSection"),
       items: [
-        ...item("usage", { href: "/admin/usage", label: t("usage"), icon: "usage", soon: true }),
-        ...item("quotas", { href: "/admin/quotas", label: t("quotas"), icon: "quotas", soon: true }),
+        ...item("usage", { href: "/admin/usage", label: t("usage"), icon: "usage" }),
+        ...item("quotas", { href: "/admin/quotas", label: t("quotas"), icon: "quotas" }),
       ],
     },
     {

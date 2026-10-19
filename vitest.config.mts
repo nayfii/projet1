@@ -5,7 +5,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      "server-only": path.resolve(__dirname, "tests/helpers/server-only-stub.ts"),
+    },
+  },
   test: {
     projects: [
       {
@@ -24,6 +29,11 @@ export default defineConfig({
           // Tests share one local database: run files one after another.
           fileParallelism: false,
         },
+      },
+      {
+        extends: true,
+        // Real API calls with the keys in the environment (a few hundred tokens per model). Run on demand.
+        test: { name: "smoke", include: ["tests/smoke/**/*.test.ts"], environment: "node", testTimeout: 60_000 },
       },
     ],
   },

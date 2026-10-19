@@ -3,7 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { BuildingIcon, PlusIcon } from "lucide-react";
+import { BuildingIcon, CoinsIcon, PlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CopyLinkButton } from "@/modules/organizations/ui/invite-form";
 import { createCompanyForCustomerAction, updateCompanyForPlatformAction } from "../server/actions";
+import { grantCreditsAction } from "@/modules/usage/server/actions";
 
 type Company = {
   id: string;
@@ -27,6 +28,8 @@ type Company = {
   pendingInvitations: number;
   ownerEmail: string | null;
   createdAt: string;
+  /** This month: credits used / limit (plan + extra) and estimated AI cost. Metadata only. */
+  credits: { used: number; limit: number; estimatedCostUsd: number; requests: number } | null;
 };
 
 export function CompaniesManager({
@@ -43,6 +46,7 @@ export function CompaniesManager({
   const tCommon = useTranslations("common");
   const format = useFormatter();
   const [creating, setCreating] = useState(false);
+  const [granting, setGranting] = useState<Company | null>(null);
   const [pending, startTransition] = useTransition();
 
   const update = (input: Parameters<typeof updateCompanyForPlatformAction>[0]) =>
@@ -70,12 +74,13 @@ export function CompaniesManager({
         <EmptyState icon={<BuildingIcon />} title={t("noCompanies")} />
       ) : (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[960px] text-sm">
             <thead>
               <tr className="border-b text-left text-[13px] text-muted-foreground">
                 <th className="px-4 py-2.5 font-medium">{t("colCompany")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("colPlan")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("colSeats")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("colCredits")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("colCreated")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("colStatus")}</th>
               </tr>
@@ -107,6 +112,28 @@ export function CompaniesManager({
                       <span className="ml-1.5 text-[13px] text-muted-foreground">{t("pending", { count: c.pendingInvitations })}</span>
                     ) : null}
                   </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <div className="min-w-0">
+                        <p className="tabular-nums">
+                          {c.credits
+                            ? t("creditsValue", {
+                                used: format.number(c.credits.used, { maximumFractionDigits: 0 }),
+                                limit: format.number(c.credits.limit, { maximumFractionDigits: 0 }),
+                              })
+                            : "—"}
+                        </p>
+                        {c.credits ? (
+                          <p className="text-[13px] text-muted-foreground">
+                            {t("estimatedCost", { cost: format.number(c.credits.estimatedCostUsd, { style: "currency", currency: "USD" }) })}
+                          </p>
+                        ) : null}
+                      </div>
+                      <Button variant="ghost" size="icon-sm" aria-label={t("grantCredits")} onClick={() => setGranting(c)}>
+                        <CoinsIcon />
+                      </Button>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-[13px] text-muted-foreground">
                     {format.dateTime(new Date(c.createdAt), { dateStyle: "medium" })}
                   </td>
@@ -130,6 +157,16 @@ export function CompaniesManager({
         </Card>
       )}
       <p className="text-[13px] text-muted-foreground">{t("contentNotice")}</p>
+
+      <Dialog open={granting !== null} onOpenChange={(open) => !open && setGranting(null)}>
+        <DialogContent className="max-w-md" closeLabel={tCommon("close")}>
+          <DialogHeader>
+            <DialogTitle>{t("grantTitle", { company: granting?.name ?? "" })}</DialogTitle>
+            <DialogDescription>{t("grantDescription")}</DialogDescription>
+          </DialogHeader>
+          {granting ? <GrantCreditsForm companyId={granting.id} onDone={() => setGranting(null)} /> : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent closeLabel={tCommon("close")}>
@@ -182,6 +219,40 @@ function CreateCompanyForm({ plans }: { plans: { id: string; name: string }[] })
       {state && !state.ok ? <FormMessage>{tErrors(state.error)}</FormMessage> : null}
       <div className="flex justify-end">
         <SubmitButton>{t("create")}</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+function GrantCreditsForm({ companyId, onDone }: { companyId: string; onDone: () => void }) {
+  const t = useTranslations("platform");
+  const tErrors = useTranslations("errors");
+  const [pending, startTransition] = useTransition();
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const form = new FormData(e.currentTarget);
+        const credits = Number(form.get("credits"));
+        if (!Number.isFinite(credits) || credits <= 0) return;
+        startTransition(async () => {
+          const result = await grantCreditsAction({ companyId, credits, note: String(form.get("note") ?? "") || undefined });
+          if (result.ok) {
+            toast.success(t("granted"));
+            onDone();
+          } else toast.error(tErrors(result.error));
+        });
+      }}
+    >
+      <Field label={t("grantCreditsLabel")} htmlFor="grant-credits">
+        <Input id="grant-credits" name="credits" type="number" min={1} required autoFocus />
+      </Field>
+      <Field label={t("grantNote")} htmlFor="grant-note">
+        <Input id="grant-note" name="note" maxLength={200} />
+      </Field>
+      <div className="flex justify-end">
+        <SubmitButton pending={pending}>{t("grantCredits")}</SubmitButton>
       </div>
     </form>
   );

@@ -1,5 +1,6 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { latestLinkFor } from "./mail";
+import { shot, signIn } from "./helpers";
 
 /**
  * Step 1 foundation, as a real user would do it: sign-up by magic link, onboarding, invitations,
@@ -9,20 +10,6 @@ const run = Date.now().toString(36);
 const owner = `owner-${run}@demo.local`;
 const olivier = `olivier-${run}@demo.local`;
 const nathalie = `nathalie-${run}@demo.local`;
-const shots = process.env.E2E_SCREENSHOTS;
-
-async function shot(page: Page, name: string) {
-  if (shots) await page.screenshot({ path: `${shots}/${name}.png`, fullPage: true });
-}
-
-async function signIn(page: Page, email: string) {
-  const before = new Date(Date.now() - 1000);
-  await page.goto("/login");
-  await page.getByLabel("Adresse e-mail").fill(email);
-  await page.getByRole("button", { name: "Recevoir mon lien" }).click();
-  await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible();
-  await page.goto(await latestLinkFor(email, before));
-}
 
 test.describe.configure({ mode: "serial" });
 

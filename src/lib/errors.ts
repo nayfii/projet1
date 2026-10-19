@@ -19,6 +19,7 @@ export const ERROR_CODES = [
   "not_found",
   "validation",
   "email_send_failed",
+  "invalid_models",
   "unknown",
 ] as const;
 

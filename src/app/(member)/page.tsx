@@ -17,7 +17,7 @@ export default async function HomePage() {
   const setupPending = hasScope(ctx.active, "company") && !ctx.active.onboardingCompletedAt;
 
   const tiles = [
-    { icon: MessageSquareIcon, title: t("askTitle"), body: t("askBody"), soon: true },
+    { icon: MessageSquareIcon, title: t("askTitle"), body: t("askBody"), href: "/chat" },
     { icon: BriefcaseIcon, title: t("clientsTitle"), body: t("clientsBody", { count: clients.length }), href: "/clients" },
     { icon: BrainIcon, title: t("memoryTitle"), body: t("memoryBody"), soon: true },
     { icon: BookOpenIcon, title: t("libraryTitle"), body: t("libraryBody"), soon: true },

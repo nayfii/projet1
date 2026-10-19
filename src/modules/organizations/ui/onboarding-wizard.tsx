@@ -99,13 +99,22 @@ export function OnboardingWizard(props: Props) {
 
         {props.step === "conversation" ? (
           <StepFrame title={t("conversationTitle")} subtitle={t("conversationSubtitle")}>
-            <SoonCard icon={<MessageSquareIcon />} text={t("conversationSoon")} />
-            <form action={completeOnboardingAction} className="mt-8 flex justify-end">
-              <SubmitButton variant="brand">
-                {t("finish")}
-                <ArrowRightIcon />
-              </SubmitButton>
-            </form>
+            <div className="flex items-start gap-3 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+              <MessageSquareIcon className="mt-0.5 size-4 shrink-0" />
+              <p>{t("conversationBody")}</p>
+            </div>
+            <div className="mt-8 flex flex-wrap justify-end gap-2">
+              <form action={completeOnboardingAction}>
+                <SubmitButton variant="ghost">{t("finish")}</SubmitButton>
+              </form>
+              <form action={completeOnboardingAction}>
+                <input type="hidden" name="next" value="/chat" />
+                <SubmitButton variant="brand">
+                  {t("startConversation")}
+                  <ArrowRightIcon />
+                </SubmitButton>
+              </form>
+            </div>
           </StepFrame>
         ) : null}
       </motion.div>

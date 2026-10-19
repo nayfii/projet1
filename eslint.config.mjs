@@ -22,6 +22,8 @@ const eslintConfig = defineConfig([
       "src/lib/supabase/admin.ts",
       "src/modules/identity/server/after-sign-in.ts",
       "src/modules/organizations/server/invitation-email.ts",
+      "src/modules/usage/server/record.ts",
+      "src/modules/conversations/server/assistant-writer.ts",
     ],
     rules: {
       "no-restricted-imports": [

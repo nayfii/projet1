@@ -93,7 +93,7 @@ export async function updateCompanyProfileAction(_: unknown, formData: FormData)
   return { ok: true };
 }
 
-export async function completeOnboardingAction() {
+export async function completeOnboardingAction(formData?: FormData) {
   const ctx = await memberOrNull("company");
   if (ctx) {
     const supabase = await createClient();
@@ -104,7 +104,8 @@ export async function completeOnboardingAction() {
       .is("onboarding_completed_at", null);
   }
   revalidatePath("/", "layout");
-  redirect("/");
+  // Only known destinations: the home page, or the first conversation.
+  redirect(formData?.get("next") === "/chat" ? "/chat" : "/");
 }
 
 // ─── Invitations ────────────────────────────────────────────────────────────

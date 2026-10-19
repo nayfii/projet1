@@ -31,6 +31,7 @@ import {
   WalletIcon,
   BriefcaseIcon,
   ArrowLeftIcon,
+  SquarePenIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +75,7 @@ const ICONS = {
   settings: SettingsIcon,
   shield: ShieldIcon,
   back: ArrowLeftIcon,
+  newChat: SquarePenIcon,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -100,6 +102,8 @@ type ShellProps = {
   locale: "fr" | "en";
   labels: ShellLabels;
   footerLink?: MenuLink;
+  /** Extra sidebar content below the navigation (e.g. recent conversations). */
+  sidebarExtra?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -135,7 +139,7 @@ export function AppShell(props: ShellProps) {
   );
 }
 
-function SidebarBody({ sections, context, user, menuLinks, locale, labels, footerLink }: ShellProps) {
+function SidebarBody({ sections, context, user, menuLinks, locale, labels, footerLink, sidebarExtra }: ShellProps) {
   const pathname = usePathname();
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -160,6 +164,7 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
             ))}
           </div>
         ))}
+        {sidebarExtra}
       </nav>
 
       {footerLink ? (
