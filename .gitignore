@@ -25,7 +25,7 @@ playwright-report/
 test-results/
 
 # local models and render outputs
-models/
+/models/
 worker/tmp/
 *.mp4
 
