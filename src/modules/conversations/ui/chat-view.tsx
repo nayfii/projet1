@@ -878,6 +878,7 @@ export function ChatView(props: Props) {
           if (!open) setAdding(null);
         }}
         conversationId={conversationId}
+        title={title}
         colleagues={props.colleagues.filter((c) => !participantIds.has(c.userId))}
         messages={messages}
         preselected={adding ?? []}

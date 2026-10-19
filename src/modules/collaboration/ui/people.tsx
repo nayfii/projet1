@@ -62,6 +62,7 @@ export function AddPeopleDialog({
   open,
   onOpenChange,
   conversationId,
+  title,
   colleagues,
   messages,
   preselected,
@@ -70,6 +71,8 @@ export function AddPeopleDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conversationId: string | null;
+  /** Shared with everyone who joins, whatever history they get. */
+  title: string | null;
   colleagues: Colleague[];
   messages: TimelineMessage[];
   preselected: string[];
@@ -169,6 +172,7 @@ export function AddPeopleDialog({
               </div>
             </>
           ) : null}
+          {title ? <p className="text-xs text-muted-foreground">{t("titleShared", { title })}</p> : null}
         </fieldset>
 
         <DialogFooter>

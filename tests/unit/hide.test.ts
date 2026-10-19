@@ -5,7 +5,7 @@ import { detectAmounts, detectCards, detectEmails, detectIbans, ibanChecksumVali
 import { detectPhones } from "@/modules/hide/detectors/phone";
 import { detectPersons } from "@/modules/hide/detectors/person";
 import { detectListTerms } from "@/modules/hide/detectors/lists";
-import { applyPlaceholders, canonicalValue, restorePlaceholders, spansToMask, StreamRestorer } from "@/modules/hide/mask";
+import { applyPlaceholders, autoSpans, canonicalValue, restorePlaceholders, spansToMask, StreamRestorer } from "@/modules/hide/mask";
 import { extractDocument } from "@/modules/documents/server/extract";
 import { minimalPdf } from "../helpers/pdf";
 
@@ -209,5 +209,19 @@ describe("long documents", () => {
     const elapsed = performance.now() - started;
     expect(spans.filter((s) => s.category === "iban").length).toBeGreaterThan(200);
     expect(elapsed).toBeLessThan(5_000);
+  });
+});
+
+describe("restoring in a group conversation", () => {
+  it("restores only the placeholders the model was shown", async () => {
+    const { createEphemeralMasker } = await import("@/modules/hide/server/masker");
+    const masker = createEphemeralMasker(LISTS);
+    const text = "Client A, IBAN FR76 3000 6000 0112 3456 7890 189";
+    const [{ masked }] = await masker.mask([{ text, spans: autoSpans(detectSensitive(text, LISTS), new Set(DEFAULT_AUTO_CATEGORIES)) }]);
+    expect(masked).toBe("[CLIENT_1], IBAN [IBAN_1]");
+    const restorer = masker.restorer(new Set(["[CLIENT_1]"]));
+    expect(restorer.push("Pour [CLIENT_1], l'IBAN est [IBAN_1].") + restorer.flush()).toBe("Pour Client A, l'IBAN est [IBAN_1].");
+    const all = masker.restorer();
+    expect(all.push("[IBAN_1]") + all.flush()).toBe("FR76 3000 6000 0112 3456 7890 189");
   });
 });
