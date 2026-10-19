@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { EraserIcon, FileTextIcon, ShieldCheckIcon, WandSparklesIcon, type LucideIcon } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { HIDE_MODES, type AutoCategory, type HideMode, type Span } from "../categories";
+import { HIDE_MODES, MAX_BLUR_CHARS, type AutoCategory, type HideMode, type Span } from "../categories";
 import { spansToMask } from "../mask";
 import { foldKey } from "../normalize";
 
@@ -80,7 +80,7 @@ export function useHideComposer({ text, initialModes, autoCategories }: { text: 
   };
 
   const blurSelection = () => {
-    if (!selection) return;
+    if (!selection || selection.length > MAX_BLUR_CHARS) return;
     const value = selection;
     setUnblur((u) => u.filter((v) => foldKey(v) !== foldKey(value)));
     setBlur((b) => [...b.filter((v) => foldKey(v) !== foldKey(value)), value]);

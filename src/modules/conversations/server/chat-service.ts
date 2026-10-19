@@ -19,7 +19,7 @@ import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMe
 import { retrievePassages } from "@/modules/memory/server/retrieval";
 import { citedPositions } from "@/modules/memory/citations";
 import type { KnowledgePassage, SourceProof } from "@/modules/memory/types";
-import { HIDE_MODES, isHideMode, totalCount, type HideMode } from "@/modules/hide/categories";
+import { HIDE_MODES, isHideMode, MAX_BLUR_CHARS, totalCount, type HideMode } from "@/modules/hide/categories";
 import type { StreamRestorer } from "@/modules/hide/mask";
 import { hideConfigured } from "@/modules/hide/server/crypto";
 import { createConversationMasker, getHideSettings, loadDetectionLists, type Masker } from "@/modules/hide/server/masker";
@@ -43,8 +43,8 @@ export const chatRequestSchema = z
     hide: z
       .object({
         modes: z.array(z.enum(HIDE_MODES)).max(3),
-        blur: z.array(z.string().min(1).max(500)).max(100).default([]),
-        unblur: z.array(z.string().min(1).max(500)).max(100).default([]),
+        blur: z.array(z.string().min(1).max(MAX_BLUR_CHARS)).max(100).default([]),
+        unblur: z.array(z.string().min(1).max(MAX_BLUR_CHARS)).max(100).default([]),
       })
       .optional(),
   })

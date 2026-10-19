@@ -14,6 +14,8 @@ export type AutoCategory = (typeof AUTO_CATEGORIES)[number];
 export type HideCategory = AutoCategory | "redacted";
 
 export const DEFAULT_MODES: HideMode[] = ["automatic", "documents"];
+/** Longest passage that can be blurred by hand in one selection (Manual mode). */
+export const MAX_BLUR_CHARS = 5000;
 /** Amounts are off by default: masking them breaks finance questions (open question 4, docs/STATUS.md). */
 export const DEFAULT_AUTO_CATEGORIES: AutoCategory[] = AUTO_CATEGORIES.filter((c) => c !== "amount");
 
