@@ -125,6 +125,13 @@ export function ChatView(props: Props) {
     };
   }, []);
 
+  // The address of a new conversation is changed in place (see ensureConversation), so the browser's
+  // Back button can come back here with the empty "new conversation" screen under /chat/<id>.
+  // Load the real conversation in that case.
+  React.useEffect(() => {
+    if (props.conversation === null && /^\/chat\/[0-9a-f-]{36}$/i.test(window.location.pathname)) router.replace(window.location.pathname);
+  }, [props.conversation, router]);
+
   // Refresh until the answer started elsewhere is done (the page then reloads its messages).
   React.useEffect(() => {
     if (!pendingElsewhere) return;
