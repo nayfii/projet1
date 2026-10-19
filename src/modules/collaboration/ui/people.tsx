@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { UserPlusIcon } from "lucide-react";
+import { TriangleAlertIcon, UserPlusIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,7 +12,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { TimelineMessage } from "@/modules/conversations/types";
-import { addParticipantsAction } from "../server/actions";
+import { addParticipantsAction, checkSharedHistoryAction, type HistoryWarning } from "../server/actions";
 import type { Colleague, Participant } from "../server/queries";
 
 /** In the conversation header: who takes part (a dot when they are here) and "Ajouter". */
@@ -53,6 +53,43 @@ export function TypingLine({ names }: { names: string[] }) {
 }
 
 type HistoryChoice = "now" | "all" | number;
+
+/** Memories cited in the history about to be shared that some recipients cannot read (checked on the server). */
+export function useHistoryWarnings(conversationId: string | null, userIds: string[], fromSeq: number | null, enabled: boolean) {
+  const key = enabled && conversationId && userIds.length > 0 ? JSON.stringify({ conversationId, userIds, fromSeq }) : null;
+  const [result, setResult] = React.useState<{ key: string; warnings: HistoryWarning[] } | null>(null);
+  React.useEffect(() => {
+    if (!key) return;
+    let cancelled = false;
+    void checkSharedHistoryAction(JSON.parse(key)).then((warnings) => {
+      if (!cancelled) setResult({ key, warnings });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
+  return { warnings: key && result?.key === key ? result.warnings : [], checking: key !== null && result?.key !== key };
+}
+
+export function HistoryWarnings({ warnings, people, kind }: { warnings: HistoryWarning[]; people: { userId: string; name: string }[]; kind: "share" | "transfer" }) {
+  const t = useTranslations("collaboration");
+  if (warnings.length === 0) return null;
+  return (
+    <div role="alert" className="space-y-1 rounded-lg bg-warning-soft px-3 py-2 text-[13px]">
+      {warnings.map((w) => {
+        const memory = w.clientName ? t("clientMemory", { client: w.clientName }) : t("companyMemory");
+        const names = w.userIds.map((id) => people.find((p) => p.userId === id)?.name ?? "?").join(", ");
+        return (
+          <p key={`${w.clientName}-${names}`} className="flex items-start gap-2">
+            <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" />
+            {kind === "share" ? t("historyWarning", { memory, names, count: w.userIds.length }) : t("transferWarningMemory", { memory, names })}
+          </p>
+        );
+      })}
+      {kind === "share" ? <p className="pl-6 text-muted-foreground">{t("historyWarningHint")}</p> : null}
+    </div>
+  );
+}
 
 /**
  * Invite colleagues. By default they see the conversation from their arrival; "Partager l'historique"
@@ -95,11 +132,12 @@ export function AddPeopleDialog({
     }
   }
   const timeline = messages.filter((m) => m.content && m.id !== "pending-user");
+  const fromSeq = history === "now" ? null : history === "all" ? (timeline[0]?.seq ?? null) : history;
+  const { warnings, checking } = useHistoryWarnings(conversationId, [...selected], fromSeq, open && fromSeq !== null);
 
   const submit = () =>
     startSaving(async () => {
       if (!conversationId) return;
-      const fromSeq = history === "now" ? null : history === "all" ? (timeline[0]?.seq ?? null) : history;
       const result = await addParticipantsAction({ conversationId, userIds: [...selected], fromSeq });
       if (!result.ok) {
         toast.error(tErrors(result.error));
@@ -174,14 +212,15 @@ export function AddPeopleDialog({
           ) : null}
           {title ? <p className="text-xs text-muted-foreground">{t("titleShared", { title })}</p> : null}
         </fieldset>
+        <HistoryWarnings warnings={warnings} people={colleagues} kind="share" />
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {tCommon("cancel")}
           </Button>
-          <Button onClick={submit} disabled={saving || selected.size === 0}>
+          <Button onClick={submit} disabled={saving || checking || selected.size === 0}>
             {saving ? <Spinner /> : <UserPlusIcon />}
-            {t("addSubmit")}
+            {warnings.length > 0 ? t("addAnyway") : t("addSubmit")}
           </Button>
         </DialogFooter>
       </DialogContent>

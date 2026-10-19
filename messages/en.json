@@ -988,6 +988,13 @@
       "documents": "Useful documents",
       "tasks": "Remaining tasks",
       "next_actions": "Next actions"
-    }
+    },
+    "historyWarning": "These messages cite {memory}, which {names} cannot access: {count, plural, one {this person} other {these people}} will see those answers.",
+    "historyWarningHint": "Share from a more recent message, or confirm if this is intended.",
+    "transferWarningMemory": "This conversation cites {memory}, which {names} cannot access: this person will see those answers.",
+    "companyMemory": "the company memory",
+    "clientMemory": "{client}'s memory",
+    "addAnyway": "Add anyway",
+    "transferAnyway": "Transfer anyway"
   }
 }

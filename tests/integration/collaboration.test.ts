@@ -223,6 +223,47 @@ describe("the AI in a group: only what every participant may access", () => {
   });
 });
 
+describe("warning before sharing history that cites a memory", () => {
+  let conversation: string, question: { id: string; seq: number }, later: { id: string; seq: number };
+
+  beforeAll(async () => {
+    conversation = await newConversation(olivier);
+    question = await post(olivier, conversation, "Budget du Client A ?");
+    const reply = await serviceClient()
+      .from("messages")
+      .insert({ conversation_id: conversation, author_type: "assistant", content: "80 000 euros [S1].", provider: "openai", model_id: "gpt-6-luna", status: "complete" })
+      .select("id")
+      .single();
+    if (reply.error) throw reply.error;
+    const source = await serviceClient().from("message_sources").insert({
+      message_id: reply.data.id,
+      conversation_id: conversation,
+      position: 1,
+      source_type: "memory_entry",
+      space_id: clientASpace,
+      title: "Budget Client A",
+      excerpt: "Le budget du Client A est de 80 000 euros.",
+    });
+    if (source.error) throw source.error;
+    later = await post(olivier, conversation, "Autre sujet.");
+  });
+
+  const check = (fromSeq: number, users: TestUser[], as: TestUser = olivier) =>
+    as.client.rpc("history_unreadable_sources", { p_conversation: conversation, p_users: users.map((u) => u.id), p_from_seq: fromSeq });
+
+  it("names the memory and the colleagues who cannot read it", async () => {
+    const { data, error } = await check(question.seq, [nathalie, owner]);
+    expect(error).toBeNull();
+    expect(data).toEqual([{ space_id: clientASpace, client_name: "Client A", user_id: nathalie.id }]);
+  });
+
+  it("says nothing when the shared part cites no such memory, or to someone outside the conversation", async () => {
+    expect((await check(later.seq, [nathalie])).data).toEqual([]);
+    expect((await check(question.seq, [ownerB])).data).toEqual([]);
+    expect((await check(question.seq, [nathalie], fanny)).data).toEqual([]);
+  });
+});
+
 describe("transfer a conversation (Smart Handover)", () => {
   let conversation: string;
   const sections = { summary: "Prévisionnel en cours.", decisions: "- Marge cible validée", documents: "", tasks: "- Finir le tableau", next_actions: "- Envoyer au client" };

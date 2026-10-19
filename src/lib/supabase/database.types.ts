@@ -986,6 +986,11 @@ isOneToOne: false
               "category": string,"placeholder": string,"value_ciphertext": string,"value_hash": string
             }[]
                            },
+"history_unreadable_sources":
+{ Args: { "p_conversation": string,"p_from_seq": number,"p_users": (string)[] }; Returns: {
+              "client_name": string,"space_id": string,"user_id": string
+            }[]
+                           },
 "leave_conversation":
 { Args: { "p_conversation": string }; Returns: undefined
                            },

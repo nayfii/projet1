@@ -132,3 +132,30 @@ export async function loadParticipantsAction(input: { conversationId: string }) 
   if (!parsed.success) return [];
   return getConversationPeople(parsed.data.conversationId);
 }
+
+export type HistoryWarning = { clientName: string | null; userIds: string[] };
+
+/**
+ * Before sharing history or transferring: memories cited in the messages the colleagues would see
+ * that some of them cannot read (null = the company memory). The person sharing decides.
+ */
+export async function checkSharedHistoryAction(input: { conversationId: string; userIds: string[]; fromSeq: number | null }): Promise<HistoryWarning[]> {
+  const ctx = await memberOrNull();
+  if (!ctx) return [];
+  const parsed = z
+    .object({ conversationId: z.uuid(), userIds: z.array(z.uuid()).min(1).max(20), fromSeq: z.number().int().min(1).nullable() })
+    .safeParse(input);
+  if (!parsed.success) return [];
+  const { data } = await (await createClient()).rpc("history_unreadable_sources", {
+    p_conversation: parsed.data.conversationId,
+    p_users: parsed.data.userIds,
+    p_from_seq: parsed.data.fromSeq ?? 1,
+  });
+  const bySpace = new Map<string, HistoryWarning>();
+  for (const row of data ?? []) {
+    const warning = bySpace.get(row.space_id) ?? { clientName: row.client_name, userIds: [] };
+    warning.userIds.push(row.user_id);
+    bySpace.set(row.space_id, warning);
+  }
+  return [...bySpace.values()];
+}

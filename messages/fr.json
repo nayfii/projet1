@@ -988,6 +988,13 @@
       "documents": "Documents utiles",
       "tasks": "Tâches restantes",
       "next_actions": "Prochaines actions"
-    }
+    },
+    "historyWarning": "Ces messages citent {memory}, que {names} ne {count, plural, one {peut} other {peuvent}} pas consulter : {count, plural, one {cette personne verra} other {ces personnes verront}} ces réponses.",
+    "historyWarningHint": "Partagez à partir d'un message plus récent, ou confirmez si c'est voulu.",
+    "transferWarningMemory": "Cette conversation cite {memory}, que {names} ne peut pas consulter : cette personne verra ces réponses.",
+    "companyMemory": "la mémoire de l'entreprise",
+    "clientMemory": "la mémoire de {client}",
+    "addAnyway": "Ajouter quand même",
+    "transferAnyway": "Transférer quand même"
   }
 }

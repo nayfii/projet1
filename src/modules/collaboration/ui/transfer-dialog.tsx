@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { cn } from "@/lib/utils";
 import { transferClientAction, transferConversationAction } from "../server/actions";
 import type { Colleague } from "../server/queries";
+import { HistoryWarnings, useHistoryWarnings } from "./people";
 
 /**
  * Transfer a conversation or a restricted client to a colleague, after confirmation. The AI drafts a
@@ -35,6 +36,8 @@ export function TransferDialog({
   const [to, setTo] = React.useState<string | null>(null);
   const [running, setRunning] = React.useState(false);
   const recipient = colleagues.find((c) => c.userId === to) ?? null;
+  // The recipient sees the whole conversation: warn if it cites memories they cannot read.
+  const { warnings, checking } = useHistoryWarnings(target.id, to ? [to] : [], 1, open && target.kind === "conversation");
 
   async function submit() {
     if (!recipient) return;
@@ -92,6 +95,7 @@ export function TransferDialog({
           </fieldset>
         )}
 
+        <HistoryWarnings warnings={warnings} people={colleagues} kind="transfer" />
         {recipient ? (
           <p className="flex items-start gap-2 rounded-lg bg-warning-soft px-3 py-2 text-[13px]">
             <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" />
@@ -104,9 +108,9 @@ export function TransferDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={running}>
             {tCommon("cancel")}
           </Button>
-          <Button onClick={() => void submit()} disabled={!recipient || running}>
+          <Button onClick={() => void submit()} disabled={!recipient || running || checking}>
             {running ? <Spinner /> : <ArrowRightLeftIcon />}
-            {t("transferSubmit")}
+            {warnings.length > 0 ? t("transferAnyway") : t("transferSubmit")}
           </Button>
         </DialogFooter>
       </DialogContent>

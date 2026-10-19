@@ -320,3 +320,27 @@ grant execute on function public.leave_conversation(uuid) to authenticated;
 grant execute on function public.transfer_conversation(uuid, uuid, jsonb, boolean) to authenticated;
 grant execute on function public.transfer_client(uuid, uuid, jsonb, boolean) to authenticated;
 grant execute on function public.conversation_shared_spaces(uuid) to authenticated;
+
+-- Before sharing history or transferring: memories cited in the messages the colleagues would see
+-- that some of them may not read (an answer citing a memory can carry its content). The person
+-- sharing is warned and decides. Only memories the caller can read themselves are named.
+create function public.history_unreadable_sources(p_conversation uuid, p_users uuid[], p_from_seq integer)
+returns table (space_id uuid, client_name text, user_id uuid)
+language sql stable security definer set search_path = '' as $$
+  select distinct s.space_id, c.name, u.user_id
+  from public.message_sources s
+  join public.messages m on m.id = s.message_id
+  join public.memory_spaces sp on sp.id = s.space_id
+  left join public.clients c on c.id = sp.client_id
+  join public.conversations cv on cv.id = s.conversation_id
+  cross join unnest(p_users) as u(user_id)
+  where s.conversation_id = p_conversation
+    and private.can_access_conversation(p_conversation)
+    and private.can_read_space(s.space_id)
+    and m.superseded_at is null
+    and m.seq >= greatest(coalesce(p_from_seq, 1), private.visible_from_seq(p_conversation))
+    and exists (select 1 from public.company_members cm where cm.company_id = cv.company_id and cm.user_id = u.user_id and cm.status = 'active')
+    and not private.user_space_right(s.space_id, u.user_id, false);
+$$;
+revoke execute on function public.history_unreadable_sources(uuid, uuid[], integer) from public, anon;
+grant execute on function public.history_unreadable_sources(uuid, uuid[], integer) to authenticated;
