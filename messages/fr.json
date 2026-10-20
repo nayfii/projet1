@@ -580,7 +580,15 @@
     "emptyTitle": "Que puis-je faire pour vous ?",
     "emptyBody": "Posez une question, joignez un document ou choisissez un modèle. Vous pouvez changer de modèle à tout moment, la conversation suit.",
     "saveToMemory": "Enregistrer en mémoire",
-    "proposeMemory": "Proposer des entrées de mémoire"
+    "proposeMemory": "Proposer des entrées de mémoire",
+    "chartLabel": "Graphique : {title}. Les données sont disponibles en tableau.",
+    "chartShowData": "Voir les données",
+    "chartHideData": "Masquer les données",
+    "export": "Exporter",
+    "exportDocx": "Document Word (.docx)",
+    "exportPdf": "PDF",
+    "exportXlsx": "Tableau Excel (.xlsx)",
+    "exportCsv": "Tableau CSV"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -1099,7 +1107,8 @@
       "text": "Texte court",
       "textarea": "Texte long",
       "client": "Client",
-      "select": "Liste de choix"
+      "select": "Liste de choix",
+      "files": "Fichiers"
     },
     "fieldOptions": "Choix possibles",
     "fieldOptionsPlaceholder": "Choix séparés par des virgules",
@@ -1169,7 +1178,7 @@
     "enabledFor": "Rôles autorisés pour {name}",
     "rolesSaved": "Rôles enregistrés.",
     "adminBuiltins": "Agents de la bibliothèque",
-    "adminBuiltinsHint": "Les agents prêts à l'emploi par service. Vous pourrez les adapter (instructions, ton, mémoire) et les activer par rôle.",
+    "adminBuiltinsHint": "Les agents prêts à l'emploi par service. Activez-les par rôle et adaptez-les à votre entreprise (consignes, ton, modèle, mémoire).",
     "launch": {
       "motion_design": {
         "name": "Motion design",
@@ -1181,60 +1190,215 @@
       },
       "proposal_writer": {
         "name": "Proposition commerciale",
-        "description": "Client et besoins → brouillon de proposition commerciale, exportable."
+        "description": "Client et besoins → brouillon de proposition commerciale, exportable.",
+        "fields": {
+          "client": "Client",
+          "needs": "Besoins du client",
+          "offer": "Ce que vous proposez (prestations, produits)",
+          "budget": "Budget ou éléments de prix",
+          "deadline": "Calendrier"
+        }
       },
       "meeting_prep": {
         "name": "Préparation de rendez-vous",
-        "description": "Client → fiche avec le contexte de sa mémoire, l'historique, les points à aborder et les questions."
+        "description": "Client → fiche avec le contexte de sa mémoire, l'historique, les points à aborder et les questions.",
+        "fields": {
+          "client": "Client",
+          "goal": "Objectif du rendez-vous",
+          "date": "Date et format",
+          "attendees": "Participants"
+        }
       },
       "invoice_intake": {
         "name": "Saisie de factures",
-        "description": "Factures (PDF ou images) → tableau fournisseur, date, montants, TVA, catégorie, exportable."
+        "description": "Factures (PDF ou images) → tableau fournisseur, date, montants, TVA, catégorie, exportable.",
+        "fields": {
+          "invoices": "Factures (PDF ou images)",
+          "instructions": "Consignes (catégories, période…)"
+        }
       },
       "payment_reminders": {
         "name": "Relances de paiement",
-        "description": "Factures impayées → brouillons d'e-mails de relance au ton progressif."
+        "description": "Factures impayées → brouillons d'e-mails de relance au ton progressif.",
+        "fields": {
+          "invoices": "Factures impayées (client, numéro, montant, échéance)",
+          "file": "Ou un fichier (CSV, Excel)",
+          "stage": "Relance",
+          "signature": "Signature"
+        },
+        "options": {
+          "stage": {
+            "first": "Première relance (courtoise)",
+            "second": "Deuxième relance (ferme)",
+            "final": "Dernière relance (mise en demeure à valider)"
+          }
+        }
       },
       "cash_flow_forecast": {
         "name": "Prévision de trésorerie",
-        "description": "Relevés bancaires et récurrents → prévision sur 3 à 12 mois, tableau et graphique."
+        "description": "Relevés bancaires et récurrents → prévision sur 3 à 12 mois, tableau et graphique.",
+        "fields": {
+          "exports": "Relevés bancaires (CSV, Excel, PDF)",
+          "opening": "Solde actuel",
+          "recurring": "Entrées et sorties récurrentes connues",
+          "horizon": "Horizon"
+        },
+        "options": {
+          "horizon": {
+            "3": "3 mois",
+            "6": "6 mois",
+            "12": "12 mois"
+          }
+        }
       },
       "margin_analysis": {
         "name": "Analyse de marge",
-        "description": "Ventes et coûts → marges par produit, client ou projet, commentées."
+        "description": "Ventes et coûts → marges par produit, client ou projet, commentées.",
+        "fields": {
+          "data": "Données de ventes et de coûts (CSV, Excel)",
+          "figures": "Ou collez vos chiffres",
+          "by": "Marges par",
+          "period": "Période"
+        },
+        "options": {
+          "by": {
+            "product": "Produit",
+            "client": "Client",
+            "project": "Projet"
+          }
+        }
       },
       "job_posting_writer": {
         "name": "Offre d'emploi",
-        "description": "Poste et contexte → brouillon d'offre d'emploi."
+        "description": "Poste et contexte → brouillon d'offre d'emploi.",
+        "fields": {
+          "role": "Intitulé du poste",
+          "context": "Équipe, missions, exigences",
+          "contract": "Contrat",
+          "location": "Lieu et télétravail",
+          "salary": "Fourchette de salaire"
+        },
+        "options": {
+          "contract": {
+            "permanent": "CDI",
+            "fixed_term": "CDD",
+            "freelance": "Freelance",
+            "internship": "Stage",
+            "work_study": "Alternance"
+          }
+        }
       },
       "application_review": {
         "name": "Aide à la lecture de candidatures",
-        "description": "Candidatures et critères de l'employeur → synthèses structurées. Une personne décide."
+        "description": "Candidatures et critères de l'employeur → synthèses structurées. Une personne décide.",
+        "fields": {
+          "role": "Poste",
+          "criteria": "Vos critères",
+          "applications": "Candidatures (CV, lettres)"
+        }
       },
       "contract_review": {
         "name": "Relecture de contrat",
-        "description": "Contrat → clauses clés, risques, clauses manquantes, questions pour un avocat."
+        "description": "Contrat → clauses clés, risques, clauses manquantes, questions pour un avocat.",
+        "fields": {
+          "contract": "Contrat",
+          "side": "Nous sommes",
+          "focus": "Points d'attention"
+        },
+        "options": {
+          "side": {
+            "client": "Le client",
+            "supplier": "Le fournisseur",
+            "partner": "Un partenaire",
+            "other": "Autre"
+          }
+        }
       },
       "template_drafter": {
         "name": "Modèles juridiques",
-        "description": "Type de document → brouillon de CGV, NDA ou autre document standard."
+        "description": "Type de document → brouillon de CGV, NDA ou autre document standard.",
+        "fields": {
+          "type": "Document",
+          "details": "Parties et informations utiles",
+          "specifics": "Points particuliers à inclure"
+        },
+        "options": {
+          "type": {
+            "terms_of_sale": "Conditions générales de vente (CGV)",
+            "nda": "Accord de confidentialité (NDA)",
+            "terms_of_service": "Conditions générales d'utilisation (CGU)",
+            "services_agreement": "Contrat de prestation de services",
+            "other": "Autre document standard"
+          }
+        }
       },
       "email_responder": {
         "name": "Réponse aux e-mails",
-        "description": "E-mail d'un client → brouillon de réponse dans le ton de l'entreprise, avec sa mémoire."
+        "description": "E-mail d'un client → brouillon de réponse dans le ton de l'entreprise, avec sa mémoire.",
+        "fields": {
+          "email": "E-mail reçu",
+          "client": "Client",
+          "intent": "Ce que vous voulez répondre"
+        }
       },
       "feedback_synthesis": {
         "name": "Synthèse des retours",
-        "description": "Avis ou e-mails → thèmes, ressenti, actions recommandées."
+        "description": "Avis ou e-mails → thèmes, ressenti, actions recommandées.",
+        "fields": {
+          "files": "Avis ou e-mails (fichiers)",
+          "text": "Ou collez-les",
+          "context": "Produit, service ou période"
+        }
       },
       "meeting_minutes": {
         "name": "Compte rendu de réunion",
-        "description": "Notes, transcription ou audio → compte rendu avec décisions et actions."
+        "description": "Notes, transcription ou audio → compte rendu avec décisions et actions.",
+        "fields": {
+          "files": "Notes ou transcription (fichier)",
+          "notes": "Ou collez vos notes",
+          "meeting": "Réunion (titre, date)",
+          "attendees": "Participants"
+        }
       },
       "weekly_dashboard": {
         "name": "Tableau de bord hebdo",
-        "description": "Fichiers de données et mémoire → synthèse d'une page : indicateurs, faits marquants, risques."
+        "description": "Fichiers de données et mémoire → synthèse d'une page : indicateurs, faits marquants, risques.",
+        "fields": {
+          "data": "Fichiers de données (CSV, Excel)",
+          "week": "Semaine",
+          "kpis": "Indicateurs à suivre"
+        }
       }
+    },
+    "fileFailed": "Le fichier « {name} » n'a pas pu être ajouté.",
+    "fileTooBig": "« {name} » dépasse 10 Mo.",
+    "tooManyFiles": "{max} fichiers au plus par lancement.",
+    "removeFile": "Retirer « {name} »",
+    "addFiles": "Ajouter des fichiers",
+    "filesHint": "PDF, Word, Excel, CSV, texte ou images ; {max} fichiers au plus, 10 Mo chacun. Ils sont lus sur nos serveurs et protégés comme dans une conversation.",
+    "adapted": "adapté",
+    "enableAgent": "Activer {name}",
+    "agentEnabled": "Agent activé.",
+    "agentDisabled": "Agent désactivé.",
+    "adapt": "Adapter",
+    "adaptNamed": "Adapter {name}",
+    "adaptSaved": "Adaptations enregistrées.",
+    "adaptTitle": "Adapter « {name} »",
+    "adaptBody": "Vos consignes s'ajoutent à celles de l'agent pour toute l'entreprise.",
+    "adaptInstructions": "Consignes de l'entreprise",
+    "adaptInstructionsHint": "Par exemple : nos devis sont valables 30 jours ; toujours proposer un appel de suivi.",
+    "adaptTone": "Ton",
+    "adaptToneHint": "Par exemple : chaleureux, vouvoiement, phrases courtes.",
+    "modelCompanyDefault": "Modèle par défaut de l'entreprise",
+    "memoryAgentDefault": "Comme prévu par l'agent",
+    "notices": {
+      "legal": "Ceci n'est pas un conseil juridique. Le document produit est un brouillon : faites-le relire par un professionnel du droit avant tout usage.",
+      "hiring": "Cet assistant résume et structure les candidatures selon vos critères. Il ne note, ne classe et n'écarte aucun candidat : une personne décide. L'IA utilisée pour filtrer des candidatures est classée « à haut risque » par le règlement européen sur l'IA.",
+      "draft": "Brouillon à vérifier par une personne. Aucun paiement ni aucun e-mail n'est effectué automatiquement."
     }
+  },
+  "exports": {
+    "defaultTitle": "Document",
+    "sheet": "Tableau {number}"
   }
 }

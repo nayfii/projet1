@@ -25,6 +25,7 @@ const eslintConfig = defineConfig([
       "src/modules/usage/server/record.ts",
       "src/modules/conversations/server/assistant-writer.ts",
       "src/modules/hide/server/store.ts",
+      "src/modules/agents/server/builtin-sync.ts",
     ],
     rules: {
       "no-restricted-imports": [

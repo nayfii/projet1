@@ -41,10 +41,17 @@
   --sidebar-foreground: var(--foreground);
   --sidebar-border: oklch(0.93 0.004 90);
   --sidebar-accent: oklch(0.94 0.004 90);
+  /* Chart series (validated for colour-blind separation on these surfaces, 3 series at most). */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
     --background: oklch(0.175 0.004 90);
     --foreground: oklch(0.955 0.003 90);
     --card: oklch(0.2 0.004 90);

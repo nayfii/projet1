@@ -7,6 +7,7 @@ import { getChatPageData } from "@/modules/conversations/server/page-data";
 import { ChatView } from "@/modules/conversations/ui/chat-view";
 import { getConversationPeople, getEligibleColleagues, getMyHandover } from "@/modules/collaboration/server/queries";
 import { getAgent } from "@/modules/agents/server/queries";
+import { agentText, type DynamicT } from "@/modules/agents/labels";
 
 export async function generateMetadata({ params }: PageProps<"/chat/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -46,7 +47,17 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
       participants={participants}
       colleagues={colleagues}
       handover={handover}
-      agent={agent ? { id: agent.id, name: agent.name, attachments: agent.tools.includes("attachments"), allowedModels: agent.allowedModels } : null}
+      agent={
+        agent
+          ? {
+              id: agent.id,
+              name: agentText(agent, (await getTranslations("tools")) as unknown as DynamicT).name,
+              attachments: agent.tools.includes("attachments"),
+              allowedModels: agent.allowedModels,
+              notice: agent.notice,
+            }
+          : null
+      }
       {...data}
     />
   );

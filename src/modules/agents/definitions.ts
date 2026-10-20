@@ -9,7 +9,7 @@ import { z } from "zod";
 export const DEPARTMENTS = ["marketing", "sales", "accounting", "finance", "hr", "legal", "customer_service", "management", "general"] as const;
 export type Department = (typeof DEPARTMENTS)[number];
 
-export const FIELD_TYPES = ["text", "textarea", "client", "select"] as const;
+export const FIELD_TYPES = ["text", "textarea", "client", "select", "files"] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
 export const OUTPUT_FORMATS = ["text", "table", "email", "document"] as const;
@@ -91,13 +91,17 @@ export function composeRunMessage(
   fields: AgentField[],
   values: Record<string, string>,
   clientName: (id: string) => string | null,
+  text: { field: (f: AgentField) => string; option: (f: AgentField, option: string) => string; colon?: string } = { field: (f) => f.label, option: (_, o) => o },
 ): string {
+  // Plain text: the first message is shown as the person's own message, without Markdown.
+  const colon = text.colon ?? ": ";
   return fields
     .map((f) => {
       const raw = (values[f.key] ?? "").trim();
-      const value = f.type === "client" ? (raw ? (clientName(raw) ?? "") : "") : raw;
+      const value = f.type === "client" ? (raw ? (clientName(raw) ?? "") : "") : f.type === "select" && raw ? text.option(f, raw) : raw;
       if (!value) return null;
-      return f.type === "textarea" || value.includes("\n") ? `**${f.label}**\n${value}` : `**${f.label}** : ${value}`;
+      const label = text.field(f);
+      return f.type === "textarea" || value.includes("\n") ? `${label}${colon.trimEnd()}\n${value}` : `${label}${colon}${value}`;
     })
     .filter(Boolean)
     .join("\n\n");

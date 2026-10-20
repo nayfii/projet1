@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   // Almost every screen is per-user and permission-filtered, so pages render at request time
   // (the previous caching model) rather than with Cache Components. See docs/ARCHITECTURE.md §11.
   poweredByHeader: false,
+  // pdfkit reads its font files from its own folder at run time: it must not be bundled.
+  serverExternalPackages: ["pdfkit"],
   turbopack: {
     rules: {
       "*.css": {

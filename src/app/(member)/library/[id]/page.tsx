@@ -10,6 +10,7 @@ import { getAgent } from "@/modules/agents/server/queries";
 import { getToolEditorContext, reachableClients } from "@/modules/agents/server/editor-context";
 import { AgentBadges } from "@/modules/agents/ui/agent-badges";
 import { RunForm } from "@/modules/agents/ui/run-form";
+import { agentText, type DynamicT } from "@/modules/agents/labels";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: PageProps<"/library/[id]">): 
   const ctx = await requireMember();
   const { id } = await params;
   const agent = UUID.test(id) ? await getAgent(ctx, id) : null;
-  return { title: agent?.name };
+  return { title: agent ? agentText(agent, (await getTranslations("tools")) as unknown as DynamicT).name : undefined };
 }
 
 export default async function ToolPage({ params }: PageProps<"/library/[id]">) {
@@ -36,7 +37,11 @@ export default async function ToolPage({ params }: PageProps<"/library/[id]">) {
         <ArrowLeftIcon className="size-4" />
         {t("libraryTitle")}
       </Link>
-      <PageHeader title={agent.name} description={agent.description || undefined} actions={<AgentBadges agent={agent} />} />
+      <PageHeader
+        title={agentText(agent, t as unknown as DynamicT).name}
+        description={agentText(agent, t as unknown as DynamicT).description || undefined}
+        actions={<AgentBadges agent={agent} />}
+      />
       <RunForm agent={agent} clients={clients} editor={editor} canDelete={canDelete} />
     </PageContainer>
   );

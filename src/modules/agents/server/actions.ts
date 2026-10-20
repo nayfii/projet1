@@ -26,6 +26,8 @@ import {
   toolSchema,
   type ToolInput,
 } from "../definitions";
+import { getLocale, getTranslations } from "next-intl/server";
+import { agentText, type DynamicT } from "../labels";
 import { getAgent } from "./queries";
 import { TOOL_DRAFT_SYSTEM } from "../prompts";
 
@@ -122,7 +124,10 @@ export async function saveToolAction(input: z.input<typeof saveSchema>): Promise
   // Models: only those the company allows (or Auto).
   const models = await getCompanyModels(ctx.active.companyId);
   const allowedIds = new Set(models.allowed.map((m) => m.id));
-  const { tool } = parsed.data;
+  // A form with a "files" field needs the attachments capability.
+  const tool = parsed.data.tool.input_fields.some((f) => f.type === "files") && !parsed.data.tool.tools.includes("attachments")
+    ? { ...parsed.data.tool, tools: [...parsed.data.tool.tools, "attachments" as const] }
+    : parsed.data.tool;
   if (tool.allowed_models.some((m) => !allowedIds.has(m))) return { ok: false, error: "invalid_models" };
   if (tool.default_model && tool.default_model !== MODEL_CHOICE_AUTO && !allowedIds.has(tool.default_model)) return { ok: false, error: "invalid_models" };
   const supabase = await createClient();
@@ -198,18 +203,63 @@ export async function startRunAction(input: { agentId: string; values: Record<st
   if (clientId && !reachable.some((c) => c.id === clientId)) return { ok: false, error: "validation" };
 
   const models = await getCompanyModels(ctx.active.companyId);
+  // A company's choice for a built-in agent comes first.
+  const preferred = agent.settings?.defaultModel ?? agent.defaultModel;
   const choice =
-    agent.defaultModel && (agent.defaultModel === MODEL_CHOICE_AUTO ? models.autoEnabled : models.allowed.some((m) => m.id === agent.defaultModel))
-      ? agent.defaultModel
+    preferred && (preferred === MODEL_CHOICE_AUTO ? models.autoEnabled : models.allowed.some((m) => m.id === preferred))
+      ? preferred
       : (agent.allowedModels.find((id) => models.allowed.some((m) => m.id === id)) ?? defaultChoice(models));
+  const text = agentText(agent, (await getTranslations("tools")) as unknown as DynamicT);
+  const colon = (await getLocale()) === "fr" ? " : " : ": ";
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("conversations")
-    .insert({ company_id: ctx.active.companyId, client_id: clientId, title: agent.name, model_choice: choice, agent_id: agent.id })
+    .insert({ company_id: ctx.active.companyId, client_id: clientId, title: text.name, model_choice: choice, agent_id: agent.id })
     .select("id")
     .single();
   if (error || !data) return { ok: false, error: toErrorCode(error) };
-  const message = composeRunMessage(agent.inputFields, parsed.data.values, (id) => reachable.find((c) => c.id === id)?.name ?? null);
+  const message = composeRunMessage(agent.inputFields, parsed.data.values, (id) => reachable.find((c) => c.id === id)?.name ?? null, { ...text, colon });
   revalidatePath("/chat", "layout");
-  return { ok: true, data: { conversationId: data.id, message: message || agent.name } };
+  return { ok: true, data: { conversationId: data.id, message: message || text.name } };
+}
+
+const settingsSchema = z.object({
+  agentId: z.uuid(),
+  settings: z.object({
+    enabled: z.boolean(),
+    enabledRoles: z.array(z.enum(["owner", "admin", "member"])).max(3),
+    instructionsAddition: z.string().max(4000),
+    tone: z.string().max(200),
+    defaultModel: z.string().regex(/^[a-z0-9][a-z0-9._-]{1,62}$/).nullable(),
+    memoryScope: z.enum(MEMORY_SCOPES).nullable(),
+  }),
+});
+
+/** A company adapts a built-in agent ("agents" scope, checked in SQL): on/off, roles, instructions, tone, model, memory. */
+export async function saveAgentSettingsAction(input: z.input<typeof settingsSchema>): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { ok: false, error: "forbidden" };
+  const parsed = settingsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const s = parsed.data.settings;
+  if (s.defaultModel && s.defaultModel !== MODEL_CHOICE_AUTO) {
+    const models = await getCompanyModels(ctx.active.companyId);
+    if (!models.allowed.some((m) => m.id === s.defaultModel)) return { ok: false, error: "invalid_models" };
+  }
+  const { error } = await (await createClient()).rpc("admin_set_agent_settings", {
+    p_company: ctx.active.companyId,
+    p_agent: parsed.data.agentId,
+    p_settings: {
+      enabled: s.enabled,
+      enabled_roles: s.enabledRoles,
+      instructions_addition: s.instructionsAddition.trim(),
+      tone: s.tone.trim(),
+      default_model: s.defaultModel ?? "",
+      memory_scope: s.memoryScope ?? "",
+    },
+  });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/admin/agents");
+  revalidatePath("/library", "layout");
+  return { ok: true };
 }

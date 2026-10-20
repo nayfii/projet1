@@ -580,7 +580,15 @@
     "emptyTitle": "What can I do for you?",
     "emptyBody": "Ask a question, attach a document or choose a model. You can switch models at any time; the conversation follows.",
     "saveToMemory": "Save to memory",
-    "proposeMemory": "Propose memory entries"
+    "proposeMemory": "Propose memory entries",
+    "chartLabel": "Chart: {title}. The data is available as a table.",
+    "chartShowData": "Show the data",
+    "chartHideData": "Hide the data",
+    "export": "Export",
+    "exportDocx": "Word document (.docx)",
+    "exportPdf": "PDF",
+    "exportXlsx": "Excel table (.xlsx)",
+    "exportCsv": "CSV table"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -1099,7 +1107,8 @@
       "text": "Short text",
       "textarea": "Long text",
       "client": "Client",
-      "select": "List of choices"
+      "select": "List of choices",
+      "files": "Files"
     },
     "fieldOptions": "Possible choices",
     "fieldOptionsPlaceholder": "Choices separated by commas",
@@ -1169,7 +1178,7 @@
     "enabledFor": "Roles allowed for {name}",
     "rolesSaved": "Roles saved.",
     "adminBuiltins": "Library agents",
-    "adminBuiltinsHint": "Ready-made agents by department. You will be able to adapt them (instructions, tone, memory) and enable them per role.",
+    "adminBuiltinsHint": "Ready-made agents by department. Enable them per role and adapt them to your company (instructions, tone, model, memory).",
     "launch": {
       "motion_design": {
         "name": "Motion Design",
@@ -1181,60 +1190,215 @@
       },
       "proposal_writer": {
         "name": "Proposal Writer",
-        "description": "Client and needs → commercial proposal draft, exportable."
+        "description": "Client and needs → commercial proposal draft, exportable.",
+        "fields": {
+          "client": "Client",
+          "needs": "The client's needs",
+          "offer": "What you propose (services, products)",
+          "budget": "Budget or price elements",
+          "deadline": "Timing"
+        }
       },
       "meeting_prep": {
         "name": "Meeting Prep",
-        "description": "Client → brief with context from its memory, history, talking points and questions."
+        "description": "Client → brief with context from its memory, history, talking points and questions.",
+        "fields": {
+          "client": "Client",
+          "goal": "Goal of the meeting",
+          "date": "Date and format",
+          "attendees": "Attendees"
+        }
       },
       "invoice_intake": {
         "name": "Invoice Intake",
-        "description": "Invoices (PDF or images) → table of supplier, date, amounts, VAT, category, exportable."
+        "description": "Invoices (PDF or images) → table of supplier, date, amounts, VAT, category, exportable.",
+        "fields": {
+          "invoices": "Invoices (PDF or images)",
+          "instructions": "Instructions (categories, period…)"
+        }
       },
       "payment_reminders": {
         "name": "Payment Reminders",
-        "description": "Unpaid invoices → reminder e-mail drafts with escalating tone."
+        "description": "Unpaid invoices → reminder e-mail drafts with escalating tone.",
+        "fields": {
+          "invoices": "Unpaid invoices (client, number, amount, due date)",
+          "file": "Or a file (CSV, Excel)",
+          "stage": "Reminder",
+          "signature": "Signature"
+        },
+        "options": {
+          "stage": {
+            "first": "First reminder (courteous)",
+            "second": "Second reminder (firm)",
+            "final": "Final reminder (formal notice to validate)"
+          }
+        }
       },
       "cash_flow_forecast": {
         "name": "Cash-Flow Forecast",
-        "description": "Bank exports and recurring items → 3–12 month forecast, table and chart."
+        "description": "Bank exports and recurring items → 3–12 month forecast, table and chart.",
+        "fields": {
+          "exports": "Bank exports (CSV, Excel, PDF)",
+          "opening": "Current balance",
+          "recurring": "Known recurring income and expenses",
+          "horizon": "Horizon"
+        },
+        "options": {
+          "horizon": {
+            "3": "3 months",
+            "6": "6 months",
+            "12": "12 months"
+          }
+        }
       },
       "margin_analysis": {
         "name": "Margin Analysis",
-        "description": "Sales and costs → margins by product, client or project, with commentary."
+        "description": "Sales and costs → margins by product, client or project, with commentary.",
+        "fields": {
+          "data": "Sales and cost data (CSV, Excel)",
+          "figures": "Or paste your figures",
+          "by": "Margins by",
+          "period": "Period"
+        },
+        "options": {
+          "by": {
+            "product": "Product",
+            "client": "Client",
+            "project": "Project"
+          }
+        }
       },
       "job_posting_writer": {
         "name": "Job Posting Writer",
-        "description": "Role and context → job posting draft."
+        "description": "Role and context → job posting draft.",
+        "fields": {
+          "role": "Job title",
+          "context": "Team, missions, requirements",
+          "contract": "Contract",
+          "location": "Location and remote work",
+          "salary": "Salary range"
+        },
+        "options": {
+          "contract": {
+            "permanent": "Permanent",
+            "fixed_term": "Fixed-term",
+            "freelance": "Freelance",
+            "internship": "Internship",
+            "work_study": "Work-study"
+          }
+        }
       },
       "application_review": {
         "name": "Application Review Assistant",
-        "description": "Applications and the employer's criteria → structured summaries. A person decides."
+        "description": "Applications and the employer's criteria → structured summaries. A person decides.",
+        "fields": {
+          "role": "Position",
+          "criteria": "Your criteria",
+          "applications": "Applications (CV, letters)"
+        }
       },
       "contract_review": {
         "name": "Contract Review",
-        "description": "Contract → key clauses, risks, missing clauses, questions for a lawyer."
+        "description": "Contract → key clauses, risks, missing clauses, questions for a lawyer.",
+        "fields": {
+          "contract": "Contract",
+          "side": "We are",
+          "focus": "Points of attention"
+        },
+        "options": {
+          "side": {
+            "client": "The client",
+            "supplier": "The supplier",
+            "partner": "A partner",
+            "other": "Other"
+          }
+        }
       },
       "template_drafter": {
         "name": "Template Drafter",
-        "description": "Type of document → draft terms and conditions, NDA or other standard document."
+        "description": "Type of document → draft terms and conditions, NDA or other standard document.",
+        "fields": {
+          "type": "Document",
+          "details": "Parties and useful information",
+          "specifics": "Specific points to include"
+        },
+        "options": {
+          "type": {
+            "terms_of_sale": "Terms and conditions of sale",
+            "nda": "Non-disclosure agreement (NDA)",
+            "terms_of_service": "Terms of service",
+            "services_agreement": "Services agreement",
+            "other": "Other standard document"
+          }
+        }
       },
       "email_responder": {
         "name": "Email Responder",
-        "description": "A client's e-mail → reply draft in the company's tone, using its memory."
+        "description": "A client's e-mail → reply draft in the company's tone, using its memory.",
+        "fields": {
+          "email": "E-mail received",
+          "client": "Client",
+          "intent": "What you want to answer"
+        }
       },
       "feedback_synthesis": {
         "name": "Feedback Synthesis",
-        "description": "Reviews or e-mails → themes, sentiment, recommended actions."
+        "description": "Reviews or e-mails → themes, sentiment, recommended actions.",
+        "fields": {
+          "files": "Reviews or e-mails (files)",
+          "text": "Or paste them",
+          "context": "Product, service or period"
+        }
       },
       "meeting_minutes": {
         "name": "Meeting Minutes",
-        "description": "Notes, transcript or audio → minutes with decisions and action items."
+        "description": "Notes, transcript or audio → minutes with decisions and action items.",
+        "fields": {
+          "files": "Notes or transcript (file)",
+          "notes": "Or paste your notes",
+          "meeting": "Meeting (title, date)",
+          "attendees": "Attendees"
+        }
       },
       "weekly_dashboard": {
         "name": "Weekly Dashboard",
-        "description": "Data files and memory → one-page summary of KPIs, highlights and risks."
+        "description": "Data files and memory → one-page summary of KPIs, highlights and risks.",
+        "fields": {
+          "data": "Data files (CSV, Excel)",
+          "week": "Week",
+          "kpis": "Indicators to follow"
+        }
       }
+    },
+    "fileFailed": "The file “{name}” could not be added.",
+    "fileTooBig": "“{name}” is larger than 10 MB.",
+    "tooManyFiles": "{max} files at most per run.",
+    "removeFile": "Remove “{name}”",
+    "addFiles": "Add files",
+    "filesHint": "PDF, Word, Excel, CSV, text or images; {max} files at most, 10 MB each. They are read on our servers and protected as in a conversation.",
+    "adapted": "adapted",
+    "enableAgent": "Enable {name}",
+    "agentEnabled": "Agent enabled.",
+    "agentDisabled": "Agent disabled.",
+    "adapt": "Adapt",
+    "adaptNamed": "Adapt {name}",
+    "adaptSaved": "Adaptations saved.",
+    "adaptTitle": "Adapt “{name}”",
+    "adaptBody": "Your instructions are added to the agent's own, for the whole company.",
+    "adaptInstructions": "Company instructions",
+    "adaptInstructionsHint": "For example: our quotes are valid for 30 days; always offer a follow-up call.",
+    "adaptTone": "Tone",
+    "adaptToneHint": "For example: warm, formal, short sentences.",
+    "modelCompanyDefault": "The company's default model",
+    "memoryAgentDefault": "As set by the agent",
+    "notices": {
+      "legal": "This is not legal advice. The document is a draft: have it reviewed by a legal professional before any use.",
+      "hiring": "This assistant summarises and structures applications against your criteria. It never scores, ranks or rejects candidates: a person decides. AI used to filter job applications is classified as high-risk under the EU AI Act.",
+      "draft": "Draft to be checked by a person. No payment and no e-mail is made automatically."
     }
+  },
+  "exports": {
+    "defaultTitle": "Document",
+    "sheet": "Table {number}"
   }
 }

@@ -101,6 +101,9 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         ...(tool ? [`- Tool instructions received: ${tool}`] : []),
         ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
         ...(helper ? ["", `You can ask ${helper[1]} about it.`] : []),
+        // Tools that ask for a table or a chart get sample ones, so exports and charts can be tested.
+        ...(tool && /Markdown table/.test(request.system) ? ["", ...SAMPLE_TABLE] : []),
+        ...(/```chart|language is `chart`/.test(request.system) ? ["", ...SAMPLE_CHART] : []),
       ].join("\n");
       for (const word of answer.split(/(?<=\s)/)) {
         if (signal.aborted) return;
@@ -113,6 +116,29 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
     },
   };
 }
+
+const SAMPLE_TABLE = [
+  "| Month | Inflows | Outflows | Balance |",
+  "|---|---:|---:|---:|",
+  "| [TEST] January | 18 500 | 15 200,50 | 12 300 |",
+  "| [TEST] February | 21 000 | 16 800 | 16 500 |",
+  "| [TEST] March | 19 400 | 22 100 | 13 800 |",
+];
+
+const SAMPLE_CHART = [
+  "```chart",
+  JSON.stringify({
+    type: "line",
+    title: "[TEST] Balance",
+    unit: "€",
+    labels: ["Jan", "Feb", "Mar"],
+    series: [
+      { name: "Inflows", values: [18500, 21000, 19400] },
+      { name: "Outflows", values: [15200.5, 16800, 22100] },
+    ],
+  }),
+  "```",
+];
 
 async function* simulated(answer: string): AsyncIterable<ChatEvent> {
   yield { type: "text", delta: answer };

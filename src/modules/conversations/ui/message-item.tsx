@@ -8,6 +8,7 @@ import {
   CheckIcon,
   ChevronDownIcon,
   CopyIcon,
+  DownloadIcon,
   FileTextIcon,
   ImageIcon,
   RefreshCwIcon,
@@ -41,6 +42,7 @@ import { MaskedView } from "@/modules/hide/ui/masked-view";
 import { ProtectedText } from "@/modules/hide/ui/hide-composer";
 import { ConfrontationView } from "@/modules/confronter/ui/confrontation-view";
 import type { ConfrontationProgress } from "@/modules/confronter/types";
+import { hasTable } from "@/modules/exports/blocks";
 
 type MemoryProps = { memoryTargets: MemoryTarget[]; conversationId: string | null };
 
@@ -375,6 +377,7 @@ function AssistantMessage({
           ) : null}
           {message.status === "complete" ? <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} /> : null}
           {!confrontation && message.status === "complete" ? <ConfrontButton onConfront={onConfront} /> : null}
+          {message.status === "complete" && message.content.trim() ? <ExportMenu messageId={message.id} table={hasTable(message.content)} /> : null}
           {canRegenerate ? (
             <>
               <Tooltip content={t("regenerate")}>
@@ -423,5 +426,41 @@ export function ModelSwitchDivider({ provider, label }: { provider: ProviderId; 
       </span>
       <span className="h-px flex-1 bg-border" />
     </div>
+  );
+}
+
+/** Download an answer as Word or PDF, and its tables as CSV or Excel (built on our server). */
+function ExportMenu({ messageId, table }: { messageId: string; table: boolean }) {
+  const t = useTranslations("chat");
+  const formats = [
+    ["docx", t("exportDocx")],
+    ["pdf", t("exportPdf")],
+    ...(table
+      ? [
+          ["xlsx", t("exportXlsx")],
+          ["csv", t("exportCsv")],
+        ]
+      : []),
+  ] as const;
+  return (
+    <DropdownMenu>
+      <Tooltip content={t("export")}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-sm" aria-label={t("export")}>
+            <DownloadIcon />
+          </Button>
+        </DropdownMenuTrigger>
+      </Tooltip>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel>{t("export")}</DropdownMenuLabel>
+        {formats.map(([format, label]) => (
+          <DropdownMenuItem key={format} asChild>
+            <a href={`/api/messages/${messageId}/export?format=${format}`} download>
+              {label}
+            </a>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -65,7 +65,9 @@ import { ConfrontDialog } from "@/modules/confronter/ui/confront-dialog";
 import type { ConfrontEstimate } from "@/modules/confronter/server/actions";
 import type { Confrontation, ConfrontationProgress } from "@/modules/confronter/types";
 import { TurnIntoToolDialog, type ToolEditorContext } from "@/modules/agents/ui/turn-into-tool-dialog";
-import { RUN_STORAGE_PREFIX } from "@/modules/agents/ui/run-form";
+import { RUN_STORAGE_PREFIX, type PendingRun } from "@/modules/agents/ui/run-form";
+import { AgentNotice } from "@/modules/agents/ui/agent-notice";
+import type { AgentNotice as AgentNoticeKind } from "@/modules/agents/builtins";
 
 type PendingAttachment = {
   key: string;
@@ -104,7 +106,7 @@ type Props = {
   colleagues: Colleague[];
   handover: Handover | null;
   /** The tool or agent this conversation runs (CLAUDE.md §4.6, §4.7). */
-  agent: { id: string; name: string; attachments: boolean; allowedModels: string[] } | null;
+  agent: { id: string; name: string; attachments: boolean; allowedModels: string[]; notice: AgentNoticeKind | null } | null;
   toolEditor: ToolEditorContext;
 };
 
@@ -225,8 +227,11 @@ export function ChatView(props: Props) {
   const pendingRun = React.useSyncExternalStore(noSubscription, () => (runKey ? readSession(runKey) : null), () => null);
   const [runText, setRunText] = React.useState<string | null>(null);
   if (pendingRun && runText === null) {
-    setRunText(pendingRun);
-    setInput(pendingRun);
+    const run = parseRun(pendingRun);
+    setRunText(run.message);
+    setInput(run.message);
+    // Files given in the form were uploaded already: they go with the first message.
+    if (run.attachments.length) setAttachments(run.attachments.map((a) => ({ ...a, key: a.id, uploading: false })));
   }
   const runSent = React.useRef(false);
   React.useEffect(() => {
@@ -778,6 +783,7 @@ export function ChatView(props: Props) {
       >
         <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
           {props.handover ? <HandoverCard handover={props.handover} className="mb-8" /> : null}
+          {props.agent?.notice ? <AgentNotice notice={props.agent.notice} className="mb-6" /> : null}
           {messages.length === 0 ? (
             <EmptyChat onPick={(text) => { setInput(text); textarea.current?.focus(); }} />
           ) : (
@@ -1185,6 +1191,17 @@ function mergeMessages(list: TimelineMessage[], requested: string[], fresh: Time
 }
 
 const noSubscription = () => () => {};
+
+/** A pending run as stored by the library page (older entries were the message alone). */
+function parseRun(raw: string): PendingRun {
+  try {
+    const value = JSON.parse(raw) as Partial<PendingRun>;
+    if (typeof value?.message === "string") return { message: value.message, attachments: Array.isArray(value.attachments) ? value.attachments : [] };
+  } catch {
+    // Not JSON: the message itself.
+  }
+  return { message: raw, attachments: [] };
+}
 
 function readSession(key: string): string | null {
   try {

@@ -9,6 +9,7 @@ import { ComingSoon } from "@/components/ui/coming-soon";
 import { DEPARTMENTS, LAUNCH_AGENTS } from "@/modules/agents/definitions";
 import { listLibrary } from "@/modules/agents/server/queries";
 import { AgentBadges } from "@/modules/agents/ui/agent-badges";
+import { agentText, type DynamicT } from "@/modules/agents/labels";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("tools");
@@ -20,8 +21,11 @@ export default async function LibraryPage() {
   const ctx = await requireMember();
   const t = await getTranslations("tools");
   // Shown: what the person may run, and their own tools whatever their state.
-  const items = (await listLibrary(ctx)).filter((a) => a.usable || a.mine);
-  const builtinNames = new Set(items.filter((a) => a.builtin).map((a) => a.name));
+  const all = await listLibrary(ctx);
+  const items = all.filter((a) => a.usable || a.mine);
+  // Built-in agents present in the database (and so runnable); the others are still to come.
+  const built = new Set(all.map((a) => a.builtinKey));
+  const text = (a: (typeof items)[number]) => agentText(a, t as unknown as DynamicT);
 
   return (
     <PageContainer>
@@ -33,7 +37,7 @@ export default async function LibraryPage() {
       <div className="space-y-10">
         {DEPARTMENTS.map((department) => {
           const own = items.filter((a) => a.department === department);
-          const upcoming = LAUNCH_AGENTS.filter((a) => a.department === department && !builtinNames.has(t(`launch.${a.key}.name`)));
+          const upcoming = LAUNCH_AGENTS.filter((a) => a.department === department && !built.has(a.key));
           if (own.length === 0 && upcoming.length === 0) return null;
           return (
             <section key={department} aria-labelledby={`dept-${department}`} className="space-y-3">
@@ -45,10 +49,10 @@ export default async function LibraryPage() {
                   <Link key={a.id} href={`/library/${a.id}`} className="rounded-xl">
                     <Card className="h-full space-y-2 p-4 transition-colors hover:border-foreground/20">
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-medium">{a.name}</p>
+                        <p className="text-sm font-medium">{text(a).name}</p>
                         <AgentBadges agent={a} />
                       </div>
-                      {a.description ? <p className="line-clamp-2 text-[13px] text-muted-foreground">{a.description}</p> : null}
+                      {text(a).description ? <p className="line-clamp-2 text-[13px] text-muted-foreground">{text(a).description}</p> : null}
                       {!a.mine && a.creatorName ? <p className="text-xs text-muted-foreground">{t("by", { name: a.creatorName })}</p> : null}
                     </Card>
                   </Link>

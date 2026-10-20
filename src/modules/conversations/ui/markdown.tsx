@@ -7,6 +7,8 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { linkCitations } from "@/modules/memory/citations";
+import { parseChartSpec } from "../chart-spec";
+import { Chart } from "./chart";
 
 /**
  * AI answers rendered as Markdown. Raw HTML in the text is never rendered (react-markdown's default),
@@ -51,7 +53,16 @@ const components: Components = {
       {children}
     </a>
   ),
-  pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
+  pre: ({ children, node }) => {
+    // A ```chart block holding a valid spec is drawn; anything else stays a code block.
+    const code = node?.children[0];
+    if (code?.type === "element" && code.tagName === "code" && String(code.properties.className ?? "").includes("language-chart")) {
+      const text = code.children.map((c) => (c.type === "text" ? c.value : "")).join("");
+      const spec = parseChartSpec(text);
+      if (spec) return <Chart spec={spec} />;
+    }
+    return <CodeBlock>{children}</CodeBlock>;
+  },
   table: ({ children }) => (
     <div className="my-4 overflow-x-auto rounded-lg border">
       <table>{children}</table>

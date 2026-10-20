@@ -14,6 +14,8 @@ import {
   type ToolCapability,
   type Visibility,
 } from "../definitions";
+import { builtinAgent, type AgentNotice } from "../builtins";
+import { ensureBuiltinAgents } from "./builtin-sync";
 
 type AgentRow = Omit<Database["public"]["Tables"]["agents"]["Row"], "decided_at" | "decided_by" | "updated_at" | "source_conversation_id">;
 type SettingsRow = Database["public"]["Tables"]["company_agent_settings"]["Row"];
@@ -32,6 +34,19 @@ export type AgentSummary = {
   /** The viewer may run it (enabled for their role, approved if shared company-wide). */
   usable: boolean;
   creatorName: string | null;
+  /** Built-in agents: their key (names, labels and notices are translated from it) and notice. */
+  builtinKey: string | null;
+  notice: AgentNotice | null;
+};
+
+/** A company's adaptation of a built-in agent (Administration → Agents and tools). */
+export type AgentSettings = {
+  enabled: boolean;
+  enabledRoles: Role[];
+  instructionsAddition: string;
+  tone: string;
+  defaultModel: string | null;
+  memoryScope: MemoryScope | null;
 };
 
 export type AgentDetail = AgentSummary & {
@@ -44,6 +59,7 @@ export type AgentDetail = AgentSummary & {
   outputFormat: OutputFormat;
   enabledRoles: Role[];
   createdAt: string;
+  settings: AgentSettings | null;
 };
 
 const SELECT =
@@ -73,6 +89,18 @@ function toDetail(a: AgentRow & { creator: { full_name: string | null; email: st
     mine: a.created_by === ctx.user.id,
     usable: usable(a, settings, ctx),
     creatorName: a.creator?.full_name ?? a.creator?.email ?? null,
+    builtinKey: a.builtin_key,
+    notice: builtinAgent(a.builtin_key)?.notice ?? null,
+    settings: settings
+      ? {
+          enabled: settings.enabled,
+          enabledRoles: settings.enabled_roles,
+          instructionsAddition: settings.instructions_addition,
+          tone: settings.tone,
+          defaultModel: settings.default_model,
+          memoryScope: (MEMORY_SCOPES as readonly string[]).includes(settings.memory_scope ?? "") ? (settings.memory_scope as MemoryScope) : null,
+        }
+      : null,
     instructions: a.instructions,
     inputFields: fields(a.input_fields),
     allowedModels: a.allowed_models,
@@ -92,6 +120,7 @@ async function settingsFor(supabase: UserClient, companyId: string) {
 
 /** Tools and agents the viewer can see (RLS), with whether they may run each. */
 export async function listLibrary(ctx: MemberContext): Promise<AgentDetail[]> {
+  await ensureBuiltinAgents();
   const supabase = await createClient();
   const companyId = ctx.active.companyId;
   const [{ data }, settings] = await Promise.all([
@@ -102,6 +131,7 @@ export async function listLibrary(ctx: MemberContext): Promise<AgentDetail[]> {
 }
 
 export async function getAgent(ctx: MemberContext, id: string): Promise<AgentDetail | null> {
+  await ensureBuiltinAgents();
   const supabase = await createClient();
   const { data } = await supabase.from("agents").select(SELECT).eq("id", id).maybeSingle();
   if (!data || (data.company_id !== null && data.company_id !== ctx.active.companyId)) return null;
