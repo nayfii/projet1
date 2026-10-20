@@ -112,9 +112,15 @@ export function toPdf(title: string, blocks: Block[]): Promise<Buffer> {
   });
 }
 
+/** A text cell that a spreadsheet would run as a formula (=, +, -, @) is kept as text. Numbers stay numbers. */
+const inert = (v: string) => (/^[=+\-@\t\r]/.test(v) && cellNumber(v) === null ? `'${v}` : v);
+
 /** The answer's tables as CSV (";" for French Excel, "," otherwise), UTF-8 with a BOM so accents open right. */
 export function toCsv(blocks: Block[], separator: ";" | ","): string {
-  const quote = (v: string) => (v.includes(separator) || /["\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const quote = (raw: string) => {
+    const v = inert(raw);
+    return v.includes(separator) || /["\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  };
   const tables = tablesOf(blocks);
   const lines = tables.flatMap((t, i) => [...(i > 0 ? [""] : []), t.header, ...t.rows].map((row) => (Array.isArray(row) ? row.map(quote).join(separator) : row)));
   return `﻿${lines.join("\r\n")}\r\n`;

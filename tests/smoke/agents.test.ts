@@ -14,12 +14,13 @@ import type { KnowledgePassage } from "@/modules/memory/types";
 /**
  * The 14 launch agents against a real model (`pnpm test:smoke`), each with a realistic French and English
  * example (BUILD_STEPS Step 7). Same system prompt and form message as in the app; attached files are given
- * as their extracted text, the way the chat sends them. Answers are saved in test-results/agent-runs/ to
+ * as their extracted text, the way the chat sends them. Answers are saved in smoke-results/agent-runs/ to
  * be read by a person. Skipped without an OpenAI key.
  */
 
 const MODEL = process.env.SMOKE_AGENT_MODEL ?? "gpt-6-luna";
-const OUT = join(process.cwd(), "test-results", "agent-runs");
+// Not test-results/: Playwright empties that folder on every run.
+const OUT = join(process.cwd(), "smoke-results", "agent-runs");
 
 type Example = {
   values: Record<string, string>;

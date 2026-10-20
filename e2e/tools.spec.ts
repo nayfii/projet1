@@ -95,7 +95,7 @@ test("the Owner approves it in Administration → Agents and tools", async () =>
   await expect(ownerPage.getByText("Outil validé pour toute l'entreprise.")).toBeVisible();
   await ownerPage.reload();
   await expect(ownerPage.getByRole("heading", { name: "À valider (0)" })).toBeVisible();
-  await expect(ownerPage.getByRole("checkbox", { name: "Membre" })).toBeChecked();
+  await expect(ownerPage.getByRole("group", { name: "Rôles autorisés pour [TEST] Synthèse client" }).getByRole("checkbox", { name: "Membre" })).toBeChecked();
 });
 
 test("the tool runs as a form and continues as a conversation, with Hide", async () => {

@@ -1,6 +1,6 @@
 # Security and data flows
 
-Status: **Step 4** (2026-10-19). Updated at every step. This document describes what is actually implemented and tested; it is not a compliance statement. We do not claim GDPR compliance, end-to-end encryption, zero data retention or any certification.
+Status: **Step 7** (2026-10-20). Updated at every step. This document describes what is actually implemented and tested; it is not a compliance statement. We do not claim GDPR compliance, end-to-end encryption, zero data retention or any certification.
 
 ---
 
@@ -28,6 +28,9 @@ Status: **Step 4** (2026-10-19). Updated at every step. This document describes 
 | Group conversations | Only active colleagues can be added (and for a client conversation, only those with access to the client); each sees messages, files, cited sources, stored files and search results from their own starting point only; the AI gets only the history every participant sees and the memories all of them may read; a group conversation cannot be linked to a client one participant cannot access; real-time events and presence channels follow the same rules (RLS, `realtime.messages` policies) | `collaboration` migration, `tests/integration/collaboration.test.ts`, `e2e/collab.spec.ts` |
 | Transfers and Smart Handover | Only the person responsible transfers a conversation; only an employee assigned to a restricted client transfers it; the sender loses access in the same transaction; the handover file is readable and editable by the recipient only and cannot be created by users; transfers and additions are logged with ids only. Before sharing history or transferring, the app warns when the shared answers cite a memory a recipient cannot read | `transfer_conversation`, `transfer_client`, `handovers` RLS, `history_unreadable_sources`, integration tests |
 | Tools and agents | Personal tools are visible to their creator only (Owner included); team tools to the team and "agents" Admins; company-wide tools only after approval by an Owner or "agents" Admin, and again after each edit. Every write goes through checked SQL functions; the database refuses a run of a tool the person may not use (role, approval). Built-in agents can be adapted per company only by its "agents" Admins | `agents` migration, `tests/integration/agents.test.ts`, `e2e/tools.spec.ts` |
+| Launch agents | Defined in code and written to the database by an audited server module only; companies cannot rewrite their instructions (only add to them through Admins), so the safeguards stay: drafts only, never send, pay or sign; legal agents remind that it is not legal advice; the Application Review Assistant never scores, ranks, shortlists or decides, ignores personal characteristics and uses no memory. These are instructions to a model, checked on real examples, not a guarantee | `builtins.ts`, `builtin-sync.ts`, `tests/unit/step7.test.ts`, `tests/integration/agents.test.ts`, `tests/smoke/agents.test.ts` |
+| Exports | Word, PDF, Excel and CSV files are built on our server from an AI answer the person can read (RLS with their session, from their starting point in a group); AI answers only; `Cache-Control: no-store`; CSV cells that a spreadsheet would run as a formula are neutralised; Excel cells are written as values, never formulas | `api/messages/[id]/export`, `exports/server/render.ts`, unit and e2e tests |
+| Charts | Drawn in the browser from a JSON description validated against a strict schema (types, lengths, numbers); nothing is executed; an invalid description stays shown as text | `chart-spec.ts`, `chart.tsx` |
 | Confronter | Same checks as an answer (access, Hide, permission-filtered memory, group rules), the quota and the estimate checked before any call; results written by the server only | `prepareChatTurn`, `confronter/server/*`, integration and e2e tests |
 | AI suggestions | Nothing is saved without a person's approval; pending suggestions are visible only to their author and to people who can write in the target memory; approval re-checks write rights in SQL | `decide_memory_suggestion`, integration tests |
 
@@ -47,7 +50,8 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Group conversation answer | Same as a chat answer, limited to the history every participant can see and the memories all of them may read; each person's message is prefixed with their name (masked by Hide when Automatic is on) | The mentioned provider (or the model chosen by the person who wrote "@IA") | Only when a message mentions the AI |
 | Who Can Help | Names (masked when Automatic is on) and declared areas of expertise of colleagues who did not opt out, in the system prompt | The chat model | Each chat answer |
 | Confronter | The same content as a chat answer, sent to **each** participating provider (OpenAI, Anthropic and Google when allowed); then each provider receives the question and the other models' answers (as written, with placeholders) to critique them; the judge's provider receives the question, all answers and all critiques | OpenAI, Anthropic, Google | When someone confirms a confrontation |
-| Tool run | Same as a chat answer, plus the tool's instructions and the company's adaptations (masked by Hide when auto-protect is on) | The tool's model (or the person's choice) | Each message of a run |
+| Tool or agent run | Same as a chat answer, plus the tool's instructions and the company's adaptations (masked by Hide when auto-protect is on). The filled form is the first message; the files of the form are attachments (text read on our server, masked by Hide; images sent as images). Per agent: invoices, bank exports, sales and cost figures, applications (CVs), contracts, client e-mails, reviews, meeting notes, KPI files — whatever the person puts in the form. The Application Review Assistant gets no memory; the other agents get the memory passages the person may read | The agent's model (or the person's choice) | Each message of a run |
+| Exports and charts | Nothing: built and drawn on our server and in the browser | – | – |
 | "Turn into a tool" | The conversation (last 24,000 characters) as the models received it (masked when Hide was on) | The conversation's model (or the one Auto picks) | When someone clicks "Transformer en outil" |
 | Smart Handover: conversation | The conversation (last 24,000 characters) as the models received it (masked when Hide was on), people numbered rather than named, the number of attached files | The conversation's model (or the one Auto picks) | When a conversation is transferred |
 | Smart Handover: client | Client name, sector and description, its memory entries (titles and content, up to 30), its document names, the last messages of the sender's conversations about it — masked when Automatic is on by default | The company's default model (or the one Auto picks) | When a restricted client is transferred |
@@ -76,7 +80,8 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | What the AI received | `messages.masked_content`, `conversation_attachments.masked_text` | Masked versions, readable by the conversation's participants |
 | Sensitive terms | `sensitive_terms` | Visible to the Owner and Hide admins only |
 | Participants | `conversation_participants` | Who takes part, their role and the first message they may see |
-| Tools and agents | `agents`, `company_agent_settings` | Instructions and forms written by employees (or drafted by the AI from a conversation and reviewed); deleted with the company |
+| Tools and agents | `agents`, `company_agent_settings` | Instructions and forms written by employees (or drafted by the AI from a conversation and reviewed); deleted with the company. Built-in agents hold no company data |
+| Agent runs | `messages`, `conversation_attachments`, `chat-attachments` bucket | A run is a conversation: the form, its files and the answers are stored like any conversation. Exported files are not stored (built on each download) |
 | Confrontations | `messages.confrontation` | Each model's answer and critique and the synthesis, with real values restored; readable like the conversation's messages |
 | Handover files | `handovers` | Text drafted by the AI (real values restored) and edited by the recipient; readable by the recipient only; deleted with the conversation or client |
 | Usage | `usage_events` | Token counts, credits, estimated cost, model, status (chat, embeddings, memory tasks). No content |
@@ -87,18 +92,19 @@ Every AI call is built by our server. Providers receive one self-contained reque
 1. Hide is imperfect by nature (see section 2). Real values remain in our database (messages as typed): Hide protects what goes to AI providers, not our own storage.
 2. No production hosting yet: the EU hosting of the app, database and storage is still to be set up (Step 10).
 3. No per-user rate limiting on the API routes beyond monthly credit quotas.
-4. Prompt injection: a document or message can try to steer the model. Impact is limited today (the model has no tools and cannot act), but answers can be misleading.
-5. File parsing libraries (pdf.js through unpdf, mammoth, exceljs) process untrusted files on our server; no antivirus scan; an isolated parsing worker would reduce the risk.
-6. Quotas are checked before each request: simultaneous requests can exceed a limit slightly.
-7. Anyone with direct database or service-role credentials (our infrastructure) can technically read content: the platform-admin guarantee is enforced by code and policies, not by cryptography.
-8. Claude and Gemini adapters have not yet been exercised against the real APIs.
-9. Memory content goes to the embeddings provider in clear (see section 2). Decide between a cloud provider and a local embeddings model before real customer data.
-10. Source Proof keeps copies of cited passages after the original is deleted. A request to erase a person's data will also have to remove these copies (no tool for that yet).
-11. Prompt injection through memory: a document added to a memory can contain instructions that the AI reads every time the passage is retrieved. Same limited impact as point 4 today, but more persistent.
-12. Losing `HIDE_ENCRYPTION_KEY` makes earlier placeholders impossible to restore; leaking it, together with database access, reveals the mapped values (which are also in the messages).
-13. Typing a word and seeing it masked tells a member it is on the company's sensitive list (inherent to masking; the list itself is not readable).
-14. Sharing history or transferring a conversation shows earlier answers as written: an answer that used a memory the recipient cannot read can carry its content. The app warns only when that answer cited the memory; what people typed themselves is their own decision.
-15. The conversation's title (by default the start of its first message) is visible to everyone added to it.
-16. A tool's instructions are written by employees and can steer the AI (like any prompt); company-wide tools are reviewed by an Admin before publication, but team tools are not.
-17. Confronter sends the same question and context to up to three providers at once: the data flow is three times wider than a normal question.
+4. Prompt injection: a document or message can try to steer the model. Impact is limited today (the model has no tools and cannot act, and agents only produce drafts), but answers can be misleading — for example an invoice or a contract written to change the extracted figures or hide a clause. Agents' outputs must be reviewed by a person; the notices say so.
+5. **Hiring (EU AI Act).** The Application Review Assistant is designed to stay out of automated filtering (no scores, rankings, shortlists or decisions; a person decides; notice shown). Whether a company's use of it falls under the high-risk obligations depends on how it is used; this needs a legal review before the agent is sold for recruitment.
+6. File parsing libraries (pdf.js through unpdf, mammoth, exceljs) process untrusted files on our server; no antivirus scan; an isolated parsing worker would reduce the risk.
+7. Quotas are checked before each request: simultaneous requests can exceed a limit slightly.
+8. Anyone with direct database or service-role credentials (our infrastructure) can technically read content: the platform-admin guarantee is enforced by code and policies, not by cryptography.
+9. Claude and Gemini adapters have not yet been exercised against the real APIs.
+10. Memory content goes to the embeddings provider in clear (see section 2). Decide between a cloud provider and a local embeddings model before real customer data.
+11. Source Proof keeps copies of cited passages after the original is deleted. A request to erase a person's data will also have to remove these copies (no tool for that yet).
+12. Prompt injection through memory: a document added to a memory can contain instructions that the AI reads every time the passage is retrieved. Same limited impact as point 4 today, but more persistent.
+13. Losing `HIDE_ENCRYPTION_KEY` makes earlier placeholders impossible to restore; leaking it, together with database access, reveals the mapped values (which are also in the messages).
+14. Typing a word and seeing it masked tells a member it is on the company's sensitive list (inherent to masking; the list itself is not readable).
+15. Sharing history or transferring a conversation shows earlier answers as written: an answer that used a memory the recipient cannot read can carry its content. The app warns only when that answer cited the memory; what people typed themselves is their own decision.
+16. The conversation's title (by default the start of its first message) is visible to everyone added to it.
+17. A tool's instructions are written by employees and can steer the AI (like any prompt); company-wide tools are reviewed by an Admin before publication, but team tools are not.
+18. Confronter sends the same question and context to up to three providers at once: the data flow is three times wider than a normal question.
 

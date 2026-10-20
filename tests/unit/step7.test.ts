@@ -128,6 +128,12 @@ describe("exports", () => {
     expect(csv).toContain("Novembre;18 500;15 200,50;12 300");
   });
 
+  it("never lets a CSV cell run as a spreadsheet formula, and keeps negative numbers", () => {
+    const csv = toCsv(markdownToBlocks("| A | B |\n|---|---|\n| =HYPERLINK(\"http://x\") | -8 950 € |\n| @SUM(1) | +33 6 12 |"), ";");
+    expect(csv).toContain(`"'=HYPERLINK(""http://x"")";-8 950 €`);
+    expect(csv).toContain("'@SUM(1);'+33 6 12");
+  });
+
   it("writes an Excel workbook with numbers as numbers", async () => {
     const buffer = await toXlsx(blocks, (i) => `Tableau ${i + 1}`);
     const book = new ExcelJS.Workbook();

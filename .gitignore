@@ -40,3 +40,4 @@ worker/tmp/
 .vercel
 .pnp
 .pnp.*
+smoke-results/

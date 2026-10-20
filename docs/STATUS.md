@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 6 (Confronter, tools and the agent framework), 2026-10-19.
+Last update: Step 7 (the launch agents, exports and charts), 2026-10-20.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -92,24 +92,28 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Feature | Status |
 |---|---|
 | Shared agent/tool framework | **done** (Step 6): one `agents` table for tools and built-in agents (instructions, form, allowed models, capabilities, memory scope, output format, visibility, roles); every write goes through checked SQL functions; the database refuses a conversation started from a tool the person may not use |
-| Library organised by department | **done**: Marketing, Ventes, Comptabilité, Finance, RH, Juridique, Service client, Direction (and Général); the 16 launch agents are listed as "Bientôt" until Step 7 |
-| Company customisation (instructions, tone, defaults, memory) and enable per role | **partial**: company tools are enabled per role in Administration → Agents et outils (done). For built-in agents, the database part is done and tested (extra instructions, tone, default model, memory, on/off, roles per company), but the screen to adapt them comes with the agents themselves in Step 7 |
-| Marketing — Motion Design (HyperFrames → MP4) | not started |
-| Marketing — Video Editor (clips + brief → MP4, 16:9 / 9:16 / 1:1) | not started |
-| Sales — Proposal Writer | not started |
-| Sales — Meeting Prep | not started |
-| Accounting — Invoice Intake (CSV / XLSX export) | not started |
-| Accounting — Payment Reminders | not started |
-| Finance — Cash-Flow Forecast (table + chart) | not started |
-| Finance — Margin Analysis | not started |
-| HR — Job Posting Writer | not started |
-| HR — Application Review Assistant (no scoring / ranking / rejection, notice) | not started |
-| Legal — Contract Review ("not legal advice" notice) | not started |
-| Legal — Template Drafter ("not legal advice" notice) | not started |
-| Customer Service — Email Responder | not started |
-| Customer Service — Feedback Synthesis | not started |
-| Management — Meeting Minutes (incl. audio file) | not started |
-| Management — Weekly Dashboard | not started |
+| Library organised by department | **done**: Marketing, Ventes, Comptabilité, Finance, RH, Juridique, Service client, Direction (and Général); 14 launch agents are live (Step 7), the two video agents are listed as "Bientôt" until Step 8 |
+| Company customisation (instructions, tone, defaults, memory) and enable per role | **done** (Step 7): Administration → Agents et outils → "Adapter" on each built-in agent (company instructions, tone, model, memory), an on/off switch and the roles allowed; company tools are enabled per role since Step 6 |
+| Launch agents defined in code | **done** (Step 7): `src/modules/agents/builtins.ts` (instructions in English, labels and options in French and English); the server keeps the database rows identical to the code; companies cannot change them, only adapt them |
+| Forms with files | **done** (Step 7): "files" fields (PDF, Word, Excel, CSV, text, images; 5 files, 10 MB each) go with the first message as attachments, read on our servers and protected by Hide like any attachment |
+| Exports | **done** (Step 7): every finished AI answer can be downloaded as Word (.docx) or PDF; answers with a table (or a chart) also as Excel (.xlsx, numbers as numbers, one sheet per table) and CSV (";" and UTF-8 for French Excel). Built on our server from the answer; nothing is sent elsewhere |
+| Charts in answers | **done** (Step 7): the finance and dashboard agents write a small chart description; the conversation draws it (line or bar, up to 3 series), with values on hover, a legend and "Voir les données" (the same numbers as a table). Exported as its table |
+| Marketing — Motion Design (HyperFrames → MP4) | not started (Step 8) |
+| Marketing — Video Editor (clips + brief → MP4, 16:9 / 9:16 / 1:1) | not started (Step 8) |
+| Sales — Proposal Writer | **done**: client + needs (+ offer, budget, timing) → proposal draft with [à compléter] where facts are missing; uses company and client memory; Word/PDF export |
+| Sales — Meeting Prep | **done**: client + goal → brief from client memory (with Source Proof), history, talking points, questions |
+| Accounting — Invoice Intake (CSV / XLSX export) | **done**: invoices (PDF, images, text) → one table (supplier, number, dates, amounts, VAT, currency, category), "?" when unreadable, totals, list of values to check; CSV/Excel export; "draft" notice. Scanned PDFs are not read (no OCR); photos of invoices go to the model as images |
+| Accounting — Payment Reminders | **done**: unpaid invoices (typed or a file) + stage (first, second, final) → one e-mail draft per client, escalating tone; never sent; "draft" notice |
+| Finance — Cash-Flow Forecast (table + chart) | **done**: bank exports + balance + recurring items + horizon (3, 6, 12 months) → monthly table, line chart, assumptions, low months; "draft" notice |
+| Finance — Margin Analysis | **done**: data files or pasted figures + dimension (product, client, project) → margin table with total, bar chart, commentary, recommendations; "draft" notice |
+| HR — Job Posting Writer | **done**: role + context (+ contract, place, salary) → posting draft, inclusive wording, no discriminatory criteria |
+| HR — Application Review Assistant (no scoring / ranking / rejection, notice) | **done**: criteria written by the employer + applications → one structured summary per application (evidence per criterion, interview questions). Never a score, ranking, shortlist or verdict, no comparison between candidates, personal characteristics ignored; ends with "a person decides"; uses no memory; notice on the form and in the conversation (EU AI Act high-risk) |
+| Legal — Contract Review ("not legal advice" notice) | **done**: contract + our side + points of attention → summary, key clauses table, risks with quotes, missing clauses, questions for a lawyer; notice + closing reminder |
+| Legal — Template Drafter ("not legal advice" notice) | **done**: document type (CGV, NDA, CGU, services agreement, other) + parties and specifics → draft with [à compléter]; notice + closing reminder |
+| Customer Service — Email Responder | **done**: e-mail received (+ client, what to answer) → reply draft in the company's tone, using memory; never sent; "draft" notice |
+| Customer Service — Feedback Synthesis | **done**: reviews or e-mails (files or pasted) → themes table (mentions, sentiment, quote), recommended actions |
+| Management — Meeting Minutes (incl. audio file) | **partial**: notes or transcript (typed or a file) → minutes, decisions, actions table (owner, due date), open questions. **Audio files are not accepted yet** (open question 8: needs a speech-to-text provider) |
+| Management — Weekly Dashboard | **done**: data files + indicators → indicators table, chart, highlights, risks, priorities; "?" when a figure is missing |
 | Render worker container (Chromium, FFmpeg, HyperFrames) + DB job queue | not started |
 | Dedicated video / motion credit quota | not started |
 
@@ -119,7 +123,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Employees: invite, deactivate, roles, expertise | **done** (Step 1) |
 | Permissions: memory categories, client visibility and assignments | **done**: client visibility and assignments (Step 1), memory groups and rights (Step 3, `/admin/permissions`) |
 | Models: enable / disable, default, Auto mode | **done** (Step 2) |
-| Agents and tools: enable per role, approve company-wide tools | **done** (Step 6): pending tools with their full content to review, approve / reject, roles per shared tool, delete; built-in agents listed as coming in Step 7 |
+| Agents and tools: enable per role, approve company-wide tools | **done** (Steps 6–7): pending tools with their full content to review, approve / reject, roles per shared tool, delete; built-in agents switched on/off, roles, and "Adapter" (instructions, tone, model, memory) |
 | Hide policies | **done** (Step 4, `/admin/hide`) |
 | Usage dashboards (real provider data; costs labelled as estimates) | **done** (Step 2, `/admin/usage`): requests, tokens, credits, estimated cost by person, by model and per day, month picker. A richer dashboard comes in Step 9 |
 | Quotas | **done** (Step 2, `/admin/quotas`): company credits this month, default limit per person, personal limits per member |
@@ -189,18 +193,19 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
-## Tests (Step 6)
+## Tests (Step 7)
 
 | Suite | Command | Result |
 |---|---|---|
-| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, Hide, collaboration, **Confronter: who takes part, who writes the synthesis, credit estimate, prompts, reading the synthesis; a guard that "use server" files export only functions**) | `pnpm test` | 161 passed |
-| Integration: isolation with real users and JWTs (Steps 1–6) | `pnpm test:integration` | 155 passed (17 new for tools and agents: personal, team and company visibility; approval by "agents" Admins only; approval again after an edit; roles per tool; who may delete; no direct writes; built-in agents adapted per company and per role; nothing for another company or the platform admin; confrontations not writable by users) |
-| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 51 passed: Confronter 1 (cost first, three answers, critiques, synthesis, Hide), tools 5 (Turn into a tool, library by department, approval, run as a form with Hide), tour 4, collaboration 7, Hide 5, memory 8, chat 16, foundation 5 |
-| Real provider smoke test | `pnpm test:smoke` | 5 passed, 4 skipped (unchanged: GPT-6.1 Sol and OpenAI embeddings refused by the provider account; Anthropic and Google skipped, no key) |
-| Database rebuilt from the migrations | `pnpm db:reset`, then the integration and Step 6 e2e tests | OK |
+| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, Hide, collaboration, Confronter, **the 14 agents: forms valid in French and English, constraints (hiring and legal notices, no score, drafts only, charts); the form turned into the first message; chart descriptions; Word, PDF, Excel and CSV exports, formulas never run from a CSV**) | `pnpm test` | 186 passed |
+| Integration: isolation with real users and JWTs (Steps 1–7) | `pnpm test:integration` | 156 passed (1 new: the launch agents come from the code, are kept in sync by the server and cannot be changed by a company) |
+| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 58 passed: agents 7 (library with the 14 agents, Proposal Writer with Word and PDF downloads, Invoice Intake with files and Excel/CSV downloads, Cash-flow chart with hover and data table, notices, adapt / disable an agent), Confronter 1, tools 5, tour 4, collaboration 7, Hide 5, memory 8, chat 16, foundation 5 |
+| **The 14 agents with a real model**, a realistic French and English example each | `pnpm test:smoke` (`tests/smoke/agents.test.ts`, answers saved in `smoke-results/agent-runs/`) | **21 of 28 run** with GPT-6 Luna and checked (structure, table, valid chart, [S1] citation, legal reminder, no score or preference for applications). **7 not run**: the OpenAI account ran out of credit during the run (Feedback Synthesis FR and EN, Meeting Minutes FR and EN, Email Responder FR, Template Drafter EN, Weekly Dashboard FR). To rerun once the account has credit. The saved answers of this run were erased by the next browser test run (they were in Playwright's folder; fixed); two were read in full (Cash-flow FR, Application Review FR) and looked right |
+| Real provider smoke test | `pnpm test:smoke` | GPT-6 Luna worked at the start of the run, then "no credits remaining"; Anthropic and Google skipped (no key) |
+| Database | no new migration in Step 7 | — |
 | Type check, lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
 
-Screenshots for the founder: `docs/screenshots/step-6/` (automated run, simulated answers marked "[TEST]").
+Screenshots for the founder: `docs/screenshots/step-7/` (automated run, simulated answers marked "[TEST]").
 
 ## Known issues
 
@@ -263,7 +268,21 @@ Screenshots for the founder: `docs/screenshots/step-6/` (automated run, simulate
   - stopping a confrontation takes effect between its stages (answers, critiques, synthesis), not in the middle of one;
   - a tool's draft is only as good as the AI's extraction: the creator must reread it, and the approver must read it before publishing it to everyone;
   - a tool run sends its first message automatically only when auto-protect is on; otherwise the filled form waits in the input so the person can protect what they want;
-  - the screen to adapt built-in agents (instructions, tone, memory, roles) arrives with the agents in Step 7.
+- **Agents, exports and charts (Step 7):**
+  - **the OpenAI account is out of credit** (HTTP 429 "insufficient_quota" since the Step 7 agent tests): until it is topped up, every real AI answer fails with "the provider account is out of credit". 7 of the 28 real agent examples could not run;
+  - agents were tested for real with GPT-6 Luna only; Claude and Gemini answers to the agents are untested (no keys);
+  - the agents' answers are only as good as the files they read: scanned PDFs are not read (no OCR), photos are sent to the model as images (Hide cannot mask text inside images), long files are cut (the AI is told it only has the first part, and the file is marked as such);
+  - charts are drawn only when the AI writes a valid chart description; otherwise the answer shows the table and the description as text. The AI could put numbers in a chart that differ from its table: the instructions forbid it, a person must check;
+  - the PDF export uses standard fonts: characters outside Western European languages (e.g. emoji, Asian scripts) are dropped from the PDF (Word keeps them);
+  - exports contain the real values the person sees (not the placeholders sent to the AI);
+  - the Application Review Assistant's rules are instructions to the model: tested for real on one French and one English example (two applications each): no score, ranking or preference, but a model can still fail; the notice tells the employer a person decides;
+  - Motion Design and Video Editor come with the render worker in Step 8.
+- Ad-hoc decisions taken in Step 7, to confirm:
+  - the launch agents are the same for every company, written by our team; a company adapts them (adds instructions, tone, model, memory, roles, on/off) but cannot rewrite their base instructions, so the legal and hiring safeguards always stay;
+  - the agents use the company memory (and the client's memory when a client is chosen), except the Application Review Assistant, which uses no memory;
+  - a run's files count as the attachments of its first message (5 files, 10 MB each);
+  - exports are offered on every finished AI answer (not only the agents'); spreadsheets only when the answer has a table or a chart;
+  - CSV uses ";" for French and "," for English; a cell starting with "=", "+", "-" or "@" that is not a number gets a leading apostrophe so a spreadsheet never runs it as a formula.
 - Ad-hoc decisions taken in Step 6, to confirm:
   - Confronter uses one model per provider (balanced tier first) and lets the company default's provider write the synthesis; it is refused if the estimate exceeds the credits left this month;
   - the confrontation is placed at the end of the conversation (with the question it confronts shown above it) and its recommended answer becomes the AI's answer for what follows;
@@ -301,7 +320,7 @@ The founder asked to proceed ("je suis prêt à construire le tout") without ans
 5. **Embeddings and sensitive data** — *now concrete (Step 3 is built this way; since Step 4 the question is masked, the documents are not).* documents saved to memory are sent in clear to the embeddings provider (OpenAI or Google) to build the search index; Hide does not apply there (masking would break search). Alternative: a local embeddings model (data stays on our servers, lower search quality, more server cost). Decision needed before real customer data.
 6. **Who sees real values in a group chat** — *applied in Step 5 as proposed below.* Proposal: every participant who can see a message sees the real values typed in it (they were shared by a colleague); the AI only ever sees placeholders. To confirm.
 7. **Gemini terms** — the free tier of the Gemini API allows Google to use data to improve its products. The production key must be on a paid (billing-enabled) Google project, or on Vertex AI in an EU region.
-8. **Meeting Minutes with audio** — needs a speech-to-text model (e.g. OpenAI or Gemini audio input). This is another data flow to document; to confirm it is acceptable.
+8. **Meeting Minutes with audio** — *not built yet (Step 7 accepts notes and transcripts only).* Needs a speech-to-text model (e.g. OpenAI or Gemini audio input), which is another data flow to document, and costs credits per minute of audio. To confirm before building it.
 9. **Knowledge export** — a company could export its whole memory (entries + documents) in open formats, which proves it is not locked in. Not in the launch spec; to confirm whether to add it.
 10. **AI provider keys (Step 2)** — to test Claude and Gemini for real, the platform needs an Anthropic API key and a Gemini API key from a billing-enabled Google project (`ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`). The current OpenAI account needs credit: GPT-6.1 Sol is refused with "no credits remaining".
 11. **Value of a credit** — proposal: 1 credit ≈ 0.001 USD of estimated AI cost (so 100,000 credits ≈ 100 USD of AI per month). The number of credits per plan and per seat should be decided together with the price (€30–40 per user per month).

@@ -81,7 +81,8 @@ The company's and clients' knowledge lives **outside every LLM**, in our databas
 | `memory` | Memory spaces (company / client), entries, permission categories, suggestions, promotion, Source Proof |
 | `providers` | Provider interface, OpenAI / Anthropic / Google adapters, model catalogue, Smart Router, embeddings provider |
 | `hide` | Sensitive data detection, pseudonymisation, mapping vault, restore, masking events |
-| `agents` | Shared agent/tool framework, built-in agents, "Turn into a tool", library, Confronter orchestration, exports |
+| `agents` | Shared agent/tool framework, built-in agents, "Turn into a tool", library |
+| `exports` | Word, PDF, Excel and CSV downloads of an AI answer (built from its Markdown on our server) |
 | `collaboration` | Smart Handover, Who Can Help |
 | `usage` | Usage events, credits, quotas (80 % warning / 100 % stop), pricing tables, estimates |
 | `render` | Render job queue API (enqueue, status); the worker itself lives in `/worker` |
@@ -166,7 +167,7 @@ As built in Step 4: there is no separate `hide_events` table; masking events go 
 | `conversations.agent_id` | a conversation started from a tool or agent ("a run") | ✓ |
 | `messages.confrontation` | a confrontation: models, judge, each model's answer and critique, the synthesis, credits | ✓ |
 
-A run is a conversation: its first message is the filled form, so Hide, memory permissions, Source Proof, usage and quotas apply without a separate runner. Built-in agents (Step 7) will be rows of `agents` defined from code at deployment. Approval history lives in `audit_log` (`agent.created`, `agent.approved`, `agent.rejected`…).
+A run is a conversation: its first message is the filled form, so Hide, memory permissions, Source Proof, usage and quotas apply without a separate runner. Built-in agents (Step 7) are rows of `agents` defined in code and kept identical to it by the server (§18). Approval history lives in `audit_log` (`agent.created`, `agent.approved`, `agent.rejected`…).
 
 ### 4.6 Usage, quotas, pricing, audit, render
 
@@ -420,3 +421,12 @@ typed message / attachments / retrieved excerpts
 - **Starting a run**: the library page calls `startRunAction`, which creates the conversation (linked to the client chosen in the form) and returns the first message; the conversation screen reads it from `sessionStorage` (`useSyncExternalStore`, so nothing differs between server and browser rendering) and sends it when auto-protect is on.
 - **Guard**: a unit test checks that "use server" files export only functions (Next.js only refuses other exports at run time).
 
+## 18. Implementation notes (Step 7)
+
+- **Launch agents** (`src/modules/agents/builtins.ts`): the 14 text agents of CLAUDE.md §4.7 (the video agents come with the render worker, Step 8). Each has a form (with "files" fields when it reads documents), instructions written for the model in English (the model answers in the person's language), an output format, a memory scope, capabilities and a notice (`legal`, `hiring`, `draft`). Shared rule blocks: `DRAFT_RULES` (work only from what was given, write [to complete], never send, pay or sign), `LEGAL_RULES` (not legal advice, closing reminder), `CHART_INSTRUCTION`.
+- **Sync** (`agents/server/builtin-sync.ts`, audited service-role module in the lint allowlist): `ensureBuiltinAgents()` upserts the rows by `builtin_key` once per server process (before the library, an agent page or the admin list is read). Users have no write grant on `agents`; companies adapt a built-in through `admin_set_agent_settings` only, which is appended after the base instructions ("Company adaptations").
+- **Translations**: names, descriptions, field labels and options of built-ins come from `messages/*.json` (`tools.launch.<key>`), through `agents/labels.ts` (`agentText`); the English text in the database is a fallback. The first message of a run is composed on the server with the translated labels, as plain text ("Label : value").
+- **Files in a run**: the run form starts the conversation, uploads each file to `/api/conversations/[id]/attachments` (same checks and Hide as the chat), and hands the message and the attachments to the conversation screen through `sessionStorage`.
+- **Charts** (`conversations/chart-spec.ts`, `conversations/ui/chart.tsx`): the model writes a fenced block with the language `chart` holding a small JSON description (line or bar, ≤ 3 series, ≤ 24 labels), validated with zod; the Markdown renderer draws it as SVG (2 px lines, rounded bars, recessive grid, legend for several series, crosshair and tooltip, "Voir les données" table). Series colours `--chart-1..3` in `globals.css`, light and dark, checked for colour-blind separation with the dataviz validator. An invalid block stays shown as code.
+- **Exports** (`src/modules/exports`): `blocks.ts` turns the answer's Markdown (remark + GFM) into simple blocks (headings, paragraphs, lists, tables, quotes, code; citation marks dropped; a chart becomes its table); `server/render.ts` writes Word (`docx`), PDF (`pdfkit`, standard fonts, listed in `serverExternalPackages`), CSV (BOM, ";" in French, formulas neutralised) and Excel (`exceljs`, numbers as numbers via `cellNumber`, which reads French and English formats). Route `GET /api/messages/[id]/export?format=docx|pdf|xlsx|csv`: the message is read with the person's session, so RLS decides (participants only, from their starting point in a group); AI answers only.
+- **Test provider**: when the instructions ask for a Markdown table or a chart, the simulated answer adds a sample table and chart, so exports and charts are tested end to end. `tests/smoke/agents.test.ts` runs each agent with a realistic French and English example against a real model (same system prompt and first message as the app; files given as their extracted text) and saves the answers in `smoke-results/agent-runs/` (not `test-results/`, which Playwright empties).
