@@ -326,16 +326,31 @@
     "pendingInvites": "{count, plural, =0 {Aucune invitation en attente} one {# invitation en attente} other {# invitations en attente}}",
     "clients": "Clients",
     "restrictedCount": "{count, plural, =0 {Aucun restreint} one {# restreint} other {# restreints}}",
-    "plan": "Offre",
     "noPlan": "Aucune offre",
-    "planHint": "Gérée par notre équipe.",
     "aiCredits": "Crédits IA ce mois-ci",
     "aiCreditsValue": "{used} / {limit}",
-    "aiCreditsHint": "{percent} % utilisés"
+    "aiCreditsHint": "{percent} % utilisés",
+    "planLine": "Offre : {plan} · gérée par notre équipe",
+    "videoCredits": "Crédits vidéo ce mois-ci",
+    "videoNone": "Non inclus dans votre offre",
+    "todo": {
+      "title": "À faire",
+      "none": "Rien à signaler pour l'instant.",
+      "tools": "{count, plural, one {# outil attend} other {# outils attendent}} votre accord pour être partagés avec toute l'entreprise.",
+      "creditsLow": "L'entreprise a utilisé {percent} % de ses crédits IA ce mois-ci.",
+      "creditsOut": "Les crédits IA du mois sont épuisés : l'IA est en pause pour toute l'entreprise.",
+      "videoLow": "L'entreprise a utilisé {percent} % de ses crédits vidéo ce mois-ci.",
+      "videoOut": "Les crédits vidéo du mois sont épuisés.",
+      "people": "{count, plural, one {Une personne approche} other {# personnes approchent}} de sa limite personnelle : {names}.",
+      "seats": "Toutes les places sont occupées ({limit}). Pour inviter quelqu'un de plus, contactez notre équipe.",
+      "review": "Examiner",
+      "quotas": "Voir les quotas",
+      "members": "Voir l'équipe"
+    }
   },
   "activity": {
     "title": "Journal d'activité",
-    "description": "Connexions, invitations, droits et accès. Aucun contenu n'est enregistré ici.",
+    "description": "Connexions, équipe, accès, mémoire, protection, partages, agents, IA et vidéo. Aucun contenu n'est enregistré ici : seulement qui a fait quoi, et quand.",
     "emptyTitle": "Aucune activité pour l'instant",
     "system": "Système",
     "actions": {
@@ -392,8 +407,38 @@
       "agent_roles_updated": "a changé les rôles autorisés pour un outil",
       "agent_deleted": "a supprimé un outil",
       "agent_settings_updated": "a adapté un agent de la bibliothèque",
-      "member_team_changed": "a changé l'équipe de {person}"
-    }
+      "member_team_changed": "a changé l'équipe de {person}",
+      "render_requested": "a lancé la fabrication d'une vidéo ({kind, select, motion {Motion design} video_edit {montage} other {vidéo}}, {credits} crédits vidéo réservés)",
+      "render_completed": "a terminé une vidéo ({kind, select, motion {Motion design} video_edit {montage} other {vidéo}}, {credits} crédits vidéo utilisés)",
+      "render_failed": "n'a pas pu terminer une vidéo ({kind, select, motion {Motion design} video_edit {montage} other {vidéo}} ; crédits rendus)",
+      "render_rate_changed": "a changé le tarif vidéo ({kind, select, motion {Motion design} video_edit {montage} other {vidéo}}) : {credits} crédits par seconde",
+      "provider_tested": "a testé {provider, select, openai {ChatGPT (OpenAI)} anthropic {Claude (Anthropic)} google {Gemini (Google)} other {un fournisseur}} : {ok, select, yes {répond} other {en erreur}}",
+      "settings_exchange_rate": "a réglé le taux de change utilisé pour les estimations : 1 $ = {rate} €"
+    },
+    "filterCategory": "Type",
+    "filterPerson": "Personne",
+    "filterPeriod": "Période",
+    "allCategories": "Tout",
+    "allPeople": "Tout le monde",
+    "categories": {
+      "access": "Accès et équipe",
+      "clients": "Clients",
+      "memory": "Mémoire et droits",
+      "protection": "Protection (Hide)",
+      "conversations": "Conversations partagées",
+      "agents": "Agents et outils",
+      "ai": "IA et quotas",
+      "video": "Vidéo"
+    },
+    "periods": {
+      "7": "7 derniers jours",
+      "30": "30 derniers jours",
+      "90": "3 derniers mois",
+      "all": "Depuis le début"
+    },
+    "older": "Voir les événements plus anciens",
+    "newest": "Revenir aux plus récents",
+    "emptyFiltered": "Aucun événement ne correspond à ces filtres."
   },
   "platformNav": {
     "title": "Plateforme",
@@ -621,7 +666,7 @@
   },
   "usage": {
     "title": "Consommation",
-    "description": "Requêtes, jetons et crédits par personne et par modèle, d'après les chiffres renvoyés par les fournisseurs d'IA.",
+    "description": "Ce que votre entreprise a utilisé : demandes à l'IA, crédits, coût estimé, par personne, par fonction et par modèle. Chiffres réels renvoyés par les fournisseurs d'IA.",
     "period": "Période",
     "emptyTitle": "Aucune utilisation sur cette période",
     "emptyBody": "Les chiffres apparaîtront dès les premières conversations avec l'IA.",
@@ -641,7 +686,32 @@
     "formerMember": "Ancien membre",
     "requestsWithAuto": "{count} (dont {auto} en Auto)",
     "sourceNote": "Les jetons sont ceux comptés par chaque fournisseur. Les coûts sont des estimations calculées avec les tarifs publics, pas des factures.",
-    "estimatedTokensNote": "{count, plural, one {# réponse a été arrêtée} other {# réponses ont été arrêtées}} avant que le fournisseur ne donne ses chiffres : leurs jetons sont estimés d'après la longueur du texte."
+    "estimatedTokensNote": "{count, plural, one {# réponse a été arrêtée} other {# réponses ont été arrêtées}} avant que le fournisseur ne donne ses chiffres : leurs jetons sont estimés d'après la longueur du texte.",
+    "aiCredits": "Crédits IA utilisés",
+    "ofLimit": "{percent} % du crédit du mois ({limit})",
+    "aiRequests": "Demandes à l'IA",
+    "activeUsers": "Personnes actives",
+    "activeUsersHint": "sur {members} dans l'équipe",
+    "byFeature": "Par fonction",
+    "share": "{percent} %",
+    "features": {
+      "chat": "Conversations et outils",
+      "agent": "« Transformer en outil »",
+      "confronter": "Confronter",
+      "embedding": "Recherche dans la mémoire",
+      "memory": "Suggestions de mémoire",
+      "handover": "Passations (Smart Handover)",
+      "router": "Choix automatique du modèle",
+      "render": "Vidéo",
+      "other": "Autre"
+    },
+    "limitLabel": "Limite : {limit}",
+    "noLimit": "Sans limite personnelle",
+    "videoTitle": "Vidéo",
+    "videoCredits": "{credits} crédits vidéo utilisés",
+    "videoRenders": "{renders, plural, =0 {Aucune vidéo demandée} one {# vidéo demandée} other {# vidéos demandées}} · {failed, plural, =0 {aucun échec} one {# échec (crédits rendus)} other {# échecs (crédits rendus)}}",
+    "videoHint": "Les vidéos utilisent leur propre quota, séparé des crédits IA (Administration → Quotas).",
+    "tokensNote": "Jetons comptés par les fournisseurs : {input} envoyés, {output} reçus."
   },
   "quotas": {
     "title": "Quotas",

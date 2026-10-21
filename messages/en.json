@@ -326,16 +326,31 @@
     "pendingInvites": "{count, plural, =0 {No pending invitations} one {# pending invitation} other {# pending invitations}}",
     "clients": "Clients",
     "restrictedCount": "{count, plural, =0 {None restricted} one {# restricted} other {# restricted}}",
-    "plan": "Plan",
     "noPlan": "No plan",
-    "planHint": "Managed by our team.",
     "aiCredits": "AI credits this month",
     "aiCreditsValue": "{used} / {limit}",
-    "aiCreditsHint": "{percent}% used"
+    "aiCreditsHint": "{percent}% used",
+    "planLine": "Plan: {plan} · managed by our team",
+    "videoCredits": "Video credits this month",
+    "videoNone": "Not included in your plan",
+    "todo": {
+      "title": "To do",
+      "none": "Nothing to report right now.",
+      "tools": "{count, plural, one {# tool is} other {# tools are}} waiting for your approval to be shared with the whole company.",
+      "creditsLow": "The company has used {percent}% of its AI credits this month.",
+      "creditsOut": "This month's AI credits are used up: AI is paused for the whole company.",
+      "videoLow": "The company has used {percent}% of its video credits this month.",
+      "videoOut": "This month's video credits are used up.",
+      "people": "{count, plural, one {One person is} other {# people are}} close to their personal limit: {names}.",
+      "seats": "All seats are taken ({limit}). To invite one more person, contact our team.",
+      "review": "Review",
+      "quotas": "See quotas",
+      "members": "See the team"
+    }
   },
   "activity": {
     "title": "Activity log",
-    "description": "Sign-ins, invitations, permissions and access. No content is ever stored here.",
+    "description": "Sign-ins, team, access, memory, protection, sharing, agents, AI and video. No content is recorded here: only who did what, and when.",
     "emptyTitle": "No activity yet",
     "system": "System",
     "actions": {
@@ -392,8 +407,38 @@
       "agent_roles_updated": "changed the roles allowed for a tool",
       "agent_deleted": "deleted a tool",
       "agent_settings_updated": "adapted a library agent",
-      "member_team_changed": "changed {person}'s team"
-    }
+      "member_team_changed": "changed {person}'s team",
+      "render_requested": "asked for a video ({kind, select, motion {Motion Design} video_edit {edit} other {video}}, {credits} video credits reserved)",
+      "render_completed": "finished a video ({kind, select, motion {Motion Design} video_edit {edit} other {video}}, {credits} video credits used)",
+      "render_failed": "could not finish a video ({kind, select, motion {Motion Design} video_edit {edit} other {video}}; credits released)",
+      "render_rate_changed": "changed the video rate ({kind, select, motion {Motion Design} video_edit {edit} other {video}}): {credits} credits per second",
+      "provider_tested": "tested {provider, select, openai {ChatGPT (OpenAI)} anthropic {Claude (Anthropic)} google {Gemini (Google)} other {a provider}}: {ok, select, yes {answering} other {failing}}",
+      "settings_exchange_rate": "set the exchange rate used for estimates: $1 = €{rate}"
+    },
+    "filterCategory": "Type",
+    "filterPerson": "Person",
+    "filterPeriod": "Period",
+    "allCategories": "All",
+    "allPeople": "Everyone",
+    "categories": {
+      "access": "Access and team",
+      "clients": "Clients",
+      "memory": "Memory and rights",
+      "protection": "Protection (Hide)",
+      "conversations": "Shared conversations",
+      "agents": "Agents and tools",
+      "ai": "AI and quotas",
+      "video": "Video"
+    },
+    "periods": {
+      "7": "Last 7 days",
+      "30": "Last 30 days",
+      "90": "Last 3 months",
+      "all": "Since the start"
+    },
+    "older": "Show older events",
+    "newest": "Back to the latest",
+    "emptyFiltered": "No event matches these filters."
   },
   "platformNav": {
     "title": "Platform",
@@ -621,7 +666,7 @@
   },
   "usage": {
     "title": "Usage",
-    "description": "Requests, tokens and credits by person and by model, from the figures returned by the AI providers.",
+    "description": "What your company used: AI requests, credits, estimated cost, by person, feature and model. Real figures returned by the AI providers.",
     "period": "Period",
     "emptyTitle": "No usage in this period",
     "emptyBody": "Figures will appear with the first AI conversations.",
@@ -641,7 +686,32 @@
     "formerMember": "Former member",
     "requestsWithAuto": "{count} ({auto} via Auto)",
     "sourceNote": "Tokens are those counted by each provider. Costs are estimates computed from public price lists, not invoices.",
-    "estimatedTokensNote": "{count, plural, one {# answer was stopped} other {# answers were stopped}} before the provider reported its figures: their tokens are estimated from the text length."
+    "estimatedTokensNote": "{count, plural, one {# answer was stopped} other {# answers were stopped}} before the provider reported its figures: their tokens are estimated from the text length.",
+    "aiCredits": "AI credits used",
+    "ofLimit": "{percent}% of the month's credits ({limit})",
+    "aiRequests": "AI requests",
+    "activeUsers": "Active people",
+    "activeUsersHint": "out of {members} in the team",
+    "byFeature": "By feature",
+    "share": "{percent}%",
+    "features": {
+      "chat": "Conversations and tools",
+      "agent": "\"Turn into a tool\"",
+      "confronter": "Confronter",
+      "embedding": "Memory search",
+      "memory": "Memory suggestions",
+      "handover": "Handovers (Smart Handover)",
+      "router": "Automatic model choice",
+      "render": "Video",
+      "other": "Other"
+    },
+    "limitLabel": "Limit: {limit}",
+    "noLimit": "No personal limit",
+    "videoTitle": "Video",
+    "videoCredits": "{credits} video credits used",
+    "videoRenders": "{renders, plural, =0 {No video asked} one {# video asked} other {# videos asked}} · {failed, plural, =0 {no failure} one {# failure (credits released)} other {# failures (credits released)}}",
+    "videoHint": "Videos use their own quota, separate from AI credits (Administration → Quotas).",
+    "tokensNote": "Tokens counted by the providers: {input} sent, {output} received."
   },
   "quotas": {
     "title": "Quotas",

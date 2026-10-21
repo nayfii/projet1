@@ -875,14 +875,14 @@ isOneToOne: false
                   ]
                 },"plans": {
                   Row: {
-                    "created_at": string,"description": string | null,"id": string,"is_active": boolean,"is_default": boolean,"monthly_credits": number,"name": string,"price_label": string | null,"seat_limit": number | null,"updated_at": string,"video_credits": number
+                    "created_at": string,"description": string | null,"id": string,"is_active": boolean,"is_default": boolean,"monthly_credits": number,"monthly_price_per_seat": number | null,"name": string,"price_currency": string,"price_label": string | null,"seat_limit": number | null,"updated_at": string,"video_credits": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_default"?: boolean,"monthly_credits"?: number,"name": string,"price_label"?: string | null,"seat_limit"?: number | null,"updated_at"?: string,"video_credits"?: number
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_default"?: boolean,"monthly_credits"?: number,"monthly_price_per_seat"?: number | null,"name": string,"price_currency"?: string,"price_label"?: string | null,"seat_limit"?: number | null,"updated_at"?: string,"video_credits"?: number
                   }
                   Update: {
-                    "created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_default"?: boolean,"monthly_credits"?: number,"name"?: string,"price_label"?: string | null,"seat_limit"?: number | null,"updated_at"?: string,"video_credits"?: number
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"is_default"?: boolean,"monthly_credits"?: number,"monthly_price_per_seat"?: number | null,"name"?: string,"price_currency"?: string,"price_label"?: string | null,"seat_limit"?: number | null,"updated_at"?: string,"video_credits"?: number
                   }
                   Relationships: [
                     
@@ -900,6 +900,26 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"platform_settings": {
+                  Row: {
+                    "id": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                  }
+                  Update: {
+                    "id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "platform_settings_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"profiles": {
                   Row: {
@@ -1187,6 +1207,9 @@ isOneToOne: false
               "company_id": string,"credit_limit": number,"credits_used": number,"estimated_cost_usd": number,"granted": number,"requests": number
             }[]
                            },
+"platform_company_usage":
+{ Args: { "p_company": string,"p_from": string,"p_to": string }; Returns: Json
+                           },
 "platform_company_video_credits":
 { Args: Record<PropertyKey, never>; Returns: {
               "company_id": string,"renders": number,"video_limit": number,"video_reserved": number,"video_used": number
@@ -1205,11 +1228,25 @@ isOneToOne: false
               "active_seats": number,"created_at": string,"id": string,"name": string,"owner_email": string,"pending_invitations": number,"plan_id": string,"plan_name": string,"seat_limit": number,"status": Database["public"]['Enums']["company_status"]
             }[]
                            },
+"platform_log_provider_test":
+{ Args: { "p_code": string,"p_latency_ms": number,"p_ok": boolean,"p_provider": string }; Returns: undefined
+                           },
+"platform_provider_health":
+{ Args: { "p_hours"?: number }; Returns: Json
+                           },
+"platform_set_exchange_rate":
+{ Args: { "p_usd_to_eur": number }; Returns: undefined
+                           },
 "platform_set_render_rate":
 { Args: { "p_credits_per_second": number,"p_kind": string }; Returns: undefined
                            },
 "platform_update_company":
 { Args: { "p_company": string,"p_plan"?: string,"p_status"?: Database["public"]['Enums']["company_status"] }; Returns: undefined
+                           },
+"platform_usage_overview":
+{ Args: { "p_from": string,"p_to": string }; Returns: {
+              "company_id": string,"created_at": string,"credits": number,"errors": number,"estimated_cost_usd": number,"name": string,"plan_name": string,"price_currency": string,"price_per_seat": number,"renders": number,"requests": number,"seats_active": number,"status": string,"video_credits": number
+            }[]
                            },
 "record_sign_in":
 { Args: Record<PropertyKey, never>; Returns: undefined

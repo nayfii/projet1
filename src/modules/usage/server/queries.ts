@@ -5,10 +5,13 @@ import type { ProviderId } from "@/modules/providers/types";
 type Row = { requests: number; input_tokens: number; output_tokens: number; credits: number; estimated_cost_usd: number };
 
 export type UsageSummary = {
-  totals: Row & { errors: number; estimated_tokens_requests: number };
+  /** AI credits only (the video pool is apart, in `video`). */
+  totals: Row & { errors: number; estimated_tokens_requests: number; active_users: number };
   byUser: (Row & { user_id: string | null })[];
   byModel: (Row & { model_id: string | null; provider: ProviderId | null; auto_requests: number })[];
+  byFeature: { feature: string; requests: number; credits: number; estimated_cost_usd: number }[];
   byDay: { day: string; requests: number; credits: number }[];
+  video: { credits: number; renders: number; succeeded: number; failed: number };
 };
 
 const toNumbers = <T extends Record<string, unknown>>(row: T): T =>
@@ -23,12 +26,21 @@ export async function getUsageSummary(companyId: string, from: Date, to: Date): 
     p_to: to.toISOString(),
   });
   if (error || !data) return null;
-  const raw = data as unknown as { totals: UsageSummary["totals"]; by_user: UsageSummary["byUser"]; by_model: UsageSummary["byModel"]; by_day: UsageSummary["byDay"] };
+  const raw = data as unknown as {
+    totals: UsageSummary["totals"];
+    by_user: UsageSummary["byUser"];
+    by_model: UsageSummary["byModel"];
+    by_feature: UsageSummary["byFeature"];
+    by_day: UsageSummary["byDay"];
+    video: UsageSummary["video"];
+  };
   return {
     totals: toNumbers(raw.totals),
     byUser: raw.by_user.map(toNumbers),
     byModel: raw.by_model.map(toNumbers),
+    byFeature: raw.by_feature.map(toNumbers),
     byDay: raw.by_day.map(toNumbers),
+    video: toNumbers(raw.video),
   };
 }
 

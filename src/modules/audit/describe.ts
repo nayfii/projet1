@@ -58,6 +58,12 @@ const KNOWN = new Set<string>([
   "agent_deleted",
   "agent_settings_updated",
   "member_team_changed",
+  "render_requested",
+  "render_completed",
+  "render_failed",
+  "render_rate_changed",
+  "provider_tested",
+  "settings_exchange_rate",
 ]);
 
 type EventLike = { action: string; target_id: string | null; metadata: Json };
@@ -91,6 +97,10 @@ export function describeEvent(
       categories: Object.keys(counts).map(hideCategory).join(", "),
       category: typeof meta.category === "string" ? hideCategory(meta.category) : "",
       visibility: String(meta.visibility ?? ""),
+      credits: typeof meta.credits === "number" ? meta.credits : typeof meta.credits_per_second === "number" ? meta.credits_per_second : 0,
+      provider: event.target_id ?? "",
+      ok: meta.ok === true ? "yes" : "no",
+      rate: typeof meta.usd_to_eur === "number" ? meta.usd_to_eur : 0,
     },
   };
 }
