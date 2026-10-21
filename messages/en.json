@@ -79,7 +79,7 @@
     "checkInboxBody": "We sent a sign-in link to {email}. It's valid for one hour.",
     "localMailHint": "Local development: emails are visible at http://127.0.0.1:54324",
     "useAnotherEmail": "Use another address",
-    "linkInvalid": "This link is no longer valid. Request a new one.",
+    "linkInvalid": "This link is no longer valid, or it was opened in another browser. Request a new one and open it in this browser.",
     "oauthFailed": "Google sign-in didn't complete. Try again or use your email."
   },
   "invite": {

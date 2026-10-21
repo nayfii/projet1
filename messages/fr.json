@@ -79,7 +79,7 @@
     "checkInboxBody": "Nous avons envoyé un lien de connexion à {email}. Il est valable une heure.",
     "localMailHint": "Développement local : les e-mails sont visibles sur http://127.0.0.1:54324",
     "useAnotherEmail": "Utiliser une autre adresse",
-    "linkInvalid": "Ce lien n'est plus valable. Demandez-en un nouveau.",
+    "linkInvalid": "Ce lien n'est plus valable, ou il a été ouvert dans un autre navigateur. Demandez-en un nouveau et ouvrez-le dans ce navigateur-ci.",
     "oauthFailed": "La connexion avec Google n'a pas abouti. Réessayez ou utilisez votre e-mail."
   },
   "invite": {

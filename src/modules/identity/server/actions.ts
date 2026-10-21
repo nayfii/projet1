@@ -23,7 +23,8 @@ export async function sendMagicLink(_: unknown, formData: FormData): Promise<Act
     email: email.data,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: new URL(next, publicEnv.appUrl).toString(),
+      // Through /auth/callback: it also signs in with Supabase's default email links (code flow).
+      emailRedirectTo: `${publicEnv.appUrl}/auth/callback?via=email&next=${encodeURIComponent(next)}`,
       data: { locale: await resolveLocale() },
     },
   });

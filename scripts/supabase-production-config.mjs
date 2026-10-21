@@ -48,7 +48,10 @@ sender_name = "${smtp.senderName.replace(/"/g, "")}"
 `;
   console.log(`Emails: sent through ${smtp.host}.`);
 } else {
-  console.log("Emails: Supabase's test mailer (2 emails per hour, to the project's team members only). Add the SMTP settings to lift it.");
+  // Supabase refuses custom email templates on its free plan without our own mail server: keep its
+  // default emails (their links work through /auth/callback, in the browser that asked for them).
+  config = config.replace(/^\[auth\.email\.template\.[a-z_]+\]\n(?:[a-z_]+ = .*\n)*/gm, "");
+  console.log("Emails: Supabase's test mailer and default templates (2 emails per hour, to the project's team members only). Add the SMTP settings to lift it.");
 }
 
 writeFileSync(file, config);

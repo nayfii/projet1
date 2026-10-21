@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeNextPath } from "@/lib/safe-redirect";
+import { safeNextPath, trailingNextParam } from "@/lib/safe-redirect";
 import { initials } from "@/lib/utils";
 import { toErrorCode } from "@/lib/errors";
 import { describeEvent } from "@/modules/audit/describe";
@@ -18,6 +18,25 @@ describe("safeNextPath (no open redirects after sign-in)", () => {
     [null, "/"],
   ])("%s → %s", (input, expected) => {
     expect(safeNextPath(input, APP)).toBe(expected);
+  });
+});
+
+describe("trailingNextParam (destination at the end of our email links)", () => {
+  it.each([
+    ["?token_hash=t&type=magiclink&next=http://localhost:3000/auth/callback?via=email&next=%2Finvite%2Fabc", "http://localhost:3000/auth/callback?via=email&next=%2Finvite%2Fabc"],
+    ["?token_hash=t&type=invite&next=http://localhost:3000/invite/abc", "http://localhost:3000/invite/abc"],
+    ["?next=%2Fclients", "/clients"],
+    ["?token_hash=t&type=magiclink", null],
+    ["?token_hash=t&notnext=x", null],
+    ["?token_hash=t&next=", null],
+  ])("%s → %s", (input, expected) => {
+    expect(trailingNextParam(input)).toBe(expected);
+  });
+
+  it("keeps the inner destination through /auth/callback, on our site only", () => {
+    const next = safeNextPath(trailingNextParam(`?token_hash=t&type=magiclink&next=${APP}/auth/callback?via=email&next=%2Fadmin`), APP);
+    expect(next).toBe("/auth/callback?via=email&next=%2Fadmin");
+    expect(safeNextPath(trailingNextParam("?type=magiclink&next=https://evil.example.com/auth/callback?next=/"), APP)).toBe("/");
   });
 });
 
