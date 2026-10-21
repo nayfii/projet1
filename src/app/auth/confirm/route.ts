@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/public-env";
-import { safeNextPath, trailingNextParam } from "@/lib/safe-redirect";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { afterSignIn } from "@/modules/identity/server/after-sign-in";
 
 const OTP_TYPES: EmailOtpType[] = ["magiclink", "email", "invite", "signup", "recovery", "email_change"];
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const tokenHash = params.get("token_hash");
   const type = params.get("type") as EmailOtpType | null;
-  const next = safeNextPath(trailingNextParam(request.nextUrl.search), publicEnv.appUrl);
+  const next = safeNextPath(params.get("next"), publicEnv.appUrl);
 
   if (tokenHash && type && OTP_TYPES.includes(type)) {
     const supabase = await createClient();
