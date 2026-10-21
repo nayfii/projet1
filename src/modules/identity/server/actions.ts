@@ -28,7 +28,16 @@ export async function sendMagicLink(_: unknown, formData: FormData): Promise<Act
       data: { locale: await resolveLocale() },
     },
   });
-  if (error) return { ok: false, error: "email_send_failed" };
+  if (error) {
+    // Metadata only (never the address): visible in the hosting logs to diagnose the mail service.
+    console.warn(JSON.stringify({ event: "magic_link_failed", code: error.code ?? null, status: error.status ?? null }));
+    if (error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit" || error.status === 429) {
+      return { ok: false, error: "email_rate_limited" };
+    }
+    // Supabase's test mailer only writes to the project's team members.
+    if (error.code === "email_address_not_authorized") return { ok: false, error: "email_not_authorized" };
+    return { ok: false, error: "email_send_failed" };
+  }
   return { ok: true, data: { email: email.data } };
 }
 

@@ -19,6 +19,8 @@ export const ERROR_CODES = [
   "not_found",
   "validation",
   "email_send_failed",
+  "email_rate_limited",
+  "email_not_authorized",
   "invalid_models",
   "system_category",
   "category_exists",

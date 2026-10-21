@@ -51,6 +51,8 @@
     "not_found": "Élément introuvable.",
     "validation": "Vérifiez les champs du formulaire.",
     "email_send_failed": "L'e-mail n'a pas pu être envoyé. Réessayez dans un instant.",
+    "email_rate_limited": "Trop d'e-mails envoyés pour l'instant. Réessayez dans une heure.",
+    "email_not_authorized": "Cette adresse ne peut pas encore recevoir d'e-mail : le service d'envoi de test n'écrit qu'aux membres de l'équipe. Contactez l'administrateur.",
     "unknown": "Une erreur est survenue. Réessayez.",
     "invalid_models": "Choix de modèles invalide : gardez au moins un modèle autorisé et un modèle par défaut valide.",
     "system_category": "Ce groupe est automatique : il ne peut être ni modifié ni supprimé.",

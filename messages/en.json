@@ -51,6 +51,8 @@
     "not_found": "Not found.",
     "validation": "Please check the form fields.",
     "email_send_failed": "The email couldn't be sent. Try again in a moment.",
+    "email_rate_limited": "Too many emails sent for now. Try again in an hour.",
+    "email_not_authorized": "This address cannot receive emails yet: the test mail service only writes to team members. Contact the administrator.",
     "unknown": "Something went wrong. Please try again.",
     "invalid_models": "Invalid model choice: keep at least one allowed model and a valid default model.",
     "system_category": "This group is automatic: it cannot be changed or deleted.",
