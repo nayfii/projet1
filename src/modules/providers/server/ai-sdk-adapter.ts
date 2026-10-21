@@ -48,6 +48,12 @@ export function createAiSdkProvider(options: {
               type: "usage",
               usage: { inputTokens: input, outputTokens: usage.outputTokens ?? 0, cachedInputTokens: Math.min(cached, input) },
             };
+            // A provider's safety filter declined (Claude: stop_reason "refusal", HTTP 200): say so instead
+            // of showing an empty or cut answer as if it were complete. The tokens used are still counted.
+            if (part.finishReason === "content-filter") {
+              yield { type: "error", error: { code: "content_filtered", retryable: false } };
+              return;
+            }
             yield { type: "done", finishReason: part.finishReason };
           } else if (part.type === "error") {
             failed = true;
