@@ -11,5 +11,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "../src/modules/render/**/*.ts"],
-  "exclude": ["../src/modules/render/server/**"]
+  "exclude": ["../src/modules/render/server/**", "../src/modules/render/ui/**"]
 }

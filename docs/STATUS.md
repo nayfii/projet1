@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 7 (the launch agents, exports and charts), 2026-10-20.
+Last update: Step 8 (video agents and the render worker), 2026-10-21.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -92,14 +92,14 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Feature | Status |
 |---|---|
 | Shared agent/tool framework | **done** (Step 6): one `agents` table for tools and built-in agents (instructions, form, allowed models, capabilities, memory scope, output format, visibility, roles); every write goes through checked SQL functions; the database refuses a conversation started from a tool the person may not use |
-| Library organised by department | **done**: Marketing, Ventes, Comptabilité, Finance, RH, Juridique, Service client, Direction (and Général); 14 launch agents are live (Step 7), the two video agents are listed as "Bientôt" until Step 8 |
+| Library organised by department | **done**: Marketing, Ventes, Comptabilité, Finance, RH, Juridique, Service client, Direction (and Général); the 16 launch agents are live (14 in Step 7, the two video agents in Step 8) |
 | Company customisation (instructions, tone, defaults, memory) and enable per role | **done** (Step 7): Administration → Agents et outils → "Adapter" on each built-in agent (company instructions, tone, model, memory), an on/off switch and the roles allowed; company tools are enabled per role since Step 6 |
 | Launch agents defined in code | **done** (Step 7): `src/modules/agents/builtins.ts` (instructions in English, labels and options in French and English); the server keeps the database rows identical to the code; companies cannot change them, only adapt them |
 | Forms with files | **done** (Step 7): "files" fields (PDF, Word, Excel, CSV, text, images; 5 files, 10 MB each) go with the first message as attachments, read on our servers and protected by Hide like any attachment |
 | Exports | **done** (Step 7): every finished AI answer can be downloaded as Word (.docx) or PDF; answers with a table (or a chart) also as Excel (.xlsx, numbers as numbers, one sheet per table) and CSV (";" and UTF-8 for French Excel). Built on our server from the answer; nothing is sent elsewhere |
 | Charts in answers | **done** (Step 7): the finance and dashboard agents write a small chart description; the conversation draws it (line or bar, up to 3 series), with values on hover, a legend and "Voir les données" (the same numbers as a table). Exported as its table |
-| Marketing — Motion Design (HyperFrames → MP4) | not started (Step 8) |
-| Marketing — Video Editor (clips + brief → MP4, 16:9 / 9:16 / 1:1) | not started (Step 8) |
+| Marketing — Motion Design (HyperFrames → MP4) | **done** (Step 8): brief + logo/images + format (16:9, 9:16, 1:1) + duration (6–30 s) → the AI writes a HyperFrames composition (HTML, CSS, GSAP); the conversation plays a preview (isolated from the page, nothing loaded from outside); "Fabriquer la vidéo" shows the cost in video credits, then the worker renders the MP4 (1920×1080, 1080×1920 or 1080×1080) to play and download. Fonts: Inter only; images: only the attached ones |
+| Marketing — Video Editor (clips + brief → MP4, 16:9 / 9:16 / 1:1) | **done** (Step 8): up to 5 clips (MP4, MOV, WebM, 200 MB each) + brief + formats + texts → the AI writes an edit plan (cuts in order, on-screen texts, formats, fill or bars) shown as a readable list; the person ticks the formats and makes the videos; FFmpeg cuts, reframes, adds the texts and encodes one MP4 per format. The AI never sees or hears the clips: it only gets their name, length and size, and says so. No music, transitions or automatic subtitles from speech yet (start simple) |
 | Sales — Proposal Writer | **done**: client + needs (+ offer, budget, timing) → proposal draft with [à compléter] where facts are missing; uses company and client memory; Word/PDF export |
 | Sales — Meeting Prep | **done**: client + goal → brief from client memory (with Source Proof), history, talking points, questions |
 | Accounting — Invoice Intake (CSV / XLSX export) | **done**: invoices (PDF, images, text) → one table (supplier, number, dates, amounts, VAT, currency, category), "?" when unreadable, totals, list of values to check; CSV/Excel export; "draft" notice. Scanned PDFs are not read (no OCR); photos of invoices go to the model as images |
@@ -114,8 +114,8 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Customer Service — Feedback Synthesis | **done**: reviews or e-mails (files or pasted) → themes table (mentions, sentiment, quote), recommended actions |
 | Management — Meeting Minutes (incl. audio file) | **partial**: notes or transcript (typed or a file) → minutes, decisions, actions table (owner, due date), open questions. **Audio files are not accepted yet** (open question 8: needs a speech-to-text provider) |
 | Management — Weekly Dashboard | **done**: data files + indicators → indicators table, chart, highlights, risks, priorities; "?" when a figure is missing |
-| Render worker container (Chromium, FFmpeg, HyperFrames) + DB job queue | not started |
-| Dedicated video / motion credit quota | not started |
+| Render worker container (Chromium, FFmpeg, HyperFrames) + DB job queue | **done** (Step 8), image not built here: `worker/` (Node 22, HyperFrames 0.8.134, FFmpeg, Chromium headless shell, Inter font) with a Postgres queue (`render_jobs`): reservation, claim with SKIP LOCKED, heartbeat and progress, cancel, retries (3), stuck jobs re-queued after 3 minutes, failure releases the credits. Tested by running the worker directly on Node 22 in this container (real renders in the e2e tests). The Docker image could not be built here (network policy: Docker Hub rate limit, Debian mirrors blocked); to build at deployment (Step 10) |
+| Dedicated video / motion credit quota | **done** (Step 8): video credits per plan (`plans.video_credits`) + video grants by our team, reserved when a render is asked, charged for the seconds really produced (never more than reserved), released on failure or cancel; 80 % warning under the button, hard stop at 100 % (logged in the activity log). Rates per second of video are set by our team (Platform → Modèles et tarifs), nothing hardcoded |
 
 ## 4.8 Company admin console
 | Feature | Status |
@@ -126,7 +126,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Agents and tools: enable per role, approve company-wide tools | **done** (Steps 6–7): pending tools with their full content to review, approve / reject, roles per shared tool, delete; built-in agents switched on/off, roles, and "Adapter" (instructions, tone, model, memory) |
 | Hide policies | **done** (Step 4, `/admin/hide`) |
 | Usage dashboards (real provider data; costs labelled as estimates) | **done** (Step 2, `/admin/usage`): requests, tokens, credits, estimated cost by person, by model and per day, month picker. A richer dashboard comes in Step 9 |
-| Quotas | **done** (Step 2, `/admin/quotas`): company credits this month, default limit per person, personal limits per member |
+| Quotas | **done** (Step 2, `/admin/quotas`): company credits this month, default limit per person, personal limits per member; video credits used / limit / reserved (Step 8) |
 | Activity log | partial: sign-ins, invitations, member changes, client creation / visibility / access, model settings, quota changes, blocked AI requests (Step 2), memory entries and documents added / edited / deleted, memory groups and rights (Step 3), masking events (counts per category), Hide settings and sensitive terms (Step 4), people added to or leaving a conversation, history shared, conversation and client transfers (Step 5) |
 
 ## 4.9 Platform admin console
@@ -134,7 +134,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 |---|---|
 | Company list, create / suspend | **done** (Step 1) |
 | Plans and seats | **done** (Step 1): seat limit enforced on invitations |
-| Quotas and credits per company | **done** (Step 2): credits used / limit this month per company, "Add credits" for the month (extra credits). Video credits: Step 8 |
+| Quotas and credits per company | **done** (Step 2): credits used / limit this month per company, "Add credits" for the month (AI credits or video credits, Step 8). Video credit rates per second: Platform → Modèles et tarifs |
 | Usage and estimated AI cost per company (margin view) | partial: requests and estimated AI cost this month per company on the companies list; full margin view in Step 9 |
 | Provider health | not started |
 | Platform audit log | **done** (Step 1) |
@@ -193,19 +193,21 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
-## Tests (Step 7)
+## Tests (Step 8)
 
 | Suite | Command | Result |
 |---|---|---|
-| Unit (router, prompts, context builder, credits, quotas, provider errors, file reading, memory, Hide, collaboration, Confronter, **the 14 agents: forms valid in French and English, constraints (hiring and legal notices, no score, drafts only, charts); the form turned into the first message; chart descriptions; Word, PDF, Excel and CSV exports, formulas never run from a CSV**) | `pnpm test` | 186 passed |
-| Integration: isolation with real users and JWTs (Steps 1–7) | `pnpm test:integration` | 156 passed (1 new: the launch agents come from the code, are kept in sync by the server and cannot be changed by a company) |
-| End to end in Chromium (test provider: `AI_FAKE_PROVIDER=true`) | `npx playwright test` | 58 passed: agents 7 (library with the 14 agents, Proposal Writer with Word and PDF downloads, Invoice Intake with files and Excel/CSV downloads, Cash-flow chart with hover and data table, notices, adapt / disable an agent), Confronter 1, tools 5, tour 4, collaboration 7, Hide 5, memory 8, chat 16, foundation 5 |
-| **The 14 agents with a real model**, a realistic French and English example each | `pnpm test:smoke` (`tests/smoke/agents.test.ts`, answers saved in `smoke-results/agent-runs/`) | **21 of 28 run** with GPT-6 Luna and checked (structure, table, valid chart, [S1] citation, legal reminder, no score or preference for applications). **7 not run**: the OpenAI account ran out of credit during the run (Feedback Synthesis FR and EN, Meeting Minutes FR and EN, Email Responder FR, Template Drafter EN, Weekly Dashboard FR). To rerun once the account has credit. The saved answers of this run were erased by the next browser test run (they were in Playwright's folder; fixed); two were read in full (Cash-flow FR, Application Review FR) and looked right |
-| Real provider smoke test | `pnpm test:smoke` | GPT-6 Luna worked at the start of the run, then "no credits remaining"; Anthropic and Google skipped (no key) |
-| Database | no new migration in Step 7 | — |
-| Type check, lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
+| Unit (…Steps 1–7, **and the render module: compositions found, checked and prepared with our security policy; edit plans checked, fitted to the real clips and turned into FFmpeg arguments without the caption text; caption wrapping; credits; video file recognition; duration and size read from MP4/MOV headers; a video described to the model without being sent**) | `pnpm test` | 204 passed |
+| Integration (Steps 1–8; 8 new, including render jobs in the platform admin's zero-row list: a render reserves video credits at the platform's rate and can be cancelled; nobody outside the conversation, another company or the platform admin can ask for or see a render; only the video agents' answers and only files of the same conversation; the video quota stops renders apart from AI credits, a video grant raises it; no direct write, the queue functions are for the worker only; the worker claims, reports, saves the videos and charges the seconds produced, the video is readable by the participant only; a silent worker's job is re-queued, then failed after 3 attempts) | `pnpm test:integration` | 164 passed |
+| End to end in Chromium (test provider, **render worker running**) | `npx playwright test` with `node worker/dist/index.js` | 63 passed: video 5 (both agents in the library; Motion Design brief + logo → isolated preview → real MP4 1080×1920 of 6 s; Video Editor two clips → plan → MP4s in 16:9 and 9:16 with the right sizes and length; company video credits), agents 7, Confronter 1, tools 5, tour 4, collaboration 7, Hide 5, memory 8, chat 16, foundation 5 |
+| Real model | `pnpm test:smoke` | not run (founder decision: real-model tests at the end, OpenAI account to top up) |
+| Database rebuilt from the migrations | `pnpm db:reset`, then all integration and e2e tests | OK |
+| Type check (app and worker), lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
+| Worker Docker image | `docker build -f worker/Dockerfile .` | **not verified**: blocked by this environment's network (see known issues) |
 
-Screenshots for the founder: `docs/screenshots/step-7/` (automated run, simulated answers marked "[TEST]").
+Screenshots for the founder: `docs/screenshots/step-8/` (automated run, simulated AI texts marked "[TEST]", real videos).
+
+**HyperFrames check (BUILD_STEPS Step 8), 2026-10-20:** packages `hyperframes`, `@hyperframes/producer`, `core`, `engine`, `player` 0.8.134 (published 2026-10-05; 0.8.181 the latest that day, the project releases several times a day), licence **Apache-2.0** (LICENSE file in the packages; commercial use, modification and redistribution allowed, with the notice kept). Read: the packages' READMEs, the core documentation (composition rules, common mistakes, template). Requirements: Node ≥ 22, Chrome headless shell, FFmpeg. Findings: the producer README is behind its code (`executeRenderJob(job, projectDir, outputPath, onProgress)`); the engine starts Chromium with `--no-sandbox`; the player supports an opaque-origin sandbox, which we use. All HyperFrames packages are pinned to 0.8.134 (npm overrides) so a release cannot change the renderer silently. **GSAP** (required by HyperFrames compositions) is version 3.15.0 under GSAP's "Standard No Charge" licence: free, including commercially, **except** in tools that let users build visual animations without code in competition with Webflow — see open question 13.
 
 ## Known issues
 
@@ -277,6 +279,23 @@ Screenshots for the founder: `docs/screenshots/step-7/` (automated run, simulate
   - exports contain the real values the person sees (not the placeholders sent to the AI);
   - the Application Review Assistant's rules are instructions to the model: tested for real on one French and one English example (two applications each): no score, ranking or preference, but a model can still fail; the notice tells the employer a person decides;
   - Motion Design and Video Editor come with the render worker in Step 8.
+- **Video agents and the render worker (Step 8):**
+  - **the worker's Docker image was not built here** (Docker Hub rate limit, then Debian package mirrors blocked by this environment's network policy). The same code was run directly on Node 22 here and made every video of the tests; the image must be built and checked at deployment (Step 10);
+  - the worker needs its own server (a few CPU cores and 4 GB of memory to start) in the EU, with access to Supabase only; it uses the Supabase service key, kept away from the rendering process (see SECURITY.md);
+  - HyperFrames starts Chromium without its own sandbox: AI-written code runs as a separate user without the keys, behind a policy that blocks any request outside the job folder;
+  - the AI cannot see or hear the Video Editor's clips (only name, length, size): edits like "keep the best moments" are a guess, and the AI says so. No speech-to-text subtitles (open question 8), no music, no transitions;
+  - reframing to 9:16 or 1:1 crops the centre of the picture ("fill") or adds bars ("pad"); it does not follow the subject;
+  - a Motion Design composition renders in its own format only; another format means asking the AI for another composition;
+  - rendering takes time: about 12 s for 4 s of motion in Full HD and 7 s for a 6-second edit in three formats on this machine; one render at a time per worker;
+  - video uploads have no progress bar yet (the button shows "Envoi des fichiers… 1/2");
+  - duration and size of clips are read by the browser, or from the file's header for MP4/MOV; the worker measures the real files again before cutting;
+  - video agents were only tested with the simulated AI (real-model tests at the end).
+- Ad-hoc decisions taken in Step 8, to confirm:
+  - starting rates: Motion Design 10 video credits per second, Video Editor 4 per second and per format; the demo plan has 2,000 video credits a month (for example 13 animations of 15 s, or 8 one-minute edits in one format);
+  - video credits are counted per company (no personal video limit); any participant who can see the answer can make the video;
+  - videos can only be made from the two video agents' conversations, while the person may still use the agent;
+  - only the person who asked for a render can cancel it; videos are kept until the conversation is deleted;
+  - compositions use the Inter font only and only images attached to the conversation (nothing from the internet).
 - Ad-hoc decisions taken in Step 7, to confirm:
   - the launch agents are the same for every company, written by our team; a company adapts them (adds instructions, tone, model, memory, roles, on/off) but cannot rewrite their base instructions, so the legal and hiring safeguards always stay;
   - the agents use the company memory (and the client's memory when a client is chosen), except the Application Review Assistant, which uses no memory;
@@ -331,3 +350,5 @@ The founder asked to proceed ("je suis prêt à construire le tout") without ans
 10. **AI provider keys (Step 2)** — to test Claude and Gemini for real, the platform needs an Anthropic API key and a Gemini API key from a billing-enabled Google project (`ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`). The current OpenAI account needs credit: GPT-6.1 Sol is refused with "no credits remaining".
 11. **Value of a credit** — proposal: 1 credit ≈ 0.001 USD of estimated AI cost (so 100,000 credits ≈ 100 USD of AI per month). The number of credits per plan and per seat should be decided together with the price (€30–40 per user per month).
 12. **Showing the estimated AI cost to customers** — CLAUDE.md §4.8 asks for it on the company usage page, so it is shown (labelled as an estimate). It reveals our approximate cost; confirm, or show credits only.
+13. **GSAP licence (Motion Design)** — HyperFrames compositions are animated with GSAP, whose free licence excludes "tools that allow users to build visual animations without code" competing with Webflow's animation features. Our agent generates animations from a brief, which may fall in that grey zone. Options: ask Webflow for written consent, have a lawyer read the licence, or switch compositions to CSS animations (HyperFrames supports other animation drivers; CLAUDE.md names GSAP, so switching needs your approval). Decision needed before selling Motion Design.
+14. **Render worker hosting** — the worker needs an always-on EU server (or container service) with FFmpeg and Chromium, separate from the app. To choose at Step 10 with the rest of the hosting.

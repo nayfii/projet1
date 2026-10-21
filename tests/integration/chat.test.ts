@@ -332,6 +332,7 @@ describe("platform admin: account metadata, never conversation content", () => {
     "company_allowed_models",
     "member_quotas",
     "credit_grants",
+    "render_jobs",
   ] as const;
 
   it.each(CONTENT_TABLES)("reads zero rows from %s", async (table) => {
