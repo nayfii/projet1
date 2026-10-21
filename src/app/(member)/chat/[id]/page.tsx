@@ -55,6 +55,7 @@ export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
               attachments: agent.tools.includes("attachments"),
               allowedModels: agent.allowedModels,
               notice: agent.notice,
+              renderKind: agent.builtinKey === "motion_design" ? "motion" : agent.builtinKey === "video_editor" ? "video_edit" : null,
             }
           : null
       }

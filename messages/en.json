@@ -60,7 +60,11 @@
     "no_client_access": "One of the people involved has no access to this client.",
     "owner_must_transfer": "You are responsible for this conversation: transfer it instead of leaving.",
     "not_restricted": "Only a restricted client can be transferred.",
-    "no_team": "You are not in a team: an administrator can assign you one (Administration → Employees)."
+    "no_team": "You are not in a team: an administrator can assign you one (Administration → Employees).",
+    "video_quota_exceeded": "Not enough video credits left this month. An administrator can ask for more.",
+    "render_in_progress": "This video is already being made.",
+    "render_invalid": "The video cannot be made: the AI's composition or edit plan is incomplete. Ask it to fix it.",
+    "render_missing_file": "A file the video uses cannot be found in this conversation."
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -357,7 +361,7 @@
       "models_updated": "changed the allowed AI models",
       "quota_default_updated": "changed the per-person credit limit",
       "quota_member_updated": "changed {person}'s credit limit",
-      "ai_request_blocked": "was blocked: {reason, select, quota_user {personal credit limit reached} quota_company {company credit limit reached} model_not_allowed {model not allowed} auto_disabled {Auto mode turned off} other {company rule}}",
+      "ai_request_blocked": "was blocked: {reason, select, quota_user {personal credit limit reached} quota_company {company credit limit reached} model_not_allowed {model not allowed} auto_disabled {Auto mode turned off} quota_video {video credit limit reached} other {company rule}}",
       "model_created": "added a model to the catalogue",
       "model_updated": "updated a catalogue model",
       "model_deleted": "removed a model from the catalogue",
@@ -458,7 +462,10 @@
     "grantDescription": "Extra credits for the current month, on top of the plan's.",
     "granted": "Credits added.",
     "grantCreditsLabel": "Number of credits",
-    "grantNote": "Internal note (optional)"
+    "grantNote": "Internal note (optional)",
+    "grantPool": "Kind of credits",
+    "grantPoolStandard": "AI credits (chat, agents)",
+    "grantPoolVideo": "Video credits (Motion Design, editing)"
   },
   "system": {
     "notFoundCode": "404",
@@ -657,7 +664,11 @@
     "limitFor": "{name}'s limit",
     "dialogNoDefault": "No per-person limit is set: this limit will apply to this person only.",
     "dialogDefault": "The default limit is {limit} credits per month.",
-    "useDefault": "Back to the default limit"
+    "useDefault": "Back to the default limit",
+    "videoTitle": "Video credits",
+    "videoBody": "{used} of {limit} video credits used this month",
+    "videoReserved": "including {reserved} reserved for videos being made",
+    "videoHint": "Videos (Motion Design, Video Editor) have their own quota, separate from AI credits. To get more, contact us."
   },
   "platformModels": {
     "title": "Models and pricing",
@@ -701,7 +712,13 @@
     "cached": "Cached input",
     "supportsImages": "Accepts images",
     "enabledLabel": "Enabled on the platform",
-    "defaultAllowedLabel": "Allowed by default in new companies"
+    "defaultAllowedLabel": "Allowed by default in new companies",
+    "renderRatesTitle": "Video rendering",
+    "renderRatesHint": "Video credits counted per second of video produced (per format). Not prices: each plan's video quota is set in Plans.",
+    "renderRateMotion": "Motion Design (per second)",
+    "renderRateVideoEdit": "Video editing (per second and per format)",
+    "renderRatesSave": "Save video rates",
+    "renderRatesSaved": "Video rates saved."
   },
   "memory": {
     "title": "Memory",
@@ -1108,7 +1125,8 @@
       "textarea": "Long text",
       "client": "Client",
       "select": "List of choices",
-      "files": "Files"
+      "files": "Files",
+      "videos": "Videos"
     },
     "fieldOptions": "Possible choices",
     "fieldOptionsPlaceholder": "Choices separated by commas",
@@ -1182,11 +1200,46 @@
     "launch": {
       "motion_design": {
         "name": "Motion Design",
-        "description": "Brief and brand assets → animated MP4 (HyperFrames)."
+        "description": "Brief and brand assets → animated MP4 (HyperFrames).",
+        "fields": {
+          "brief": "Brief (message, texts, audience)",
+          "assets": "Logo and images (PNG, JPG)",
+          "format": "Format",
+          "duration": "Duration",
+          "style": "Colours and style"
+        },
+        "options": {
+          "format": {
+            "16_9": "16:9 · landscape",
+            "9_16": "9:16 · vertical",
+            "1_1": "1:1 · square"
+          },
+          "duration": {
+            "6": "6 seconds",
+            "10": "10 seconds",
+            "15": "15 seconds",
+            "20": "20 seconds",
+            "30": "30 seconds"
+          }
+        }
       },
       "video_editor": {
         "name": "Video Editor",
-        "description": "Your clips and a brief → edited video (cuts, order, captions, 16:9 / 9:16 / 1:1)."
+        "description": "Your clips and a brief → edited video (cuts, order, captions, 16:9 / 9:16 / 1:1).",
+        "fields": {
+          "clips": "Video clips (MP4, MOV, WebM)",
+          "brief": "Brief (what the video must show, length, tone)",
+          "formats": "Formats",
+          "captions": "Texts to show (titles, captions)"
+        },
+        "options": {
+          "formats": {
+            "all": "All three (16:9, 9:16 and 1:1)",
+            "16_9": "16:9 · landscape",
+            "9_16": "9:16 · vertical",
+            "1_1": "1:1 · square"
+          }
+        }
       },
       "proposal_writer": {
         "name": "Proposal Writer",
@@ -1394,11 +1447,82 @@
     "notices": {
       "legal": "This is not legal advice. The document is a draft: have it reviewed by a legal professional before any use.",
       "hiring": "This assistant summarises and structures applications against your criteria. It never scores, ranks or rejects candidates: a person decides. AI used to filter job applications is classified as high-risk under the EU AI Act.",
-      "draft": "Draft to be checked by a person. No payment and no e-mail is made automatically."
-    }
+      "draft": "Draft to be checked by a person. No payment and no e-mail is made automatically.",
+      "video": "The video is made on our servers from what the AI writes. You see a preview and the cost in video credits before making it."
+    },
+    "addVideos": "Add videos",
+    "videosHint": "MP4, MOV or WebM; at most {max} videos, 200 MB each. They stay on our servers: the AI only gets their name, length and size.",
+    "videoTooBig": "The video \"{name}\" is larger than 200 MB.",
+    "uploadingFiles": "Sending files… {done}/{total}"
   },
   "exports": {
     "defaultTitle": "Document",
     "sheet": "Table {number}"
+  },
+  "render": {
+    "previewLabel": "Animation preview",
+    "previewLoading": "Preparing the preview…",
+    "previewHint": "Preview played in your browser, isolated from the rest of the page. The MP4 is made on our servers.",
+    "previewFailed": "The preview cannot be shown.",
+    "code": "Show the animation code",
+    "problems": {
+      "too_large": "The animation code is too large.",
+      "no_composition": "The AI did not write a complete animation.",
+      "unsupported_size": "The animation is not 16:9, 9:16 or 1:1.",
+      "no_duration": "The animation does not state its duration.",
+      "too_long": "The animation is longer than 60 seconds.",
+      "no_timeline": "The animation has no usable timeline.",
+      "fix": "Ask the AI to fix the animation."
+    },
+    "planTitle": "Edit plan",
+    "planSummary": "{segments, plural, one {# cut} other {# cuts}} · {duration}",
+    "planCaptions": "On-screen texts",
+    "planInvalid": "The AI's edit plan is incomplete. Ask it to fix it.",
+    "seconds": "{value, number} s",
+    "formats": "Formats",
+    "format": {
+      "16:9": "16:9 · landscape",
+      "9:16": "9:16 · vertical",
+      "1:1": "1:1 · square"
+    },
+    "make": "Make the video",
+    "makeMany": "Make the videos",
+    "cost": "{credits} video credits · {left} left this month",
+    "notEnough": "Not enough video credits this month: {credits} needed, {left} left.",
+    "requested": "On its way. You can leave the page, it keeps going.",
+    "status": {
+      "queued": "Waiting…",
+      "running": "Making · {progress}%",
+      "succeeded": "Ready",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "stage": {
+      "starting": "Starting",
+      "preparing": "Preparing",
+      "rendering": "Rendering",
+      "capturing": "Capturing frames",
+      "encoding": "Encoding",
+      "assembling": "Assembling",
+      "uploading": "Saving",
+      "done": "Done"
+    },
+    "cancel": "Cancel",
+    "cancelled": "Cancelled. The reserved credits are released.",
+    "download": "Download",
+    "downloadFormat": "Download {format}",
+    "charged": "{credits} video credits used",
+    "retry": "Try again",
+    "videoLabel": "{format} video",
+    "errors": {
+      "invalid_composition": "The AI's animation is incomplete.",
+      "invalid_plan": "The AI's edit plan is incomplete.",
+      "clip_unreadable": "A video clip could not be read (damaged file or unsupported format).",
+      "render_timeout": "Making the video took too long and was stopped.",
+      "worker_lost": "The render server stopped answering. Try again in a moment.",
+      "default": "Making the video failed. Try again; if it happens again, ask the AI for a simpler version."
+    },
+    "almostOut": "More than 80% of this month's video credits are used.",
+    "range": "{start} → {end}"
   }
 }

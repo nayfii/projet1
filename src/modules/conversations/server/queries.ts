@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { RoutingInfo, SuggestedColleague } from "../stream-events";
-import type { TimelineMessage } from "../types";
+import type { AttachmentKind, TimelineMessage } from "../types";
 import { isHideMode, type HideCounts, type Span } from "@/modules/hide/categories";
 import type { SourceProof } from "@/modules/memory/types";
 import { isConfrontation } from "@/modules/confronter/types";
@@ -113,7 +113,7 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
     attachments: (m.attachments ?? []).map((a) => ({
       id: a.id,
       filename: a.filename,
-      kind: a.kind as "image" | "document",
+      kind: a.kind as AttachmentKind,
       truncated: a.text_truncated,
     })),
     sources: sourcesByMessage.get(m.id) ?? [],

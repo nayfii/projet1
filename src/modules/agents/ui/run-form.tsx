@@ -4,14 +4,17 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { PaperclipIcon, PencilIcon, PlayIcon, Trash2Icon, XIcon } from "lucide-react";
+import { FilmIcon, PaperclipIcon, PencilIcon, PlayIcon, Trash2Icon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Spinner } from "@/components/ui/form";
 import { Input, Textarea } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE } from "@/modules/documents/file-types";
+import { MAX_VIDEO_BYTES, VIDEO_ACCEPT } from "@/modules/render/formats";
+import { uploadVideo } from "@/modules/render/ui/upload-video";
 import type { Span } from "@/modules/hide/categories";
+import type { AttachmentKind } from "@/modules/conversations/types";
 import { invalidRunFields, toolSchema, type ToolInput, type Visibility } from "../definitions";
 import { agentText, type DynamicT } from "../labels";
 import { AgentNotice } from "./agent-notice";
@@ -26,7 +29,7 @@ export const RUN_STORAGE_PREFIX = "tool-run:";
 /** What waits for the conversation screen: the filled form and the files already uploaded with it. */
 export type PendingRun = {
   message: string;
-  attachments: { id: string; filename: string; kind: "image" | "document"; truncated: boolean; text?: string; spans?: Span[] }[];
+  attachments: { id: string; filename: string; kind: AttachmentKind; truncated: boolean; text?: string; spans?: Span[] }[];
 };
 
 const NO_CLIENT = "__none";
@@ -51,6 +54,7 @@ export function RunForm({
   // Files chosen in "files" fields, uploaded with the first message once the run starts.
   const [files, setFiles] = React.useState<Record<string, File[]>>({});
   const [running, startRunning] = React.useTransition();
+  const [sending, setSending] = React.useState<{ done: number; total: number } | null>(null);
   const text = agentText(agent, t as unknown as DynamicT);
   const allFiles = Object.values(files).flat();
   const [editing, setEditing] = React.useState(false);
@@ -65,9 +69,19 @@ export function RunForm({
         return;
       }
       const id = result.data.conversationId;
-      // Files are read on our server like any attachment (and masked by Hide when the message is sent).
+      // Files are read on our server like any attachment (and masked by Hide when the message is sent);
+      // videos go to their own private storage and the AI only gets their name, length and size.
       const uploaded: PendingRun["attachments"] = [];
-      for (const file of allFiles) {
+      const videoKeys = new Set(agent.inputFields.filter((f) => f.type === "videos").map((f) => f.key));
+      const queue = Object.entries(files).flatMap(([key, list]) => list.map((file) => ({ file, video: videoKeys.has(key) })));
+      for (const [i, { file, video }] of queue.entries()) {
+        setSending({ done: i, total: queue.length });
+        if (video) {
+          const sent = await uploadVideo(id, file);
+          if (sent) uploaded.push(sent);
+          else toast.error(t("fileFailed", { name: file.name }));
+          continue;
+        }
         const form = new FormData();
         form.append("file", file);
         const response = await fetch(`/api/conversations/${id}/attachments`, { method: "POST", body: form }).catch(() => null);
@@ -75,6 +89,7 @@ export function RunForm({
         if (!response?.ok || !body || body.error) toast.error(t("fileFailed", { name: file.name }));
         else uploaded.push({ id: body.id, filename: body.filename, kind: body.kind, truncated: body.truncated, text: body.text, spans: body.spans });
       }
+      setSending(null);
       try {
         sessionStorage.setItem(`${RUN_STORAGE_PREFIX}${id}`, JSON.stringify({ message: result.data.message, attachments: uploaded } satisfies PendingRun));
       } catch {
@@ -101,9 +116,10 @@ export function RunForm({
           const label = f.required ? `${text.field(f)} *` : text.field(f);
           return (
             <Field key={f.key} label={label} htmlFor={id}>
-              {f.type === "files" ? (
+              {f.type === "files" || f.type === "videos" ? (
                 <FilesInput
                   id={id}
+                  video={f.type === "videos"}
                   files={files[f.key] ?? []}
                   room={MAX_ATTACHMENTS_PER_MESSAGE - allFiles.length + (files[f.key]?.length ?? 0)}
                   onChange={(next) => {
@@ -148,7 +164,7 @@ export function RunForm({
           );
         })}
         <div className="flex items-center justify-between gap-3 pt-1">
-          <p className="text-xs text-muted-foreground">{t("runHint")}</p>
+          <p className="text-xs text-muted-foreground" aria-live="polite">{sending ? t("uploadingFiles", { done: sending.done + 1, total: sending.total }) : t("runHint")}</p>
           <Button type="submit" variant="brand" disabled={!agent.usable || missing.length > 0 || running}>
             {running ? <Spinner /> : <PlayIcon />}
             {t("run")}
@@ -265,8 +281,9 @@ function EditDialog({ agent, editor, onClose }: { agent: AgentDetail; editor: To
   );
 }
 
-/** A "files" field: the files go with the first message, like attachments in a conversation. */
-function FilesInput({ id, files, room, onChange }: { id: string; files: File[]; room: number; onChange: (files: File[]) => void }) {
+/** A "files" or "videos" field: the files go with the first message, like attachments in a conversation. */
+function FilesInput({ id, files, room, video, onChange }: { id: string; files: File[]; room: number; video: boolean; onChange: (files: File[]) => void }) {
+  const maxBytes = video ? MAX_VIDEO_BYTES : MAX_ATTACHMENT_BYTES;
   const t = useTranslations("tools");
   const input = React.useRef<HTMLInputElement>(null);
   return (
@@ -276,13 +293,13 @@ function FilesInput({ id, files, room, onChange }: { id: string; files: File[]; 
         id={id}
         type="file"
         multiple
-        accept={ATTACHMENT_ACCEPT}
+        accept={video ? VIDEO_ACCEPT : ATTACHMENT_ACCEPT}
         className="sr-only"
         onChange={(e) => {
           const chosen = Array.from(e.target.files ?? []);
-          const tooBig = chosen.filter((f) => f.size > MAX_ATTACHMENT_BYTES);
-          if (tooBig.length) toast.error(t("fileTooBig", { name: tooBig[0].name }));
-          const ok = chosen.filter((f) => f.size <= MAX_ATTACHMENT_BYTES);
+          const tooBig = chosen.filter((f) => f.size > maxBytes);
+          if (tooBig.length) toast.error(t(video ? "videoTooBig" : "fileTooBig", { name: tooBig[0].name }));
+          const ok = chosen.filter((f) => f.size <= maxBytes);
           if (ok.length > room) toast.error(t("tooManyFiles", { max: MAX_ATTACHMENTS_PER_MESSAGE }));
           onChange([...files, ...ok.slice(0, Math.max(room, 0))]);
           e.target.value = "";
@@ -306,10 +323,10 @@ function FilesInput({ id, files, room, onChange }: { id: string; files: File[]; 
         </ul>
       ) : null}
       <Button type="button" variant="outline" size="sm" disabled={room <= 0} onClick={() => input.current?.click()}>
-        <PaperclipIcon />
-        {t("addFiles")}
+        {video ? <FilmIcon /> : <PaperclipIcon />}
+        {video ? t("addVideos") : t("addFiles")}
       </Button>
-      <p className="text-xs text-muted-foreground">{t("filesHint", { max: MAX_ATTACHMENTS_PER_MESSAGE })}</p>
+      <p className="text-xs text-muted-foreground">{t(video ? "videosHint" : "filesHint", { max: MAX_ATTACHMENTS_PER_MESSAGE })}</p>
     </div>
   );
 }

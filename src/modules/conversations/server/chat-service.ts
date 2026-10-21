@@ -74,6 +74,7 @@ type AttachmentRow = {
   extracted_text: string | null;
   text_truncated: boolean;
   masked_text: string | null;
+  media: Json;
 };
 
 const fail = (error: ChatRequestError, status: number): Prepared => ({ ok: false, error, status });
@@ -108,7 +109,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   const { data: rows } = await supabase
     .from("messages")
     .select(
-      "id, seq, author_type, author_id, content, masked_content, hide_modes, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text)",
+      "id, seq, author_type, author_id, content, masked_content, hide_modes, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text, media)",
     )
     .eq("conversation_id", conversation.id)
     .order("seq");
@@ -135,7 +136,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     if (ids.length > 0) {
       const { data } = await supabase
         .from("conversation_attachments")
-        .select("id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text")
+        .select("id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text, media")
         .eq("conversation_id", conversation.id)
         .eq("uploaded_by", ctx.user.id)
         .is("message_id", null)
@@ -596,6 +597,7 @@ async function toHistory(
     usable.map(async (r, index) => {
       const attachments: HistoryAttachment[] = await Promise.all(
         ((r.attachments ?? []) as AttachmentRow[]).map(async (a) => {
+          if (a.kind === "video") return { filename: a.filename, kind: "video" as const, media: (a.media as HistoryAttachment["media"]) ?? null };
           if (a.kind !== "image") {
             // Hide: the masked text when Documents mode masked something in this file.
             return { filename: a.filename, kind: "document" as const, text: a.masked_text ?? a.extracted_text, truncated: a.text_truncated };

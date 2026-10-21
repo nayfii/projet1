@@ -42,10 +42,15 @@ export async function setMemberQuotaAction(input: { userId: string; credits: num
 }
 
 /** Platform admin: extra credits for a company for the current month ("raise the limit"). */
-export async function grantCreditsAction(input: { companyId: string; credits: number; note?: string }): Promise<ActionResult> {
+export async function grantCreditsAction(input: { companyId: string; credits: number; note?: string; pool?: "standard" | "video" }): Promise<ActionResult> {
   if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
   const parsed = z
-    .object({ companyId: z.uuid(), credits: z.number().positive().max(1_000_000_000), note: z.string().trim().max(200).optional() })
+    .object({
+      companyId: z.uuid(),
+      credits: z.number().positive().max(1_000_000_000),
+      note: z.string().trim().max(200).optional(),
+      pool: z.enum(["standard", "video"]).default("standard"),
+    })
     .safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
   const supabase = await createClient();
@@ -53,6 +58,7 @@ export async function grantCreditsAction(input: { companyId: string; credits: nu
     p_company: parsed.data.companyId,
     p_credits: parsed.data.credits,
     p_note: parsed.data.note,
+    p_pool: parsed.data.pool,
   });
   if (error) return { ok: false, error: toErrorCode(error) };
   revalidatePath("/platform");

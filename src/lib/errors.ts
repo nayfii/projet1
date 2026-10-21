@@ -28,6 +28,10 @@ export const ERROR_CODES = [
   "owner_must_transfer",
   "not_restricted",
   "no_team",
+  "video_quota_exceeded",
+  "render_in_progress",
+  "render_invalid",
+  "render_missing_file",
   "unknown",
 ] as const;
 

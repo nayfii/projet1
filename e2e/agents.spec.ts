@@ -70,7 +70,8 @@ test("the library holds the 14 agents by department; the video agents come later
     const region = page.getByRole("region", { name: department });
     for (const agent of agents) await expect(region.getByRole("link", { name: new RegExp(agent) })).toBeVisible();
   }
-  await expect(page.getByRole("region", { name: "Marketing" })).toContainText("Bientôt");
+  // The two video agents arrived with the render worker (Step 8, e2e/video.spec.ts).
+  await expect(page.getByRole("region", { name: "Marketing" }).getByRole("link", { name: /Motion design/ })).toBeVisible();
   await shot(page, "80-library-agents");
 });
 

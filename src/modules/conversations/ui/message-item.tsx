@@ -10,6 +10,7 @@ import {
   CopyIcon,
   DownloadIcon,
   FileTextIcon,
+  FilmIcon,
   ImageIcon,
   RefreshCwIcon,
   ScaleIcon,
@@ -31,7 +32,11 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_ERROR_CODES, type ProviderErrorCode, type ProviderId } from "@/modules/providers/types";
 import { cn } from "@/lib/utils";
-import type { TimelineMessage } from "../types";
+import type { AttachmentKind, TimelineMessage } from "../types";
+import type { RenderKind } from "@/modules/render/formats";
+import { RenderPanel } from "@/modules/render/ui/render-panel";
+
+type RenderProps = { kind: RenderKind; attachments: { id: string; filename: string; kind: AttachmentKind }[] };
 import type { SuggestedColleague } from "../stream-events";
 import { Markdown } from "./markdown";
 import type { PickerModel } from "./model-picker";
@@ -66,8 +71,11 @@ export function MessageItem({
   onInvite,
   onConfront,
   confrontProgress,
+  render,
 }: {
   message: TimelineMessage;
+  /** Video agents: the answer may hold a composition or an edit plan to make into MP4s. */
+  render?: RenderProps | null;
   /** The answer is streaming right now in this browser. */
   live?: boolean;
   isLastAnswer: boolean;
@@ -97,6 +105,7 @@ export function MessageItem({
       onInvite={onInvite}
       onConfront={onConfront}
       confrontProgress={confrontProgress}
+      render={render}
     />
   );
 }
@@ -200,7 +209,7 @@ export function AttachmentChip({
   hideBadge,
   onOpen,
 }: {
-  attachment: { id?: string; filename: string; kind: "image" | "document"; truncated?: boolean };
+  attachment: { id?: string; filename: string; kind: AttachmentKind; truncated?: boolean };
   onRemove?: () => void;
   removeLabel?: string;
   pending?: boolean;
@@ -210,7 +219,7 @@ export function AttachmentChip({
   onOpen?: () => void;
 }) {
   const t = useTranslations("chat");
-  const Icon = attachment.kind === "image" ? ImageIcon : FileTextIcon;
+  const Icon = attachment.kind === "image" ? ImageIcon : attachment.kind === "video" ? FilmIcon : FileTextIcon;
   const body = (
     <>
       <Icon className="size-3.5 shrink-0 text-muted-foreground" />
@@ -269,8 +278,10 @@ function AssistantMessage({
   onInvite,
   onConfront,
   confrontProgress,
+  render,
 }: {
   message: TimelineMessage;
+  render?: RenderProps | null;
   live?: boolean;
   isLastAnswer: boolean;
   busy: boolean;
@@ -320,6 +331,9 @@ function AssistantMessage({
         </div>
       ) : message.content ? (
         <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
+      ) : null}
+      {render && !live && message.status === "complete" && message.content ? (
+        <RenderPanel key={message.id} messageId={message.id} kind={render.kind} content={message.content} attachments={render.attachments} />
       ) : null}
 
       {message.status === "error" && !confrontation ? (

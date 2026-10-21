@@ -10,19 +10,15 @@ import { toCsv, toDocx, toPdf, toXlsx } from "@/modules/exports/server/render";
 
 type Launch = Record<string, { name: string; fields?: Record<string, string>; options?: Record<string, Record<string, string>> }>;
 
-describe("the 14 text agents", () => {
-  it("are the launch set minus the two video agents (Step 8)", () => {
-    expect(BUILTIN_AGENTS.map((a) => a.key).sort()).toEqual(
-      LAUNCH_AGENTS.map((a) => a.key)
-        .filter((k) => k !== "motion_design" && k !== "video_editor")
-        .sort(),
-    );
+describe("the launch agents", () => {
+  it("with the two video agents (Step 8), are exactly the launch set of CLAUDE.md §4.7", () => {
+    expect(BUILTIN_AGENTS.map((a) => a.key).sort()).toEqual(LAUNCH_AGENTS.map((a) => a.key).sort());
     for (const a of BUILTIN_AGENTS) expect(LAUNCH_AGENTS.find((l) => l.key === a.key)?.department).toBe(a.department);
   });
 
   it.each(BUILTIN_AGENTS.map((a) => [a.key, a] as const))("%s has a valid form, every text in French and English", (key, agent) => {
     for (const f of agent.fields) expect(fieldSchema.safeParse({ ...f, label: f.label }).success).toBe(true);
-    if (agent.fields.some((f) => f.type === "files")) expect(agent.tools).toContain("attachments");
+    if (agent.fields.some((f) => f.type === "files" || f.type === "videos")) expect(agent.tools).toContain("attachments");
     for (const messages of [fr, en]) {
       const entry = (messages.tools.launch as Launch)[key];
       expect(entry.name).toBeTruthy();
@@ -44,7 +40,13 @@ describe("the 14 text agents", () => {
       expect(agent.notice).toBe("legal");
       expect(agent.instructions).toMatch(/not legal advice/);
     }
-    for (const agent of BUILTIN_AGENTS) expect(agent.instructions).toMatch(/You never send, pay, sign or submit anything/);
+    for (const agent of BUILTIN_AGENTS.filter((a) => a.department !== "marketing")) expect(agent.instructions).toMatch(/You never send, pay, sign or submit anything/);
+    // The video agents write code or a plan for our worker; they never invent claims or images.
+    for (const key of ["motion_design", "video_editor"]) {
+      const agent = BUILTIN_AGENTS.find((a) => a.key === key)!;
+      expect(agent.notice).toBe("video");
+      expect(agent.instructions).toMatch(key === "motion_design" ? /no external URL[\s\S]*Never invent an image/ : /You cannot see or hear the videos/);
+    }
     for (const key of ["invoice_intake", "payment_reminders", "cash_flow_forecast", "margin_analysis"]) expect(BUILTIN_AGENTS.find((a) => a.key === key)!.notice).toBe("draft");
     for (const key of ["cash_flow_forecast", "margin_analysis", "weekly_dashboard"]) expect(BUILTIN_AGENTS.find((a) => a.key === key)!.instructions).toContain(CHART_INSTRUCTION);
   });

@@ -60,7 +60,11 @@
     "no_client_access": "Une des personnes concernées n'a pas accès à ce client.",
     "owner_must_transfer": "Vous êtes responsable de cette conversation : transférez-la plutôt que de la quitter.",
     "not_restricted": "Seul un client restreint peut être transféré.",
-    "no_team": "Vous n'êtes dans aucune équipe : un administrateur peut vous en attribuer une (Administration → Employés)."
+    "no_team": "Vous n'êtes dans aucune équipe : un administrateur peut vous en attribuer une (Administration → Employés).",
+    "video_quota_exceeded": "Plus assez de crédits vidéo ce mois-ci. Un administrateur peut en demander davantage.",
+    "render_in_progress": "Cette vidéo est déjà en cours de fabrication.",
+    "render_invalid": "La vidéo ne peut pas être fabriquée : la composition ou le plan de montage de l'IA est incomplet. Demandez-lui de le corriger.",
+    "render_missing_file": "Un fichier utilisé par la vidéo est introuvable dans cette conversation."
   },
   "auth": {
     "signInTitle": "Connexion",
@@ -357,7 +361,7 @@
       "models_updated": "a modifié les modèles IA autorisés",
       "quota_default_updated": "a modifié la limite de crédits par personne",
       "quota_member_updated": "a modifié la limite de crédits de {person}",
-      "ai_request_blocked": "a été bloqué(e) : {reason, select, quota_user {limite personnelle de crédits atteinte} quota_company {limite de crédits de l'entreprise atteinte} model_not_allowed {modèle non autorisé} auto_disabled {mode Auto désactivé} other {règle de l'entreprise}}",
+      "ai_request_blocked": "a été bloqué(e) : {reason, select, quota_user {limite personnelle de crédits atteinte} quota_company {limite de crédits de l'entreprise atteinte} model_not_allowed {modèle non autorisé} auto_disabled {mode Auto désactivé} quota_video {limite de crédits vidéo atteinte} other {règle de l'entreprise}}",
       "model_created": "a ajouté un modèle au catalogue",
       "model_updated": "a modifié un modèle du catalogue",
       "model_deleted": "a retiré un modèle du catalogue",
@@ -458,7 +462,10 @@
     "grantDescription": "Crédits supplémentaires pour le mois en cours, en plus de ceux de l'offre.",
     "granted": "Crédits ajoutés.",
     "grantCreditsLabel": "Nombre de crédits",
-    "grantNote": "Note interne (facultatif)"
+    "grantNote": "Note interne (facultatif)",
+    "grantPool": "Type de crédits",
+    "grantPoolStandard": "Crédits IA (conversations, agents)",
+    "grantPoolVideo": "Crédits vidéo (Motion Design, montage)"
   },
   "system": {
     "notFoundCode": "404",
@@ -657,7 +664,11 @@
     "limitFor": "Limite de {name}",
     "dialogNoDefault": "Aucune limite par personne n'est définie : cette limite s'appliquera à cette personne seulement.",
     "dialogDefault": "La limite par défaut est de {limit} crédits par mois.",
-    "useDefault": "Revenir à la limite par défaut"
+    "useDefault": "Revenir à la limite par défaut",
+    "videoTitle": "Crédits vidéo",
+    "videoBody": "{used} sur {limit} crédits vidéo utilisés ce mois-ci",
+    "videoReserved": "dont {reserved} réservés pour des vidéos en cours de fabrication",
+    "videoHint": "Les vidéos (Motion Design, Montage vidéo) ont leur propre quota, séparé des crédits IA. Pour en obtenir davantage, contactez-nous."
   },
   "platformModels": {
     "title": "Modèles et tarifs",
@@ -701,7 +712,13 @@
     "cached": "Entrée en cache",
     "supportsImages": "Accepte les images",
     "enabledLabel": "Activé sur la plateforme",
-    "defaultAllowedLabel": "Autorisé par défaut dans les nouvelles entreprises"
+    "defaultAllowedLabel": "Autorisé par défaut dans les nouvelles entreprises",
+    "renderRatesTitle": "Rendu vidéo",
+    "renderRatesHint": "Crédits vidéo décomptés par seconde de vidéo produite (par format). Ce ne sont pas des prix : le quota vidéo de chaque offre se règle dans Offres.",
+    "renderRateMotion": "Motion Design (par seconde)",
+    "renderRateVideoEdit": "Montage vidéo (par seconde et par format)",
+    "renderRatesSave": "Enregistrer les tarifs vidéo",
+    "renderRatesSaved": "Tarifs vidéo enregistrés."
   },
   "memory": {
     "title": "Mémoire",
@@ -1108,7 +1125,8 @@
       "textarea": "Texte long",
       "client": "Client",
       "select": "Liste de choix",
-      "files": "Fichiers"
+      "files": "Fichiers",
+      "videos": "Vidéos"
     },
     "fieldOptions": "Choix possibles",
     "fieldOptionsPlaceholder": "Choix séparés par des virgules",
@@ -1182,11 +1200,46 @@
     "launch": {
       "motion_design": {
         "name": "Motion design",
-        "description": "Brief et éléments de marque → animation MP4 (HyperFrames)."
+        "description": "Brief et éléments de marque → animation MP4 (HyperFrames).",
+        "fields": {
+          "brief": "Brief (message, textes, public)",
+          "assets": "Logo et images (PNG, JPG)",
+          "format": "Format",
+          "duration": "Durée",
+          "style": "Couleurs et style"
+        },
+        "options": {
+          "format": {
+            "16_9": "16:9 · paysage",
+            "9_16": "9:16 · vertical",
+            "1_1": "1:1 · carré"
+          },
+          "duration": {
+            "6": "6 secondes",
+            "10": "10 secondes",
+            "15": "15 secondes",
+            "20": "20 secondes",
+            "30": "30 secondes"
+          }
+        }
       },
       "video_editor": {
         "name": "Montage vidéo",
-        "description": "Vos clips et un brief → vidéo montée (coupes, ordre, sous-titres, formats 16:9 / 9:16 / 1:1)."
+        "description": "Vos clips et un brief → vidéo montée (coupes, ordre, sous-titres, formats 16:9 / 9:16 / 1:1).",
+        "fields": {
+          "clips": "Clips vidéo (MP4, MOV, WebM)",
+          "brief": "Brief (ce que la vidéo doit montrer, durée, ton)",
+          "formats": "Formats",
+          "captions": "Textes à afficher (titres, sous-titres)"
+        },
+        "options": {
+          "formats": {
+            "all": "Les trois (16:9, 9:16 et 1:1)",
+            "16_9": "16:9 · paysage",
+            "9_16": "9:16 · vertical",
+            "1_1": "1:1 · carré"
+          }
+        }
       },
       "proposal_writer": {
         "name": "Proposition commerciale",
@@ -1394,11 +1447,82 @@
     "notices": {
       "legal": "Ceci n'est pas un conseil juridique. Le document produit est un brouillon : faites-le relire par un professionnel du droit avant tout usage.",
       "hiring": "Cet assistant résume et structure les candidatures selon vos critères. Il ne note, ne classe et n'écarte aucun candidat : une personne décide. L'IA utilisée pour filtrer des candidatures est classée « à haut risque » par le règlement européen sur l'IA.",
-      "draft": "Brouillon à vérifier par une personne. Aucun paiement ni aucun e-mail n'est effectué automatiquement."
-    }
+      "draft": "Brouillon à vérifier par une personne. Aucun paiement ni aucun e-mail n'est effectué automatiquement.",
+      "video": "La vidéo est fabriquée sur nos serveurs à partir de ce que l'IA écrit. Vous voyez un aperçu et le coût en crédits vidéo avant de lancer la fabrication."
+    },
+    "addVideos": "Ajouter des vidéos",
+    "videosHint": "MP4, MOV ou WebM ; {max} vidéos au plus, 200 Mo chacune. Elles restent sur nos serveurs : l'IA ne reçoit que leur nom, leur durée et leur taille.",
+    "videoTooBig": "La vidéo « {name} » dépasse 200 Mo.",
+    "uploadingFiles": "Envoi des fichiers… {done}/{total}"
   },
   "exports": {
     "defaultTitle": "Document",
     "sheet": "Tableau {number}"
+  },
+  "render": {
+    "previewLabel": "Aperçu de l'animation",
+    "previewLoading": "Préparation de l'aperçu…",
+    "previewHint": "Aperçu joué dans votre navigateur, isolé du reste de la page. La vidéo MP4 est fabriquée sur nos serveurs.",
+    "previewFailed": "L'aperçu ne peut pas s'afficher.",
+    "code": "Voir le code de l'animation",
+    "problems": {
+      "too_large": "L'animation est trop longue à décrire (code trop volumineux).",
+      "no_composition": "L'IA n'a pas écrit d'animation complète.",
+      "unsupported_size": "Le format de l'animation n'est pas 16:9, 9:16 ou 1:1.",
+      "no_duration": "L'animation n'indique pas sa durée.",
+      "too_long": "L'animation dépasse 60 secondes.",
+      "no_timeline": "L'animation n'a pas de chronologie utilisable.",
+      "fix": "Demandez à l'IA de corriger l'animation."
+    },
+    "planTitle": "Plan de montage",
+    "planSummary": "{segments, plural, one {# plan} other {# plans}} · {duration}",
+    "planCaptions": "Textes à l'écran",
+    "planInvalid": "Le plan de montage de l'IA est incomplet. Demandez-lui de le corriger.",
+    "seconds": "{value, number} s",
+    "formats": "Formats",
+    "format": {
+      "16:9": "16:9 · paysage",
+      "9:16": "9:16 · vertical",
+      "1:1": "1:1 · carré"
+    },
+    "make": "Fabriquer la vidéo",
+    "makeMany": "Fabriquer les vidéos",
+    "cost": "{credits} crédits vidéo · {left} restants ce mois-ci",
+    "notEnough": "Pas assez de crédits vidéo ce mois-ci : {credits} nécessaires, {left} restants.",
+    "requested": "C'est parti. Vous pouvez quitter la page, la fabrication continue.",
+    "status": {
+      "queued": "En attente…",
+      "running": "Fabrication · {progress} %",
+      "succeeded": "Prête",
+      "failed": "Échec",
+      "cancelled": "Annulée"
+    },
+    "stage": {
+      "starting": "Démarrage",
+      "preparing": "Préparation",
+      "rendering": "Rendu",
+      "capturing": "Capture des images",
+      "encoding": "Encodage",
+      "assembling": "Assemblage",
+      "uploading": "Enregistrement",
+      "done": "Terminé"
+    },
+    "cancel": "Annuler",
+    "cancelled": "Fabrication annulée. Les crédits réservés sont rendus.",
+    "download": "Télécharger",
+    "downloadFormat": "Télécharger le {format}",
+    "charged": "{credits} crédits vidéo utilisés",
+    "retry": "Réessayer",
+    "videoLabel": "Vidéo {format}",
+    "errors": {
+      "invalid_composition": "L'animation de l'IA est incomplète.",
+      "invalid_plan": "Le plan de montage de l'IA est incomplet.",
+      "clip_unreadable": "Un clip vidéo n'a pas pu être lu (fichier abîmé ou format non pris en charge).",
+      "render_timeout": "La fabrication a pris trop de temps et a été arrêtée.",
+      "worker_lost": "Le serveur de rendu ne répond plus. Réessayez dans un instant.",
+      "default": "La fabrication a échoué. Réessayez ; si cela recommence, demandez à l'IA une version plus simple."
+    },
+    "almostOut": "Plus de 80 % des crédits vidéo du mois sont utilisés.",
+    "range": "{start} → {end}"
   }
 }

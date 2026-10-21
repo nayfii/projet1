@@ -15,7 +15,9 @@ export const IMAGE_LOOKBACK_MESSAGES = 6;
 
 export type HistoryAttachment = {
   filename: string;
-  kind: "image" | "document";
+  kind: "image" | "document" | "video";
+  /** Videos: what the browser read before sending (duration in seconds, size in pixels). */
+  media?: { duration: number; width: number; height: number } | null;
   text?: string | null;
   truncated?: boolean;
   /** Image bytes, loaded only for recent messages. */
@@ -60,6 +62,11 @@ function renderMessage(message: HistoryMessage, documentCharAllowance = Infinity
       }
       const note = truncated ? "\n[Only the first part of this document is included.]" : "";
       texts.push(body ? `<attachment name="${a.filename}">\n${body}${note}\n</attachment>` : `[Attachment "${a.filename}": no readable text.]`);
+    } else if (a.kind === "video") {
+      // The model never receives the video itself, only what is needed to plan an edit.
+      const m = a.media;
+      const about = m && m.duration > 0 ? `: ${Math.round(m.duration * 10) / 10} s${m.width && m.height ? `, ${m.width}×${m.height}` : ""}` : "";
+      texts.push(`[Video "${a.filename}"${about}. Its pictures and sound are not available to you.]`);
     } else if (a.image) {
       texts.push(`[Image attached: "${a.filename}"]`);
     } else {

@@ -16,7 +16,7 @@ import { MODEL_CHOICE_AUTO } from "@/modules/providers/catalog";
 import { listClients } from "@/modules/clients/server/queries";
 import {
   DEPARTMENTS,
-  FIELD_TYPES,
+  TOOL_FIELD_TYPES,
   MEMORY_SCOPES,
   OUTPUT_FORMATS,
   VISIBILITIES,
@@ -81,7 +81,7 @@ export async function draftToolAction(input: { conversationId: string }): Promis
   const fields = (Array.isArray(json.input_fields) ? json.input_fields : []).slice(0, 6).flatMap((f) => {
     const label = text((f as Record<string, unknown>)?.label, 80);
     if (!label) return [];
-    const type = oneOf((f as Record<string, unknown>).type, FIELD_TYPES, "text");
+    const type = oneOf((f as Record<string, unknown>).type, TOOL_FIELD_TYPES, "text");
     const options = Array.isArray((f as Record<string, unknown>).options) ? ((f as Record<string, unknown>).options as unknown[]).map((o) => text(o, 80)).filter(Boolean).slice(0, 20) : [];
     const key = fieldKey(label, taken);
     taken.add(key);

@@ -6,6 +6,7 @@ import { getCompanyPlan, listMembers } from "@/modules/organizations/server/quer
 import { getCompanyAiSettings, getMemberCredits } from "@/modules/usage/server/queries";
 import { getMyQuota } from "@/modules/usage/server/quota";
 import { QuotasManager } from "@/modules/usage/ui/quotas-manager";
+import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("adminNav");
@@ -16,13 +17,16 @@ export default async function AdminQuotasPage() {
   const ctx = await requireScope("quotas");
   const t = await getTranslations("quotas");
   const companyId = ctx.active.companyId;
-  const [members, credits, settings, quota, plan] = await Promise.all([
+  const supabase = await createClient();
+  const [members, credits, settings, quota, plan, { data: video }] = await Promise.all([
     listMembers(companyId),
     getMemberCredits(companyId),
     getCompanyAiSettings(companyId),
     getMyQuota(companyId),
     getCompanyPlan(companyId),
+    supabase.rpc("my_video_credits", { p_company: companyId }),
   ]);
+  const videoCredits = video?.[0];
   const byUser = new Map(credits.map((c) => [c.userId, c]));
   const planCredits = Number(plan?.monthly_credits ?? 0);
   const limit = quota?.status.companyLimit ?? planCredits;
@@ -45,6 +49,18 @@ export default async function AdminQuotasPage() {
             hasOverride: byUser.get(m.userId)?.hasOverride ?? false,
           }))}
       />
+      {videoCredits ? (
+        <section className="mt-8 space-y-1.5 rounded-xl border bg-card p-5" aria-labelledby="video-credits">
+          <h2 id="video-credits" className="text-[15px] font-medium">
+            {t("videoTitle")}
+          </h2>
+          <p className="text-sm">
+            {t("videoBody", { used: Number(videoCredits.video_used), limit: Number(videoCredits.video_limit) })}
+            {Number(videoCredits.video_reserved) > 0 ? ` · ${t("videoReserved", { reserved: Number(videoCredits.video_reserved) })}` : null}
+          </p>
+          <p className="text-[13px] text-muted-foreground">{t("videoHint")}</p>
+        </section>
+      ) : null}
     </PageContainer>
   );
 }

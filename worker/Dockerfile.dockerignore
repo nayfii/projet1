@@ -1,0 +1,6 @@
+*
+!worker/package.json
+!worker/package-lock.json
+!worker/build.mjs
+!worker/src/**
+!src/modules/render/**

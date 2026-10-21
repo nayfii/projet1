@@ -9,8 +9,10 @@ import { z } from "zod";
 export const DEPARTMENTS = ["marketing", "sales", "accounting", "finance", "hr", "legal", "customer_service", "management", "general"] as const;
 export type Department = (typeof DEPARTMENTS)[number];
 
-export const FIELD_TYPES = ["text", "textarea", "client", "select", "files"] as const;
+export const FIELD_TYPES = ["text", "textarea", "client", "select", "files", "videos"] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
+/** Field types a company tool may use. "videos" (clips for the render worker) is for the Video Editor only. */
+export const TOOL_FIELD_TYPES = FIELD_TYPES.filter((t) => t !== "videos");
 
 export const OUTPUT_FORMATS = ["text", "table", "email", "document"] as const;
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
@@ -44,7 +46,8 @@ export const toolSchema = z.object({
     .array(fieldSchema)
     .max(12)
     .refine((fields) => new Set(fields.map((f) => f.key)).size === fields.length, "duplicate keys")
-    .refine((fields) => fields.every((f) => f.type !== "select" || (f.options?.length ?? 0) > 0), "select needs options"),
+    .refine((fields) => fields.every((f) => f.type !== "select" || (f.options?.length ?? 0) > 0), "select needs options")
+    .refine((fields) => fields.every((f) => f.type !== "videos"), "videos is reserved"),
   allowed_models: z.array(z.string().regex(/^[a-z0-9][a-z0-9._-]{1,62}$/)).max(20),
   default_model: z.string().regex(/^[a-z0-9][a-z0-9._-]{1,62}$/).nullable(),
   tools: z.array(z.enum(TOOL_CAPABILITIES)).max(TOOL_CAPABILITIES.length),

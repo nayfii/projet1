@@ -308,6 +308,12 @@ Screenshots for the founder: `docs/screenshots/step-7/` (automated run, simulate
   - documents up to 20 MB, the first 400,000 characters are read and indexed; up to 6 passages of 1,600 characters are given to the AI per question;
   - search by meaning (embeddings) consumes credits like any AI call.
 
+## Founder decisions (Step 7 report, 2026-10-20)
+
+- **Application Review Assistant — legal review on hold.** The agent stays as built (no scores, rankings or decisions; notice shown). The legal review it needs before being sold for recruitment (EU AI Act, high risk) is parked until the founder reopens it.
+- **Real-model tests deferred to the end.** The OpenAI account will be topped up once the platform is finished; the 7 agent examples not run yet (and Claude/Gemini once keys exist) are rerun then with `pnpm test:smoke`.
+- **Hands-on access in Step 10.** The founder gets a working online platform once Step 10's deployment is done and the accounts listed there are created.
+
 ## Open questions for the founder
 
 The founder asked to proceed ("je suis prêt à construire le tout") without answering these yet: the proposals below are applied as **defaults** and can be changed.

@@ -53,7 +53,7 @@ export async function recordUsage(event: UsageEvent): Promise<void> {
   if (error) console.error("usage_events insert failed", { code: error.code, companyId: event.companyId });
 }
 
-export type BlockedReason = "quota_user" | "quota_company" | "model_not_allowed" | "auto_disabled";
+export type BlockedReason = "quota_user" | "quota_company" | "model_not_allowed" | "auto_disabled" | "quota_video";
 
 /** Activity log entry for a request refused before reaching any AI provider. */
 export async function logBlockedRequest(companyId: string, userId: string, reason: BlockedReason): Promise<void> {

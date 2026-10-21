@@ -15,4 +15,8 @@ export default function setup() {
   process.env.TEST_SUPABASE_PUBLISHABLE_KEY = status.PUBLISHABLE_KEY ?? status.ANON_KEY;
   process.env.TEST_SUPABASE_SECRET_KEY = status.SECRET_KEY ?? status.SERVICE_ROLE_KEY;
   process.env.TEST_DATABASE_URL = status.DB_URL;
+  // Server modules under test (e.g. the built-in agents sync) read the app's own variables.
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??= status.API_URL;
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??= process.env.TEST_SUPABASE_PUBLISHABLE_KEY;
+  process.env.SUPABASE_SECRET_KEY ??= process.env.TEST_SUPABASE_SECRET_KEY;
 }

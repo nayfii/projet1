@@ -18,7 +18,7 @@ export type TimelineMessage = {
   routing: RoutingInfo | null;
   /** Oldest messages left out of the AI context because the conversation was too long. */
   omittedMessages: number;
-  attachments: { id: string; filename: string; kind: "image" | "document"; truncated: boolean }[];
+  attachments: { id: string; filename: string; kind: AttachmentKind; truncated: boolean }[];
   /** Source Proof: memory passages the answer cited (only those the viewer may still read). */
   sources: SourceProof[];
   /** Hide: exactly what the AI received (user message) or wrote (answer), when it differs from `content`. */
@@ -34,3 +34,6 @@ export type TimelineMessage = {
   /** Confronter: this answer is the synthesis of a confrontation. */
   confrontation: Confrontation | null;
 };
+
+/** Images go to the model as images, documents as their text, videos (Video Editor) as a short description only. */
+export type AttachmentKind = "image" | "document" | "video";

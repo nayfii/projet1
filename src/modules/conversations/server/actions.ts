@@ -92,9 +92,16 @@ export async function deleteConversationAction(input: { conversationId: string }
   // Files first (Storage keeps objects otherwise), then the conversation (messages cascade).
   const { data: files } = await supabase
     .from("conversation_attachments")
-    .select("storage_path")
+    .select("storage_path, bucket")
     .eq("conversation_id", parsed.data.conversationId);
-  if (files?.length) await supabase.storage.from("chat-attachments").remove(files.map((f) => f.storage_path));
+  for (const bucket of ["chat-attachments", "render-media"]) {
+    const paths = (files ?? []).filter((f) => f.bucket === bucket).map((f) => f.storage_path);
+    if (paths.length) await supabase.storage.from(bucket).remove(paths);
+  }
+  // Videos made by the render worker (Step 8).
+  const { data: jobs } = await supabase.from("render_jobs").select("outputs").eq("conversation_id", parsed.data.conversationId);
+  const outputs = (jobs ?? []).flatMap((j) => ((j.outputs as { path?: string }[] | null) ?? []).flatMap((o) => (o.path ? [o.path] : [])));
+  if (outputs.length) await supabase.storage.from("render-outputs").remove(outputs);
   const { error, count } = await supabase
     .from("conversations")
     .delete({ count: "exact" })
@@ -116,10 +123,10 @@ export async function removePendingAttachmentAction(input: { attachmentId: strin
     .delete()
     .eq("id", parsed.data.attachmentId)
     .is("message_id", null)
-    .select("storage_path")
+    .select("storage_path, bucket")
     .maybeSingle();
   if (!data) return { ok: false, error: "not_found" };
-  await supabase.storage.from("chat-attachments").remove([data.storage_path]);
+  await supabase.storage.from(data.bucket).remove([data.storage_path]);
   return { ok: true };
 }
 

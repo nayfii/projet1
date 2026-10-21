@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import type { PickerModel } from "@/modules/conversations/ui/model-picker";
-import { DEPARTMENTS, FIELD_TYPES, MEMORY_SCOPES, OUTPUT_FORMATS, VISIBILITIES, fieldKey, type ToolInput, type Visibility } from "../definitions";
+import { DEPARTMENTS, TOOL_FIELD_TYPES, MEMORY_SCOPES, OUTPUT_FORMATS, VISIBILITIES, fieldKey, type ToolInput, type Visibility } from "../definitions";
 
 const ANY_MODEL = "__any";
 
@@ -83,7 +83,7 @@ export function ToolEditor({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {FIELD_TYPES.map((type) => (
+                    {TOOL_FIELD_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
                         {t(`fieldTypes.${type}`)}
                       </SelectItem>

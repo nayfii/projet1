@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { linkCitations } from "@/modules/memory/citations";
 import { parseChartSpec } from "../chart-spec";
 import { Chart } from "./chart";
+import { editPlanSchema } from "@/modules/render/edit-plan";
+import { EditPlanView } from "@/modules/render/ui/edit-plan-view";
 
 /**
  * AI answers rendered as Markdown. Raw HTML in the text is never rendered (react-markdown's default),
@@ -56,10 +58,18 @@ const components: Components = {
   pre: ({ children, node }) => {
     // A ```chart block holding a valid spec is drawn; anything else stays a code block.
     const code = node?.children[0];
-    if (code?.type === "element" && code.tagName === "code" && String(code.properties.className ?? "").includes("language-chart")) {
-      const text = code.children.map((c) => (c.type === "text" ? c.value : "")).join("");
+    const lang = code?.type === "element" && code.tagName === "code" ? String(code.properties.className ?? "") : "";
+    const text = code?.type === "element" ? code.children.map((c) => (c.type === "text" ? c.value : "")).join("") : "";
+    if (lang.includes("language-chart")) {
       const spec = parseChartSpec(text);
       if (spec) return <Chart spec={spec} />;
+    }
+    // Motion Design: the animation is previewed under the answer; its code stays available, folded.
+    if (lang.includes("language-hyperframes")) return <FoldedCode>{children}</FoldedCode>;
+    // Video Editor: the edit plan shown as cuts and texts.
+    if (lang.includes("language-editplan")) {
+      const plan = parseEditPlan(text);
+      if (plan) return <EditPlanView plan={plan} />;
     }
     return <CodeBlock>{children}</CodeBlock>;
   },
@@ -69,6 +79,25 @@ const components: Components = {
     </div>
   ),
 };
+
+function FoldedCode({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("render");
+  return (
+    <details className="my-3 rounded-lg border px-3 py-2 text-[13px]">
+      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">{t("code")}</summary>
+      <CodeBlock>{children}</CodeBlock>
+    </details>
+  );
+}
+
+function parseEditPlan(text: string) {
+  try {
+    const parsed = editPlanSchema.safeParse(JSON.parse(text));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 function CodeBlock({ children }: { children: React.ReactNode }) {
   const t = useTranslations("chat");

@@ -317,14 +317,14 @@ isOneToOne: false
                   ]
                 },"conversation_attachments": {
                   Row: {
-                    "company_id": string,"conversation_id": string,"created_at": string,"extracted_text": string | null,"filename": string,"id": string,"kind": string,"masked_text": string | null,"message_id": string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated": boolean,"uploaded_by": string
+                    "bucket": string,"company_id": string,"conversation_id": string,"created_at": string,"extracted_text": string | null,"filename": string,"id": string,"kind": string,"masked_text": string | null,"media": Json | null,"message_id": string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated": boolean,"uploaded_by": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "company_id"?: string,"conversation_id": string,"created_at"?: string,"extracted_text"?: string | null,"filename": string,"id"?: string,"kind": string,"masked_text"?: string | null,"message_id"?: string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated"?: boolean,"uploaded_by"?: string
+                    "bucket"?: string,"company_id"?: string,"conversation_id": string,"created_at"?: string,"extracted_text"?: string | null,"filename": string,"id"?: string,"kind": string,"masked_text"?: string | null,"media"?: Json | null,"message_id"?: string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated"?: boolean,"uploaded_by"?: string
                   }
                   Update: {
-                    "company_id"?: string,"conversation_id"?: string,"created_at"?: string,"extracted_text"?: string | null,"filename"?: string,"id"?: string,"kind"?: string,"masked_text"?: string | null,"message_id"?: string | null,"mime_type"?: string,"size_bytes"?: number,"storage_path"?: string,"text_truncated"?: boolean,"uploaded_by"?: string
+                    "bucket"?: string,"company_id"?: string,"conversation_id"?: string,"created_at"?: string,"extracted_text"?: string | null,"filename"?: string,"id"?: string,"kind"?: string,"masked_text"?: string | null,"media"?: Json | null,"message_id"?: string | null,"mime_type"?: string,"size_bytes"?: number,"storage_path"?: string,"text_truncated"?: boolean,"uploaded_by"?: string
                   }
                   Relationships: [
                     {
@@ -425,14 +425,14 @@ isOneToOne: false
                   ]
                 },"credit_grants": {
                   Row: {
-                    "company_id": string,"created_at": string,"credits": number,"granted_by": string | null,"id": string,"note": string | null,"period_start": string
+                    "company_id": string,"created_at": string,"credits": number,"granted_by": string | null,"id": string,"note": string | null,"period_start": string,"pool": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "company_id": string,"created_at"?: string,"credits": number,"granted_by"?: string | null,"id"?: string,"note"?: string | null,"period_start": string
+                    "company_id": string,"created_at"?: string,"credits": number,"granted_by"?: string | null,"id"?: string,"note"?: string | null,"period_start": string,"pool"?: string
                   }
                   Update: {
-                    "company_id"?: string,"created_at"?: string,"credits"?: number,"granted_by"?: string | null,"id"?: string,"note"?: string | null,"period_start"?: string
+                    "company_id"?: string,"created_at"?: string,"credits"?: number,"granted_by"?: string | null,"id"?: string,"note"?: string | null,"period_start"?: string,"pool"?: string
                   }
                   Relationships: [
                     {
@@ -921,6 +921,64 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"render_jobs": {
+                  Row: {
+                    "attempts": number,"cancel_requested_at": string | null,"company_id": string,"conversation_id": string,"created_at": string,"created_by": string | null,"credits_charged": number | null,"credits_reserved": number,"duration_seconds": number,"error_code": string | null,"finished_at": string | null,"formats": (string)[],"heartbeat_at": string | null,"id": string,"input": NonNullable<Json>,"kind": string,"locked_by": string | null,"message_id": string,"outputs": NonNullable<Json>,"progress": number,"stage": string | null,"started_at": string | null,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"company_id": string,"conversation_id": string,"created_at"?: string,"created_by"?: string | null,"credits_charged"?: number | null,"credits_reserved": number,"duration_seconds": number,"error_code"?: string | null,"finished_at"?: string | null,"formats": (string)[],"heartbeat_at"?: string | null,"id"?: string,"input": NonNullable<Json>,"kind": string,"locked_by"?: string | null,"message_id": string,"outputs"?: NonNullable<Json>,"progress"?: number,"stage"?: string | null,"started_at"?: string | null,"status"?: string
+                  }
+                  Update: {
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"company_id"?: string,"conversation_id"?: string,"created_at"?: string,"created_by"?: string | null,"credits_charged"?: number | null,"credits_reserved"?: number,"duration_seconds"?: number,"error_code"?: string | null,"finished_at"?: string | null,"formats"?: (string)[],"heartbeat_at"?: string | null,"id"?: string,"input"?: NonNullable<Json>,"kind"?: string,"locked_by"?: string | null,"message_id"?: string,"outputs"?: NonNullable<Json>,"progress"?: number,"stage"?: string | null,"started_at"?: string | null,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "render_jobs_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "render_jobs_conversation_id_company_id_fkey"
+      columns: ["conversation_id","company_id"]
+isOneToOne: false
+      referencedRelation: "conversations"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "render_jobs_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "render_jobs_message_id_conversation_id_fkey"
+      columns: ["message_id","conversation_id"]
+isOneToOne: false
+      referencedRelation: "messages"
+      referencedColumns: ["id","conversation_id"]
+    }
+                  ]
+                },"render_rates": {
+                  Row: {
+                    "credits_per_second": number,"kind": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "credits_per_second": number,"kind": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "credits_per_second"?: number,"kind"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "render_rates_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"sensitive_terms": {
                   Row: {
                     "category": string,"company_id": string,"created_at": string,"created_by": string | null,"id": string,"term": string
@@ -1052,6 +1110,9 @@ isOneToOne: false
 "admin_update_model_settings":
 { Args: { "p_allowed": (string)[],"p_auto": boolean,"p_company": string,"p_default": string }; Returns: undefined
                            },
+"cancel_render_job":
+{ Args: { "p_job": string }; Returns: undefined
+                           },
 "company_usage_summary":
 { Args: { "p_company": string,"p_from": string,"p_to": string }; Returns: Json
                            },
@@ -1074,6 +1135,9 @@ isOneToOne: false
                            },
 "delete_tool":
 { Args: { "p_agent": string }; Returns: undefined
+                           },
+"enqueue_render_job":
+{ Args: { "p_duration": number,"p_formats": (string)[],"p_input": Json,"p_kind": string,"p_message": string }; Returns: string
                            },
 "hide_assign_placeholders":
 { Args: { "p_conversation": string,"p_items"?: Json }; Returns: {
@@ -1113,9 +1177,19 @@ isOneToOne: false
               "company_limit": number,"company_used": number,"period_start": string,"user_limit": number,"user_used": number
             }[]
                            },
+"my_video_credits":
+{ Args: { "p_company": string }; Returns: {
+              "video_limit": number,"video_reserved": number,"video_used": number
+            }[]
+                           },
 "platform_company_credits":
 { Args: Record<PropertyKey, never>; Returns: {
               "company_id": string,"credit_limit": number,"credits_used": number,"estimated_cost_usd": number,"granted": number,"requests": number
+            }[]
+                           },
+"platform_company_video_credits":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "company_id": string,"renders": number,"video_limit": number,"video_reserved": number,"video_used": number
             }[]
                            },
 "platform_create_company":
@@ -1124,18 +1198,33 @@ isOneToOne: false
             }[]
                            },
 "platform_grant_credits":
-{ Args: { "p_company": string,"p_credits": number,"p_note"?: string }; Returns: undefined
+{ Args: { "p_company": string,"p_credits": number,"p_note"?: string,"p_pool"?: string }; Returns: undefined
                            },
 "platform_list_companies":
 { Args: Record<PropertyKey, never>; Returns: {
               "active_seats": number,"created_at": string,"id": string,"name": string,"owner_email": string,"pending_invitations": number,"plan_id": string,"plan_name": string,"seat_limit": number,"status": Database["public"]['Enums']["company_status"]
             }[]
                            },
+"platform_set_render_rate":
+{ Args: { "p_credits_per_second": number,"p_kind": string }; Returns: undefined
+                           },
 "platform_update_company":
 { Args: { "p_company": string,"p_plan"?: string,"p_status"?: Database["public"]['Enums']["company_status"] }; Returns: undefined
                            },
 "record_sign_in":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"render_claim_job":
+{ Args: { "p_worker": string }; Returns: Json
+                           },
+"render_job_failed":
+{ Args: { "p_error": string,"p_job": string,"p_retry": boolean,"p_worker": string }; Returns: undefined
+                           },
+"render_job_progress":
+{ Args: { "p_job": string,"p_progress": number,"p_stage": string,"p_worker": string }; Returns: boolean
+                           },
+"render_job_succeeded":
+{ Args: { "p_job": string,"p_outputs": Json,"p_seconds": number,"p_worker": string }; Returns: undefined
                            },
 "revoke_invitation":
 { Args: { "p_invitation": string }; Returns: undefined

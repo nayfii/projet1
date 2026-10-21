@@ -5,7 +5,8 @@ import type { Department, FieldType, MemoryScope, OutputFormat, ToolCapability }
  * (`server/builtin-sync.ts`). Labels, options and notices are translated (messages: tools.launch.<key>);
  * the English labels below are stored in the database as a fallback. Instructions are written for the
  * model in English; the model answers in the person's language.
- * Motion Design and Video Editor (marketing) come with the render worker (Step 8).
+ * Motion Design and Video Editor (marketing) write a composition or an edit plan that the render worker
+ * turns into MP4 files (Step 8, src/modules/render).
  */
 
 export type BuiltinField = {
@@ -19,7 +20,7 @@ export type BuiltinField = {
 };
 
 /** Shown on the agent's page and in its conversations. */
-export type AgentNotice = "legal" | "hiring" | "draft";
+export type AgentNotice = "legal" | "hiring" | "draft" | "video";
 
 export type BuiltinAgent = {
   key: string;
@@ -52,7 +53,77 @@ const LEGAL_RULES = [
   "- End with one line reminding that the document must be reviewed by a legal professional before any use.",
 ].join("\n");
 
+/** How Motion Design writes a HyperFrames composition (checked by src/modules/render/composition.ts). */
+const MOTION_RULES = [
+  "Write ONE complete HyperFrames composition: an HTML page animated with a GSAP timeline, in a fenced code block whose language is `hyperframes`.",
+  "Required structure:",
+  '- In <head>: <meta data-composition-id="motion" data-width="W" data-height="H" data-duration="D">, where W×H is 1920×1080 for 16:9, 1080×1920 for 9:16, 1080×1080 for 1:1 (the format chosen in the form) and D is the duration in seconds chosen in the form.',
+  "- html and body exactly W×H pixels, overflow hidden, a background colour. A #stage div of W×H, position relative.",
+  '- Each scene is an element with class="clip", data-start (seconds), data-duration (seconds) and data-track-index (0, 1, 2… higher is in front). The CSS sets .clip { position: absolute; inset: 0; visibility: hidden; }. Never change visibility yourself.',
+  '- One script at the end of <body>: var tl = gsap.timeline({ paused: true }); animate opacity, transforms (x, y, scale, rotation), colours, clip-path; end with tl.set({}, {}, D); then window.__timelines = window.__timelines || {}; window.__timelines["motion"] = tl;',
+  "Strict limits: no other script, no <script src>, no external URL (no CDN, no web fonts, no remote images), no fetch, no video or audio element. GSAP is provided. The only font is \"Inter\" (weights 100 to 900): font-family: Inter, sans-serif.",
+  "Images: only the files attached to the form, written exactly as src=\"assets/<file name>\" (for example assets/logo.png). Never invent an image.",
+  "Design: one idea per scene, large legible text (at least 64px on 16:9, 80px on 9:16), a safe margin of 8% on every side, at most 3 colours from the brief or the brand (company knowledge), smooth eases, short readable texts. Texts come from the brief; never invent figures, prices or claims.",
+  "Before the code block, describe the scenes in 2 to 4 short lines in the person's language. Nothing after the code block. The person previews it, then makes the MP4.",
+].join("\n");
+
+/** How the Video Editor writes an edit plan (checked by src/modules/render/edit-plan.ts). */
+const EDIT_RULES = [
+  'You cannot see or hear the videos: each attached video is described as [Video "name": duration, size]. Plan from the brief, the names and the durations, and say so in one line when the brief asks for things only visible in the pictures (e.g. "keep the best moments").',
+  "Write the edit plan as JSON in a fenced code block whose language is `editplan`:",
+  '{"title": "...", "segments": [{"clip": "exact file name", "start": 0, "end": 4.5}], "captions": [{"text": "...", "start": 0, "end": 3}], "formats": ["16:9", "9:16", "1:1"], "fit": "crop"}',
+  "- segments: the cuts, in playing order; start and end in seconds inside that clip (never beyond its duration); at least 0.5 s each. The same clip may be used several times.",
+  "- captions: short texts shown at the bottom (at most 2 lines each), timed on the final video; only texts from the form or the brief, never invented facts. Empty list if none.",
+  '- formats: the formats chosen in the form ("all" means the three). fit: "crop" fills the frame (default, best for social networks); "pad" keeps the whole picture with bars when the brief asks for it.',
+  "- The whole video lasts at most 300 seconds.",
+  "Before the code block, explain the edit in 2 to 4 short lines in the person's language (order, total duration, formats). Nothing after the code block. The person checks the plan, then makes the videos.",
+].join("\n");
+
 export const BUILTIN_AGENTS: BuiltinAgent[] = [
+  {
+    key: "motion_design",
+    department: "marketing",
+    name: "Motion Design",
+    description: "Brief + brand assets → animated MP4, built with HyperFrames.",
+    fields: [
+      { key: "brief", type: "textarea", required: true, label: "Brief (message, texts, audience)" },
+      { key: "assets", type: "files", required: false, label: "Logo and images (PNG, JPG)" },
+      { key: "format", type: "select", required: true, label: "Format", options: ["16_9", "9_16", "1_1"] },
+      { key: "duration", type: "select", required: true, label: "Duration", options: ["6", "10", "15", "20", "30"] },
+      { key: "style", type: "text", required: false, label: "Colours and style" },
+    ],
+    instructions: [
+      "Create a short animated video (motion design) from the brief: title cards, key messages, logo reveal, call to action.",
+      "The format in the form is 16_9 (16:9, landscape), 9_16 (9:16, vertical) or 1_1 (1:1, square); the duration is in seconds.",
+      "Use the company knowledge for the brand (colours, tone, offers) when the brief does not say.",
+      MOTION_RULES,
+    ].join("\n"),
+    outputFormat: "text",
+    memoryScope: "company",
+    tools: ["attachments"],
+    notice: "video",
+  },
+  {
+    key: "video_editor",
+    department: "marketing",
+    name: "Video Editor",
+    description: "Uploaded clips + brief → edited MP4 (cuts, order, captions, 16:9 / 9:16 / 1:1 versions).",
+    fields: [
+      { key: "clips", type: "videos", required: true, label: "Video clips (MP4, MOV, WebM)" },
+      { key: "brief", type: "textarea", required: true, label: "Brief (what the video must show, length, tone)" },
+      { key: "formats", type: "select", required: true, label: "Formats", options: ["all", "16_9", "9_16", "1_1"] },
+      { key: "captions", type: "textarea", required: false, label: "Texts to show (titles, captions)" },
+    ],
+    instructions: [
+      "Plan the edit of the attached clips into one video following the brief: cuts, order, captions and formats.",
+      "Formats in the form: all (16:9, 9:16 and 1:1), 16_9, 9_16 or 1_1.",
+      EDIT_RULES,
+    ].join("\n"),
+    outputFormat: "text",
+    memoryScope: "company",
+    tools: ["attachments"],
+    notice: "video",
+  },
   {
     key: "proposal_writer",
     department: "sales",

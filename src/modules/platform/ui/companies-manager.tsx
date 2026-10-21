@@ -237,7 +237,8 @@ function GrantCreditsForm({ companyId, onDone }: { companyId: string; onDone: ()
         const credits = Number(form.get("credits"));
         if (!Number.isFinite(credits) || credits <= 0) return;
         startTransition(async () => {
-          const result = await grantCreditsAction({ companyId, credits, note: String(form.get("note") ?? "") || undefined });
+          const pool = form.get("pool") === "video" ? "video" : "standard";
+          const result = await grantCreditsAction({ companyId, credits, note: String(form.get("note") ?? "") || undefined, pool });
           if (result.ok) {
             toast.success(t("granted"));
             onDone();
@@ -248,6 +249,19 @@ function GrantCreditsForm({ companyId, onDone }: { companyId: string; onDone: ()
       <Field label={t("grantCreditsLabel")} htmlFor="grant-credits">
         <Input id="grant-credits" name="credits" type="number" min={1} required autoFocus />
       </Field>
+      <fieldset className="space-y-1.5">
+        <legend className="text-sm font-medium">{t("grantPool")}</legend>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <label className="inline-flex items-center gap-2">
+            <input type="radio" name="pool" value="standard" defaultChecked className="accent-brand" />
+            {t("grantPoolStandard")}
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input type="radio" name="pool" value="video" className="accent-brand" />
+            {t("grantPoolVideo")}
+          </label>
+        </div>
+      </fieldset>
       <Field label={t("grantNote")} htmlFor="grant-note">
         <Input id="grant-note" name="note" maxLength={200} />
       </Field>

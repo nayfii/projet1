@@ -36,7 +36,8 @@ import { ATTACHMENT_ACCEPT, ATTACHMENT_TYPES, extensionOf, MAX_ATTACHMENT_BYTES,
 import { QuotaBanner } from "@/modules/usage/ui/quota-banner";
 import type { QuotaState } from "@/modules/usage/quota";
 import { CHAT_REQUEST_ERRORS, type ChatRequestError, type ChatStreamEvent } from "../stream-events";
-import type { TimelineMessage } from "../types";
+import type { AttachmentKind, TimelineMessage } from "../types";
+import type { RenderKind } from "@/modules/render/formats";
 import { splitNdjson } from "../ndjson";
 import {
   createConversationAction,
@@ -73,7 +74,7 @@ type PendingAttachment = {
   key: string;
   id?: string;
   filename: string;
-  kind: "image" | "document";
+  kind: AttachmentKind;
   truncated?: boolean;
   uploading: boolean;
   /** Hide: the file's text and what looks sensitive in it (from the server), for the preview. */
@@ -106,7 +107,7 @@ type Props = {
   colleagues: Colleague[];
   handover: Handover | null;
   /** The tool or agent this conversation runs (CLAUDE.md §4.6, §4.7). */
-  agent: { id: string; name: string; attachments: boolean; allowedModels: string[]; notice: AgentNoticeKind | null } | null;
+  agent: { id: string; name: string; attachments: boolean; allowedModels: string[]; notice: AgentNoticeKind | null; renderKind: RenderKind | null } | null;
   toolEditor: ToolEditorContext;
 };
 
@@ -147,6 +148,9 @@ export function ChatView(props: Props) {
   // A tool's models only, when it is limited to some.
   const pickerModels = props.agent?.allowedModels.length ? props.models.filter((m) => props.agent!.allowedModels.includes(m.id)) : props.models;
   const canAttach = !props.agent || props.agent.attachments;
+  // Video agents: the files of the conversation a composition or an edit plan may use.
+  const renderKind = props.agent?.renderKind ?? null;
+  const conversationFiles = React.useMemo(() => messages.flatMap((m) => m.attachments), [messages]);
   const [caret, setCaret] = React.useState(0);
   const [mentionIndex, setMentionIndex] = React.useState(0);
   const [mentionDismissed, setMentionDismissed] = React.useState<number | null>(null);
@@ -809,6 +813,7 @@ export function ChatView(props: Props) {
                       onInvite={(userId) => void openAdd([userId])}
                       onConfront={confrontHandler(index)}
                       confrontProgress={confrontProgress[m.id]}
+                      render={renderKind ? { kind: renderKind, attachments: conversationFiles } : null}
                     />
                   </React.Fragment>
                 );
