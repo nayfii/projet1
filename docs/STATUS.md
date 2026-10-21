@@ -214,7 +214,7 @@ Screenshots for the founder: `docs/screenshots/step-9/` (consoles) and `docs/scr
 ## Known issues
 
 - **Code location:** the code is on GitHub (`nayfii/projet1`, branch `claude/amazing-davinci-5th459`), not merged into the main branch yet.
-- **The founder cannot click-test yet:** the app runs only inside this container. The test deployment is prepared (`docs/DEPLOY.md`: Supabase Frankfurt, Vercel `fra1`, database installed by GitHub Actions) and waits for the founder to create the Supabase and Vercel accounts. This environment cannot reach Supabase or Vercel directly, so the database goes through `.github/workflows/deploy-database.yml`; not yet run against a real hosted project.
+- **Hands-on testing:** until now the app ran only inside this container. Test deployment under way (2026-10-21, `docs/DEPLOY.md`): Supabase project in Frankfurt created by the founder, the 12 migrations applied by `.github/workflows/deploy-database.yml` (this environment cannot reach Supabase or Vercel directly); Vercel project created (Hobby, production branch `claude/amazing-davinci-5th459`, address `projet1-taupe-nu.vercel.app`), simulated AI for the first checks.
 - **Online, videos stay "En attente"** until the render worker is hosted (open question 14). Video clips above 50 MB are refused on Supabase's free plan (storage limit), although the app accepts up to 200 MB.
 - Google sign-in is untested (needs a Google OAuth client). The button stays hidden until `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`.
 - Emails go to the local test inbox (Mailpit). Production needs an SMTP provider; Supabase's default limit of 2 emails/hour must then be raised.
