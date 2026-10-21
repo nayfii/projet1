@@ -31,8 +31,12 @@ export function Chart({ spec }: { spec: ChartSpec }) {
   }, []);
 
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+  // Below 1, significant digits: 0.0018 stays 0.0018 instead of becoming 0.
+  const small = new Intl.NumberFormat(locale, { maximumSignificantDigits: 3 });
   const compact = new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 });
-  const value = (v: number) => (spec.unit ? `${number.format(v)} ${spec.unit}` : number.format(v));
+  const plain = (v: number) => (Math.abs(v) < 1 ? small.format(v) : number.format(v));
+  const value = (v: number) => (spec.unit ? `${plain(v)} ${spec.unit}` : plain(v));
+  const tickLabel = (v: number) => (Math.abs(v) < 1 ? small.format(v) : compact.format(v));
 
   const n = spec.labels.length;
   const all = spec.series.flatMap((s) => s.values);
@@ -83,7 +87,7 @@ export function Chart({ spec }: { spec: ChartSpec }) {
             <g key={tick}>
               <line x1={M.left} x2={width - M.right} y1={y(tick)} y2={y(tick)} stroke="var(--border)" strokeWidth={tick === 0 ? 1.25 : 1} />
               <text x={M.left - 8} y={y(tick)} dy="0.32em" textAnchor="end" className="fill-muted-foreground text-[11px] tabular-nums">
-                {compact.format(tick)}
+                {tickLabel(tick)}
               </text>
             </g>
           ))}
