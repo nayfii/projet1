@@ -32,7 +32,7 @@ Les prix ci-dessus viennent des pages publiques des services. Vérifiez-les sur 
 3. Cliquez **Create new project** et attendez 2 minutes.
 4. Notez ces informations (dans votre gestionnaire de mots de passe) :
    - **Project ref** : *Project Settings → General → Project ID* (une suite de 20 lettres) ;
-   - **Project URL** : *Project Settings → Data API* (`https://….supabase.co`) ;
+   - **Project URL** : *Project Settings → Data API* (`https://<project ref>.supabase.co`). **Attention** : ce n'est pas l'adresse de la page Supabase dans votre navigateur (`supabase.com/dashboard/project/…`), qui ne marche pas ;
    - **Publishable key** : *Project Settings → API Keys* (commence par `sb_publishable_`) ;
    - **Secret key** : même page, section *Secret keys* (commence par `sb_secret_`). Si aucune n'existe, cliquez **Add new secret key** ;
    - **Access token** : cliquez votre avatar en haut à droite → **Account preferences → Access Tokens → Generate new token**.
@@ -76,7 +76,7 @@ Copiez le résultat dans votre gestionnaire de mots de passe : c'est votre `HIDE
 
 | Nom | Valeur |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | la Project URL |
+| `NEXT_PUBLIC_SUPABASE_URL` | la Project URL, de la forme `https://<project ref>.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | la publishable key |
 | `SUPABASE_SECRET_KEY` | la secret key |
 | `HIDE_ENCRYPTION_KEY` | la clé générée dans le Terminal |
@@ -107,7 +107,7 @@ Copiez le résultat dans votre gestionnaire de mots de passe : c'est votre `HIDE
    `SMTP_SENDER_EMAIL` = par exemple `no-reply@votre-domaine.fr`, `SMTP_SENDER_NAME` = le nom affiché.
 3. Écrivez à Claude « APP_URL ajouté » : il applique les réglages de connexion (adresse du site, modèles d'e-mails, serveur d'e-mails).
 
-Sans Resend, Supabase envoie lui-même **2 e-mails par heure au maximum, et seulement aux membres de votre équipe Supabase** : cela suffit pour vous connecter vous-même. Pour un collègue, le lien d'invitation s'affiche aussi à l'écran : vous pouvez le copier et le lui envoyer.
+Sans Resend, Supabase envoie lui-même **2 e-mails par heure au maximum, et seulement aux membres de votre équipe Supabase** : cela suffit pour vous connecter vous-même. Ses e-mails sont alors les siens (en anglais, « Your Magic Link ») et le lien doit être ouvert **dans le navigateur où vous l'avez demandé**. Pour un collègue, le lien d'invitation s'affiche aussi à l'écran : vous pouvez le copier et le lui envoyer.
 
 ---
 
