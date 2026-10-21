@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 8 (video agents and the render worker), 2026-10-21.
+Last update: Step 9 (admin consoles), 2026-10-21.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -125,9 +125,10 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Models: enable / disable, default, Auto mode | **done** (Step 2) |
 | Agents and tools: enable per role, approve company-wide tools | **done** (Steps 6–7): pending tools with their full content to review, approve / reject, roles per shared tool, delete; built-in agents switched on/off, roles, and "Adapter" (instructions, tone, model, memory) |
 | Hide policies | **done** (Step 4, `/admin/hide`) |
-| Usage dashboards (real provider data; costs labelled as estimates) | **done** (Step 2, `/admin/usage`): requests, tokens, credits, estimated cost by person, by model and per day, month picker. A richer dashboard comes in Step 9 |
+| Overview | **done** (Step 9, `/admin`): seats, clients, AI credits and video credits this month, and a "À faire" list: tools waiting for approval, AI or video credits at 80 % or used up, people close to their personal limit, all seats taken ("Rien à signaler" otherwise). Each item links to the page that solves it |
+| Usage dashboards (real provider data; costs labelled as estimates) | **done** (Steps 2 and 9, `/admin/usage`): AI credits used with a meter against the month's limit, AI requests, active people, estimated cost (labelled), credits per day (chart with its data table), by feature, by person (with personal limit), by model (with Auto), video credits and renders kept apart from AI credits, tokens counted by the providers; month picker (12 months) |
 | Quotas | **done** (Step 2, `/admin/quotas`): company credits this month, default limit per person, personal limits per member; video credits used / limit / reserved (Step 8) |
-| Activity log | partial: sign-ins, invitations, member changes, client creation / visibility / access, model settings, quota changes, blocked AI requests (Step 2), memory entries and documents added / edited / deleted, memory groups and rights (Step 3), masking events (counts per category), Hide settings and sensitive terms (Step 4), people added to or leaving a conversation, history shared, conversation and client transfers (Step 5) |
+| Activity log | **done** (Step 9): filters by type (access and team, clients, memory and rights, protection, shared conversations, agents and tools, AI and quotas, video), by person and by period (7 / 30 / 90 days / all), 50 events per page with "older" / "newest". Events recorded: sign-ins, invitations, member changes, client creation / visibility / access, model settings, quota changes, blocked AI requests (Step 2), memory entries and documents added / edited / deleted, memory groups and rights (Step 3), masking events (counts per category), Hide settings and sensitive terms (Step 4), people added to or leaving a conversation, history shared, conversation and client transfers (Step 5), tools and agents (Steps 6–7), video renders and blocked renders (Step 8) |
 
 ## 4.9 Platform admin console
 | Feature | Status |
@@ -135,10 +136,11 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Company list, create / suspend | **done** (Step 1) |
 | Plans and seats | **done** (Step 1): seat limit enforced on invitations |
 | Quotas and credits per company | **done** (Step 2): credits used / limit this month per company, "Add credits" for the month (AI credits or video credits, Step 8). Video credit rates per second: Platform → Modèles et tarifs |
-| Usage and estimated AI cost per company (margin view) | partial: requests and estimated AI cost this month per company on the companies list; full margin view in Step 9 |
-| Provider health | not started |
+| Plan prices (for our margins) | **done** (Step 9): monthly price per seat and currency (€ or $) on each plan, set by our team; nothing is billed from it |
+| Usage and estimated AI cost per company (margin view) | **done** (Step 9, `/platform/usage`): per company and per month: seats, AI requests (errors), AI credits, video credits, estimated AI cost in $, revenue (active seats today × price per seat), estimated margin and margin rate (red when negative); totals; exchange rate $ → € set by our team (margins shown as "—" until it is set for euro plans). Company detail (`/platform/companies/[id]`): estimated cost per day, by model, by feature, video; **never per person, never content** |
+| Provider health | **done** (Step 9, `/platform/health`): per provider over 24 h, from our own requests: requests, error rate (refusals by safety filters and too-long requests do not count against the provider), average response time, last success, most frequent error; status Opérationnel / Perturbé / En panne / Pas de trafic / Non configuré; "Tester maintenant" sends a tiny request without customer data with the provider's cheapest model and logs the outcome (platform log). Render queue: waiting, rendering, finished in 24 h, "Bloqué" when videos wait more than 3 minutes or a render stops sending its heartbeat. Document search (embeddings) configured or not |
 | Platform audit log | **done** (Step 1) |
-| No access to customer content (DB policies + server + tests) | **done** for Step 1–4 tables (conversations, messages, attachments, usage rows, quotas, memory entries, documents, passages, suggestions, sources, Hide mappings, sensitive terms, Hide settings: zero rows, tested); every new content table must be added to the test list |
+| No access to customer content (DB policies + server + tests) | **done** (Step 9: the margin view, company detail and provider health return totals only; tests check the columns returned and that no person appears). **Done** for Step 1–8 tables (conversations, messages, attachments, usage rows, quotas, memory entries, documents, passages, suggestions, sources, Hide mappings, sensitive terms, Hide settings: zero rows, tested); every new content table must be added to the test list |
 | Model catalogue, price estimates, credit rates | **done** (Step 2, `/platform/models`): editable, nothing hardcoded; default prices are placeholders to verify |
 
 ## 4.10 Onboarding
@@ -193,26 +195,27 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
-## Tests (Step 8)
+## Tests (Step 9)
 
 | Suite | Command | Result |
 |---|---|---|
-| Unit (…Steps 1–7, **and the render module: compositions found, checked and prepared with our security policy; edit plans checked, fitted to the real clips and turned into FFmpeg arguments without the caption text; caption wrapping; credits; video file recognition; duration and size read from MP4/MOV headers; a video described to the model without being sent**) | `pnpm test` | 204 passed |
-| Integration (Steps 1–8; 8 new, including render jobs in the platform admin's zero-row list: a render reserves video credits at the platform's rate and can be cancelled; nobody outside the conversation, another company or the platform admin can ask for or see a render; only the video agents' answers and only files of the same conversation; the video quota stops renders apart from AI credits, a video grant raises it; no direct write, the queue functions are for the worker only; the worker claims, reports, saves the videos and charges the seconds produced, the video is readable by the participant only; a silent worker's job is re-queued, then failed after 3 attempts) | `pnpm test:integration` | 164 passed |
-| End to end in Chromium (test provider, **render worker running**) | `npx playwright test` with `node worker/dist/index.js` | 63 passed: video 5 (both agents in the library; Motion Design brief + logo → isolated preview → real MP4 1080×1920 of 6 s; Video Editor two clips → plan → MP4s in 16:9 and 9:16 with the right sizes and length; company video credits), agents 7, Confronter 1, tools 5, tour 4, collaboration 7, Hide 5, memory 8, chat 16, foundation 5 |
-| Real model | `pnpm test:smoke` | not run (founder decision: real-model tests at the end, OpenAI account to top up) |
+| Unit (Steps 1–8, **and the consoles: margins in € and $, "—" rather than a wrong figure when a price or the exchange rate is missing, totals in euros; provider status from configuration, traffic and live tests; a stopped render worker spotted; calendar months; every audited action family filed under an activity category**) | `pnpm test` | 214 passed |
+| Integration (Steps 1–9; 8 new: the usage dashboard keeps AI and video credits apart, counts active people, shows no other company and is reserved to the Owner and "usage" Admins; the margin view, company detail and provider health answer our team only, with totals only — the columns are checked and no person appears; the exchange rate and plan prices can only be changed by our team, the rate only through its logged function; a live provider test is logged as metadata only and never shows in a company's log) | `pnpm test:integration` | 172 passed |
+| End to end in Chromium (test provider, render worker running) | `npx playwright test` with `node worker/dist/index.js` | 69 passed, including the consoles 6 (overview "À faire", usage dashboard, activity filters, plan price → revenue and margin per company → company detail without names, provider health with "Tester maintenant") and the tour of every platform page |
+| Real model | `pnpm test:smoke` | not run (founder decision: real-model tests at the end, OpenAI account to top up, Anthropic key to add) |
 | Database rebuilt from the migrations | `pnpm db:reset`, then all integration and e2e tests | OK |
 | Type check (app and worker), lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
-| Worker Docker image | `docker build -f worker/Dockerfile .` | **not verified**: blocked by this environment's network (see known issues) |
+| Worker Docker image | `.github/workflows/worker-image.yml` (built on GitHub's machines) | see the latest run on GitHub (this environment's network blocks the build) |
 
-Screenshots for the founder: `docs/screenshots/step-8/` (automated run, simulated AI texts marked "[TEST]", real videos).
+Screenshots for the founder: `docs/screenshots/step-9/` (consoles) and `docs/screenshots/step-8/` (videos); automated runs, simulated AI texts marked "[TEST]".
 
 **HyperFrames check (BUILD_STEPS Step 8), 2026-10-20:** packages `hyperframes`, `@hyperframes/producer`, `core`, `engine`, `player` 0.8.134 (published 2026-10-05; 0.8.181 the latest that day, the project releases several times a day), licence **Apache-2.0** (LICENSE file in the packages; commercial use, modification and redistribution allowed, with the notice kept). Read: the packages' READMEs, the core documentation (composition rules, common mistakes, template). Requirements: Node ≥ 22, Chrome headless shell, FFmpeg. Findings: the producer README is behind its code (`executeRenderJob(job, projectDir, outputPath, onProgress)`); the engine starts Chromium with `--no-sandbox`; the player supports an opaque-origin sandbox, which we use. All HyperFrames packages are pinned to 0.8.134 (npm overrides) so a release cannot change the renderer silently. **GSAP** (required by HyperFrames compositions) is version 3.15.0 under GSAP's "Standard No Charge" licence: free, including commercially, **except** in tools that let users build visual animations without code in competition with Webflow — see open question 13.
 
 ## Known issues
 
 - **Code location:** the code is on GitHub (`nayfii/projet1`, branch `claude/amazing-davinci-5th459`), not merged into the main branch yet.
-- **The founder cannot click-test yet:** the app runs only inside this container. A preview deployment (Supabase EU project + EU hosting) is needed for hands-on testing.
+- **The founder cannot click-test yet:** the app runs only inside this container. The test deployment is prepared (`docs/DEPLOY.md`: Supabase Frankfurt, Vercel `fra1`, database installed by GitHub Actions) and waits for the founder to create the Supabase and Vercel accounts. This environment cannot reach Supabase or Vercel directly, so the database goes through `.github/workflows/deploy-database.yml`; not yet run against a real hosted project.
+- **Online, videos stay "En attente"** until the render worker is hosted (open question 14). Video clips above 50 MB are refused on Supabase's free plan (storage limit), although the app accepts up to 200 MB.
 - Google sign-in is untested (needs a Google OAuth client). The button stays hidden until `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`.
 - Emails go to the local test inbox (Mailpit). Production needs an SMTP provider; Supabase's default limit of 2 emails/hour must then be raised.
 - No ownership transfer (Owner → someone else) and no company switcher for people in several companies (the database supports several memberships, the UI uses the first active one).
@@ -326,6 +329,12 @@ Screenshots for the founder: `docs/screenshots/step-8/` (automated run, simulate
   - an Admin without access to a restricted client sees it as "Client restreint (nom masqué)" on the rights page, and can still set its rights;
   - documents up to 20 MB, the first 400,000 characters are read and indexed; up to 6 passages of 1,600 characters are given to the AI per question;
   - search by meaning (embeddings) consumes credits like any AI call.
+- **Admin consoles (Step 9):**
+  - margins are **estimates**: AI cost comes from our price tables (placeholders to check) and the tokens returned by the providers, not from their invoices; revenue uses **today's** active seats and the plan's price per seat, so a past month is shown with today's seat count;
+  - the $ → € exchange rate is typed by our team (no automatic rate feed);
+  - provider health is computed from our own customers' requests: a provider nobody used in 24 hours shows "Pas de trafic" until someone tests it; providers do not send us their status;
+  - "Tester maintenant" costs us a few tokens per click (not counted to any company);
+  - the activity log has 50 events per page and no export yet.
 
 ## Founder decisions (Step 7 report, 2026-10-20)
 
@@ -352,3 +361,4 @@ The founder asked to proceed ("je suis prêt à construire le tout") without ans
 12. **Showing the estimated AI cost to customers** — CLAUDE.md §4.8 asks for it on the company usage page, so it is shown (labelled as an estimate). It reveals our approximate cost; confirm, or show credits only.
 13. **GSAP licence (Motion Design)** — HyperFrames compositions are animated with GSAP, whose free licence excludes "tools that allow users to build visual animations without code" competing with Webflow's animation features. Our agent generates animations from a brief, which may fall in that grey zone. Options: ask Webflow for written consent, have a lawyer read the licence, or switch compositions to CSS animations (HyperFrames supports other animation drivers; CLAUDE.md names GSAP, so switching needs your approval). Decision needed before selling Motion Design.
 14. **Render worker hosting** — the worker needs an always-on EU server (or container service) with FFmpeg and Chromium, separate from the app. To choose at Step 10 with the rest of the hosting.
+15. **Test deployment accounts (Step 9)** — to click-test online, the founder creates a Supabase project (Frankfurt) and a Vercel project (Frankfurt), then adds the keys in GitHub and Vercel settings, following `docs/DEPLOY.md`. Both free plans are enough for testing; Vercel's free plan is for non-commercial use, so a paid plan (or another EU host) is needed before selling. Optional: Resend (with a domain) to email people other than the founder.

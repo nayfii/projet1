@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, FormMessage, SubmitButton } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { PlanRow } from "../server/queries";
 import { savePlanAction } from "../server/actions";
 
@@ -49,6 +50,11 @@ export function PlansManager({ header, plans }: { header: { title: string; descr
                     {!p.is_active ? <Badge variant="outline">{t("inactive")}</Badge> : null}
                   </p>
                   {p.price_label ? <p className="text-sm text-muted-foreground">{p.price_label}</p> : null}
+                  <p className="text-[12px] text-muted-foreground">
+                    {p.monthly_price_per_seat === null
+                      ? t("noSeatPrice")
+                      : t("seatPriceValue", { price: format.number(Number(p.monthly_price_per_seat), { style: "currency", currency: p.price_currency }) })}
+                  </p>
                 </div>
                 <Button variant="ghost" size="icon-sm" aria-label={t("editPlan")} onClick={() => setEditing(p)}>
                   <PencilIcon />
@@ -107,6 +113,31 @@ function PlanForm({ plan, onSaved }: { plan: PlanRow | null; onSaved: () => void
       <Field label={t("priceLabel")} htmlFor="plan-price" hint={t("priceLabelHint")}>
         <Input id="plan-price" name="priceLabel" defaultValue={plan?.price_label ?? ""} maxLength={80} />
       </Field>
+      <div className="grid gap-4 sm:grid-cols-[1fr_7rem]">
+        <Field label={t("seatPrice")} htmlFor="plan-seat-price" hint={t("seatPriceHint")}>
+          <Input
+            id="plan-seat-price"
+            name="pricePerSeat"
+            inputMode="decimal"
+            pattern="[0-9]+([.,][0-9]{1,2})?"
+            defaultValue={plan?.monthly_price_per_seat ?? ""}
+          />
+        </Field>
+        <Field label={t("currency")} htmlFor="plan-currency">
+          <Select name="currency" defaultValue={plan?.price_currency ?? "EUR"}>
+            <SelectTrigger id="plan-currency">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(["EUR", "USD"] as const).map((c) => (
+                <SelectItem key={c} value={c}>
+                  {t(`currency${c}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label={t("seatLimit")} htmlFor="plan-seats" hint={t("seatLimitHint")}>
           <Input id="plan-seats" name="seatLimit" type="number" min={0} defaultValue={plan?.seat_limit ?? ""} />

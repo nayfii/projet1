@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // pdfkit reads its font files from its own folder at run time: it must not be bundled.
   serverExternalPackages: ["pdfkit"],
+  // The Motion Design preview's open-source files, copied by scripts/copy-vendor.mjs (read at run time).
+  outputFileTracingIncludes: { "/api/render/vendor/[name]": ["./.vendor/**"] },
   turbopack: {
     rules: {
       "*.css": {

@@ -71,7 +71,7 @@ language plpgsql security definer set search_path = '' as $$
 begin
   if not private.is_platform_admin() then perform private.fail('forbidden'); end if;
   if p_usd_to_eur is not null and (p_usd_to_eur <= 0 or p_usd_to_eur > 100) then perform private.fail('validation'); end if;
-  update public.platform_settings set usd_to_eur = p_usd_to_eur, updated_by = (select auth.uid()), updated_at = now();
+  update public.platform_settings set usd_to_eur = p_usd_to_eur, updated_by = (select auth.uid()), updated_at = now() where id;
   perform private.log_event('platform', null, 'settings.exchange_rate', 'platform_settings', 'usd_to_eur',
     jsonb_build_object('usd_to_eur', p_usd_to_eur));
 end;
@@ -159,13 +159,17 @@ begin
         select e.provider::text as provider,
                count(*) as requests,
                count(*) filter (where e.status = 'error') as errors,
+               -- Errors that say something about the provider itself (a refused or too-long request does not).
+               count(*) filter (where e.status = 'error' and coalesce(e.error_code, '') not in ('content_filtered', 'context_too_long')) as service_errors,
                (select e2.error_code from public.usage_events e2
-                 where e2.provider = e.provider and e2.status = 'error' and e2.created_at >= v_since and e2.error_code is not null
+                 where e2.provider = e.provider and e2.status = 'error' and e2.created_at >= v_since
+                   and e2.error_code is not null and e2.error_code not in ('content_filtered', 'context_too_long')
                  group by e2.error_code order by count(*) desc limit 1) as top_error,
                round(avg(e.latency_ms) filter (where e.status = 'ok' and e.latency_ms is not null)) as avg_latency_ms,
                max(e.created_at) filter (where e.status = 'ok') as last_ok_at,
                max(e.created_at) filter (where e.status = 'error') as last_error_at,
-               count(*) filter (where e.status = 'error' and e.created_at >= now() - interval '1 hour') as errors_last_hour,
+               count(*) filter (where e.status = 'error' and coalesce(e.error_code, '') not in ('content_filtered', 'context_too_long')
+                                  and e.created_at >= now() - interval '1 hour') as errors_last_hour,
                count(*) filter (where e.status = 'ok' and e.created_at >= now() - interval '1 hour') as ok_last_hour
         from public.usage_events e
         where e.created_at >= v_since and e.provider is not null

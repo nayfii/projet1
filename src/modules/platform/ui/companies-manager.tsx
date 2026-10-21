@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { BuildingIcon, CoinsIcon, PlusIcon } from "lucide-react";
@@ -89,7 +90,9 @@ export function CompaniesManager({
               {companies.map((c) => (
                 <tr key={c.id}>
                   <td className="px-4 py-3">
-                    <p className="font-medium">{c.name}</p>
+                    <Link href={`/platform/companies/${c.id}`} className="font-medium hover:underline">
+                      {c.name}
+                    </Link>
                     <p className="text-[13px] text-muted-foreground">{c.ownerEmail ?? t("noOwner")}</p>
                   </td>
                   <td className="px-4 py-3">

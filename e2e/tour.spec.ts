@@ -102,6 +102,8 @@ test("the platform console (our team)", async ({ page }) => {
     ["/platform/plans", "t27-platform-plans"],
     ["/platform/models", "t28-platform-models"],
     ["/platform/audit", "t29-platform-audit"],
+    ["/platform/usage", "t29b-platform-usage"],
+    ["/platform/health", "t29c-platform-health"],
   ]) {
     await visit(page, path, name);
   }

@@ -20,8 +20,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     {
       label: t("monitoring"),
       items: [
-        { href: "/platform/usage", label: t("usage"), icon: "usage", soon: true },
-        { href: "/platform/health", label: t("health"), icon: "health", soon: true },
+        { href: "/platform/usage", label: t("usage"), icon: "usage" },
+        { href: "/platform/health", label: t("health"), icon: "health" },
       ],
     },
   ];

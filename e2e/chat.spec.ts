@@ -255,7 +255,8 @@ test("the usage dashboard shows real counts per person and per model", async () 
   await page.goto("/admin/usage");
   await expect(page.getByText("Requêtes").first()).toBeVisible();
   await expect(page.getByText("Estimation d'après les tarifs publics")).toBeVisible();
-  await expect(page.getByRole("cell", { name: "Claire Martin" })).toBeVisible();
+  // Step 9: people are a ranked list, models a table.
+  await expect(page.getByRole("main").getByText("Claire Martin")).toBeVisible();
   await expect(page.getByRole("cell", { name: /Sonnet 5.5/ })).toBeVisible();
   await shot(page, "30-admin-usage");
 

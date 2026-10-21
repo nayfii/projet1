@@ -13,18 +13,13 @@ import { ShareList } from "@/modules/usage/ui/share-list";
 import { Chart } from "@/modules/conversations/ui/chart";
 import { PeriodSelect } from "@/modules/usage/ui/period-select";
 import { ModelName } from "@/modules/conversations/ui/provider-mark";
+import { Stat } from "@/modules/usage/ui/stat";
+import { UsageTable } from "@/modules/usage/ui/usage-table";
+import { daysOf, monthRange, recentMonths } from "@/modules/usage/period";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("adminNav");
   return { title: t("usage") };
-}
-
-/** Months offered in the period picker: the current one and the 11 before (UTC, like credits). */
-function monthOptions(now = new Date()) {
-  return Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-  });
 }
 
 export default async function AdminUsagePage({ searchParams }: PageProps<"/admin/usage">) {
@@ -32,13 +27,10 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
   const t = await getTranslations("usage");
   const format = await getFormatter();
   const { period } = await searchParams;
-  const months = monthOptions();
-  const selected = typeof period === "string" && months.includes(period) ? period : months[0];
-  const [year, month] = selected.split("-").map(Number);
-  const from = new Date(Date.UTC(year, month - 1, 1));
-  const to = new Date(Date.UTC(year, month, 1));
+  // The current month and the 11 before.
+  const months = recentMonths(12);
+  const { key: selected, from, to, current } = monthRange(period, months);
 
-  const current = selected === months[0];
   const [summary, members, models, memberCredits, quota] = await Promise.all([
     getUsageSummary(ctx.active.companyId, from, to),
     listMembers(ctx.active.companyId),
@@ -60,10 +52,7 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
   });
 
   const totals = summary?.totals;
-  const days = Array.from({ length: Math.round((to.getTime() - from.getTime()) / 86_400_000) }, (_, i) => {
-    const day = new Date(from.getTime() + i * 86_400_000).toISOString().slice(0, 10);
-    return { day, credits: summary?.byDay.find((d) => d.day === day)?.credits ?? 0 };
-  });
+  const days = daysOf(from, to).map((day) => ({ day, credits: summary?.byDay.find((d) => d.day === day)?.credits ?? 0 }));
   const activeMembers = members.filter((m) => m.status === "active").length;
   const limit = quota?.status.companyLimit ?? 0;
   const known = new Set(["chat", "agent", "confronter", "embedding", "memory", "handover", "router"]);
@@ -165,52 +154,5 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
         </div>
       )}
     </PageContainer>
-  );
-}
-
-function Stat({ label, value, hint, meter }: { label: string; value: string; hint?: string; meter?: number }) {
-  return (
-    <Card className="p-5">
-      <p className="text-[13px] text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
-      {meter !== undefined ? (
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div className={meter >= 0.8 ? "h-full rounded-full bg-warning" : "h-full rounded-full bg-brand"} style={{ width: `${Math.max(meter * 100, meter > 0 ? 2 : 0)}%` }} />
-        </div>
-      ) : null}
-      {hint ? <p className="mt-1.5 text-[13px] text-muted-foreground">{hint}</p> : null}
-    </Card>
-  );
-}
-
-function UsageTable({ title, headers, rows }: { title: string; headers: string[]; rows: { key: string; cells: React.ReactNode[] }[] }) {
-  return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-medium">{title}</h2>
-      <Card className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b text-left text-[13px] text-muted-foreground">
-              {headers.map((h, i) => (
-                <th key={h} className={i === 0 ? "px-4 py-2.5 font-medium" : "px-4 py-2.5 text-right font-medium"}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {rows.map((r) => (
-              <tr key={r.key}>
-                {r.cells.map((c, i) => (
-                  <td key={i} className={i === 0 ? "max-w-48 truncate px-4 py-2.5" : "px-4 py-2.5 text-right tabular-nums"}>
-                    {c}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-    </div>
   );
 }

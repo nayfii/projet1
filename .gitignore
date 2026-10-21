@@ -41,3 +41,6 @@ worker/tmp/
 .pnp
 .pnp.*
 smoke-results/
+
+# Motion Design preview files copied from node_modules (scripts/copy-vendor.mjs)
+/.vendor/

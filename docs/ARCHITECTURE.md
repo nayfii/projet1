@@ -180,6 +180,8 @@ A run is a conversation: its first message is the filled form, so Hide, memory p
 | `member_quotas` | personal monthly credit limit overriding the company default (*replaces the planned `quotas` table: the company limit is the plan's monthly credits + grants*) | ✓ |
 | `credit_grants` | extra credits for one month, granted by the platform admin | ✓ |
 | `audit_log` | `actor_id`, `action`, `target_type`, `target_id`, `metadata` (no content), `scope` (company / platform) | ✓ (null for platform events) |
+| `plans` (Step 9 columns) | `monthly_price_per_seat`, `price_currency` (EUR / USD): for our margin view only, nothing is billed from them | – |
+| `platform_settings` | single row: `usd_to_eur` (exchange rate typed by our team), written only through `platform_set_exchange_rate` (logged) | – |
 | `render_jobs` | `kind` (motion / video_edit), `status` (queued / running / succeeded / failed / cancelled), `progress`, `input` (composition or edit plan), `output_paths`, `error`, `attempts`, `locked_by`, `heartbeat_at`, `credits_reserved`, `credits_charged` | ✓ |
 
 ---
@@ -440,3 +442,9 @@ typed message / attachments / retrieved excerpts
 - **Run form**: a `videos` field type (Video Editor only; company tools cannot use it) sends clips to `render-media` before the first message; they are attachments of kind `video` (column `bucket`, `media`).
 - **Test provider**: writes a small valid composition (format and duration from the form, the attached logo) or an edit plan over the attached clips, so the e2e tests make real videos.
 - **Activity log**: `render.requested`, `render.completed`, `render.failed` (metadata only), refusals for lack of video credits as `ai.request_blocked` (`quota_video`), rate changes and video grants on the platform log.
+
+## 20. Implementation notes (Step 9)
+
+- **Database** (`20261027000001_admin_consoles.sql`): `company_usage_summary` v2 (AI credits only in the totals, plus active people, by feature, by day; video credits and renders apart), `platform_usage_overview` (one row per company: plan price, active seats, requests, errors, AI and video credits, estimated cost), `platform_company_usage` (per day, model, feature, video; no person), `platform_provider_health` (per provider over N hours; "service errors" exclude `content_filtered` and `context_too_long`; render queue counts and heartbeat), `platform_log_provider_test`, `platform_set_exchange_rate`. All are SECURITY DEFINER with the caller checked first (`has_admin_scope(…, 'usage')` or `is_platform_admin()`).
+- **Company console**: overview "À faire" list computed on the server from the same functions as the pages it links to (`/admin`); usage dashboard reuses the answer chart component (`Chart`) and two small shared pieces (`usage/ui/stat.tsx`, `usage/ui/usage-table.tsx`); months are calendar months in UTC (`usage/period.ts`), like credits. Activity log filters are URL parameters (`category`, `actor`, `period`, `before`) turned into `action like 'prefix%'` filters (`audit/categories.ts`), keyset paging on `created_at`.
+- **Platform console**: margins computed in `platform/margin.ts` (pure, unit-tested): revenue = active seats × price per seat; cost converted with our exchange rate, "—" when a conversion is missing rather than a wrong figure. Provider status in `platform/health.ts` (pure, unit-tested): not configured → no traffic → down (only errors in the last hour) → degraded (errors in the last hour or > 5 % over 24 h) → operational; a live test newer than the last real request wins. "Tester maintenant" (`testProviderAction`) streams a 256-token answer from the provider's cheapest enabled model with a fixed prompt and logs only ok / code / latency.
