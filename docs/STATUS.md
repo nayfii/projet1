@@ -114,7 +114,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Customer Service — Feedback Synthesis | **done**: reviews or e-mails (files or pasted) → themes table (mentions, sentiment, quote), recommended actions |
 | Management — Meeting Minutes (incl. audio file) | **partial**: notes or transcript (typed or a file) → minutes, decisions, actions table (owner, due date), open questions. **Audio files are not accepted yet** (open question 8: needs a speech-to-text provider) |
 | Management — Weekly Dashboard | **done**: data files + indicators → indicators table, chart, highlights, risks, priorities; "?" when a figure is missing |
-| Render worker container (Chromium, FFmpeg, HyperFrames) + DB job queue | **done** (Step 8), image not built here: `worker/` (Node 22, HyperFrames 0.8.134, FFmpeg, Chromium headless shell, Inter font) with a Postgres queue (`render_jobs`): reservation, claim with SKIP LOCKED, heartbeat and progress, cancel, retries (3), stuck jobs re-queued after 3 minutes, failure releases the credits. Tested by running the worker directly on Node 22 in this container (real renders in the e2e tests). The Docker image could not be built here (network policy: Docker Hub rate limit, Debian mirrors blocked); to build at deployment (Step 10) |
+| Render worker container (Chromium, FFmpeg, HyperFrames) + DB job queue | **done** (Step 8; image built on GitHub since Step 9): `worker/` (Node 22, HyperFrames 0.8.134, FFmpeg, Chromium headless shell, Inter font) with a Postgres queue (`render_jobs`): reservation, claim with SKIP LOCKED, heartbeat and progress, cancel, retries (3), stuck jobs re-queued after 3 minutes, failure releases the credits. Tested by running the worker directly on Node 22 in this container (real renders in the e2e tests). The Docker image cannot be built in this environment (network policy), so GitHub builds it at every change (`.github/workflows/worker-image.yml`, first build 2026-10-21: FFmpeg 5.1, Node 22, Inter font and Chrome headless shell present). Not yet hosted, and no full render run inside the container yet |
 | Dedicated video / motion credit quota | **done** (Step 8): video credits per plan (`plans.video_credits`) + video grants by our team, reserved when a render is asked, charged for the seconds really produced (never more than reserved), released on failure or cancel; 80 % warning under the button, hard stop at 100 % (logged in the activity log). Rates per second of video are set by our team (Platform → Modèles et tarifs), nothing hardcoded |
 
 ## 4.8 Company admin console
@@ -205,7 +205,7 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 | Real model | `pnpm test:smoke` | not run (founder decision: real-model tests at the end, OpenAI account to top up, Anthropic key to add) |
 | Database rebuilt from the migrations | `pnpm db:reset`, then all integration and e2e tests | OK |
 | Type check (app and worker), lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
-| Worker Docker image | `.github/workflows/worker-image.yml` (built on GitHub's machines) | see the latest run on GitHub (this environment's network blocks the build) |
+| Worker Docker image | `.github/workflows/worker-image.yml` (built on GitHub's machines) | builds (run 1, 2026-10-21); tools checked inside; a render inside the container is still to try once it is hosted |
 
 Screenshots for the founder: `docs/screenshots/step-9/` (consoles) and `docs/screenshots/step-8/` (videos); automated runs, simulated AI texts marked "[TEST]".
 
@@ -283,7 +283,7 @@ Screenshots for the founder: `docs/screenshots/step-9/` (consoles) and `docs/scr
   - the Application Review Assistant's rules are instructions to the model: tested for real on one French and one English example (two applications each): no score, ranking or preference, but a model can still fail; the notice tells the employer a person decides;
   - Motion Design and Video Editor come with the render worker in Step 8.
 - **Video agents and the render worker (Step 8):**
-  - **the worker's Docker image was not built here** (Docker Hub rate limit, then Debian package mirrors blocked by this environment's network policy). The same code was run directly on Node 22 here and made every video of the tests; the image must be built and checked at deployment (Step 10);
+  - the worker's Docker image cannot be built in this environment (network policy); GitHub builds it at every change and checks the tools inside (since Step 9). The same code, run directly on Node 22 here, made every video of the tests; a render inside the container itself is still to try once it is hosted;
   - the worker needs its own server (a few CPU cores and 4 GB of memory to start) in the EU, with access to Supabase only; it uses the Supabase service key, kept away from the rendering process (see SECURITY.md);
   - HyperFrames starts Chromium without its own sandbox: AI-written code runs as a separate user without the keys, behind a policy that blocks any request outside the job folder;
   - the AI cannot see or hear the Video Editor's clips (only name, length, size): edits like "keep the best moments" are a guess, and the AI says so. No speech-to-text subtitles (open question 8), no music, no transitions;
