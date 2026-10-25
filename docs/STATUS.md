@@ -200,8 +200,8 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 | Suite | Command | Result |
 |---|---|---|
 | Unit (Steps 1–9, and the security fixes: placeholders written by people made inert, answers restoring only what the model was shown, values already protected replaced in the instructions, redirects resolved like the browser does) | `pnpm test` | 223 passed |
-| Integration (Steps 1–9; 6 new from the security review: unconfirmed accounts cannot take an invitation, a deactivated employee cannot hand a client over, handovers and AI suggestions disappear with the access, pending suggestions stay private to their proposer, seats cannot be exceeded by reactivation, server-only functions stay closed) | `pnpm test:integration` | 178 passed |
-| End to end in Chromium (test provider, render worker running) | `npx playwright test` with `node worker/dist/index.js` | see below: the **launch scenario of CLAUDE.md §10** (`e2e/launch.spec.ts`, 15 steps, five people in five browsers, a real MP4) plus every earlier spec |
+| Integration (Steps 1–9; 6 new from the security review: unconfirmed accounts cannot take an invitation, a deactivated employee cannot hand a client over, handovers and AI suggestions disappear with the access, pending suggestions stay private to their proposer, seats cannot be exceeded by reactivation, server-only functions stay closed, passwords cleared by the server only) | `pnpm test:integration` | 179 passed |
+| End to end in Chromium (test provider, render worker running) | `npx playwright test` with `node worker/dist/index.js` | 83 passed, including the **launch scenario of CLAUDE.md §10** (`e2e/launch.spec.ts`, 15 steps in 14 tests, five people in five browsers, a real MP4), run again on a database rebuilt from the migrations |
 | Real model | `pnpm test:smoke` | not run (founder decision: real-model tests once keys and credit exist) |
 | Database rebuilt from the migrations | `pnpm db:reset`, then all integration and e2e tests | OK |
 | Type check (app and worker), lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
