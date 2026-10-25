@@ -1,6 +1,6 @@
 # AI Workspace for SMEs (working name)
 
-One minimalist workspace where a small company's employees use ChatGPT, Claude and Gemini with a shared company memory and per-client memories. Product spec: [`CLAUDE.md`](CLAUDE.md). Progress: [`docs/STATUS.md`](docs/STATUS.md). Design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Security and data flows to AI providers: [`docs/SECURITY.md`](docs/SECURITY.md).
+One minimalist workspace where a small company's employees use ChatGPT, Claude and Gemini with a shared company memory and per-client memories. Product spec: [`CLAUDE.md`](CLAUDE.md). Progress: [`docs/STATUS.md`](docs/STATUS.md). Design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Security and data flows to AI providers: [`docs/SECURITY.md`](docs/SECURITY.md). What is ready and what comes next: [`docs/ROADMAP.md`](docs/ROADMAP.md). Putting it online (EU): [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Run it locally
 
@@ -23,7 +23,8 @@ pnpm typecheck && pnpm lint      # types and lint
 pnpm test                        # unit tests
 pnpm test:integration            # isolation tests against local Supabase
 pnpm build && AI_FAKE_PROVIDER=true pnpm start &       # simulated AI answers ("[TEST]"), then:
-PLAYWRIGHT_CHROMIUM_PATH=/path/to/chromium npx playwright test   # end-to-end
+(cd worker && npm ci && node build.mjs && SUPABASE_URL=… SUPABASE_SECRET_KEY=… node dist/index.js &)   # render worker (videos)
+PLAYWRIGHT_CHROMIUM_PATH=/path/to/chromium npx playwright test   # end-to-end, including the launch scenario (e2e/launch.spec.ts)
 pnpm test:smoke                  # one tiny real request per configured AI provider (uses the API keys)
 ```
 
@@ -34,3 +35,11 @@ Hide (sensitive data masking) needs `HIDE_ENCRYPTION_KEY` (at least 32 character
 Group conversations use Supabase Realtime (Postgres Changes and private Presence channels). The migrations add `messages` and `conversation_participants` to the `supabase_realtime` publication and authorise the channels; on a hosted project, Realtime must be enabled.
 
 `pnpm db:reset` re-applies the migrations and the DEMO seed. `pnpm db:types` regenerates database types.
+
+## Configure
+
+Every setting is listed, with what it does, in [`.env.example`](.env.example). Server-only secrets (`SUPABASE_SECRET_KEY`, AI keys, `HIDE_ENCRYPTION_KEY`) never get a `NEXT_PUBLIC_` prefix. Plans, prices, credit rates and the model catalogue live in the database and are edited in the platform console (`/platform`), never in code.
+
+## Project layout
+
+`src/app` (pages and API routes), `src/modules/<module>` (identity, organisations, clients, conversations, documents, memory, providers, hide, collaboration, confronter, agents, render, usage, audit, platform), `supabase/migrations` (schema, row-level security, functions), `worker/` (video render worker), `e2e/` and `tests/` (end-to-end, unit and isolation tests), `docs/`.

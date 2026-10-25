@@ -101,7 +101,7 @@ Every AI call is built by our server. Providers receive one self-contained reque
 ## 4. Remaining risks before accepting real customer data
 
 1. Hide is imperfect by nature (see section 2). Real values remain in our database (messages as typed): Hide protects what goes to AI providers, not our own storage.
-2. No production hosting yet: the EU hosting of the app, database and storage is still to be set up (Step 10).
+2. Hosting: a test deployment runs in the EU (Supabase Frankfurt, Vercel `fra1`) on free plans; production plans, backups, monitoring and an incident procedure are still to be set up (`docs/DEPLOY.md`, `docs/ROADMAP.md`).
 3. No per-user rate limiting on the API routes beyond monthly credit quotas.
 4. Prompt injection: a document or message can try to steer the model. Impact is limited today (the model has no tools and cannot act, and agents only produce drafts), but answers can be misleading — for example an invoice or a contract written to change the extracted figures or hide a clause. Agents' outputs must be reviewed by a person; the notices say so.
 5. **Hiring (EU AI Act).** The Application Review Assistant is designed to stay out of automated filtering (no scores, rankings, shortlists or decisions; a person decides; notice shown). Whether a company's use of it falls under the high-risk obligations depends on how it is used; this needs a legal review before the agent is sold for recruitment.
@@ -121,3 +121,43 @@ Every AI call is built by our server. Providers receive one self-contained reque
 19. **Render worker**: it holds the Supabase service key (needed to claim jobs and move files). The rendering of AI-written code is kept away from it (separate process and user, no keys in its environment, blocking policy), but the worker's container should also be limited to network access to Supabase only when deployed, and the key should be replaced by a narrowly scoped role later.
 20. **Chromium without its own sandbox** in the renderer (HyperFrames' launch options): a browser exploit in AI-written code would reach the render user's process. Mitigated by the separate user, the blocking policy and one job folder per render; an isolated VM per render would be stronger.
 21. **GSAP licence** for Motion Design (open question 13 in STATUS.md): a licensing risk, not a security one, to settle before selling the agent.
+22. **Content Security Policy** allows inline scripts (`'unsafe-inline'`, no nonce yet): it blocks loading anything from other sites (images, connections, frames), which is what stops data being sent out, but a nonce-based policy would also contain an injected script.
+23. **`/api/hide/detect`** (the live highlighting while typing) answers which words of a text are on the company's lists: someone could test many names quickly. Requests are signed-in and limited in size, not rate-limited.
+24. **Deploy workflow**: anyone with write access to the repository can run it and change the production database. A protected GitHub "production" environment (required reviewer, main branch only) and actions pinned by commit are to be set up before real customers.
+25. Dependencies use version ranges in `package.json` (the lockfile pins them; installs must use it). One moderate advisory in a sub-dependency of the Excel export (`uuid` through `exceljs`, only reachable with an argument we never pass).
+
+## 5. Security review (Step 10, 2026-10-25)
+
+Three independent reviews (database policies and functions; server routes, actions and AI paths; secrets, logs, configuration and supply chain), each finding traced to the code that runs, then fixed and covered by a test where possible (`tests/integration/security-review.test.ts`, `tests/unit/security-review.test.ts`, `e2e/launch.spec.ts`).
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | Sign-up without e-mail confirmation: an account created for someone else's address could list and accept the invitations sent to it, or pre-register an address listed in `PLATFORM_ADMIN_EMAILS` | critical | **fixed**: confirmation on (`config.toml`, pushed to the hosted project); invitations refused to unconfirmed accounts in SQL; any password on an account is cleared at each sign-in by a server-only function (nobody signs in with a password here) |
+| 2 | Group conversation: a colleague added later could type a placeholder (`[IBAN_1]`) and get the value restored from history they cannot see; same for "Turn into a tool", memory suggestions and handovers | high | **fixed**: placeholder-shaped text written by people, files and documents is made inert before anything; answers restore only placeholders the model was shown, the others are stored inert; AI tasks restore only placeholders present in what the person can read |
+| 3 | A hijacked renderer could make the worker (root) upload any file as a "video", including its own key | medium | **fixed**: the worker reads only the expected output files, as plain files inside the job folder (no links), takes the folder back before reading, measures the videos itself, kills the renderer's whole process group, caps what it reads from it |
+| 4 | Markdown images in answers loaded automatically (a planted instruction could send restored values to an outside server); no Content Security Policy | medium | **fixed**: images in answers are never loaded (their description is shown); CSP limits images, connections, media and frames to our site and our Supabase project; HSTS added |
+| 5 | Values protected by Hide reached providers in clear: the client handover used the original messages; in Manual mode the client's name in the instructions stayed visible | medium | **fixed**: handovers use what the models received; every value already protected in a conversation is replaced in the instructions and memory passages too |
+| 6 | Open redirect after sign-in with control characters (`/\t/evil.com`) | medium | **fixed**: targets resolved like the browser does, same origin only (unit tests) |
+| 7 | Handovers and AI memory suggestions stayed readable after losing access; pending suggestions readable by other writers of the memory | medium | **fixed** in the policies (tests) |
+| 8 | A deactivated employee could still hand a restricted client over | medium | **fixed** (test) |
+| 9 | Video credits: a render could be asked for a shorter length than its composition | medium | **fixed**: the worker refuses a composition or plan longer than what was reserved |
+| 10 | Seat limit could be exceeded by reactivating someone | low | **fixed** (trigger, test) |
+| 11 | Server-only functions re-opened by later blanket grants; helper functions executable by anonymous callers | low | **fixed** (test) |
+| 12 | Signed download links without `Cache-Control: no-store`; extension lookups with `in` | low | **fixed** |
+| 13 | Actions that start an AI task did not check the conversation belongs to the company being worked in (people in several companies) | low | **fixed** |
+| 14 | Deploy workflow gave every secret to every step and passed the password on the command line | medium | **fixed** (per-step secrets); environment protection and pinned actions: see risk 24 |
+| 15 | Confronter on a tool's answer uses the company's models, not only the tool's allowed models | low | accepted for now (product setting, not a data boundary) |
+| 16 | `/api/hide/detect` can be used to test names | low | open (risk 23) |
+
+Checked and found sound by the reviews: row-level security on all 37 tables, no table rights for anonymous callers, every SECURITY DEFINER function sets its search path and checks the caller first, the platform admin reaches no content table, storage or real-time channel, restricted clients and group starting points are enforced in the database, usage and credits cannot be written by users, no secret in the repository or the browser bundle, logs carry codes and ids only, file uploads are checked by type, size and content, exports neutralise spreadsheet formulas, no claims of certifications or compliance.
+
+## 6. What an external security audit should check
+
+1. **Tenant isolation**, by an attacker holding a valid account in another company: every REST table, RPC, storage path and real-time channel (the database is reachable directly with the public key, not only through the app).
+2. **Restricted clients and group conversations**: the permission intersection for the AI (memory, history, Source Proof), history sharing and transfers, including through the AI ("prompt" attacks asking for other clients' data).
+3. **Hide**: detection gaps that matter for the customers' data, the placeholder mapping (encryption, key handling), and every path to a provider (chat, files, memory, Confronter, tools, handovers, embeddings).
+4. **Authentication**: magic links, invitation flow, session cookies (readable by scripts with Supabase's defaults), account pre-registration, Google sign-in once enabled.
+5. **Prompt injection** through documents, e-mails given to agents and tools, and what an injected instruction can make the product display or send.
+6. **File handling**: PDF, Word, Excel and video parsing on our servers with hostile files; the render worker and its Chromium (sandbox off) in its deployed container, with network limited to Supabase.
+7. **Platform console**: that our team really cannot reach customer content, and the protection of the service key, the Hide key and the deploy credentials.
+8. **Configuration of the hosted services**: Supabase Auth settings, storage limits, backups, Vercel environment variables and preview deployments, GitHub repository and workflow permissions.

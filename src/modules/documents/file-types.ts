@@ -35,5 +35,5 @@ export const ATTACHMENT_ACCEPT = Object.keys(ATTACHMENT_TYPES)
 
 export function extensionOf(filename: string): AttachmentExtension | null {
   const ext = filename.toLowerCase().split(".").pop() ?? "";
-  return ext in ATTACHMENT_TYPES ? (ext as AttachmentExtension) : null;
+  return Object.hasOwn(ATTACHMENT_TYPES, ext) ? (ext as AttachmentExtension) : null;
 }

@@ -3,7 +3,7 @@ import type { MemberContext } from "@/lib/auth/guards";
 import type { UserClient } from "@/lib/supabase/server";
 import { parseModelJson } from "@/modules/memory/json";
 import { runMemoryTask } from "@/modules/memory/server/ai-tasks";
-import { autoSpans, restorePlaceholders } from "@/modules/hide/mask";
+import { autoSpans, neutralizePlaceholders, restorePlaceholders } from "@/modules/hide/mask";
 import { hideConfigured } from "@/modules/hide/server/crypto";
 import { conversationValues, createEphemeralMasker, getHideSettings, loadDetectionLists } from "@/modules/hide/server/masker";
 import { HANDOVER_SECTIONS, type HandoverSections } from "../handover-sections";
@@ -38,7 +38,7 @@ function toSections(text: string, restore: (value: string) => string): HandoverS
 /** Draft for a conversation, from the messages the sender can see (as the models received them). */
 export async function draftConversationHandover(supabase: UserClient, ctx: MemberContext, conversationId: string): Promise<HandoverSections | null> {
   const [{ data: conversation }, { data: messages }, { data: files }] = await Promise.all([
-    supabase.from("conversations").select("title, model_choice").eq("id", conversationId).maybeSingle(),
+    supabase.from("conversations").select("title, model_choice").eq("id", conversationId).eq("company_id", ctx.active.companyId).maybeSingle(),
     supabase.from("messages").select("author_type, author_id, content, masked_content, status").eq("conversation_id", conversationId).is("superseded_at", null).order("seq"),
     supabase.from("conversation_attachments").select("filename").eq("conversation_id", conversationId).not("message_id", "is", null),
   ]);
@@ -60,7 +60,7 @@ export async function draftConversationHandover(supabase: UserClient, ctx: Membe
   const result = await runMemoryTask(supabase, ctx, { system: HANDOVER_SYSTEM, user: material, modelChoice: conversation.model_choice, feature: "handover" });
   if (!result.ok) return null;
   const masked = messages.some((m) => m.masked_content !== null);
-  const values = masked && hideConfigured() ? await conversationValues(conversationId) : new Map<string, string>();
+  const values = masked && hideConfigured() ? await conversationValues(conversationId, [material]) : new Map<string, string>();
   return toSections(result.text, (v) => restorePlaceholders(v, values));
 }
 
@@ -81,15 +81,17 @@ export async function draftClientHandover(supabase: UserClient, ctx: MemberConte
   for (const c of conversations ?? []) {
     const { data: messages } = await supabase
       .from("messages")
-      .select("author_type, content, status")
+      .select("author_type, content, masked_content, status")
       .eq("conversation_id", c.id)
       .is("superseded_at", null)
       .order("seq", { ascending: false })
       .limit(12);
-    const lines = (messages ?? []).reverse().filter((m) => m.content && m.status !== "error").map((m) => `${m.author_type === "assistant" ? "Assistant" : "Participant"}: ${m.content}`);
+    const lines = (messages ?? []).reverse().filter((m) => m.content && m.status !== "error").map((m) => `${m.author_type === "assistant" ? "Assistant" : "Participant"}: ${m.masked_content ?? m.content}`);
     if (lines.length) excerpts.push(`### Conversation: ${c.title ?? "(untitled)"}\n${lines.join("\n")}`);
   }
-  const material = [
+  // Messages go as the chat models received them (values protected by Hide stay protected, whatever the
+  // company's default); their placeholders are made inert so they cannot be mistaken for this task's own.
+  const material = neutralizePlaceholders([
     `Client: ${client.name}${client.sector ? ` (${client.sector})` : ""}`,
     client.description ? `About the client: ${client.description}` : "",
     "",
@@ -103,7 +105,7 @@ export async function draftClientHandover(supabase: UserClient, ctx: MemberConte
     ...excerpts,
   ]
     .join("\n")
-    .slice(0, MAX_MATERIAL);
+    .slice(0, MAX_MATERIAL));
 
   // Hide: with auto-protect on by default, the material is masked before it goes to the AI.
   const settings = await getHideSettings(supabase, companyId);

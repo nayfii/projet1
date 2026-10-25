@@ -22,5 +22,6 @@ export async function GET(request: Request, ctx: RouteContext<"/api/render-jobs/
     .from("render-outputs")
     .createSignedUrl(output.path, 300, params.get("download") ? { download: name } : undefined);
   if (!signed?.signedUrl) return Response.json({ error: "not_found" }, { status: 404 });
-  return Response.redirect(signed.signedUrl, 302);
+  // A short-lived link: never kept by a browser or proxy cache.
+  return new Response(null, { status: 302, headers: { Location: signed.signedUrl, "Cache-Control": "no-store" } });
 }

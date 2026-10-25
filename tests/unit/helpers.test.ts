@@ -15,9 +15,15 @@ describe("safeNextPath (no open redirects after sign-in)", () => {
     ["//evil.example.com", "/"],
     ["/\\evil.example.com", "/"],
     ["javascript:alert(1)", "/"],
+    ["/\t/evil.example.com", "/"],
+    ["/%09/evil.example.com", "/%09/evil.example.com"],
+    [`${APP}//evil.example.com`, "/"],
+    ["/ok\n/evil", "/"],
     [null, "/"],
   ])("%s → %s", (input, expected) => {
     expect(safeNextPath(input, APP)).toBe(expected);
+    // Wherever it is used, the result stays on our site.
+    expect(new URL(safeNextPath(input, APP), APP).origin).toBe(APP);
   });
 });
 

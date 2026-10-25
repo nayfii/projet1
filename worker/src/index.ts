@@ -1,9 +1,13 @@
 import { spawn } from "node:child_process";
-import { chown, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lchown, lstat, mkdir, mkdtemp, open, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { hostname, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import { inspectComposition } from "../../src/modules/render/composition";
+import { editPlanSchema, planDuration } from "../../src/modules/render/edit-plan";
+import { readMp4Media } from "../../src/modules/render/mp4-info";
 import type { ChildMessage, JobFile, RenderResult } from "./protocol";
 
 /**
@@ -22,6 +26,9 @@ const WORKER_ID = `${hostname()}-${process.pid}`;
 const POLL_MS = Number(process.env.RENDER_POLL_MS ?? 2000);
 const JOB_TIMEOUT_MS = Number(process.env.RENDER_JOB_TIMEOUT_MS ?? 15 * 60 * 1000);
 const HEARTBEAT_MS = 10_000;
+const MAX_LINE = 64 * 1024;
+// The render-outputs bucket's limit.
+const MAX_OUTPUT_BYTES = 500 * 1024 * 1024;
 const supabase = createClient(env("SUPABASE_URL"), env("SUPABASE_SECRET_KEY"), { auth: { persistSession: false, autoRefreshToken: false } });
 const childScript = fileURLToPath(new URL("./render-child.js", import.meta.url));
 
@@ -93,7 +100,15 @@ function runChild(job: ClaimedJob, dir: string): Promise<{ ok: true } | { ok: fa
   return new Promise((resolve) => {
     const childEnv = { ...Object.fromEntries(CHILD_ENV_KEYS.flatMap((k) => (process.env[k] ? [[k, process.env[k]!]] : []))), HOME: CHILD_HOME };
     const identity = CHILD_UID !== null ? { uid: CHILD_UID, gid: CHILD_GID! } : {};
-    const child = spawn(process.execPath, [childScript, dir], { env: childEnv, stdio: ["ignore", "pipe", "pipe"], cwd: dir, ...identity });
+    // Its own process group, so the browser and encoder it starts are stopped with it.
+    const child = spawn(process.execPath, [childScript, dir], { env: childEnv, stdio: ["ignore", "pipe", "pipe"], cwd: dir, detached: true, ...identity });
+    const killGroup = () => {
+      try {
+        if (child.pid) process.kill(-child.pid, "SIGKILL");
+      } catch {
+        // Already gone.
+      }
+    };
     let last = { value: 0, stage: "starting" };
     let settled = false;
     let reportedCode: string | null = null;
@@ -102,10 +117,14 @@ function runChild(job: ClaimedJob, dir: string): Promise<{ ok: true } | { ok: fa
       settled = true;
       clearInterval(beat);
       clearTimeout(timer);
+      killGroup();
       current = null;
       resolve(result);
     };
-    const kill = () => child.kill("SIGKILL");
+    const kill = () => {
+      child.kill("SIGKILL");
+      killGroup();
+    };
     current = { job, kill };
     // Heartbeat with the latest progress; stops the render when it was cancelled.
     const beat = setInterval(async () => {
@@ -122,7 +141,8 @@ function runChild(job: ClaimedJob, dir: string): Promise<{ ok: true } | { ok: fa
     child.stdout.on("data", (chunk: Buffer) => {
       buffer += chunk.toString("utf8");
       const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
+      // A line longer than this is not one of our messages: dropped rather than kept in memory.
+      buffer = (lines.pop() ?? "").slice(-MAX_LINE);
       for (const line of lines) {
         let message: ChildMessage | null = null;
         try {
@@ -144,23 +164,62 @@ function runChild(job: ClaimedJob, dir: string): Promise<{ ok: true } | { ok: fa
   });
 }
 
-/** Hands the job folder to the render user. */
+/** Hands the job folder (and everything in it, links included, never their targets) to a user. */
 async function giveTo(dir: string, uid: number, gid: number) {
-  await chown(dir, uid, gid);
-  for (const entry of await readdir(dir, { recursive: true })) await chown(path.join(dir, entry), uid, gid);
+  await lchown(dir, uid, gid);
+  for (const entry of await readdir(dir, { recursive: true })) await lchown(path.join(dir, entry), uid, gid);
+}
+
+const invalidOutput = () => Object.assign(new Error("output"), { code: "invalid_output", retry: false });
+
+/**
+ * The render ran without our keys, but it may have been hijacked by the composition it rendered:
+ * nothing it wrote is trusted. Each video is read only from the expected file in the job folder,
+ * as a plain file (no link), within the size limit, and its length is measured here.
+ */
+async function readOutput(dir: string, format: string): Promise<{ body: Buffer; seconds: number; width: number; height: number }> {
+  const file = path.join(dir, "out", `${format.replace(":", "x")}.mp4`);
+  const info = await lstat(file).catch(() => null);
+  if (!info?.isFile() || info.size > MAX_OUTPUT_BYTES || !(await realpath(file)).startsWith((await realpath(dir)) + path.sep)) throw invalidOutput();
+  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const body = await handle.readFile();
+    const media = await readMp4Media(async (offset, length) => body.subarray(offset, offset + length), body.length);
+    if (!media || !(media.duration > 0)) throw invalidOutput();
+    return { body, seconds: Math.round(media.duration * 100) / 100, width: media.width, height: media.height };
+  } finally {
+    await handle.close();
+  }
 }
 
 async function upload(job: ClaimedJob, dir: string): Promise<{ outputs: unknown[]; seconds: number }> {
   const result = JSON.parse(await readFile(path.join(dir, "result.json"), "utf8")) as RenderResult;
+  const formats = [...new Set(result.outputs.map((o) => o.format))];
+  if (formats.length === 0 || formats.some((f) => !job.formats.includes(f))) throw invalidOutput();
   const outputs = [];
-  for (const out of result.outputs) {
-    const target = `${job.conversation_id}/${job.id}/${out.format.replace(":", "x")}.mp4`;
-    const body = await readFile(path.join(dir, out.file));
-    const { error } = await supabase.storage.from("render-outputs").upload(target, body, { contentType: "video/mp4", upsert: true });
+  let seconds = 0;
+  for (const format of formats) {
+    const media = await readOutput(dir, format);
+    const target = `${job.conversation_id}/${job.id}/${format.replace(":", "x")}.mp4`;
+    const { error } = await supabase.storage.from("render-outputs").upload(target, media.body, { contentType: "video/mp4", upsert: true });
     if (error) throw Object.assign(new Error("upload"), { code: "upload_failed", retry: true });
-    outputs.push({ format: out.format, path: target, bytes: (await stat(path.join(dir, out.file))).size, width: out.width, height: out.height, seconds: out.seconds });
+    outputs.push({ format, path: target, bytes: media.body.length, width: media.width, height: media.height, seconds: media.seconds });
+    seconds = Math.max(seconds, media.seconds);
   }
-  return { outputs, seconds: result.seconds };
+  return { outputs, seconds };
+}
+
+/** The length asked for (and paid for) must cover what the composition or plan really contains. */
+function declaredLengthCovers(job: ClaimedJob): { ok: true } | { ok: false; code: string } {
+  const reserved = Number(job.duration_seconds) + 0.5;
+  if (job.kind === "motion") {
+    const inspected = inspectComposition(String(job.input.composition ?? ""));
+    if (!inspected.ok || inspected.info.duration > reserved || !job.formats.includes(inspected.info.format)) return { ok: false, code: "invalid_composition" };
+    return { ok: true };
+  }
+  const plan = editPlanSchema.safeParse(job.input.plan);
+  if (!plan.success || planDuration(plan.data) > reserved) return { ok: false, code: "invalid_plan" };
+  return { ok: true };
 }
 
 async function handle(job: ClaimedJob) {
@@ -168,6 +227,12 @@ async function handle(job: ClaimedJob) {
   log("job_started", { job: job.id, kind: job.kind, formats: job.formats, attempt: job.attempts });
   const dir = await mkdtemp(path.join(tmpdir(), "render-"));
   try {
+    const covered = declaredLengthCovers(job);
+    if (!covered.ok) {
+      log("job_failed", { job: job.id, code: covered.code, retry: false, ms: Date.now() - started });
+      await fail(job, covered.code, false);
+      return;
+    }
     const files = await download(job, dir);
     const jobFile: JobFile = { kind: job.kind, formats: job.formats, durationSeconds: Number(job.duration_seconds), input: job.input, files };
     await writeFile(path.join(dir, "job.json"), JSON.stringify(jobFile));
@@ -179,6 +244,8 @@ async function handle(job: ClaimedJob) {
       await fail(job, result.code, result.retry);
       return;
     }
+    // The render user may not change anything any more before the videos are read.
+    if (CHILD_UID !== null) await giveTo(dir, process.getuid?.() ?? 0, process.getgid?.() ?? 0);
     await progress(job, 99, "uploading");
     const { outputs, seconds } = await upload(job, dir);
     const { error } = await supabase.rpc("render_job_succeeded", { p_job: job.id, p_worker: WORKER_ID, p_outputs: outputs, p_seconds: seconds });

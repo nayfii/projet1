@@ -161,6 +161,8 @@ export async function suggestFromConversationAction(input: { conversationId: str
     .from("conversations")
     .select("id, client_id, model_choice")
     .eq("id", parsed.data.conversationId)
+    // The company being worked in: its memory and its credits (someone may belong to several companies).
+    .eq("company_id", ctx.active.companyId)
     .maybeSingle();
   if (!conversation) return { ok: false, error: "not_found" };
 
@@ -189,7 +191,7 @@ export async function suggestFromConversationAction(input: { conversationId: str
   const items = parseModelJson(result.text);
   // Placeholders in the proposals are turned back into real values for the person who reviews them.
   const masked = (messages ?? []).some((m) => m.masked_content !== null);
-  const values = masked && hideConfigured() ? await conversationValues(conversation.id) : new Map<string, string>();
+  const values = masked && hideConfigured() ? await conversationValues(conversation.id, [transcript]) : new Map<string, string>();
   const valid = (Array.isArray(items) ? items : [])
     .map((i) =>
       entrySchema.safeParse({

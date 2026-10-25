@@ -1133,6 +1133,9 @@ isOneToOne: false
 "cancel_render_job":
 { Args: { "p_job": string }; Returns: undefined
                            },
+"clear_user_password":
+{ Args: { "p_user": string }; Returns: undefined
+                           },
 "company_usage_summary":
 { Args: { "p_company": string,"p_from": string,"p_to": string }; Returns: Json
                            },

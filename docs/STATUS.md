@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 9 (admin consoles), 2026-10-21.
+Last update: Step 10 (full scenario, security review, documentation), 2026-10-25.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -195,19 +195,21 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
-## Tests (Step 9)
+## Tests (Step 10)
 
 | Suite | Command | Result |
 |---|---|---|
-| Unit (Steps 1–8, **and the consoles: margins in € and $, "—" rather than a wrong figure when a price or the exchange rate is missing, totals in euros; provider status from configuration, traffic and live tests; a stopped render worker spotted; calendar months; every audited action family filed under an activity category**) | `pnpm test` | 214 passed |
-| Integration (Steps 1–9; 8 new: the usage dashboard keeps AI and video credits apart, counts active people, shows no other company and is reserved to the Owner and "usage" Admins; the margin view, company detail and provider health answer our team only, with totals only — the columns are checked and no person appears; the exchange rate and plan prices can only be changed by our team, the rate only through its logged function; a live provider test is logged as metadata only and never shows in a company's log) | `pnpm test:integration` | 172 passed |
-| End to end in Chromium (test provider, render worker running) | `npx playwright test` with `node worker/dist/index.js` | 69 passed, including the consoles 6 (overview "À faire", usage dashboard, activity filters, plan price → revenue and margin per company → company detail without names, provider health with "Tester maintenant") and the tour of every platform page |
-| Real model | `pnpm test:smoke` | not run (founder decision: real-model tests at the end, OpenAI account to top up, Anthropic key to add) |
+| Unit (Steps 1–9, and the security fixes: placeholders written by people made inert, answers restoring only what the model was shown, values already protected replaced in the instructions, redirects resolved like the browser does) | `pnpm test` | 223 passed |
+| Integration (Steps 1–9; 6 new from the security review: unconfirmed accounts cannot take an invitation, a deactivated employee cannot hand a client over, handovers and AI suggestions disappear with the access, pending suggestions stay private to their proposer, seats cannot be exceeded by reactivation, server-only functions stay closed) | `pnpm test:integration` | 178 passed |
+| End to end in Chromium (test provider, render worker running) | `npx playwright test` with `node worker/dist/index.js` | see below: the **launch scenario of CLAUDE.md §10** (`e2e/launch.spec.ts`, 15 steps, five people in five browsers, a real MP4) plus every earlier spec |
+| Real model | `pnpm test:smoke` | not run (founder decision: real-model tests once keys and credit exist) |
 | Database rebuilt from the migrations | `pnpm db:reset`, then all integration and e2e tests | OK |
 | Type check (app and worker), lint, production build | `pnpm typecheck`, `pnpm lint`, `pnpm build` | OK |
-| Worker Docker image | `.github/workflows/worker-image.yml` (built on GitHub's machines) | builds (run 1, 2026-10-21); tools checked inside; a render inside the container is still to try once it is hosted |
+| Worker Docker image | `.github/workflows/worker-image.yml` (built on GitHub's machines) | builds; tools checked inside; a render inside the container is still to try once it is hosted |
 
-Screenshots for the founder: `docs/screenshots/step-9/` (consoles) and `docs/screenshots/step-8/` (videos); automated runs, simulated AI texts marked "[TEST]".
+**Launch scenario (CLAUDE.md §10), automated with the simulated AI:** 1. our team creates a plan, the Owner signs up and gets it · 2–3. Olivier and Nathalie (finance) join, Client A restricted to Olivier, Client B open · 4. the Owner adds a Client A document and memory entry · 5. Olivier asks ChatGPT, Source Proof shows the contract passage · 6. Claude continues with the whole conversation · 7. an IBAN and a client name reach the model as placeholders, Olivier sees the real values · 8. a finance question suggests Nathalie · 9. Nathalie added from a chosen message, `@Claude` uses only what both can access, and typing `[IBAN_1]` does not give her Olivier's IBAN · 10. Confronter (three answers, critiques, synthesis) · 11. a conversation becomes a tool, the Owner publishes it, a member finds it · 12. Proposal Writer, then Motion Design renders a real MP4 · 13. Client A handed to Nathalie with a Smart Handover, Olivier loses access · 14. Marc (no access) and Olivier get nothing of Client A by page, file link, API, AI or search · 15. the Owner sees usage and the activity log; our team sees the company's usage and margin but no conversation.
+
+Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `docs/screenshots/step-9/` (consoles), `docs/screenshots/step-8/` (videos); automated runs, simulated AI texts marked "[TEST]".
 
 **HyperFrames check (BUILD_STEPS Step 8), 2026-10-20:** packages `hyperframes`, `@hyperframes/producer`, `core`, `engine`, `player` 0.8.134 (published 2026-10-05; 0.8.181 the latest that day, the project releases several times a day), licence **Apache-2.0** (LICENSE file in the packages; commercial use, modification and redistribution allowed, with the notice kept). Read: the packages' READMEs, the core documentation (composition rules, common mistakes, template). Requirements: Node ≥ 22, Chrome headless shell, FFmpeg. Findings: the producer README is behind its code (`executeRenderJob(job, projectDir, outputPath, onProgress)`); the engine starts Chromium with `--no-sandbox`; the player supports an opaque-origin sandbox, which we use. All HyperFrames packages are pinned to 0.8.134 (npm overrides) so a release cannot change the renderer silently. **GSAP** (required by HyperFrames compositions) is version 3.15.0 under GSAP's "Standard No Charge" licence: free, including commercially, **except** in tools that let users build visual animations without code in competition with Webflow — see open question 13.
 
@@ -335,6 +337,8 @@ Screenshots for the founder: `docs/screenshots/step-9/` (consoles) and `docs/scr
   - provider health is computed from our own customers' requests: a provider nobody used in 24 hours shows "Pas de trafic" until someone tests it; providers do not send us their status;
   - "Tester maintenant" costs us a few tokens per click (not counted to any company);
   - the activity log has 50 events per page and no export yet.
+- **Security review (Step 10):** 16 findings, 14 fixed with tests, 2 accepted or open (SECURITY.md §5); remaining hardening before real customers in SECURITY.md risks 22–25. No external audit yet.
+- **E-mail confirmation is now required** (it was off): new accounts confirm from their mailbox. On the hosted project this goes out with the next database update; Supabase's default "Confirm your signup" e-mail then replaces the magic link for a first sign-in.
 
 ## Founder decisions (Step 7 report, 2026-10-20)
 

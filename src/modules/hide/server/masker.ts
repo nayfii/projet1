@@ -7,6 +7,7 @@ import {
   DEFAULT_MODES,
   HIDE_MODES,
   isAutoCategory,
+  PLACEHOLDER_PATTERN,
   placeholderPrefix,
   type HideCategory,
   type HideCounts,
@@ -14,7 +15,7 @@ import {
   type Span,
 } from "../categories";
 import { detectSensitive, type DetectionLists } from "../detect";
-import { applyPlaceholders, canonicalValue, restorePlaceholders, StreamRestorer } from "../mask";
+import { applyPlaceholders, canonicalValue, protectValues, restorePlaceholders, StreamRestorer } from "../mask";
 import { decryptValue, encryptValue, valueHash } from "./crypto";
 import { assignPlaceholders, loadCompanyLists } from "./store";
 
@@ -41,7 +42,9 @@ export type Masker = {
   /** Masks several texts at once; new values get the next placeholders of their category. */
   mask(items: MaskItem[]): Promise<{ masked: string; counts: HideCounts }[]>;
   restore(text: string): string;
-  /** `only`: restore just these placeholders (group conversations: those the model was shown). */
+  /** Replaces every value already protected in this conversation by its placeholder (facts, passages). */
+  protect(text: string): string;
+  /** `only`: restore just these placeholders (group conversations: those the model was shown); others are made inert. */
   restorer(only?: ReadonlySet<string>): StreamRestorer;
 };
 
@@ -79,7 +82,8 @@ export async function createConversationMasker(conversationId: string, lists: De
       return items.map((item) => applyPlaceholders(item.text, item.spans, (category, value) => placeholders.get(hashOf(category, value)) ?? `[${placeholderPrefix(category)}_0]`));
     },
     restore: (text) => restorePlaceholders(text, values),
-    restorer: (only) => new StreamRestorer(only ? new Map([...values].filter(([placeholder]) => only.has(placeholder))) : values),
+    protect: (text) => protectValues(text, values),
+    restorer: (only) => (only ? new StreamRestorer(new Map([...values].filter(([placeholder]) => only.has(placeholder))), true) : new StreamRestorer(values)),
   };
 }
 
@@ -106,13 +110,22 @@ export function createEphemeralMasker(lists: DetectionLists): Masker {
       );
     },
     restore: (text) => restorePlaceholders(text, values),
+    protect: (text) => protectValues(text, values),
     restorer: (only) => new StreamRestorer(only ? new Map([...values].filter(([placeholder]) => only.has(placeholder))) : values),
   };
 }
 
-/** Real values of a conversation's placeholders, to restore an AI task's output (e.g. memory suggestions). */
-export async function conversationValues(conversationId: string): Promise<Map<string, string>> {
+/**
+ * Real values of a conversation's placeholders, to restore an AI task's output (e.g. memory
+ * suggestions): only those that appear in `shown`, the texts the task sent to the model (read with
+ * the person's own rights). A placeholder from history the person cannot see is never restored.
+ */
+export async function conversationValues(conversationId: string, shown: string[]): Promise<Map<string, string>> {
+  const visible = new Set(shown.flatMap((text) => [...text.matchAll(PLACEHOLDER_PATTERN)].map((m) => m[0])));
   const values = new Map<string, string>();
-  for (const r of await assignPlaceholders(conversationId, [])) values.set(r.placeholder, decryptValue(r.ciphertext));
+  if (visible.size === 0) return values;
+  for (const r of await assignPlaceholders(conversationId, [])) {
+    if (visible.has(r.placeholder)) values.set(r.placeholder, decryptValue(r.ciphertext));
+  }
   return values;
 }

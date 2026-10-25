@@ -41,7 +41,7 @@ export async function draftToolAction(input: { conversationId: string }): Promis
   if (!parsed.success) return { ok: false, error: "validation" };
   const supabase = await createClient();
   const [{ data: conversation }, { data: messages }] = await Promise.all([
-    supabase.from("conversations").select("id, title, model_choice").eq("id", parsed.data.conversationId).maybeSingle(),
+    supabase.from("conversations").select("id, title, model_choice").eq("id", parsed.data.conversationId).eq("company_id", ctx.active.companyId).maybeSingle(),
     supabase
       .from("messages")
       .select("author_type, content, masked_content, status")
@@ -102,7 +102,7 @@ export async function draftToolAction(input: { conversationId: string }): Promis
   const draftText = JSON.stringify(tool);
   const specific = new RegExp(PLACEHOLDER_PATTERN.source).test(draftText);
   if (specific && hideConfigured()) {
-    const values = await conversationValues(parsed.data.conversationId);
+    const values = await conversationValues(parsed.data.conversationId, [transcript]);
     tool = JSON.parse(restorePlaceholders(draftText, values)) as ToolInput;
   }
   return { ok: true, data: { tool, aiGenerated: true, specific } };

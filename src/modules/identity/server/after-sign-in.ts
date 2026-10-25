@@ -8,11 +8,15 @@ import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
 
 /**
  * Runs once after a successful sign-in (magic link or Google):
+ * - clears any password on the account: nobody signs in with a password here, so a password set by
+ *   someone who created the account before its owner (without access to the mailbox) stops working
+ *   once the owner signs in;
  * - grants platform admin rights to the emails listed in PLATFORM_ADMIN_EMAILS (verified emails only);
  * - records the sign-in in the company activity log;
  * - applies the user's saved language.
  */
 export async function afterSignIn(supabase: UserClient, user: User) {
+  await createAdminClient().rpc("clear_user_password", { p_user: user.id });
   const email = user.email?.toLowerCase();
   if (email && user.email_confirmed_at && platformAdminEmails().has(email)) {
     const admin = createAdminClient();

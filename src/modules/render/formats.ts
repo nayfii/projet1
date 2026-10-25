@@ -37,7 +37,7 @@ export const VIDEO_ACCEPT = Object.keys(VIDEO_TYPES)
 
 export function videoExtensionOf(filename: string): VideoExtension | null {
   const ext = filename.toLowerCase().split(".").pop() ?? "";
-  return ext in VIDEO_TYPES ? (ext as VideoExtension) : null;
+  return Object.hasOwn(VIDEO_TYPES, ext) ? (ext as VideoExtension) : null;
 }
 
 /** MP4 and MOV start with an "ftyp" box, WebM with the EBML signature. */

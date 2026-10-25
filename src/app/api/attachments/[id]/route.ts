@@ -13,5 +13,6 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/attachments
     .from(data.bucket)
     .createSignedUrl(data.storage_path, 60, { download: data.filename });
   if (!signed?.signedUrl) return Response.json({ error: "not_found" }, { status: 404 });
-  return Response.redirect(signed.signedUrl, 302);
+  // A short-lived link: never kept by a browser or proxy cache.
+  return new Response(null, { status: 302, headers: { Location: signed.signedUrl, "Cache-Control": "no-store" } });
 }

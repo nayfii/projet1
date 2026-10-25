@@ -82,13 +82,32 @@ export function restorePlaceholders(text: string, values: ReadonlyMap<string, st
 }
 
 /**
+ * Turns placeholder-shaped text that our masker did not write into an inert lookalike of the same
+ * length ("[IBAN_1]" → "[IBAN 1]"), except the placeholders in `keep`. Applied to everything people
+ * or documents put in front of the model, so nobody can type "[IBAN_1]" and get a value restored
+ * that they were never shown (a colleague who joined a group conversation later, for example).
+ */
+export function neutralizePlaceholders(text: string, keep?: ReadonlySet<string>): string {
+  return text.replace(PLACEHOLDER_PATTERN, (placeholder) => (keep?.has(placeholder) ? placeholder : placeholder.replace("_", " ")));
+}
+
+/**
  * Restores placeholders in a streamed answer. A placeholder can arrive in pieces ("[CLI" then
  * "ENT_1]"): a possible beginning is held back until it is complete.
  */
 export class StreamRestorer {
   private buffer = "";
 
-  constructor(private readonly values: ReadonlyMap<string, string>) {}
+  /** `neutralizeOthers`: placeholders without a value here are made inert, so they cannot be restored later. */
+  constructor(
+    private readonly values: ReadonlyMap<string, string>,
+    private readonly neutralizeOthers = false,
+  ) {}
+
+  private restore(text: string): string {
+    const restored = restorePlaceholders(text, this.values);
+    return this.neutralizeOthers ? neutralizePlaceholders(restored) : restored;
+  }
 
   push(delta: string): string {
     this.buffer += delta;
@@ -97,12 +116,24 @@ export class StreamRestorer {
     if (open !== -1 && this.buffer.length - open <= 16 && /^\[[A-Z]*_?\d*$/.test(this.buffer.slice(open))) cut = open;
     const out = this.buffer.slice(0, cut);
     this.buffer = this.buffer.slice(cut);
-    return restorePlaceholders(out, this.values);
+    return this.restore(out);
   }
 
   flush(): string {
-    const out = restorePlaceholders(this.buffer, this.values);
+    const out = this.restore(this.buffer);
     this.buffer = "";
     return out;
   }
+}
+
+/** Longest values first, so "Client A Nord" is replaced before "Client A". Whole words only. */
+export function protectValues(text: string, values: ReadonlyMap<string, string>): string {
+  let out = text;
+  for (const [placeholder, value] of [...values].sort((a, b) => b[1].length - a[1].length)) {
+    if (value.trim().length < 2) continue;
+    const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Never inside a placeholder already in the text ("[CLIENT_1]" when a client is called "Client").
+    out = out.replace(new RegExp(`(?<![\\p{L}\\p{N}[])${escaped}(?![\\p{L}\\p{N}_])`, "giu"), placeholder);
+  }
+  return out;
 }

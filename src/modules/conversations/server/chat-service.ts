@@ -20,7 +20,7 @@ import { retrievePassages } from "@/modules/memory/server/retrieval";
 import { citedPositions, toSourceProofs } from "@/modules/memory/citations";
 import type { KnowledgePassage } from "@/modules/memory/types";
 import { HIDE_MODES, isHideMode, MAX_BLUR_CHARS, PLACEHOLDER_PATTERN, totalCount, type HideMode } from "@/modules/hide/categories";
-import type { StreamRestorer } from "@/modules/hide/mask";
+import { neutralizePlaceholders, type StreamRestorer } from "@/modules/hide/mask";
 import { hideConfigured } from "@/modules/hide/server/crypto";
 import { createConversationMasker, getHideSettings, loadDetectionLists, type Masker } from "@/modules/hide/server/masker";
 import { logMaskingEvent, saveAttachmentMasks, saveMessageMask } from "@/modules/hide/server/store";
@@ -119,7 +119,8 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   let base = visible;
   let target: (typeof visible)[number] | null = null;
   let pending: AttachmentRow[] = [];
-  const newText = input.message?.content.trim() ?? "";
+  // Placeholder-shaped text typed by a person is made inert: only our masker writes placeholders.
+  const newText = neutralizePlaceholders(input.message?.content.trim() ?? "");
   if (input.confront) {
     const question = visible.find((r) => r.id === input.confront!.messageId);
     if (!question || question.author_type !== "user" || !question.content.trim()) return fail("not_found", 404);
@@ -252,12 +253,13 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     .slice(0, 15)
     .map((m) => ({ userId: m.user_id, name: m.profile!.full_name!, expertise: m.expertise }));
   const authors = (authorRows ?? []).map((a) => ({ id: a.id, name: a.full_name?.trim() || "?" }));
+  const inert = (text: string | null | undefined) => (text ? neutralizePlaceholders(text) : (text ?? null));
   const facts = {
-    userName: ctx.profile.fullName,
-    companyDescription: companyRes.data?.description ?? null,
-    client: clientRes.data ? { name: clientRes.data.name, sector: clientRes.data.sector, description: clientRes.data.description } : null,
-    people: [...colleagues.map((c) => c.name), ...authors.map((a) => a.name)],
-    toolInstructions: agent?.instructions ?? null,
+    userName: inert(ctx.profile.fullName),
+    companyDescription: inert(companyRes.data?.description),
+    client: clientRes.data ? { name: neutralizePlaceholders(clientRes.data.name), sector: inert(clientRes.data.sector), description: inert(clientRes.data.description) } : null,
+    people: [...colleagues.map((c) => neutralizePlaceholders(c.name)), ...authors.map((a) => neutralizePlaceholders(a.name))],
+    toolInstructions: inert(agent?.instructions),
   };
   const turn = masker
     ? await maskTurn(masker, {
@@ -265,11 +267,24 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         autoCategories,
         choices: { blur: input.hide?.blur ?? [], unblur: input.hide?.unblur ?? [] },
         text: input.message ? newText : null,
-        attachments: pending,
+        attachments: pending.map((a) => ({ ...a, extracted_text: inert(a.extracted_text) })),
         facts,
       })
     : null;
-  const promptFacts = turn?.facts ?? facts;
+  const maskedFacts = turn?.facts ?? facts;
+  // Whatever is already protected in this conversation (by any mode) stays protected in the instructions.
+  const shield = (text: string | null | undefined) => (text && masker ? masker.protect(text) : (text ?? null));
+  const promptFacts = masker
+    ? {
+        ...maskedFacts,
+        userName: shield(maskedFacts.userName),
+        companyDescription: shield(maskedFacts.companyDescription),
+        client: maskedFacts.client
+          ? { name: shield(maskedFacts.client.name)!, sector: shield(maskedFacts.client.sector), description: shield(maskedFacts.client.description) }
+          : null,
+        toolInstructions: shield(maskedFacts.toolInstructions),
+      }
+    : maskedFacts;
 
   // Save the user's message with their own session (RLS proves they may write here).
   let userMessage: Extract<ChatStreamEvent, { type: "meta" }>["userMessage"] = null;
@@ -352,7 +367,16 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   const embeddingQuery = input.message ? (turn?.message ?? newText) : (lastUser?.masked_content ?? routedText);
   const knowledge =
     agent?.memoryScope === "none" ? [] : await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText, embeddingQuery, restrictTo });
-  const promptKnowledge = masker ? await maskPassages(masker, knowledge, hideModes, autoCategories) : knowledge;
+  // Documents and notes are written by people too: placeholder-shaped text in them is made inert.
+  const inertKnowledge = knowledge.map((p) => ({ ...p, content: neutralizePlaceholders(p.content), title: neutralizePlaceholders(p.title) }));
+  const promptKnowledge = masker
+    ? (await maskPassages(masker, inertKnowledge, hideModes, autoCategories)).map((p) => ({
+        ...p,
+        content: masker!.protect(p.content),
+        title: masker!.protect(p.title),
+        clientName: p.clientName ? masker!.protect(p.clientName) : p.clientName,
+      }))
+    : inertKnowledge;
   const system = buildSystemPrompt({
     company: { name: companyRes.data?.name ?? ctx.active.companyName, industry: companyRes.data?.industry, description: promptFacts.companyDescription },
     client: promptFacts.client,
@@ -412,6 +436,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         userMessage,
         target: target ? { id: target.id, complete: target.status === "complete" } : null,
         restorer: masker?.restorer(shownPlaceholders) ?? null,
+        shownPlaceholders,
         contextLimited: group && (historyLimited || memoryLimited),
         colleagues: colleagues.map((c) => ({ userId: c.userId, name: c.name })),
       }),
@@ -430,6 +455,8 @@ async function* runTurn(p: {
   target: { id: string; complete: boolean } | null;
   /** Hide: puts real values back in place of placeholders as the answer streams. */
   restorer: StreamRestorer | null;
+  /** Group conversations: the placeholders the model was shown (the only ones restored). */
+  shownPlaceholders?: ReadonlySet<string>;
   contextLimited: boolean;
   /** Who Can Help: colleagues the answer may suggest (real names). */
   colleagues: SuggestedColleague[];
@@ -510,7 +537,9 @@ async function* runTurn(p: {
     shown += rest;
     yield { type: "delta", text: rest };
   }
-  const masked = p.restorer && shown !== text ? text : null;
+  // In a group, placeholders the model was not shown are stored inert too, so a later turn cannot revive them.
+  const modelText = p.shownPlaceholders ? neutralizePlaceholders(text, p.shownPlaceholders) : text;
+  const masked = p.restorer && shown !== modelText ? modelText : null;
   const suggested = suggestedColleagues(shown, p.colleagues).map((c) => ({ userId: c.userId, name: c.name }));
 
   const aborted = stop.signal.aborted && !providerError;
@@ -600,7 +629,7 @@ async function toHistory(
           if (a.kind === "video") return { filename: a.filename, kind: "video" as const, media: (a.media as HistoryAttachment["media"]) ?? null };
           if (a.kind !== "image") {
             // Hide: the masked text when Documents mode masked something in this file.
-            return { filename: a.filename, kind: "document" as const, text: a.masked_text ?? a.extracted_text, truncated: a.text_truncated };
+            return { filename: a.filename, kind: "document" as const, text: a.masked_text ?? (a.extracted_text && neutralizePlaceholders(a.extracted_text)), truncated: a.text_truncated };
           }
           let image: HistoryAttachment["image"] = null;
           if (index >= firstImageIndex) {

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ATTACHMENT_TYPES, extensionOf, MAX_ATTACHMENT_BYTES } from "@/modules/documents/file-types";
 import { contentMatchesExtension, extractText } from "@/modules/documents/server/extract";
 import { detectSensitive } from "@/modules/hide/detect";
+import { neutralizePlaceholders } from "@/modules/hide/mask";
 import { loadDetectionLists } from "@/modules/hide/server/masker";
 
 /**
@@ -62,7 +63,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/conversatio
       size_bytes: file.size,
       storage_path: storagePath,
       kind: type.kind,
-      extracted_text: type.kind === "document" ? extracted.text : null,
+      // Placeholder-shaped text in a file is made inert: only our masker writes placeholders.
+      extracted_text: type.kind === "document" ? neutralizePlaceholders(extracted.text) : null,
       text_truncated: extracted.truncated,
     })
     .select("id, filename, kind, size_bytes, text_truncated, extracted_text")

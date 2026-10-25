@@ -107,7 +107,7 @@ Copiez le résultat dans votre gestionnaire de mots de passe : c'est votre `HIDE
    `SMTP_SENDER_EMAIL` = par exemple `no-reply@votre-domaine.fr`, `SMTP_SENDER_NAME` = le nom affiché.
 3. Écrivez à Claude « APP_URL ajouté » : il applique les réglages de connexion (adresse du site, modèles d'e-mails, serveur d'e-mails).
 
-Sans Resend, Supabase envoie lui-même **2 e-mails par heure au maximum, et seulement aux membres de votre équipe Supabase** : cela suffit pour vous connecter vous-même. Ses e-mails sont alors les siens (en anglais, « Your Magic Link ») et le lien doit être ouvert **dans le navigateur où vous l'avez demandé**. Pour un collègue, le lien d'invitation s'affiche aussi à l'écran : vous pouvez le copier et le lui envoyer.
+Sans Resend, Supabase envoie lui-même **2 e-mails par heure au maximum, et seulement aux membres de votre équipe Supabase** : cela suffit pour vous connecter vous-même. Ses e-mails sont alors les siens, en anglais : « Confirm your signup » pour une première connexion (l'adresse doit être confirmée), puis « Your Magic Link ». Le lien doit être ouvert **dans le navigateur où vous l'avez demandé**. Pour un collègue, le lien d'invitation s'affiche aussi à l'écran : vous pouvez le copier et le lui envoyer.
 
 ---
 

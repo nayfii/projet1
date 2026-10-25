@@ -48,7 +48,12 @@ export async function transferConversationAction(input: { conversationId: string
   const parsed = z.object({ conversationId: z.uuid(), toUserId: z.uuid() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
   const supabase = await createClient();
-  const { data: conversation } = await supabase.from("conversations").select("owner_id").eq("id", parsed.data.conversationId).maybeSingle();
+  const { data: conversation } = await supabase
+    .from("conversations")
+    .select("owner_id")
+    .eq("id", parsed.data.conversationId)
+    .eq("company_id", ctx.active.companyId)
+    .maybeSingle();
   if (!conversation) return { ok: false, error: "not_found" };
   if (conversation.owner_id !== ctx.user.id) return { ok: false, error: "owner_only" };
 

@@ -50,6 +50,9 @@ export function Markdown({ children, className, onCite }: { children: string; cl
 }
 
 const components: Components = {
+  // Images in an answer are never loaded: a planted instruction could otherwise make the AI write an
+  // image whose address carries restored values to an outside server. Its description is shown instead.
+  img: ({ alt }) => (alt ? <span className="italic text-muted-foreground">{alt}</span> : null),
   a: ({ href, title, children }) => (
     <a href={href} title={title} target="_blank" rel="noopener noreferrer nofollow">
       {children}
