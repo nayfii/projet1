@@ -348,6 +348,7 @@ Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `doc
 
 ## Founder requests (product framing, 2026-10-30)
 
+- **Business plan, pricing and plans: handled by the founder, separately.** Claude does not work on them for now (2026-10-30). On the framing page, the plans, credit wording, cost display and plan placement are marked "later, handled separately" and left out of the count.
 - **Product name: "Cendr"** — noted by the founder on the framing page (claude.ai artifact "Cadrage de la plateforme"). Not applied in the app yet; CLAUDE.md still says "working name: TBD" until the framing review.
 - **Applications (connected apps), Canva first** — the founder asked to add an agentic "Applications" section: a category in the left sidebar, with apps that can also be called from the chat (e.g. `@Canva`). This moves part of CLAUDE.md §6 (Canva integration, "other integrations") and §4.7 ("No third-party integrations at launch") into scope. **Not built.** The details are on the framing page (which apps first, personal vs company account, confirmation before actions, masked data sent to apps, who enables apps, plan). CLAUDE.md is updated after the framing review, with the founder's approval. The founder adds that Motion Design (and so the Video Editor) would move into Applications, and that the agentic part is a complement, not the core of the project. Technical direction: Canva's official MCP server (OAuth), which needs our platform registered in Canva's developer portal; the credentials go in environment settings.
 
