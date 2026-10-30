@@ -40,6 +40,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdfkit"],
   // The Motion Design preview's open-source files, copied by scripts/copy-vendor.mjs (read at run time).
   outputFileTracingIncludes: { "/api/render/vendor/[name]": ["./.vendor/**"] },
+  // The Tailwind loader's output was served from Turbopack's file-system cache after globals.css changed
+  // (stale design tokens in dev and in production builds, seen at Step 11). Correctness first: no FS cache.
+  experimental: { turbopackFileSystemCacheForBuild: false, turbopackFileSystemCacheForDev: false },
   turbopack: {
     rules: {
       "*.css": {

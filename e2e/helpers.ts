@@ -17,3 +17,9 @@ export async function signIn(page: Page, email: string) {
   await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible();
   await page.goto(await latestLinkFor(email, before));
 }
+
+/** Onboarding: the avatar step comes right after the company is created; most specs skip it. */
+export async function skipAvatarStep(page: Page) {
+  await expect(page.getByRole("heading", { name: "Créez votre avatar" })).toBeVisible();
+  await page.getByRole("button", { name: "Plus tard" }).click();
+}

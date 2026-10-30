@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Step 6, tools (CLAUDE.md §4.6, §4.7, §10 step 11): Olivier turns a conversation into a tool and asks
@@ -29,6 +29,7 @@ test("setup: a company, Client A and Olivier", async () => {
   await ownerPage.getByLabel("Votre nom").fill("Claire Martin");
   await ownerPage.getByLabel("Nom de l'entreprise").fill(`Atelier Outils ${run}`);
   await ownerPage.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(ownerPage);
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
   await expect(ownerPage.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();

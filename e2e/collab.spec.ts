@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Step 5, with two people in two browsers (CLAUDE.md §10, steps 8, 9 and 13): Who Can Help, adding a
@@ -53,6 +53,7 @@ test("setup: Client A is restricted to Olivier, with a memory entry; Nathalie de
   await ownerPage.getByLabel("Votre nom").fill("Claire Martin");
   await ownerPage.getByLabel("Nom de l'entreprise").fill(`Atelier Collab ${run}`);
   await ownerPage.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(ownerPage);
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
   await expect(ownerPage.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();

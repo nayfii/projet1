@@ -7,16 +7,18 @@ import { getCompany, getMyPendingInvitations, listMembers } from "@/modules/orga
 import { OnboardingWizard, type OnboardingStep } from "@/modules/organizations/ui/onboarding-wizard";
 import { listMemorySpaces } from "@/modules/memory/server/queries";
 import type { MemberContext } from "@/lib/auth/guards";
+import { avatarRate } from "@/modules/avatars/server/store";
+import { fakeProviderEnabled } from "@/lib/env";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("onboarding");
   return { title: t("metaTitle") };
 }
 
-const COMPANY_STEPS: OnboardingStep[] = ["company", "invite", "client", "document", "conversation"];
+const COMPANY_STEPS: OnboardingStep[] = ["avatar", "company", "invite", "client", "document", "conversation"];
 
 /**
- * Account → company → company profile → invite → first client → first document → first conversation.
+ * Account → company → avatar → company profile → invite → first client → first document → first conversation.
  * Every step after company creation can be skipped.
  */
 export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
@@ -64,6 +66,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
         .filter((m) => m.status === "active" && m.role !== "owner")
         .map((m) => ({ userId: m.userId, name: m.fullName ?? m.email }))}
       companySpaceId={companySpaceId}
+      avatar={step === "avatar" ? { currentUrl: ctx.profile.avatarUrl, credits: (await avatarRate()).credits, testMode: fakeProviderEnabled() } : undefined}
     />
   );
 }

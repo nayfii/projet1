@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Step 3, in a real browser: company and client memories, documents, Source Proof, saving to memory,
@@ -50,6 +50,7 @@ test("onboarding: the first document goes into the company memory", async () => 
   await page.getByLabel("Votre nom").fill("Claire Martin");
   await page.getByLabel("Nom de l'entreprise").fill(company);
   await page.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
 

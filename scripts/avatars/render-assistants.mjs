@@ -156,6 +156,42 @@ window.renderPersona = (p) => {
   const face = { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
   return { image: canvas.toDataURL("image/webp", 0.92), face };
 };
+// A generic person, used as the result in test mode (no image model called). Same light and
+// framing as the assistants, on the solid background personal avatars are generated with.
+window.renderPerson = () => {
+  const scene = new THREE.Scene();
+  scene.environment = envMap;
+  scene.background = new THREE.Color("#1c1c21");
+  const key = new THREE.DirectionalLight("#fff8f0", 1.6); key.position.set(-2.5, 3, 4); scene.add(key);
+  const fill = new THREE.DirectionalLight("#f0f2ff", 0.5); fill.position.set(3, 0.5, 2.5); scene.add(fill);
+  const rim = new THREE.DirectionalLight("#dfe3ff", 1.6); rim.position.set(0.5, 2.5, -4); scene.add(rim);
+  scene.add(new THREE.HemisphereLight("#ffffff", "#2a2a35", 0.35));
+  const skin = clay("#efc3a2", { roughness: 0.55, sheen: 0.6 });
+  const hair = clay("#4a3428", { roughness: 0.6 });
+  const dark = new THREE.MeshPhysicalMaterial({ color: "#1d1512", roughness: 0.2, clearcoat: 1 });
+  const white = new THREE.MeshBasicMaterial({ color: "#ffffff" });
+  const g = new THREE.Group(); scene.add(g);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), skin); head.scale.set(0.82, 0.92, 0.8); head.position.y = 0.4; g.add(head);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64, 0, Math.PI * 2, 0, Math.PI * 0.52), hair);
+  cap.scale.set(0.87, 0.82, 0.86); cap.position.set(0, 0.52, -0.04); cap.rotation.x = -0.22; g.add(cap);
+  for (const s of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.16, 32, 24), skin); ear.scale.set(0.6, 1, 0.8); ear.position.set(s * 0.8, 0.32, -0.02); g.add(ear);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.105, 48, 32), dark); eye.scale.set(1, 1.15, 0.6); eye.position.set(s * 0.29, 0.38, 0.72); g.add(eye);
+    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.028, 16, 12), white); shine.position.set(s * 0.29 - 0.035, 0.43, 0.79); g.add(shine);
+    const brow = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.16, 8, 16), hair); brow.rotation.z = Math.PI / 2 + s * 0.12; brow.position.set(s * 0.3, 0.6, 0.7); g.add(brow);
+  }
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.09, 32, 24), clay("#e6b08e")); nose.position.set(0, 0.22, 0.8); g.add(nose);
+  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.03, 16, 48, Math.PI), clay("#b5525f", { roughness: 0.4 }));
+  smile.rotation.z = Math.PI; smile.position.set(0, 0.05, 0.73); g.add(smile);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.4, 48), skin); neck.position.y = -0.48; g.add(neck);
+  const top = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), clay("#8d93b8", { roughness: 0.7 })); top.scale.set(1.2, 0.6, 0.76); top.position.y = -1.1; g.add(top);
+  g.rotation.y = -0.1;
+  const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 50);
+  camera.position.set(0, 0.5, 7.2); camera.lookAt(0, 0.12, 0);
+  renderer.render(scene, camera);
+  scene.background = null;
+  return canvas.toDataURL("image/webp", 0.9);
+};
 window.ready = true;
 </script></body></html>`;
 
@@ -178,5 +214,7 @@ for (const persona of PERSONAS) {
   fs.writeFileSync(path.join(outDir, `${persona.id}.webp`), Buffer.from(image.split(",")[1], "base64"));
   faces[persona.id] = Object.fromEntries(Object.entries(face).map(([k, v]) => [k, Math.round(v * 1000) / 1000]));
 }
+const person = await tab.evaluate(() => window.renderPerson());
+fs.writeFileSync(path.join(root, "public/avatars/test-person.webp"), Buffer.from(person.split(",")[1], "base64"));
 await browser.close();
 console.log(JSON.stringify(faces, null, 2));

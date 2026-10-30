@@ -23,6 +23,7 @@ const eslintConfig = defineConfig([
       "src/modules/identity/server/after-sign-in.ts",
       "src/modules/organizations/server/invitation-email.ts",
       "src/modules/usage/server/record.ts",
+      "src/modules/avatars/server/store.ts",
       "src/modules/conversations/server/assistant-writer.ts",
       "src/modules/hide/server/store.ts",
       "src/modules/agents/server/builtin-sync.ts",

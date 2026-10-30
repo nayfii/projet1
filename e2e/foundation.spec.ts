@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Step 1 foundation, as a real user would do it: sign-up by magic link, onboarding, invitations,
@@ -23,6 +23,7 @@ test("owner signs up and completes onboarding", async ({ page }) => {
   await page.getByLabel("Nom de l'entreprise").fill(`Atelier Martin ${run}`);
   await shot(page, "02-onboarding-start");
   await page.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(page);
 
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByLabel("Secteur d'activité").fill("Agence de communication");

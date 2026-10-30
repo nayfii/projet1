@@ -903,14 +903,14 @@ isOneToOne: false
                   ]
                 },"platform_settings": {
                   Row: {
-                    "id": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null
+                    "avatar_cost_usd": number,"avatar_credits": number,"id": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
                   }
                   Update: {
-                    "id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
                   }
                   Relationships: [
                     {
@@ -923,14 +923,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "active_company_id": string | null,"avatar_url": string | null,"created_at": string,"email": string,"full_name": string | null,"id": string,"locale": string | null,"updated_at": string
+                    "active_company_id": string | null,"avatar_path": string | null,"avatar_pending_path": string | null,"avatar_url": string | null,"created_at": string,"email": string,"full_name": string | null,"id": string,"locale": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active_company_id"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email": string,"full_name"?: string | null,"id": string,"locale"?: string | null,"updated_at"?: string
+                    "active_company_id"?: string | null,"avatar_path"?: string | null,"avatar_pending_path"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email": string,"full_name"?: string | null,"id": string,"locale"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "active_company_id"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email"?: string,"full_name"?: string | null,"id"?: string,"locale"?: string | null,"updated_at"?: string
+                    "active_company_id"?: string | null,"avatar_path"?: string | null,"avatar_pending_path"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email"?: string,"full_name"?: string | null,"id"?: string,"locale"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1236,6 +1236,9 @@ isOneToOne: false
                            },
 "platform_provider_health":
 { Args: { "p_hours"?: number }; Returns: Json
+                           },
+"platform_set_avatar_rate":
+{ Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
                            },
 "platform_set_exchange_rate":
 { Args: { "p_usd_to_eur": number }; Returns: undefined

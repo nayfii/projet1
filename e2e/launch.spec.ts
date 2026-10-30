@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * The launch success scenario of CLAUDE.md §10, steps 1 to 15, in one run with five people in five
@@ -85,6 +85,7 @@ test("1. our team creates a plan; the Owner signs up, completes onboarding and g
   await ownerPage.getByLabel("Votre nom").fill("Claire Martin");
   await ownerPage.getByLabel("Nom de l'entreprise").fill(company);
   await ownerPage.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(ownerPage);
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
   await expect(ownerPage.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();

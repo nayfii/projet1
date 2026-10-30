@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Step 6, Confronter (CLAUDE.md §4.5): cost shown before running, three models answer, critique each
@@ -27,6 +27,7 @@ test("Confronter: the cost is shown first, then three answers, critiques and a s
   await page.getByLabel("Votre nom").fill("Claire Martin");
   await page.getByLabel("Nom de l'entreprise").fill(`Atelier Confronter ${run}`);
   await page.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.goto("/chat");
 

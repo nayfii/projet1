@@ -10,7 +10,7 @@ import type { ProviderId } from "@/modules/providers/types";
 export type UsageEvent = {
   companyId: string;
   userId: string;
-  feature: "chat" | "memory" | "embedding" | "handover" | "confronter" | "agent";
+  feature: "chat" | "memory" | "embedding" | "handover" | "confronter" | "agent" | "avatar";
   conversationId: string | null;
   messageId: string | null;
   provider: ProviderId;

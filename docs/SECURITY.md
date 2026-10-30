@@ -66,6 +66,7 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Document reading | Nothing: memory documents are read on our server | – | – |
 | Hide detection | Nothing: detection runs on our server | – | – |
 | Provider test (platform console) | A fixed sentence ("Health check. Reply with the single word OK.") and nothing else: **no customer data** | The tested provider, with its cheapest enabled model | When our team clicks "Tester maintenant" |
+| Personal avatar (Step 11) | **The person's photo** (a face: personal data), squared and re-encoded as JPEG in their browser first (EXIF and location dropped), plus the fixed style prompt (`src/modules/avatars/prompt.ts`). Hide does not apply (it is an image). **We never store the photo**: only the generated avatar is kept | **OpenAI** image model (`AVATAR_IMAGE_MODEL`, default `gpt-image-1.5`); in test mode nothing is sent | When the person chooses a photo on their profile or in onboarding, after an on-screen notice |
 
 **Important limits today**
 
@@ -74,6 +75,7 @@ Every AI call is built by our server. Providers receive one self-contained reque
 - **No EU data residency is configured** with any provider. Data sent to OpenAI, Anthropic or Google may be processed outside the EU.
 - **Provider retention** follows each provider's API terms. `store: false` (OpenAI) stops responses being stored for later retrieval; it does not mean zero retention (providers may keep API data for a limited time, e.g. for abuse monitoring, as described in their own terms).
 - **Gemini**: the API key must belong to a billing-enabled Google project; on the free tier Google may use the data to improve its products.
+- **Avatar photos** go to OpenAI under its API terms (retention for abuse monitoring may apply; no EU residency configured). The notice shown before upload says so in plain words; it does not claim that OpenAI keeps nothing.
 
 ## 3. Data we store
 
@@ -95,6 +97,7 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Rendered videos | Storage bucket `render-outputs` (private), `render_jobs` (status, progress, formats, credits, the composition or the plan, output paths) | Readable by the people who can see the answer; deleted with the conversation |
 | Confrontations | `messages.confrontation` | Each model's answer and critique and the synthesis, with real values restored; readable like the conversation's messages |
 | Handover files | `handovers` | Text drafted by the AI (real values restored) and edited by the recipient; readable by the recipient only; deleted with the conversation or client |
+| Personal avatars (Step 11) | Storage bucket `avatars` (private, **no policy for signed-in people**: only the server reads and writes it), `profiles.avatar_path` / `avatar_pending_path` | The generated image only, never the photo. Served by `/api/avatars/<user>` to the person and the people they share a company with (the `profiles` policy decides); the image just generated (`?pending=`) to its owner only. "Use my initials" deletes the files. `profiles.avatar_url` can only point at that route and is set by the server only (column privilege revoked, check constraint) |
 | Usage | `usage_events` | Token counts, credits, estimated cost, model, status (chat, embeddings, memory tasks). No content |
 | Activity | `audit_log` | Ids and settings only (e.g. "request blocked: personal limit"). No content |
 

@@ -54,7 +54,7 @@ export async function createCompanyAction(_: unknown, formData: FormData): Promi
   if (error) return { ok: false, error: toErrorCode(error) };
 
   revalidatePath("/", "layout");
-  redirect("/onboarding?step=company");
+  redirect("/onboarding?step=avatar");
 }
 
 const companyProfileSchema = z.object({

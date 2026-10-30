@@ -135,6 +135,7 @@
     "steps": {
       "label": "Étapes",
       "start": "Compte",
+      "avatar": "Avatar",
       "company": "Entreprise",
       "invite": "Équipe",
       "client": "Client",
@@ -721,7 +722,8 @@
       "handover": "Passations (Smart Handover)",
       "router": "Choix automatique du modèle",
       "render": "Vidéo",
-      "other": "Autre"
+      "other": "Autre",
+      "avatar": "Avatars 3D"
     },
     "limitLabel": "Limite : {limit}",
     "noLimit": "Sans limite personnelle",
@@ -806,7 +808,13 @@
     "renderRateMotion": "Motion Design (par seconde)",
     "renderRateVideoEdit": "Montage vidéo (par seconde et par format)",
     "renderRatesSave": "Enregistrer les tarifs vidéo",
-    "renderRatesSaved": "Tarifs vidéo enregistrés."
+    "renderRatesSaved": "Tarifs vidéo enregistrés.",
+    "avatarRateTitle": "Avatars 3D",
+    "avatarRateHint": "Crédits décomptés à chaque création d'avatar à partir d'une photo (modèle d'images : {model}), et son coût estimé chez le fournisseur. Ce ne sont pas des prix.",
+    "avatarRateCredits": "Crédits par création",
+    "avatarRateCost": "Coût estimé ($ par création)",
+    "avatarRateSave": "Enregistrer",
+    "avatarRateSaved": "Tarif des avatars enregistré."
   },
   "memory": {
     "title": "Mémoire",
@@ -1719,5 +1727,41 @@
     "embeddingsBody": "Découpage des documents et recherche par le sens (modèle : {model}).",
     "noteSource": "Les fournisseurs ne nous transmettent pas leur état : ce tableau reflète ce que vivent nos clients (erreurs et temps de réponse de leurs requêtes), sans aucun contenu.",
     "noteTest": "« Tester maintenant » envoie une toute petite demande, sans aucune donnée client, avec le modèle le moins cher du fournisseur. Son coût est négligeable et n'est compté à aucune entreprise."
+  },
+  "avatar": {
+    "title": "Mon avatar",
+    "description": "Votre personnage 3D, tel que vos collègues vous voient dans les conversations.",
+    "alt": "Avatar de {name}",
+    "upload": "Importer une photo",
+    "replace": "Créer un nouvel avatar",
+    "useInitials": "Utiliser mes initiales",
+    "step1": "On étudie vos traits…",
+    "step2": "On sculpte votre avatar en 3D…",
+    "step3": "On ajuste la lumière…",
+    "step4": "Presque prêt…",
+    "ready": "Le voici. C'est bien vous ?",
+    "choose": "C'est moi !",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "saved": "Avatar enregistré.",
+    "tip": "Une photo de face, bien éclairée, sans lunettes de soleil donne le meilleur résultat.",
+    "privacy": "Votre photo est envoyée au modèle d'images d'OpenAI pour créer l'avatar. Nous ne la conservons pas : seul l'avatar est gardé.",
+    "cost": "Environ {credits} crédits par création.",
+    "testMode": "Mode test : un avatar de démonstration est utilisé, aucune IA n'est appelée.",
+    "testResult": "Avatar de démonstration (mode test).",
+    "photoAsIs": "Utiliser ma photo telle quelle",
+    "later": "Plus tard",
+    "onboardingTitle": "Créez votre avatar",
+    "onboardingSubtitle": "Une photo suffit. C'est ainsi que votre équipe vous verra dans les conversations.",
+    "welcomeAvatar": "Votre avatar",
+    "errors": {
+      "invalid_photo": "Cette image n'a pas pu être lue. Essayez une photo JPG ou PNG.",
+      "too_large": "Cette photo est trop lourde (6 Mo au maximum).",
+      "rate_limited": "Vous avez créé beaucoup d'avatars aujourd'hui. Réessayez demain.",
+      "quota": "Les crédits du mois sont épuisés. Votre administrateur peut augmenter la limite.",
+      "failed": "La création a échoué. Réessayez dans un instant.",
+      "not_configured": "La création d'avatars n'est pas encore activée sur cette plateforme.",
+      "forbidden": "Vous devez être connecté(e) à votre espace pour créer un avatar."
+    }
   }
 }

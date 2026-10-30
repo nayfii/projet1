@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * A tour of the screens the other specs do not capture (home, clients, profile, every admin and
@@ -32,6 +32,7 @@ test("the owner's screens", async () => {
   await ownerPage.getByLabel("Votre nom").fill("Claire Martin");
   await ownerPage.getByLabel("Nom de l'entreprise").fill(`Atelier Démo ${run}`);
   await ownerPage.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(ownerPage);
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await shot(ownerPage, "t01-onboarding-company");
   await ownerPage.getByRole("button", { name: "Continuer" }).click();

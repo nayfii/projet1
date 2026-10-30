@@ -10,20 +10,25 @@ import { Field, FormMessage, SubmitButton } from "@/components/ui/form";
 import { updateMyProfile } from "@/modules/identity/server/actions";
 import { updateMyCardAction } from "../server/actions";
 import type { ActionResult } from "@/lib/errors";
+import { AvatarStudio } from "@/modules/avatars/ui/avatar-studio";
 
 export function WelcomeForm({
   companyName,
   fullName,
   jobTitle,
   expertise,
+  avatar,
 }: {
   companyName: string;
   fullName: string | null;
   jobTitle: string;
   expertise: string;
+  /** Avatar first: the image model works while the person fills in the rest. */
+  avatar: { currentUrl: string | null; credits: number; testMode: boolean; name: string };
 }) {
   const t = useTranslations("onboarding");
   const tProfile = useTranslations("profile");
+  const tAvatar = useTranslations("avatar");
   const tErrors = useTranslations("errors");
   const router = useRouter();
 
@@ -42,6 +47,9 @@ export function WelcomeForm({
         <h1 className="text-2xl font-semibold tracking-tight">{t("welcomeTitle", { company: companyName })}</h1>
         <p className="text-sm text-muted-foreground">{t("welcomeSubtitle")}</p>
       </div>
+      <section aria-label={tAvatar("welcomeAvatar")} className="rounded-2xl border bg-card px-5 py-7">
+        <AvatarStudio name={avatar.name} currentUrl={avatar.currentUrl} credits={avatar.credits} testMode={avatar.testMode} size={128} />
+      </section>
       <form action={action} className="space-y-5">
         <Field label={t("yourName")} htmlFor="fullName">
           <Input id="fullName" name="fullName" defaultValue={fullName ?? ""} required maxLength={120} autoComplete="name" />

@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Step 8, the video agents (CLAUDE.md §4.7): Motion Design (composition → preview → MP4) and the Video
@@ -53,6 +53,7 @@ test("setup: a company", async () => {
   await page.getByLabel("Votre nom").fill("Claire Martin");
   await page.getByLabel("Nom de l'entreprise").fill(`Studio Vidéo ${run}`);
   await page.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();

@@ -14,12 +14,13 @@ import { ClientForm } from "@/modules/clients/ui/client-form";
 import { acceptInvitationAction, completeOnboardingAction, createCompanyAction } from "../server/actions";
 import { CompanyProfileForm, type CompanyProfileValues } from "./company-profile-form";
 import { InviteForm } from "./invite-form";
+import { AvatarStudio } from "@/modules/avatars/ui/avatar-studio";
 import { cn } from "@/lib/utils";
 import type { ErrorCode } from "@/lib/errors";
 
-export type OnboardingStep = "start" | "company" | "invite" | "client" | "document" | "conversation";
+export type OnboardingStep = "start" | "avatar" | "company" | "invite" | "client" | "document" | "conversation";
 
-const PROGRESS: OnboardingStep[] = ["start", "company", "invite", "client", "document", "conversation"];
+const PROGRESS: OnboardingStep[] = ["start", "avatar", "company", "invite", "client", "document", "conversation"];
 
 type Props = {
   step: OnboardingStep;
@@ -30,10 +31,13 @@ type Props = {
   members?: { userId: string; name: string }[];
   /** Company memory, where the first document goes. */
   companySpaceId?: string | null;
+  /** The avatar step: the person's current avatar, the credit cost, test mode. */
+  avatar?: { currentUrl: string | null; credits: number; testMode: boolean };
 };
 
 export function OnboardingWizard(props: Props) {
   const t = useTranslations("onboarding");
+  const tAvatar = useTranslations("avatar");
   const router = useRouter();
   const go = useCallback((step: OnboardingStep) => router.push(`/onboarding?step=${step}`), [router]);
   const skip = (step: OnboardingStep) => (
@@ -53,6 +57,26 @@ export function OnboardingWizard(props: Props) {
         className="mt-10"
       >
         {props.step === "start" ? <StartStep {...props} /> : null}
+
+        {props.step === "avatar" && props.avatar ? (
+          <StepFrame title={tAvatar("onboardingTitle")} subtitle={tAvatar("onboardingSubtitle")}>
+            <AvatarStudio
+              name={props.fullName ?? props.email}
+              currentUrl={props.avatar.currentUrl}
+              credits={props.avatar.credits}
+              testMode={props.avatar.testMode}
+              // A short beat to see it, then on to the next step.
+              onDone={(url) => url && setTimeout(() => go("company"), 900)}
+              className="pt-2"
+            />
+            <div className="mt-8 flex justify-end">
+              <Button type="button" variant="ghost" onClick={() => go("company")}>
+                {tAvatar("later")}
+                <ArrowRightIcon />
+              </Button>
+            </div>
+          </StepFrame>
+        ) : null}
 
         {props.step === "company" && props.company ? (
           <StepFrame title={t("companyTitle")} subtitle={t("companySubtitle")}>

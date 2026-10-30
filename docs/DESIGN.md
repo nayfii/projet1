@@ -1,0 +1,67 @@
+# Design
+
+Art direction, assistant characters and personal avatars (Step 11, 2026-10-30).
+The founder's references: a near-black, ultra-minimal product page (white type, generous space, soft pastel touches)
+and a stylized 3D avatar (soft volumes, diffuse light, a friendly face that reads even when small).
+
+## 1. Art direction
+
+**Principle: few elements, each one intentional.** The chat stays the centre; everything else is quiet until needed.
+
+| Element | Rule | Where |
+|---|---|---|
+| Background | Near-black `oklch(0.135 0.004 285)` (≈ #08080b), never pure #000 (less harsh for hours of use) | `--background` |
+| Surfaces | Two lifts only: cards `0.172`, popovers `0.195`. Borders are white at 8–13 % opacity, not grey lines | `--card`, `--popover`, `--border`, `--input` |
+| Type | Inter with optical sizes (tighter at display sizes), soft white `0.965` for text, `0.69` for secondary text | `layout.tsx`, `--foreground`, `--muted-foreground` |
+| Hierarchy | Display titles 28–32 px, semibold, tracking −0.025em; body 14–15 px; captions 11–13 px | components |
+| Accent | One pastel lavender (`--brand`), for focus, the active item and links only | `--brand` |
+| Pastel family | Lavender, peach, mint, sky, pearl: one per assistant, used as halos behind characters and in the logo's orb. Never for text | `--pastel-*` |
+| Buttons | Pills. Primary = white pill with near-black text (as in the reference); secondary = outline or ghost | `components/ui/button.tsx` |
+| Radii | Controls 10 px, cards 16 px, composer 20 px, buttons and avatars round | `--radius` scale |
+| Motion | 150–320 ms, ease-out-soft; messages rise 6 px as they appear; characters breathe only while they work; everything stops for people who ask for reduced motion | `globals.css` |
+| Logo | The existing mark kept (a tile with a dot); the dot became a small pastel orb | `components/brand/logo.tsx` |
+| Light theme | Still available per device (account menu → Apparence): Sombre (default), Clair, Comme l'appareil | `lib/theme.ts` |
+
+## 2. AI assistants: a cast of characters
+
+- **One character per assistant**: ChatGPT (mint, antenna), Claude (peach, ear pods), Gemini (sky, halo), Auto (pearl, floating orb).
+  They share one recipe — same head-and-shoulders framing, soft clay materials, studio light with a rim light so they
+  read on near-black — and differ by colour and one signature detail, so each is recognizable at 24 px.
+- **Clearly AI.** They are friendly robots, not human faces: in a group conversation nobody can mistake an assistant for
+  a colleague (people have human avatars). The model's name is always written next to its character.
+- **Alive, not a game.** The face is drawn live on the glass visor: it blinks at rest, looks up while it thinks, talks while
+  it writes, smiles for a moment when it is done. In a long thread only the assistant at work moves.
+- **Where they appear**: next to each answer; in a quiet column beside the thread on wide screens (the one at work is
+  larger and says "réfléchit…" or "écrit…"), as a small stack in the header on smaller screens; as a picker on the empty
+  conversation (clicking a character chooses it); in the model picker and the "@" menu; around the table in Confronter
+  (each one thinks, critiques, then the judge writes the synthesis).
+- **Source**: `scripts/avatars/render-assistants.mjs` renders the images (three.js, dev only). To change a character,
+  edit its line in `PERSONAS`, run the script, and copy the printed face box into `src/modules/avatars/assistants.ts`.
+
+## 3. Personal avatars
+
+**Journey (onboarding and profile):** choose a photo → the photo softens while a pastel ring turns and a few words say
+what is happening → the avatar appears with a soft burst → "C'est moi !", "Réessayer" or "Annuler". Initials remain the
+default and stay one click away. "Ma photo telle quelle" is marked *Bientôt*.
+
+**Consistency comes from one fixed prompt** (`src/modules/avatars/prompt.ts`, versioned), used for everyone:
+
+| Rule | Value |
+|---|---|
+| Likeness | Keep face shape, skin tone, eyes, eyebrows, nose, lips, hairstyle and colour, facial hair, glasses, piercings. Never change apparent age, gender or ethnicity; no beautifying, no caricature |
+| Style | Premium stylized 3D, soft rounded volumes, smooth matte clay-like skin, no pores, slightly larger head and eyes, gentle closed-mouth smile |
+| Framing | Head and top of the shoulders, centred, slight turn to the left, hair top at about 12 % from the top |
+| Clothing | Plain top, muted neutral colour, no logo, no text |
+| Light | Soft key light from the upper left, gentle fill, subtle cool rim light |
+| Background | Solid flat charcoal `#1C1C21`: people's avatars sit on dark, assistants on pastel halos |
+| Output | One character, square 1024 × 1024, no text, watermark or frame |
+
+**Technical choices**
+
+- OpenAI image editing through the AI SDK, model `AVATAR_IMAGE_MODEL` (default `gpt-image-1.5`), `inputFidelity: high`
+  (keeps the face), opaque background (no dependence on transparency support), WebP output.
+- The browser squares and re-encodes the photo (≤ 1024 px JPEG), which also removes EXIF data and location. The server
+  checks the bytes, keeps nothing but the result, and charges the credits set by our team (6 creations per person per day).
+- Test mode (`AI_FAKE_PROVIDER=true`): no AI is called; a fixed demo character is returned and labelled as such.
+- **Not verified yet against the real image model** (the OpenAI account has no credit): the first real avatars must be
+  checked by eye, and the prompt adjusted if needed (then bump `AVATAR_STYLE_VERSION`).

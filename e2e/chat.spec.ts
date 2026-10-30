@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Step 2, in a real browser against the production build. The server must run with
@@ -40,6 +40,7 @@ test("an owner starts a conversation; Auto picks the model and explains why", as
   await page.getByLabel("Votre nom").fill("Claire Martin");
   await page.getByLabel("Nom de l'entreprise").fill(company);
   await page.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
 
   await page.goto("/chat");
@@ -270,6 +271,7 @@ test("another company cannot open the conversation", async ({ browser }) => {
   await other.getByLabel("Votre nom").fill("Intrus");
   await other.getByLabel("Nom de l'entreprise").fill(`Intrus ${run}`);
   await other.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(other);
   await expect(other.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   const response = await other.goto(conversationUrl);
   expect(response?.status()).toBe(404);

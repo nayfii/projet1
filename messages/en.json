@@ -135,6 +135,7 @@
     "steps": {
       "label": "Steps",
       "start": "Account",
+      "avatar": "Avatar",
       "company": "Company",
       "invite": "Team",
       "client": "Client",
@@ -721,7 +722,8 @@
       "handover": "Handovers (Smart Handover)",
       "router": "Automatic model choice",
       "render": "Video",
-      "other": "Other"
+      "other": "Other",
+      "avatar": "3D avatars"
     },
     "limitLabel": "Limit: {limit}",
     "noLimit": "No personal limit",
@@ -806,7 +808,13 @@
     "renderRateMotion": "Motion Design (per second)",
     "renderRateVideoEdit": "Video editing (per second and per format)",
     "renderRatesSave": "Save video rates",
-    "renderRatesSaved": "Video rates saved."
+    "renderRatesSaved": "Video rates saved.",
+    "avatarRateTitle": "3D avatars",
+    "avatarRateHint": "Credits charged for each avatar created from a photo (image model: {model}), and its estimated provider cost. These are not prices.",
+    "avatarRateCredits": "Credits per creation",
+    "avatarRateCost": "Estimated cost ($ per creation)",
+    "avatarRateSave": "Save",
+    "avatarRateSaved": "Avatar rate saved."
   },
   "memory": {
     "title": "Memory",
@@ -1719,5 +1727,41 @@
     "embeddingsBody": "Document splitting and search by meaning (model: {model}).",
     "noteSource": "Providers do not send us their status: this page reflects what our customers experience (errors and response times of their requests), without any content.",
     "noteTest": "\"Test now\" sends a tiny request, with no customer data, using the provider's cheapest model. Its cost is negligible and is not counted against any company."
+  },
+  "avatar": {
+    "title": "My avatar",
+    "description": "Your 3D character, as your colleagues see you in conversations.",
+    "alt": "{name}'s avatar",
+    "upload": "Upload a photo",
+    "replace": "Create a new avatar",
+    "useInitials": "Use my initials",
+    "step1": "Studying your features…",
+    "step2": "Sculpting your 3D avatar…",
+    "step3": "Adjusting the light…",
+    "step4": "Almost ready…",
+    "ready": "Here it is. Is that you?",
+    "choose": "That's me!",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "saved": "Avatar saved.",
+    "tip": "A well-lit photo facing the camera, without sunglasses, gives the best result.",
+    "privacy": "Your photo is sent to OpenAI's image model to create the avatar. We do not keep it: only the avatar is kept.",
+    "cost": "About {credits} credits per creation.",
+    "testMode": "Test mode: a demo avatar is used, no AI is called.",
+    "testResult": "Demo avatar (test mode).",
+    "photoAsIs": "Use my photo as it is",
+    "later": "Later",
+    "onboardingTitle": "Create your avatar",
+    "onboardingSubtitle": "One photo is enough. This is how your team will see you in conversations.",
+    "welcomeAvatar": "Your avatar",
+    "errors": {
+      "invalid_photo": "This image could not be read. Try a JPG or PNG photo.",
+      "too_large": "This photo is too large (6 MB maximum).",
+      "rate_limited": "You have created many avatars today. Try again tomorrow.",
+      "quota": "This month's credits are used up. Your administrator can raise the limit.",
+      "failed": "Creation failed. Try again in a moment.",
+      "not_configured": "Avatar creation is not enabled on this platform yet.",
+      "forbidden": "You need to be signed in to your workspace to create an avatar."
+    }
   }
 }

@@ -55,7 +55,7 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
   const days = daysOf(from, to).map((day) => ({ day, credits: summary?.byDay.find((d) => d.day === day)?.credits ?? 0 }));
   const activeMembers = members.filter((m) => m.status === "active").length;
   const limit = quota?.status.companyLimit ?? 0;
-  const known = new Set(["chat", "agent", "confronter", "embedding", "memory", "handover", "router"]);
+  const known = new Set(["chat", "agent", "confronter", "embedding", "memory", "handover", "router", "avatar"]);
   const empty = !summary || (summary.totals.requests === 0 && summary.video.renders === 0);
 
   return (

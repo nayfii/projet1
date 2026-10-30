@@ -488,3 +488,48 @@
     pointer-events: none;
   }
 }
+
+/* Avatar studio (modules/avatars/ui/avatar-studio.tsx): the photo softens while a pastel ring turns, then the avatar appears. */
+@keyframes studio-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes studio-soften {
+  0% {
+    filter: blur(0) saturate(1);
+    transform: scale(1);
+  }
+  100% {
+    filter: blur(10px) saturate(0.4) brightness(0.8);
+    transform: scale(1.08);
+  }
+}
+@keyframes studio-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+@layer components {
+  .avatar-studio-ring {
+    background: conic-gradient(from 0deg, var(--pastel-lavender), var(--pastel-sky), var(--pastel-mint), var(--pastel-peach), var(--pastel-lavender));
+    animation: studio-turn 2.4s linear infinite;
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  }
+  .avatar-studio-photo {
+    animation: studio-soften 9s var(--ease-out-soft) forwards;
+  }
+  .avatar-studio-burst {
+    background: radial-gradient(circle, color-mix(in oklch, var(--pastel-lavender) 60%, transparent) 0%, color-mix(in oklch, var(--pastel-peach) 30%, transparent) 40%, transparent 70%);
+    animation: studio-burst 1.4s var(--ease-out-soft) forwards;
+    pointer-events: none;
+  }
+}

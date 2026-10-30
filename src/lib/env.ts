@@ -52,6 +52,11 @@ export function fakeProviderEnabled(): boolean {
   return process.env.AI_FAKE_PROVIDER === "true";
 }
 
+/** Image model that turns a photo into a personal 3D avatar (OpenAI; needs OPENAI_API_KEY). */
+export function avatarImageModel(): string {
+  return process.env.AVATAR_IMAGE_MODEL?.trim() || "gpt-image-1.5";
+}
+
 /** Embeddings (search index of memory and documents). The vector size must match the database (1536). */
 export function embeddingsConfig(): { provider: "openai" | "google"; model: string; dimensions: number } {
   const provider = process.env.EMBEDDINGS_PROVIDER === "google" ? "google" : "openai";

@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
-import { shot, signIn } from "./helpers";
+import { shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Hide, as validated with the founder: red = the AI would see it, green struck = protected.
@@ -45,6 +45,7 @@ test("auto-protect (default): detected items arrive struck in green; a click lea
   await page.getByLabel("Votre nom").fill("Claire Martin");
   await page.getByLabel("Nom de l'entreprise").fill(`Atelier Hide ${run}`);
   await page.getByRole("button", { name: "Créer l'espace" }).click();
+  await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
