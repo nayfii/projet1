@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 10 (full scenario, security review, documentation), 2026-10-25.
+Last update: Step 11 (art direction, AI avatars, personal avatars), 2026-10-30.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -195,6 +195,46 @@ This project is currently developed in a **Claude Code cloud session** (Linux co
 
 ---
 
+## Step 11 — Art direction and avatars (2026-10-30)
+
+Founder's brief: a near-black, ultra-minimal premium interface; 3D characters for the AI assistants, visible and alive in
+the chat; personal 3D avatars made from a photo with one standardized prompt; the avatar moment added to the existing
+onboarding without rebuilding it. Details: `docs/DESIGN.md`.
+
+| Item | Status |
+|---|---|
+| Near-black theme by default, white type, Inter (optical sizes), pastel lavender accent and pastel family, pill buttons, radii, motion, reduced motion | **done** |
+| Light theme kept as a per-device choice (account menu → Apparence: Sombre, Clair, Comme l'appareil) | **done** |
+| Logo integrated (existing mark kept, pastel orb) | **done** — the product name stays "Workspace" until the name is confirmed (the framing page notes "Cendr") |
+| 3D characters for ChatGPT, Claude, Gemini and Auto, one recipe, recognizable at 24 px | **done** (rendered by our script; can be replaced by image-model renders later with the same face boxes) |
+| Live faces: blink, think, talk, smile; only the assistant at work moves | **done** |
+| Avatars next to each answer, presence column on wide screens, header stack on small ones, picker on the empty conversation, model picker, "@" menu | **done** |
+| Confronter shown as a round table (each assistant thinks, critiques, then the judge writes) | **done** |
+| Colleagues' avatars in group conversations | **done** |
+| Personal 3D avatar from a photo: upload, generation, reveal, keep / retry / cancel, back to initials | **done** in test mode; **not verified against the real image model** (no OpenAI credit) |
+| Standardized prompt (likeness, style, framing, light, background), versioned | **done** — to be checked by eye on the first real avatars |
+| Photo privacy: re-encoded in the browser (EXIF and location dropped), never stored, private bucket, colleagues only, server-only avatar URL | **done**, tested |
+| Credits per avatar and estimated cost set by our team; 6 per person per day | **done** |
+| Avatar step in onboarding (owner, skippable) and on the welcome screen (invited colleagues, made while they fill in the rest) | **done** |
+| "Use my photo as it is" | **not started** (marked *Bientôt*) |
+| Voice and lip-sync | **not started** (no voice feature yet) |
+| Deleting an account removes its avatar files | **not started** — there is no account deletion flow yet (ROADMAP, "Before a first paying customer" §7); a generated image not kept stays as *pending* until the next creation or "Use my initials" |
+
+**Known issue found and fixed at Step 11:** Turbopack's file-system cache served an old compile of `globals.css`
+(stale design tokens in dev and in a production build). The cache is now off for dev and builds (`next.config.ts`);
+builds take a little longer but always use the current styles.
+
+## Tests (Step 11)
+
+| Suite | Result |
+|---|---|
+| Unit (`pnpm test`) | 229 passed (6 new: characters, prompt rules, photo checks, avatar URLs) |
+| Integration (`pnpm test:integration`) | 185 passed (5 new: the avatar URL is server-only and ours only, colleagues only, the bucket is closed to signed-in people, the rate is for our team only) |
+| End to end (`npx playwright test`, test provider, render worker running) | 87 passed (4 new: the avatar moment in onboarding, privacy between companies, the assistants in the chat, back to initials), including the launch scenario of CLAUDE.md §10 and real MP4s |
+| Type check, lint, production build | OK |
+
+Screenshots for the founder: `docs/screenshots/step-11/`.
+
 ## Tests (Step 10)
 
 | Suite | Command | Result |
@@ -351,6 +391,8 @@ Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `doc
 - **Business plan, pricing and plans: handled by the founder, separately.** Claude does not work on them for now (2026-10-30). On the framing page, the plans, credit wording, cost display and plan placement are marked "later, handled separately" and left out of the count.
 - **Product name: "Cendr"** — noted by the founder on the framing page (claude.ai artifact "Cadrage de la plateforme"). Not applied in the app yet; CLAUDE.md still says "working name: TBD" until the framing review.
 - **Applications: our own agent store, in the style of Canva's "Apps" panel** (corrected 2026-10-30). The founder does not mean an integration with Canva: he means a section in the left sidebar like Canva's "Apps" (tabs "Discover" and "Your apps", categories, most used), filled with our agents (Motion Design, Video Editor and the other agents, plus tools made by the team), which can also be called from the chat (e.g. `@Motion Design`). No third-party integration, so CLAUDE.md §6 is unchanged; it would replace or reshape the current Library (§4.7). The founder says the agentic part is a complement, not the core of the project. **Not built.** Details on the framing page; CLAUDE.md is updated after the framing review, with his approval.
+
+- **Clients, permissions and collaboration (2026-10-30).** The founder set the principles: conversations private by default, client memory shared by access and separate from conversations, three modes (private, collaborative, transfer), roles and permissions applied by the system, memory layers (personal, client, company, conversations). Most of it already exists (Steps 3–5). Proposed next build: a "Clients" section in the sidebar (recent clients, search, add), the client space (summary, my conversations, shared with me, new conversation), privacy and client markers on conversations, one "Share / Transfer" entry, stronger confirmations. **Eight security decisions are waiting on the framing page** (participant rights incl. read-only, a Manager role, departures, admin reading, contributions to client memory, personal memory, deleting clients, the client summary), plus "who can create a client". Read-only participants and personal memory are in CLAUDE.md §6 (not at launch): they move into scope only if the founder confirms them there.
 
 ## Open questions for the founder
 
