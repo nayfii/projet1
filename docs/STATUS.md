@@ -346,6 +346,11 @@ Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `doc
 - **Real-model tests deferred to the end.** The OpenAI account will be topped up once the platform is finished; the 7 agent examples not run yet (and Claude/Gemini once keys exist) are rerun then with `pnpm test:smoke`.
 - **Hands-on access in Step 10.** The founder gets a working online platform once Step 10's deployment is done and the accounts listed there are created.
 
+## Founder requests (product framing, 2026-10-30)
+
+- **Product name: "Cendr"** — noted by the founder on the framing page (claude.ai artifact "Cadrage de la plateforme"). Not applied in the app yet; CLAUDE.md still says "working name: TBD" until the framing review.
+- **Applications (connected apps), Canva first** — the founder asked to add an agentic "Applications" section: a category in the left sidebar, with apps that can also be called from the chat (e.g. `@Canva`). This moves part of CLAUDE.md §6 (Canva integration, "other integrations") and §4.7 ("No third-party integrations at launch") into scope. **Not built.** The details are on the framing page (which apps first, personal vs company account, confirmation before actions, masked data sent to apps, who enables apps, plan). CLAUDE.md is updated after the framing review, with the founder's approval. Technical direction: Canva's official MCP server (OAuth), which needs our platform registered in Canva's developer portal; the credentials go in environment settings.
+
 ## Open questions for the founder
 
 The founder asked to proceed ("je suis prêt à construire le tout") without answering these yet: the proposals below are applied as **defaults** and can be changed.
@@ -366,3 +371,4 @@ The founder asked to proceed ("je suis prêt à construire le tout") without ans
 13. **GSAP licence (Motion Design)** — HyperFrames compositions are animated with GSAP, whose free licence excludes "tools that allow users to build visual animations without code" competing with Webflow's animation features. Our agent generates animations from a brief, which may fall in that grey zone. Options: ask Webflow for written consent, have a lawyer read the licence, or switch compositions to CSS animations (HyperFrames supports other animation drivers; CLAUDE.md names GSAP, so switching needs your approval). Decision needed before selling Motion Design.
 14. **Render worker hosting** — the worker needs an always-on EU server (or container service) with FFmpeg and Chromium, separate from the app. To choose at Step 10 with the rest of the hosting.
 15. **Test deployment accounts (Step 9)** — to click-test online, the founder creates a Supabase project (Frankfurt) and a Vercel project (Frankfurt), then adds the keys in GitHub and Vercel settings, following `docs/DEPLOY.md`. Both free plans are enough for testing; Vercel's free plan is for non-commercial use, so a paid plan (or another EU host) is needed before selling. Optional: Resend (with a domain) to email people other than the founder.
+16. **Applications: masked data** — Hide replaces client names with placeholders; a Canva design built from masked text would show `[CLIENT_1]`. Proposal: restore real values for the app call only after the employee approves what is sent (that data then goes to the app's provider, to document in SECURITY.md). Decision on the framing page.
