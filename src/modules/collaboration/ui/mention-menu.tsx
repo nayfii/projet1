@@ -1,10 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ProviderId } from "@/modules/providers/types";
-import { ProviderDot } from "@/modules/conversations/ui/provider-mark";
+import { AssistantAvatar } from "@/modules/avatars/ui/assistant-avatar";
 
 /** One way to call the AI in a group conversation: "@IA", "@Claude", "@ChatGPT", "@Gemini". */
 export type MentionOption = { token: string; aliases: string[]; provider: ProviderId | null; hint: string };
@@ -44,7 +43,7 @@ export function MentionMenu({ options, active, onPick }: { options: MentionOptio
           onClick={() => onPick(o)}
           className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm", i === active ? "bg-accent" : "hover:bg-accent/60")}
         >
-          {o.provider ? <ProviderDot provider={o.provider} /> : <SparklesIcon className="size-3.5 text-brand" />}
+          <AssistantAvatar provider={o.provider ?? "auto"} size={24} />
           <span className="font-medium">{`@${o.token}`}</span>
           <span className="ml-auto truncate text-xs text-muted-foreground">{o.hint}</span>
         </button>

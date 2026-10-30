@@ -41,6 +41,8 @@ import type { SuggestedColleague } from "../stream-events";
 import { Markdown } from "./markdown";
 import type { PickerModel } from "./model-picker";
 import { ModelName, ProviderDot } from "./provider-mark";
+import { AssistantAvatar } from "@/modules/avatars/ui/assistant-avatar";
+import type { AssistantState } from "@/modules/avatars/assistants";
 import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
 import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
 import { MaskedView } from "@/modules/hide/ui/masked-view";
@@ -57,6 +59,9 @@ type InviteProps = { invitable?: SuggestedColleague[]; onInvite?: (userId: strin
 /** Confronter: opens the confirmation for this question (or the question this answer replies to). */
 type ConfrontProps = { onConfront?: () => void; confrontProgress?: ConfrontationProgress };
 
+/** Avatars of the people in the conversation, by user id (colleagues' messages show theirs). */
+export type PeopleLookup = Map<string, { name: string; avatarUrl: string | null }>;
+
 export function MessageItem({
   message,
   live,
@@ -72,8 +77,10 @@ export function MessageItem({
   onConfront,
   confrontProgress,
   render,
+  people,
 }: {
   message: TimelineMessage;
+  people?: PeopleLookup;
   /** Video agents: the answer may hold a composition or an edit plan to make into MP4s. */
   render?: RenderProps | null;
   /** The answer is streaming right now in this browser. */
@@ -89,7 +96,16 @@ export function MessageItem({
   ConfrontProps) {
   if (message.role === "user") {
     const mine = !message.author || message.author.id === meId;
-    return <UserMessage message={message} mine={mine} memoryTargets={memoryTargets} conversationId={conversationId} onConfront={onConfront} />;
+    return (
+      <UserMessage
+        message={message}
+        mine={mine}
+        avatarUrl={message.author ? (people?.get(message.author.id)?.avatarUrl ?? null) : null}
+        memoryTargets={memoryTargets}
+        conversationId={conversationId}
+        onConfront={onConfront}
+      />
+    );
   }
   return (
     <AssistantMessage
@@ -146,16 +162,23 @@ function SaveToMemory({ message, memoryTargets, conversationId, className }: { m
   );
 }
 
-function UserMessage({ message, mine, memoryTargets, conversationId, onConfront }: { message: TimelineMessage; mine: boolean } & MemoryProps & ConfrontProps) {
+function UserMessage({
+  message,
+  mine,
+  avatarUrl,
+  memoryTargets,
+  conversationId,
+  onConfront,
+}: { message: TimelineMessage; mine: boolean; avatarUrl: string | null } & MemoryProps & ConfrontProps) {
   const hover = "mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100";
   const t = useTranslations("collaboration");
   if (!mine) {
     // A colleague's message (group conversation, or a conversation taken over after a transfer).
     const name = message.author?.name ?? t("someone");
     return (
-      <div className="group/user flex flex-col items-start gap-2">
+      <div className="group/user flex animate-message-in flex-col items-start gap-2">
         <div className="flex items-center gap-2 text-[13px]">
-          <Avatar name={name} className="size-5" />
+          <Avatar name={name} src={avatarUrl} className="size-7" />
           <span className="font-medium">{name}</span>
         </div>
         {message.attachments.length > 0 ? (
@@ -179,7 +202,7 @@ function UserMessage({ message, mine, memoryTargets, conversationId, onConfront 
     );
   }
   return (
-    <div className="group/user flex flex-col items-end gap-2">
+    <div className="group/user flex animate-message-in flex-col items-end gap-2">
       {message.attachments.length > 0 ? (
         <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
           {message.attachments.map((a) => (
@@ -302,11 +325,16 @@ function AssistantMessage({
     : "unknown";
   const confrontation = message.confrontation;
   const canRegenerate = !confrontation && isLastAnswer && !live && !busy && message.status !== "streaming";
+  const mood = useAssistantMood(Boolean(live), waiting, message.status);
 
   return (
-    <article className="group/answer space-y-2" aria-busy={live}>
-      <header className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
-        {message.model && !confrontation ? <ModelName provider={message.model.provider} label={message.model.label} /> : null}
+    <article className="group/answer animate-message-in space-y-2.5" aria-busy={live}>
+      <header className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px]">
+        {!confrontation ? (
+          <AssistantAvatar provider={message.model?.provider ?? "auto"} size={30} state={mood} animated={mood !== "idle"} seed={message.id} />
+        ) : null}
+        {message.model && !confrontation ? <ModelName provider={message.model.provider} label={message.model.label} dot={false} /> : null}
+        {!message.model && !confrontation && waiting ? <span className="font-medium text-foreground">{t("auto")}</span> : null}
         {message.routing ? (
           <span className="inline-flex items-center gap-1 text-muted-foreground">
             <SparklesIcon className="size-3 text-brand" />
@@ -324,11 +352,9 @@ function AssistantMessage({
           onCite={message.sources.length ? setOpenSource : undefined}
         />
       ) : waiting ? (
-        <div className="flex h-7 items-center gap-1" aria-label={t("thinking")}>
-          {[0, 1, 2].map((i) => (
-            <span key={i} className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60" style={{ animationDelay: `${i * 150}ms` }} />
-          ))}
-        </div>
+        <p className="flex h-7 items-center gap-2 text-[14px]" role="status">
+          <span className="text-shimmer font-medium">{brand ? t("thinkingNamed", { name: brand }) : t("thinking")}</span>
+        </p>
       ) : message.content ? (
         <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
       ) : null}
@@ -436,7 +462,7 @@ export function ModelSwitchDivider({ provider, label }: { provider: ProviderId; 
     <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground" role="separator">
       <span className="h-px flex-1 bg-border" />
       <span className="inline-flex items-center gap-1.5">
-        {t("continuedWith")} <ModelName provider={provider} label={label} />
+        {t("continuedWith")} <AssistantAvatar provider={provider} size={18} /> <ModelName provider={provider} label={label} dot={false} />
       </span>
       <span className="h-px flex-1 bg-border" />
     </div>
@@ -477,4 +503,24 @@ function ExportMenu({ messageId, table }: { messageId: string; table: boolean })
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+/**
+ * The assistant's expression for one answer: thinking before the first words, speaking while they
+ * stream, a short smile once done, then at rest. Only the answer being written here is animated.
+ */
+function useAssistantMood(live: boolean, waiting: boolean, status: TimelineMessage["status"]): AssistantState {
+  const [justDone, setJustDone] = React.useState(false);
+  const wasLive = React.useRef(live);
+  React.useEffect(() => {
+    if (wasLive.current && !live && status === "complete") {
+      setJustDone(true);
+      const timer = setTimeout(() => setJustDone(false), 1600);
+      wasLive.current = live;
+      return () => clearTimeout(timer);
+    }
+    wasLive.current = live;
+  }, [live, status]);
+  if (live) return waiting ? "thinking" : "speaking";
+  return justDone ? "happy" : "idle";
 }

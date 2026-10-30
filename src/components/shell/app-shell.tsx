@@ -18,6 +18,7 @@ import {
   HouseIcon,
   KeyRoundIcon,
   LanguagesIcon,
+  MoonIcon,
   LayersIcon,
   LayoutDashboardIcon,
   LogOutIcon,
@@ -48,7 +49,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/brand/logo";
-import { setLocale } from "@/modules/identity/server/actions";
+import { setLocale, setTheme } from "@/modules/identity/server/actions";
+import { isTheme, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
@@ -92,6 +94,10 @@ export type ShellLabels = {
   signOut: string;
   french: string;
   english: string;
+  appearance: string;
+  themeDark: string;
+  themeLight: string;
+  themeSystem: string;
 };
 
 type ShellProps = {
@@ -221,8 +227,14 @@ function UserMenu({
   labels,
 }: Pick<ShellProps, "user" | "menuLinks" | "locale" | "labels">) {
   const [pending, startTransition] = useTransition();
+  const [theme, setThemeState] = React.useState<Theme>("dark");
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        const current = document.documentElement.dataset.theme;
+        if (open && isTheme(current)) setThemeState(current);
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <button className="flex w-full items-center gap-2.5 rounded-md p-1.5 text-left transition-colors hover:bg-sidebar-accent">
           <Avatar name={user.name ?? user.email} src={user.avatarUrl} className="size-7" />
@@ -260,6 +272,25 @@ function UserMenu({
           <DropdownMenuRadioItem value="en" disabled={pending}>
             {labels.english}
           </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="flex items-center gap-2">
+          <MoonIcon className="size-3.5" />
+          {labels.appearance}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={theme}
+          onValueChange={(value) => {
+            if (!isTheme(value)) return;
+            // Applied at once in this tab; the cookie keeps it for the next visits.
+            document.documentElement.dataset.theme = value;
+            setThemeState(value);
+            startTransition(() => setTheme(value));
+          }}
+        >
+          <DropdownMenuRadioItem value="dark">{labels.themeDark}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="light">{labels.themeLight}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="system">{labels.themeSystem}</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <form action="/auth/signout" method="post">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ChevronDownIcon, SparklesIcon, CheckIcon } from "lucide-react";
+import { ChevronDownIcon, CheckIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { modelDisplay, MODEL_CHOICE_AUTO, type ModelTier } from "@/modules/providers/catalog";
 import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
 import { cn } from "@/lib/utils";
-import { ProviderDot } from "./provider-mark";
+import { AssistantAvatar } from "@/modules/avatars/ui/assistant-avatar";
 
 export type PickerModel = {
   id: string;
@@ -49,16 +49,16 @@ export function ModelPicker({
       <DropdownMenuTrigger
         disabled={disabled}
         aria-label={t("modelPicker")}
-        className="flex h-8 max-w-56 items-center gap-1.5 rounded-md px-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+        className="flex h-8 max-w-56 items-center gap-1.5 rounded-full pr-2.5 pl-1 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
       >
         {isAuto || !current ? (
           <>
-            <SparklesIcon className="size-3.5 text-brand" />
+            <AssistantAvatar provider="auto" size={22} />
             <span className="font-medium text-foreground">{t("auto")}</span>
           </>
         ) : (
           <>
-            <ProviderDot provider={current.provider} />
+            <AssistantAvatar provider={current.provider} size={22} />
             <span className="truncate">
               <span className="font-medium text-foreground">{modelDisplay(current.provider, current.label).brand}</span>{" "}
               {modelDisplay(current.provider, current.label).name}
@@ -71,7 +71,7 @@ export function ModelPicker({
         {autoEnabled ? (
           <>
             <DropdownMenuItem onSelect={() => onChange(MODEL_CHOICE_AUTO)} className="items-start py-2">
-              <SparklesIcon className="mt-0.5 !text-brand" />
+              <AssistantAvatar provider="auto" size={26} />
               <span className="flex-1">
                 <span className="block font-medium">{t("auto")}</span>
                 <span className="block text-xs text-muted-foreground">{t("autoHint")}</span>
@@ -86,10 +86,12 @@ export function ModelPicker({
           if (group.length === 0) return null;
           return (
             <div key={provider}>
-              <DropdownMenuLabel>{modelDisplay(provider, "").brand}</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <AssistantAvatar provider={provider} size={22} />
+                {modelDisplay(provider, "").brand}
+              </DropdownMenuLabel>
               {group.map((m) => (
-                <DropdownMenuItem key={m.id} disabled={!m.available} onSelect={() => onChange(m.id)}>
-                  <ProviderDot provider={m.provider} />
+                <DropdownMenuItem key={m.id} disabled={!m.available} onSelect={() => onChange(m.id)} className="pl-9">
                   <span className="flex-1 truncate">{modelDisplay(m.provider, m.label).name}</span>
                   {m.available ? (
                     <span className={cn("text-xs text-muted-foreground", value === m.id && "hidden")}>{t(`tier.${m.tier}`)}</span>

@@ -25,7 +25,7 @@ importers:
         version: 0.8.134(@types/node@20.19.43)
       '@hyperframes/player':
         specifier: 0.8.134
-        version: 0.8.134(@types/node@20.19.43)
+        version: 0.8.134
       '@supabase/ssr':
         specifier: ^0.12.7
         version: 0.12.7(@supabase/supabase-js@2.118.0)
@@ -150,6 +150,9 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.3.3
+      three:
+        specifier: 0.186.1
+        version: 0.186.1
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -4342,6 +4345,9 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
+  three@0.186.1:
+    resolution: {integrity: sha512-blFeqb49wRCSGUGj7gtpfnSGHy2lwDk94RhUmS1c/hTby70kvChbWpkJ4Pm1390LqzzvTmzgXKHPEafJwCb8jA==}
+
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
 
@@ -5118,11 +5124,10 @@ snapshots:
     transitivePeerDependencies:
       - canvas
 
-  '@hyperframes/player@0.8.134(@types/node@20.19.43)':
+  '@hyperframes/player@0.8.134':
     dependencies:
       '@hyperframes/core': 0.8.134(@types/node@20.19.43)
     transitivePeerDependencies:
-      - '@types/node'
       - canvas
 
   '@hyperframes/studio-server@0.8.134(@types/node@20.19.43)':
@@ -9342,6 +9347,8 @@ snapshots:
       fs-constants: 1.0.0
       inherits: 2.0.4
       readable-stream: 3.6.2
+
+  three@0.186.1: {}
 
   tiny-inflate@1.0.3: {}
 

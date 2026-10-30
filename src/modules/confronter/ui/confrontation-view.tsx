@@ -3,10 +3,11 @@
 import * as React from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { AlertTriangleIcon, CheckCircle2Icon, CheckIcon, GitForkIcon, ScaleIcon, SearchCheckIcon, XIcon } from "lucide-react";
-import { Spinner } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@/modules/conversations/ui/markdown";
-import { ModelName, ProviderDot } from "@/modules/conversations/ui/provider-mark";
+import { ModelName } from "@/modules/conversations/ui/provider-mark";
+import { AssistantAvatar } from "@/modules/avatars/ui/assistant-avatar";
+import type { AssistantState } from "@/modules/avatars/assistants";
 import { modelDisplay } from "@/modules/providers/catalog";
 import type { Confrontation, ConfrontationModel, ConfrontationProgress } from "../types";
 
@@ -46,8 +47,8 @@ export function ConfrontationView({
         </span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           {confrontation.models.map((m) => (
-            <span key={m.id} className="inline-flex items-center gap-1">
-              <ProviderDot provider={m.provider} />
+            <span key={m.id} className="inline-flex items-center gap-1.5">
+              <AssistantAvatar provider={m.provider} size={20} />
               {brand(m)}
             </span>
           ))}
@@ -103,7 +104,17 @@ export function ConfrontationView({
             ) : null}
             {tab === "answers"
               ? confrontation.answers.map((a) => (
-                  <Part key={a.modelId} title={<ModelName provider={model(a.modelId).provider} label={model(a.modelId).label} />} failed={a.status === "error"} failedLabel={t("noAnswer")}>
+                  <Part
+                    key={a.modelId}
+                    title={
+                      <span className="inline-flex items-center gap-2">
+                        <AssistantAvatar provider={model(a.modelId).provider} size={24} />
+                        <ModelName provider={model(a.modelId).provider} label={model(a.modelId).label} dot={false} />
+                      </span>
+                    }
+                    failed={a.status === "error"}
+                    failedLabel={t("noAnswer")}
+                  >
                     {a.content}
                   </Part>
                 ))
@@ -112,7 +123,17 @@ export function ConfrontationView({
               ? confrontation.critiques.length === 0
                 ? <p className="text-[13px] text-muted-foreground">{t("noCritiques")}</p>
                 : confrontation.critiques.map((c) => (
-                    <Part key={c.modelId} title={t("critiqueBy", { model: brand(model(c.modelId)) })} failed={c.status === "error"} failedLabel={t("noCritique")}>
+                    <Part
+                      key={c.modelId}
+                      title={
+                        <span className="inline-flex items-center gap-2">
+                          <AssistantAvatar provider={model(c.modelId).provider} size={24} />
+                          {t("critiqueBy", { model: brand(model(c.modelId)) })}
+                        </span>
+                      }
+                      failed={c.status === "error"}
+                      failedLabel={t("noCritique")}
+                    >
                       {c.content}
                     </Part>
                   ))
@@ -127,31 +148,50 @@ export function ConfrontationView({
   );
 }
 
+/**
+ * While it runs: the assistants around the table. Each one thinks while it writes its answer,
+ * talks while it critiques the others, smiles when it is done; then the judge writes the synthesis.
+ */
 function Progress({ confrontation, progress }: { confrontation: Confrontation; progress: ConfrontationProgress }) {
   const t = useTranslations("confronter");
   const status = (stage: "answer" | "critique" | "synthesis", modelId: string) => progress.find((p) => p.stage === stage && p.modelId === modelId)?.status;
-  const icon = (value: string | undefined) =>
-    value === "complete" ? <CheckIcon className="size-3.5 text-success" /> : value === "error" ? <XIcon className="size-3.5 text-destructive" /> : value === "running" ? <Spinner /> : <span className="size-3.5" />;
+  const seat = (modelId: string): { state: AssistantState; label: string; active: boolean } => {
+    const answer = status("answer", modelId);
+    const critique = status("critique", modelId);
+    if (answer === "error") return { state: "idle", label: t("seatFailed"), active: false };
+    if (critique === "running") return { state: "speaking", label: t("seatCritiquing"), active: true };
+    if (answer === "running") return { state: "thinking", label: t("seatAnswering"), active: true };
+    if (critique === "complete" || critique === "error") return { state: "happy", label: t("seatDone"), active: false };
+    if (answer === "complete") return { state: "idle", label: t("seatWaiting"), active: false };
+    return { state: "idle", label: t("seatWaiting"), active: false };
+  };
+  const synthesis = status("synthesis", confrontation.judge.id);
   return (
-    <div className="space-y-2 px-4 py-4 text-[13px]" aria-live="polite">
-      {confrontation.models.map((m) => (
-        <div key={m.id} className="flex items-center gap-3">
-          <span className="w-44 shrink-0">
-            <ModelName provider={m.provider} label={m.label} />
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            {icon(status("answer", m.id))}
-            {t("progressAnswer")}
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            {icon(status("critique", m.id))}
-            {t("progressCritique")}
-          </span>
-        </div>
-      ))}
-      <div className="flex items-center gap-1.5 pt-1 text-muted-foreground">
-        {icon(status("synthesis", confrontation.judge.id))}
-        {t("progressSynthesis", { model: modelDisplay(confrontation.judge.provider, confrontation.judge.label).brand })}
+    <div className="space-y-6 px-4 py-6" aria-live="polite">
+      <div className="flex flex-wrap items-start justify-center gap-8 sm:gap-12">
+        {confrontation.models.map((m) => {
+          const s = seat(m.id);
+          return (
+            <div key={m.id} className="flex w-28 flex-col items-center gap-2 text-center">
+              <AssistantAvatar provider={m.provider} size={s.active ? 64 : 52} state={s.state} animated={s.active || s.state === "happy"} seed={m.id} className="transition-[width,height] duration-500" />
+              <span className="text-[13px] font-medium">{modelDisplay(m.provider, m.label).brand}</span>
+              <span className={cn("text-xs", s.active ? "text-foreground" : "text-muted-foreground")}>{s.label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-center gap-2 text-[13px] text-muted-foreground">
+        <AssistantAvatar
+          provider={confrontation.judge.provider}
+          size={24}
+          state={synthesis === "running" ? "speaking" : "idle"}
+          animated={synthesis === "running"}
+          seed="judge"
+        />
+        <span className={cn(synthesis === "running" && "text-shimmer font-medium")}>
+          {t("progressSynthesis", { model: modelDisplay(confrontation.judge.provider, confrontation.judge.label).brand })}
+        </span>
+        {synthesis === "complete" ? <CheckIcon className="size-3.5 text-success" /> : synthesis === "error" ? <XIcon className="size-3.5 text-destructive" /> : null}
       </div>
     </div>
   );

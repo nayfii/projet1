@@ -48,13 +48,15 @@ import {
   setConversationModelAction,
 } from "../server/actions";
 import { titleFromMessage, useChatList } from "./chat-list";
-import { AttachmentChip, MessageItem, ModelSwitchDivider } from "./message-item";
+import { AttachmentChip, MessageItem, ModelSwitchDivider, type PeopleLookup } from "./message-item";
 import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
 import { AutoSwitch, FilePreview, HideBar, HideOverlay, useHideComposer, type HidePayload } from "@/modules/hide/ui/hide-composer";
 import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
 import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
-import { PROVIDER_IDS } from "@/modules/providers/types";
+import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
+import { CastPicker, CastRail, CastStack, type Cast } from "@/modules/avatars/ui/conversation-cast";
+import type { AssistantId } from "@/modules/avatars/assistants";
 import { leaveConversationAction, loadParticipantsAction, loadTimelineMessagesAction } from "@/modules/collaboration/server/actions";
 import type { Colleague, Handover, Participant } from "@/modules/collaboration/server/queries";
 import { AddPeopleDialog, ParticipantsBar, TypingLine } from "@/modules/collaboration/ui/people";
@@ -692,6 +694,34 @@ export function ChatView(props: Props) {
   }
 
   const memoryTargets = [...props.memoryTargets].sort((a, b) => Number(b.clientId === clientId) - Number(a.clientId === clientId));
+  // Avatars (Step 11): who is in the conversation, and which assistant is at work.
+  const selectedAssistant: AssistantId =
+    modelChoice === MODEL_CHOICE_AUTO ? "auto" : (props.models.find((m) => m.id === modelChoice)?.provider ?? "auto");
+  const liveMessage = liveId ? messages.find((m) => m.id === liveId) : undefined;
+  const cast: Cast = (() => {
+    const seen: AssistantId[] = [];
+    for (const m of messages) if (m.role === "assistant" && m.model && !m.confrontation && !seen.includes(m.model.provider)) seen.push(m.model.provider);
+    const working: AssistantId | null = busy ? (liveMessage?.model?.provider ?? selectedAssistant) : null;
+    if (working && !seen.includes(working)) seen.push(working);
+    if (seen.length === 0) seen.push(selectedAssistant);
+    return {
+      assistants: seen,
+      active: working ? { id: working, state: liveMessage?.content ? "speaking" : "thinking" } : null,
+      people: participants.map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, online: online.has(p.userId) })),
+    };
+  })();
+  const people: PeopleLookup = new Map(participants.map((p) => [p.userId, { name: p.name, avatarUrl: p.avatarUrl }]));
+  const castOptions: AssistantId[] = [
+    ...PROVIDER_IDS.filter((provider) => pickerModels.some((m) => m.provider === provider && m.available)),
+    ...(props.autoEnabled && !props.agent?.allowedModels.length ? (["auto"] as const) : []),
+  ];
+  function pickAssistant(id: AssistantId) {
+    if (id === "auto") return changeModel(MODEL_CHOICE_AUTO);
+    if (props.models.find((m) => m.id === modelChoice)?.provider === id) return;
+    const first = pickerModels.find((m) => m.provider === (id as ProviderId) && m.available);
+    if (first) changeModel(first.id);
+  }
+
   const lastAnswerId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
   const lastIsAnswer = messages.at(-1)?.role === "assistant";
 
@@ -708,6 +738,7 @@ export function ChatView(props: Props) {
             <span className="truncate">{props.agent.name}</span>
           </Link>
         ) : null}
+        {messages.length > 0 ? <CastStack cast={cast} className="xl:hidden" /> : null}
         <ParticipantsBar participants={participants} online={online} onAdd={() => void openAdd([])} />
         {isOwner ? (
           <DropdownMenu>
@@ -785,11 +816,19 @@ export function ChatView(props: Props) {
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
       >
+        <div className="w-full xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,48rem)_minmax(0,1fr)]">
+        <div aria-hidden className="hidden xl:block" />
         <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
           {props.handover ? <HandoverCard handover={props.handover} className="mb-8" /> : null}
           {props.agent?.notice ? <AgentNotice notice={props.agent.notice} className="mb-6" /> : null}
           {messages.length === 0 ? (
-            <EmptyChat onPick={(text) => { setInput(text); textarea.current?.focus(); }} />
+            <EmptyChat
+              onPick={(text) => {
+                setInput(text);
+                textarea.current?.focus();
+              }}
+              cast={castOptions.length > 1 ? { options: castOptions, selected: selectedAssistant, onSelect: pickAssistant } : null}
+            />
           ) : (
             <div className="space-y-8">
               {messages.map((m, index) => {
@@ -814,12 +853,15 @@ export function ChatView(props: Props) {
                       onConfront={confrontHandler(index)}
                       confrontProgress={confrontProgress[m.id]}
                       render={renderKind ? { kind: renderKind, attachments: conversationFiles } : null}
+                      people={people}
                     />
                   </React.Fragment>
                 );
               })}
             </div>
           )}
+        </div>
+        <div className="hidden xl:block">{messages.length > 0 ? <CastRail cast={cast} className="sticky top-8 mt-8 ml-2" /> : null}</div>
         </div>
       </div>
 
@@ -1094,20 +1136,27 @@ export function ChatView(props: Props) {
   );
 }
 
-function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
+function EmptyChat({
+  onPick,
+  cast,
+}: {
+  onPick: (text: string) => void;
+  cast: { options: AssistantId[]; selected: AssistantId; onSelect: (id: AssistantId) => void } | null;
+}) {
   const t = useTranslations("chat");
   const suggestions = [t("suggestion1"), t("suggestion2"), t("suggestion3")];
   return (
-    <div className="flex min-h-[45vh] flex-col items-center justify-center text-center">
-      <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{t("emptyTitle")}</h2>
-      <p className="mt-2 max-w-md text-sm text-muted-foreground">{t("emptyBody")}</p>
+    <div className="flex min-h-[52vh] flex-col items-center justify-center text-center">
+      {cast ? <CastPicker options={cast.options} selected={cast.selected} onSelect={cast.onSelect} /> : null}
+      <h2 className={cn("text-2xl font-semibold tracking-[-0.025em] sm:text-[2rem]", cast && "mt-10")}>{t("emptyTitle")}</h2>
+      <p className="mt-3 max-w-md text-[15px] text-muted-foreground">{t("emptyBody")}</p>
       <div className="mt-8 flex max-w-xl flex-wrap justify-center gap-2">
         {suggestions.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => onPick(s)}
-            className="rounded-full border bg-card px-3.5 py-1.5 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+            className="rounded-full border bg-card/60 px-4 py-2 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
           >
             {s}
           </button>

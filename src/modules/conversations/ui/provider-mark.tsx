@@ -14,11 +14,11 @@ export function ProviderDot({ provider, className }: { provider: ProviderId; cla
 }
 
 /** "Claude · Sonnet 5.5" with the brand in medium weight. */
-export function ModelName({ provider, label, className }: { provider: ProviderId; label: string; className?: string }) {
+export function ModelName({ provider, label, className, dot = true }: { provider: ProviderId; label: string; className?: string; dot?: boolean }) {
   const { brand, name } = modelDisplay(provider, label);
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-1.5", className)}>
-      <ProviderDot provider={provider} />
+      {dot ? <ProviderDot provider={provider} /> : null}
       <span className="truncate">
         <span className="font-medium text-foreground">{brand}</span>
         <span className="text-muted-foreground"> · {name}</span>

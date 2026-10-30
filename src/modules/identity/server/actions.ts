@@ -10,6 +10,7 @@ import { safeNextPath } from "@/lib/safe-redirect";
 import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
 import { resolveLocale } from "@/i18n/request";
 import type { ActionResult } from "@/lib/errors";
+import { isTheme, THEME_COOKIE } from "@/lib/theme";
 
 const emailSchema = z.email().max(254);
 
@@ -61,6 +62,13 @@ export async function setLocale(locale: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) await supabase.from("profiles").update({ locale }).eq("id", user.id);
+  revalidatePath("/", "layout");
+}
+
+/** Appearance is a per-device choice: a cookie, read by the root layout. */
+export async function setTheme(theme: string) {
+  if (!isTheme(theme)) return;
+  (await cookies()).set(THEME_COOKIE, theme, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   revalidatePath("/", "layout");
 }
 

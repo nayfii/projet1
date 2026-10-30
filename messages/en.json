@@ -15,7 +15,11 @@
     "language": "Language",
     "signOut": "Sign out",
     "french": "Français",
-    "english": "English"
+    "english": "English",
+    "appearance": "Appearance",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeSystem": "Match device"
   },
   "roles": {
     "owner": "Owner",
@@ -649,7 +653,12 @@
     "exportDocx": "Word document (.docx)",
     "exportPdf": "PDF",
     "exportXlsx": "Excel table (.xlsx)",
-    "exportCsv": "CSV table"
+    "exportCsv": "CSV table",
+    "thinkingNamed": "{name} is thinking…",
+    "castTitle": "In the conversation",
+    "castThinking": "thinking",
+    "castWriting": "writing",
+    "castPick": "Choose the assistant"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -1156,7 +1165,12 @@
     "used": "{credits} credits used",
     "progressAnswer": "Answer",
     "progressCritique": "Critique",
-    "progressSynthesis": "Synthesis by {model}"
+    "progressSynthesis": "Synthesis by {model}",
+    "seatAnswering": "writing an answer",
+    "seatCritiquing": "critiquing the others",
+    "seatDone": "done",
+    "seatWaiting": "waiting",
+    "seatFailed": "could not answer"
   },
   "tools": {
     "libraryTitle": "Library",

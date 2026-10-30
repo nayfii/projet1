@@ -12,5 +12,9 @@ export async function getShellLabels(): Promise<ShellLabels> {
     signOut: t("signOut"),
     french: t("french"),
     english: t("english"),
+    appearance: t("appearance"),
+    themeDark: t("themeDark"),
+    themeLight: t("themeLight"),
+    themeSystem: t("themeSystem"),
   };
 }

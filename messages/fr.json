@@ -15,7 +15,11 @@
     "language": "Langue",
     "signOut": "Se déconnecter",
     "french": "Français",
-    "english": "English"
+    "english": "English",
+    "appearance": "Apparence",
+    "themeDark": "Sombre",
+    "themeLight": "Clair",
+    "themeSystem": "Comme l'appareil"
   },
   "roles": {
     "owner": "Propriétaire",
@@ -649,7 +653,12 @@
     "exportDocx": "Document Word (.docx)",
     "exportPdf": "PDF",
     "exportXlsx": "Tableau Excel (.xlsx)",
-    "exportCsv": "Tableau CSV"
+    "exportCsv": "Tableau CSV",
+    "thinkingNamed": "{name} réfléchit…",
+    "castTitle": "Dans la conversation",
+    "castThinking": "réfléchit",
+    "castWriting": "écrit",
+    "castPick": "Choisir l'assistant"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -1156,7 +1165,12 @@
     "used": "{credits} crédits utilisés",
     "progressAnswer": "Réponse",
     "progressCritique": "Critique",
-    "progressSynthesis": "Synthèse par {model}"
+    "progressSynthesis": "Synthèse par {model}",
+    "seatAnswering": "rédige sa réponse",
+    "seatCritiquing": "critique les autres",
+    "seatDone": "a terminé",
+    "seatWaiting": "en attente",
+    "seatFailed": "n'a pas pu répondre"
   },
   "tools": {
     "libraryTitle": "Bibliothèque",
