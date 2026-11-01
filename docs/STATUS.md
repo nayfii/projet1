@@ -398,6 +398,10 @@ Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `doc
 
 - **Our own back-office — second round (2026-11-01).** After V1, an internal interface for our team to run the business: support (SAV) for our customers' platforms, and growth and scale tools (accounts follow-up, activation, usage trends, retention). It will extend or sit beside the platform console. Constraint to keep: support never opens customer content unless the customer grants explicit, time-limited, logged access (CLAUDE.md §3). Not started; to design with the founder after V1.
 
+## Founder decisions — framing (2026-11-01)
+
+The founder answered the 72 points of the framing page (60 as recommended) and clarified the transfer in the conversation. The result is written into **CLAUDE.md §11** (which now wins over older sections). Built next: Step 12 (clients, permissions and collaboration, personal memory, voice dictation) and Step 13 (Applications, our console's app catalogue, launch choices: invitation-only sign-up, credits only, video and Application Review hidden, onboarding checklist, Hide switch, name "Cendr").
+
 ## Open questions for the founder
 
 The founder asked to proceed ("je suis prêt à construire le tout") without answering these yet: the proposals below are applied as **defaults** and can be changed.

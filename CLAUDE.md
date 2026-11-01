@@ -1,4 +1,4 @@
-# Product Spec — AI Workspace for SMEs (working name: TBD)
+# Product Spec — AI Workspace for SMEs (name: Cendr)
 
 Read this file at the start of every session. It is the single source of truth for product decisions.
 Do not change a decision written here without the founder's explicit approval. Record open questions in `docs/STATUS.md`.
@@ -160,9 +160,10 @@ Create account → create company → company profile → invite employees → f
 
 ## 6. Not at launch (backlog — do not build unless asked)
 - Data Preview (rejected by the founder).
-- Read-only "follow" mode and "copy" mode for shared conversations.
+- "Copy" mode for shared conversations (read-only participants moved into scope on 2026-11-01, see §11).
 - AI that intervenes in group chats without being mentioned.
-- Personal memory.
+- (Personal memory moved into scope on 2026-11-01, see §11.)
+- Our own back-office: support (SAV) for our customers' platforms and growth tools — second round, after V1.
 - Higgsfield and Canva integrations; Microsoft 365, SharePoint, Google Drive, Slack and other integrations.
 - Additional providers (Mistral, Grok…), EU-hosted or private models.
 - Autonomous agents that act on external systems (sending emails, payments).
@@ -222,3 +223,48 @@ Create account → create company → company profile → invite employees → f
 13. Olivier transfers Client A to Nathalie with a Smart Handover; Olivier loses access.
 14. A member without access cannot obtain Client A data by any route: UI, API, AI or search.
 15. The Owner sees real usage, credits and the activity log; the platform admin sees the company's usage but cannot open any conversation.
+
+---
+
+## 11. Founder decisions — product framing (2026-11-01)
+
+Taken on the framing page ("Cadrage de la plateforme") and in the conversation. Where they differ from the sections above, **this section wins**.
+
+**Name.** The product is called **Cendr**.
+
+**Art direction and avatars (Step 11).** Near-black premium interface; 3D characters for the AI assistants; personal 3D avatars made from a photo with one standardized prompt (docs/DESIGN.md).
+
+**Roles.** Add a **Manager** role: a manager manages access to clients for the members of their team (assignments), without any access to conversation content. Owner and delegated Admins stay as they are (the 10 delegable scopes are kept; ready-made profiles may be offered as shortcuts). Administrative rights and content access stay separate for every role.
+
+**Clients.**
+- Everyone can create a client (open). Only the Owner and Admins/Managers with the right can make it restricted.
+- A "Clients" section in the left sidebar: recent clients, search, add.
+- Client space: a short automatic summary built only from what the viewer may access, key information, "my conversations", "shared with me", and "new conversation" (one conversation, two entry points: chat history and client space).
+- In a chat, when a client is mentioned and the chat is not linked, the app suggests linking it (or creating the client), with a light animation of the "link to a client" control.
+- Deleting a client: archive first (reversible); permanent deletion by the Owner only, after typing the client's name.
+
+**Conversations.**
+- Private by default. The Owner, Admins and our team never read a conversation in the app. A legal obligation is handled outside the application by our team, with a trace and legal advice.
+- Shared conversations: three participant rights — read only, participate, manage participants.
+- In group conversations, writing an assistant's name naturally ("hello chat, can you…") is turned into a mention ("@chat"); the AI still answers only when mentioned.
+- **Transfer = the conversation forks.** The recipient gets the conversation and continues it. The sender keeps their own copy of everything written up to the transfer, which they can continue as a separate branch; they never see what the recipient writes afterwards. Logged without content.
+- An employee who leaves transfers their conversations first; otherwise they stay closed (nobody reads them).
+
+**Memory layers.**
+- **Personal memory** (new): what the AI keeps about one person (role, preferences, writing style), on a "What the AI knows about me" page; used for that person only; never visible to anyone else, never used in group conversations.
+- **Client memory**: after useful answers about a client, the AI proposes what to add and one click validates. Nothing from a private chat becomes shared without that click.
+- Company memory and Source Proof unchanged. Who Can Help also uses authorship of shared memory entries.
+
+**Voice dictation.** A microphone in the chat: speech is transcribed by OpenAI's transcription model into the input, the person reads it, then sends. Hide masks the text before it reaches any chat model; the voice itself reaches OpenAI unmasked (documented). Admins can switch dictation off.
+
+**Applications (replaces the Library).** Like Canva's "Apps" panel, filled with our agents: "Discover" (categories by department, most used in the company) and "Your apps" (the Owner chooses what is available, each person adds favourites). An app is called from the chat with an "Apps" button or a "/" command. Team-made tools are labelled "Made by your team". Motion Design and the Video Editor are apps. Our team adds apps (skills) for all customers from the platform console. The agentic part is a complement, not the core of the product.
+
+**Launch choices.**
+- Sign-up by invitation from our team only (no open sign-up at launch).
+- Customers see usage in credits only; estimated costs stay in our console.
+- Video agents are not offered at launch (shown as "Coming soon") until the render worker is hosted.
+- The Application Review Assistant is hidden until a lawyer has reviewed it.
+- Onboarding: after the name, the company and the avatar, go straight to the first conversation; the other setup steps become a short checklist on the home page.
+- Hide: one visible switch; the three modes in a small menu. Manual mode, detected categories, permission groups, teams and agent adaptation move to advanced settings.
+
+**Still to discuss.** Auto mode tuned for profitability (the founder wants Auto pushed; the one-line explanation must stay truthful); plans and pricing (founder, separately: B2B, three plans by company size with agentic add-ons, then "contact us"); quick fixes from our console with Claude Code (second round).
