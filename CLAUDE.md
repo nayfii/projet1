@@ -244,7 +244,7 @@ Taken on the framing page ("Cadrage de la plateforme") and in the conversation. 
 - Deleting a client: archive first (reversible); permanent deletion by the Owner only, after typing the client's name.
 
 **Conversations.**
-- Private by default. The Owner, Admins and our team never read a conversation in the app. A legal obligation is handled outside the application by our team, with a trace and legal advice.
+- Private by default. The Owner and Admins never read a conversation. **Support access (consent):** from our console, our team can request access to one specific conversation; the request is sent by e-mail to that conversation's owner, and access opens only after their approval — read-only, time-limited, logged and visible in the company's activity log (built with our back-office). There is no other access to conversation content.
 - Shared conversations: three participant rights — read only, participate, manage participants.
 - In group conversations, writing an assistant's name naturally ("hello chat, can you…") is turned into a mention ("@chat"); the AI still answers only when mentioned.
 - **Transfer = the conversation forks.** The recipient gets the conversation and continues it. The sender keeps their own copy of everything written up to the transfer, which they can continue as a separate branch; they never see what the recipient writes afterwards. Logged without content.
@@ -252,7 +252,7 @@ Taken on the framing page ("Cadrage de la plateforme") and in the conversation. 
 
 **Memory layers.**
 - **Personal memory** (new): what the AI keeps about one person (role, preferences, writing style), on a "What the AI knows about me" page; used for that person only; never visible to anyone else, never used in group conversations.
-- **Client memory**: after useful answers about a client, the AI proposes what to add and one click validates. Nothing from a private chat becomes shared without that click.
+- **Client memory is fed automatically** (founder's choice, made knowing the risk): after answers in a conversation linked to a client, or that clearly talks about one, the AI extracts the useful facts about that client and adds them to its memory when the person may write there — the facts only, never the conversation. Safeguards: each automatic entry shows where it comes from (author and date, not the conversation), can be undone at once, edited or deleted; a conversation can be set to "do not feed the memory"; Admins can switch automatic feeding off for the company. This replaces "no silent automatic capture" in §4.2 for client memory.
 - Company memory and Source Proof unchanged. Who Can Help also uses authorship of shared memory entries.
 
 **Voice dictation.** A microphone in the chat: speech is transcribed by OpenAI's transcription model into the input, the person reads it, then sends. Hide masks the text before it reaches any chat model; the voice itself reaches OpenAI unmasked (documented). Admins can switch dictation off.
