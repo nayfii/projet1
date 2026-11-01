@@ -396,6 +396,8 @@ Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `doc
 
 - **Voice dictation (2026-10-30, "très important").** A microphone in the chat: the person speaks, the text appears in the input, they read it and send it. The founder wants OpenAI's transcription model (the AI SDK supports `gpt-4o-transcribe`). Privacy point to document: the voice reaches OpenAI before Hide can mask anything (Hide then masks the written text as usual before it goes to the chat model); a company setting will switch dictation off. Model and timing are on the framing page (recommended: OpenAI, built with Step 12).
 
+- **Our own back-office — second round (2026-11-01).** After V1, an internal interface for our team to run the business: support (SAV) for our customers' platforms, and growth and scale tools (accounts follow-up, activation, usage trends, retention). It will extend or sit beside the platform console. Constraint to keep: support never opens customer content unless the customer grants explicit, time-limited, logged access (CLAUDE.md §3). Not started; to design with the founder after V1.
+
 ## Open questions for the founder
 
 The founder asked to proceed ("je suis prêt à construire le tout") without answering these yet: the proposals below are applied as **defaults** and can be changed.

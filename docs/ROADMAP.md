@@ -38,6 +38,7 @@ Built, tested automatically (unit, isolation and end-to-end tests), and checked 
 ## Next (after launch)
 
 - Online payment (Stripe), self-serve plans, usage-based extra credits.
+- **Our back-office (founder's request, second round):** customer support for our customers' platforms (access to their content only with their explicit, time-limited, logged consent) and growth tools (account follow-up, activation, usage trends, retention).
 - Ownership transfer between Owners, a company switcher for people in several companies, Google sign-in.
 - Data export of a company's memory; deletion requests across Source Proof copies.
 - Meeting minutes from audio (speech to text), OCR for scanned documents.
