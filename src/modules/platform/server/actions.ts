@@ -9,6 +9,8 @@ import { resolveLocale } from "@/i18n/request";
 import { invitationUrl, sendInvitationEmail } from "@/modules/organizations/server/invitation-email";
 import { getProvider } from "@/modules/providers/server/registry";
 import { PROVIDER_IDS, type ProviderErrorCode } from "@/modules/providers/types";
+import { fakeProviderEnabled } from "@/lib/env";
+import { checkAllModels, type ModelCheck } from "./model-check";
 
 const optionalInt = z
   .union([z.literal(""), z.coerce.number().int().min(0)])
@@ -192,4 +194,28 @@ export async function testProviderAction(input: {
   await supabase.rpc("platform_log_provider_test", { p_provider: provider, p_ok: ok, p_code: code as string, p_latency_ms: latencyMs });
   revalidatePath("/platform/health");
   return { ok: true, data: { ok, code, latencyMs } };
+}
+
+/**
+ * "Test each model" (platform console): every enabled model, the search index, dictation and avatars.
+ * No customer data; outcomes are shown, and each provider's overall result is logged like a test.
+ */
+export async function checkAllModelsAction(): Promise<ActionResult<{ testMode: boolean; checks: ModelCheck[] }>> {
+  if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
+  if (fakeProviderEnabled()) return { ok: true, data: { testMode: true, checks: [] } };
+  const supabase = await createClient();
+  const checks = await checkAllModels(supabase);
+  for (const provider of PROVIDER_IDS) {
+    const mine = checks.filter((c) => c.kind === "chat" && c.provider === provider);
+    if (mine.length === 0 || mine.every((c) => c.code === "missing_key")) continue;
+    const failed = mine.find((c) => !c.ok);
+    await supabase.rpc("platform_log_provider_test", {
+      p_provider: provider,
+      p_ok: !failed,
+      p_code: (failed?.code ?? null) as string,
+      p_latency_ms: Math.max(...mine.map((c) => c.latencyMs)),
+    });
+  }
+  revalidatePath("/platform/health");
+  return { ok: true, data: { testMode: false, checks } };
 }

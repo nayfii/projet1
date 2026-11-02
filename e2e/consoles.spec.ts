@@ -132,6 +132,9 @@ test("provider health, with a live test", async ({ browser }) => {
   // Operational, or disturbed if other tests just simulated errors: never down after a successful test.
   await expect(claude.getByText(/^(Opérationnel|Perturbé)$/)).toBeVisible();
   await expect(admin.getByTestId("render-queue")).toBeVisible();
+  // "Test each model" says plainly when the platform runs in test mode (no real AI is called).
+  await admin.getByRole("button", { name: "Tester chaque modèle" }).click();
+  await expect(admin.getByText(/Mode test activé \(AI_FAKE_PROVIDER\)/)).toBeVisible();
   await shot(admin, "106-platform-health");
 
   await admin.goto("/platform/audit");

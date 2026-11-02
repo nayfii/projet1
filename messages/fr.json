@@ -1815,7 +1815,20 @@
     "embeddingsTitle": "Recherche dans les documents",
     "embeddingsBody": "Découpage des documents et recherche par le sens (modèle : {model}).",
     "noteSource": "Les fournisseurs ne nous transmettent pas leur état : ce tableau reflète ce que vivent nos clients (erreurs et temps de réponse de leurs requêtes), sans aucun contenu.",
-    "noteTest": "« Tester maintenant » envoie une toute petite demande, sans aucune donnée client, avec le modèle le moins cher du fournisseur. Son coût est négligeable et n'est compté à aucune entreprise."
+    "noteTest": "« Tester maintenant » envoie une toute petite demande, sans aucune donnée client, avec le modèle le moins cher du fournisseur. Son coût est négligeable et n'est compté à aucune entreprise.",
+    "checkAllTitle": "Tester chaque modèle",
+    "checkAllBody": "Essaie pour de vrai chaque modèle utilisé par le produit : les modèles de conversation activés, la recherche dans les documents, la dictée et les avatars. Aucune donnée client ; quelques jetons à notre charge.",
+    "checkAll": "Tester chaque modèle",
+    "checkAllRunning": "Test en cours…",
+    "checkAllSummary": "{ok} sur {total} fonctionnent.",
+    "checkAllTestMode": "Mode test activé (AI_FAKE_PROVIDER) : aucune vraie IA n'est appelée. Retirez cette variable dans Vercel puis redéployez pour brancher les vraies IA.",
+    "checkAllHelp": "« clé d'accès absente » : la clé n'est pas dans Vercel. « clé d'accès refusée » : la clé est fausse ou désactivée. « compte du fournisseur sans crédit » : ajoutez du crédit ou activez la facturation chez le fournisseur. « modèle introuvable » : le nom du modèle a changé, corrigez-le dans Modèles et tarifs.",
+    "checkOk": "répond ({ms} ms)",
+    "checkKind": {
+      "embedding": "Recherche dans les documents",
+      "dictation": "Dictée vocale",
+      "avatar": "Avatars 3D"
+    }
   },
   "avatar": {
     "title": "Mon avatar",

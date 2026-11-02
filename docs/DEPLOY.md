@@ -123,6 +123,42 @@ Notez ce qui va et ce qui ne va pas, avec la page et ce que vous avez cliqué : 
 
 ---
 
+## Partie 4 — Brancher les vraies IA (ChatGPT, Claude, Gemini)
+
+Chaque fournisseur facture à l'usage : il faut **un compte, du crédit et une clé** chez chacun. Les clés se collent
+**uniquement dans Vercel**, jamais dans la conversation.
+
+1. **ChatGPT (OpenAI)** — sur **platform.openai.com** : *Settings → Billing → Add to credit balance* (10 à 20 $ suffisent
+   pour tester). Si vous n'avez pas encore de clé dans Vercel : *API keys → Create new secret key*.
+   Cette clé sert aussi à la recherche dans les documents, à la dictée et aux avatars.
+2. **Claude (Anthropic)** — sur **console.anthropic.com** : *Settings → Billing → Buy credits* (5 $ minimum), puis
+   *API keys → Create Key*.
+3. **Gemini (Google)** — sur **aistudio.google.com** : *Get API key → Create API key*, puis **activez la facturation**
+   (*Set up billing*, une carte bancaire). Sans facturation, Google peut utiliser les données pour améliorer ses produits.
+4. **Vercel** — projet → *Settings → Environment Variables* (environnement *Production*) :
+
+   | Nom | Valeur |
+   |---|---|
+   | `OPENAI_API_KEY` | la clé OpenAI |
+   | `ANTHROPIC_API_KEY` | la clé Anthropic |
+   | `GOOGLE_GENERATIVE_AI_API_KEY` | la clé Gemini |
+   | `EMBEDDINGS_PROVIDER` | `openai` |
+
+   **Supprimez `AI_FAKE_PROVIDER`** s'il existe (sinon l'IA reste simulée). Puis *Deployments → ⋯ → Redeploy* : les
+   variables ne comptent qu'après un nouveau déploiement.
+5. **Vérifier** — connecté avec votre compte de l'équipe, ouvrez **/platform/health** et cliquez **« Tester chaque modèle »** :
+   chaque ligne doit être verte. Sinon, la raison est écrite en clair sur la ligne (clé absente, clé refusée, compte
+   sans crédit, modèle introuvable).
+6. **Dans l'entreprise** — *Administration → Modèles* : cochez les modèles autorisés, choisissez le modèle par défaut ou
+   Auto. Les documents ajoutés avant l'arrivée d'une clé OpenAI avec crédit sont retrouvés par leurs mots ; ajoutez-les
+   de nouveau pour qu'ils le soient aussi par le sens.
+
+*Facultatif :* pour que Claude puisse lancer lui-même les tests avec les vraies IA, ajoutez les mêmes clés dans les
+réglages de l'environnement Claude Code (menu de l'environnement dans la barre de titre de la session → *Edit*), sous les
+mêmes noms. Une nouvelle session les prend en compte.
+
+---
+
 ## Ce qui ne marchera pas encore en ligne
 
 - **Les vidéos** (Motion Design, montage) : l'aperçu animé fonctionne, mais le MP4 reste « En attente » tant que le moteur vidéo n'est pas hébergé (il demande un serveur à part, en Europe : décision à prendre, question 14 de `docs/STATUS.md`). La page **Plateforme → État des fournisseurs** l'indique comme « Bloqué » au bout de 3 minutes.

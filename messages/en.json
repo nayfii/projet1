@@ -1815,7 +1815,20 @@
     "embeddingsTitle": "Document search",
     "embeddingsBody": "Document splitting and search by meaning (model: {model}).",
     "noteSource": "Providers do not send us their status: this page reflects what our customers experience (errors and response times of their requests), without any content.",
-    "noteTest": "\"Test now\" sends a tiny request, with no customer data, using the provider's cheapest model. Its cost is negligible and is not counted against any company."
+    "noteTest": "\"Test now\" sends a tiny request, with no customer data, using the provider's cheapest model. Its cost is negligible and is not counted against any company.",
+    "checkAllTitle": "Test each model",
+    "checkAllBody": "Tries every model the product uses for real: the enabled chat models, document search, dictation and avatars. No customer data; a few tokens at our expense.",
+    "checkAll": "Test each model",
+    "checkAllRunning": "Testing…",
+    "checkAllSummary": "{ok} of {total} work.",
+    "checkAllTestMode": "Test mode is on (AI_FAKE_PROVIDER): no real AI is called. Remove this variable in Vercel and redeploy to connect the real AIs.",
+    "checkAllHelp": "\"access key missing\": the key is not in Vercel. \"access key rejected\": the key is wrong or disabled. \"provider account out of credit\": add credit or turn billing on with the provider. \"model not found\": the model's name changed; fix it in Models and rates.",
+    "checkOk": "answers ({ms} ms)",
+    "checkKind": {
+      "embedding": "Document search",
+      "dictation": "Voice dictation",
+      "avatar": "3D avatars"
+    }
   },
   "avatar": {
     "title": "My avatar",

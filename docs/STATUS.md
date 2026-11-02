@@ -248,6 +248,19 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Support access by consent (our team asks for one conversation; the owner approves by e-mail; read-only, time-limited, logged) | **not started**: built with our back-office (second round). Awaiting the founder's confirmation that the e-mail goes to the conversation's owner |
 | Product name "Cendr" in the interface | **not started** (Step 13) |
 
+## Connecting the real AIs (2026-11-02)
+
+- **"Tester chaque modèle"** (Platform → État des fournisseurs): tries every enabled chat model, the search index model,
+  the dictation model and the avatar image model for real, one line each, with the reason in plain words. **done**
+- **Out-of-credit errors recognised for every provider** (Anthropic answers 400, Google 403 "billing", some 402): shown
+  as "compte du fournisseur sans crédit" instead of "demande refusée". **done**, unit-tested.
+- **First real run (2026-11-02, from our work environment, OpenAI key only):** every OpenAI model name is recognised;
+  GPT-6 Luna answers; GPT-6.1 Sol, GPT-6 Astra and the embeddings model fail for **lack of credit** on the OpenAI account;
+  the dictation (`gpt-4o-transcribe`) and avatar (`gpt-image-1.5`) models are available to the key. Claude and Gemini:
+  no key yet. **To do by the founder:** credit on OpenAI, Anthropic and Google keys with billing, all three in Vercel
+  (`docs/DEPLOY.md`, Partie 4), then "Tester chaque modèle" online.
+- Documents added while embeddings were unavailable stay searchable by their words only (no automatic re-indexing yet).
+
 ## Tests (Step 12)
 
 | Suite | Result |

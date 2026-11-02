@@ -8,9 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { getLastProviderTests, getProviderHealth } from "@/modules/platform/server/queries";
 import { classifyProvider, classifyRenderQueue, type HealthStatus, type RenderStatus } from "@/modules/platform/health";
 import { ProviderTestButton } from "@/modules/platform/ui/provider-test-button";
+import { ModelCheckPanel } from "@/modules/platform/ui/model-check-panel";
 import { configuredProviders } from "@/modules/providers/server/registry";
 import { embeddingModelName, embeddingsAvailable } from "@/modules/providers/server/embeddings";
 import { PROVIDER_BRANDS, PROVIDER_ERROR_CODES, PROVIDER_IDS } from "@/modules/providers/types";
+
+/** "Test each model" waits for every model at once (30 seconds at most each). */
+export const maxDuration = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("platformNav");
@@ -95,6 +99,8 @@ export default async function PlatformHealthPage() {
           );
         })}
       </div>
+
+      <ModelCheckPanel />
 
       <div className="mt-6 grid gap-3 md:grid-cols-2">
         <Card className="p-5" data-testid="render-queue">

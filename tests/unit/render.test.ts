@@ -188,5 +188,5 @@ describe("reading a video's header", () => {
       expect(media!.duration).toBeCloseTo(2.5, 1);
     }
     expect(await readMp4Media(async () => new Uint8Array([0, 0, 0, 8, 0x66, 0x72, 0x65, 0x65]), 8)).toBeNull();
-  });
+  }, 30_000); // FFmpeg makes four small videos: slow when the whole suite runs at once.
 });

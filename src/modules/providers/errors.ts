@@ -5,6 +5,8 @@ import type { ProviderError } from "./types";
  * Only the code and HTTP status are kept: provider errors can carry the request body
  * (the prompt), which must never reach logs or the browser.
  */
+const BILLING = /insufficient_quota|credit[_ ]balance|billing|no credits|payment required|exceeded your current quota/;
+
 export function normalizeProviderError(error: unknown): ProviderError {
   const e = (error ?? {}) as {
     name?: string;
@@ -25,14 +27,14 @@ export function normalizeProviderError(error: unknown): ProviderError {
   const body = `${e.responseBody ?? ""} ${e.message ?? ""}`.toLowerCase();
 
   if (status !== undefined) {
+    // An account without credit or billing: Anthropic answers 400 ("credit balance is too low"), OpenAI
+    // 429 ("insufficient_quota"), Google 400/403/429 ("billing"), some providers 402.
+    if (status === 402 || ([400, 403, 429].includes(status) && BILLING.test(body))) return { code: "provider_quota", retryable: false, status };
     if (status === 401 || status === 403) return { code: "auth_failed", retryable: false, status };
     if (status === 404) return { code: "model_not_found", retryable: false, status };
     if (status === 408 || status === 409 || status === 425) return { code: "unavailable", retryable: true, status };
     if (status === 413) return { code: "context_too_long", retryable: false, status };
-    if (status === 429) {
-      if (/insufficient_quota|credit_balance|billing|no credits/.test(body)) return { code: "provider_quota", retryable: false, status };
-      return { code: "rate_limited", retryable: true, status };
-    }
+    if (status === 429) return { code: "rate_limited", retryable: true, status };
     if (status >= 500) return { code: "unavailable", retryable: true, status };
     if (status === 400 || status === 422) {
       if (/context|too long|too many tokens|maximum.*tokens|token limit|prompt is too long/.test(body)) {

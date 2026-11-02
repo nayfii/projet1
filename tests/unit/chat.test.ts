@@ -266,6 +266,12 @@ describe("provider errors are explained, never leaked", () => {
     [{ statusCode: 401 }, "auth_failed"],
     [{ statusCode: 429, responseBody: '{"error":{"type":"rate_limit_error"}}' }, "rate_limited"],
     [{ statusCode: 429, responseBody: '{"error":{"type":"insufficient_quota"}}' }, "provider_quota"],
+    // Anthropic: an account without credit answers 400.
+    [{ statusCode: 400, responseBody: '{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}' }, "provider_quota"],
+    // Google: a project without billing.
+    [{ statusCode: 403, responseBody: "This API method requires billing to be enabled." }, "provider_quota"],
+    [{ statusCode: 402 }, "provider_quota"],
+    [{ statusCode: 403 }, "auth_failed"],
     [{ statusCode: 503 }, "unavailable"],
     [{ statusCode: 529 }, "unavailable"],
     [{ statusCode: 404 }, "model_not_found"],
