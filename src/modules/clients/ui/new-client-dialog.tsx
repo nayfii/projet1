@@ -16,13 +16,16 @@ export function NewClientDialog({
   onOpenChange,
   canRestrict,
   defaultName,
+  linkConversationId,
   onCreated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   canRestrict: boolean;
   defaultName?: string;
-  onCreated?: (id: string) => void;
+  /** Opened from a conversation: it is linked to the new client by the server, in the same step. */
+  linkConversationId?: string;
+  onCreated?: (id: string, name: string) => void;
 }) {
   const t = useTranslations("clients");
   const tCommon = useTranslations("common");
@@ -41,11 +44,12 @@ export function NewClientDialog({
             showAssignees={false}
             canRestrict={canRestrict}
             defaultName={defaultName}
+            linkConversationId={linkConversationId}
             submitLabel={t("create")}
-            onCreated={(id) => {
+            onCreated={(id, name) => {
               toast.success(t("createdToast"));
               onOpenChange(false);
-              if (onCreated) onCreated(id);
+              if (onCreated) onCreated(id, name);
               else router.push(`/clients/${id}`);
               router.refresh();
             }}

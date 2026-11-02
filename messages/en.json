@@ -649,8 +649,6 @@
     },
     "noTextFound": "No readable text in “{name}” (scanned document?). The AI will not be able to read it.",
     "linkClient": "Link to a client",
-    "clientLabel": "Conversation client",
-    "noClient": "No client",
     "conversationActions": "Conversation actions",
     "rename": "Rename",
     "delete": "Delete",
@@ -711,7 +709,12 @@
     },
     "linkSuggestion": "Link to {name}?",
     "createClientSuggestion": "Create the client \"{name}\"?",
-    "dismissSuggestion": "Dismiss"
+    "dismissSuggestion": "Dismiss",
+    "newClient": "New client",
+    "unlinkClient": "Unlink from {name}",
+    "clientUnlinked": "Conversation unlinked from {name}",
+    "clientSearch": "Search clients",
+    "clientNoMatch": "No client found"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",

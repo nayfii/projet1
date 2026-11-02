@@ -81,6 +81,36 @@ test("voice dictation writes into the message box, to be read before sending", a
   await expect(page.locator("article")).toHaveCount(0);
 });
 
+test("from a conversation: create a client and link it at once, then detach it", async () => {
+  const newName = `Boulangerie Lune ${run}`;
+  await page.goto("/chat");
+  await composer().fill("Rédige un mot de bienvenue pour un nouveau client.");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(page.locator('article[aria-busy="true"]')).toHaveCount(0, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
+
+  await page.getByRole("button", { name: "Rattacher à un client" }).click();
+  await expect(page.getByRole("menuitem", { name: "Aucun client" })).toHaveCount(0);
+  await page.getByRole("menuitem", { name: "Nouveau client" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nouveau client" });
+  await dialog.getByLabel("Nom du client").fill(newName);
+  await dialog.getByRole("button", { name: "Créer le client" }).click();
+  // Linked at once: the header names the client, and so does the conversation in the sidebar.
+  const header = page.getByRole("button", { name: newName });
+  await expect(header).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: newName })).toBeVisible();
+  await shot(page, "s12-08-new-client-linked");
+
+  await page.getByRole("button", { name: newName }).click();
+  await expect(page.getByRole("menuitem", { name: "Nouveau client" })).toHaveCount(0);
+  await page.getByRole("menuitem", { name: `Détacher de ${newName}` }).click();
+  await expect(page.getByText(`Conversation détachée de ${newName}`)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Rattacher à un client" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Rattacher à un client" })).toBeVisible();
+});
+
 test("personal notes live on the profile page, for this person only", async () => {
   await page.goto("/profile");
   await expect(page.getByRole("heading", { name: "Ce que l'IA sait de moi" })).toBeVisible();

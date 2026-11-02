@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { GlobeIcon, LockIcon } from "lucide-react";
 import { Input, Textarea } from "@/components/ui/input";
@@ -17,28 +17,37 @@ export function ClientForm({
   canRestrict = true,
   showAssignees = true,
   defaultName,
+  linkConversationId,
 }: {
   members: { userId: string; name: string }[];
   submitLabel: string;
-  onCreated?: (id: string) => void;
+  onCreated?: (id: string, name: string) => void;
   secondary?: React.ReactNode;
   /** Restricted clients: Owner, client Admins and Managers (CLAUDE.md §11). Others create open ones. */
   canRestrict?: boolean;
   /** The quick dialog skips choosing people: access is managed on the client's page. */
   showAssignees?: boolean;
   defaultName?: string;
+  /** Created from a conversation: the server links that conversation to the new client in the same step. */
+  linkConversationId?: string;
 }) {
   const t = useTranslations("clients");
   const tErrors = useTranslations("errors");
   const [state, action] = useActionState(createClientAction, null);
   const [visibility, setVisibility] = useState<"open" | "restricted">("open");
 
+  // Once per created client, even if the parent re-renders with a new callback.
+  const reported = useRef<string | null>(null);
   useEffect(() => {
-    if (state?.ok && state.data) onCreated?.(state.data.id);
+    if (state?.ok && state.data && state.data.id !== reported.current) {
+      reported.current = state.data.id;
+      onCreated?.(state.data.id, state.data.name);
+    }
   }, [state, onCreated]);
 
   return (
     <form action={action} className="space-y-5">
+      {linkConversationId ? <input type="hidden" name="linkConversation" value={linkConversationId} /> : null}
       <Field label={t("name")} htmlFor="client-name" error={state && !state.ok && state.fields?.name ? t("nameRequired") : undefined}>
         <Input id="client-name" name="name" required maxLength={160} placeholder={t("namePlaceholder")} defaultValue={defaultName} autoFocus={Boolean(defaultName)} />
       </Field>

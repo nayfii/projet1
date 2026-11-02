@@ -649,8 +649,6 @@
     },
     "noTextFound": "Aucun texte lisible dans « {name} » (document scanné ?). L'IA ne pourra pas le lire.",
     "linkClient": "Rattacher à un client",
-    "clientLabel": "Client de la conversation",
-    "noClient": "Aucun client",
     "conversationActions": "Actions sur la conversation",
     "rename": "Renommer",
     "delete": "Supprimer",
@@ -711,7 +709,12 @@
     },
     "linkSuggestion": "Rattacher à {name} ?",
     "createClientSuggestion": "Créer le client « {name} » ?",
-    "dismissSuggestion": "Ignorer"
+    "dismissSuggestion": "Ignorer",
+    "newClient": "Nouveau client",
+    "unlinkClient": "Détacher de {name}",
+    "clientUnlinked": "Conversation détachée de {name}",
+    "clientSearch": "Rechercher un client",
+    "clientNoMatch": "Aucun client trouvé"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",

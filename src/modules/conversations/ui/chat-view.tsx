@@ -11,6 +11,7 @@ import {
   AtSignIcon,
   BrainIcon,
   BriefcaseIcon,
+  CheckIcon,
   GitBranchIcon,
   LightbulbIcon,
   LogOutIcon,
@@ -18,8 +19,10 @@ import {
   MoreHorizontalIcon,
   PaperclipIcon,
   PencilIcon,
+  PlusIcon,
   SquareIcon,
   Trash2Icon,
+  UnlinkIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +31,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -214,6 +216,12 @@ export function ChatView(props: Props) {
   // Clients created from this conversation are known right away, before the page data reloads.
   const [createdClients, setCreatedClients] = React.useState<{ id: string; name: string }[]>([]);
   const allClients = React.useMemo(() => [...props.clients, ...createdClients], [props.clients, createdClients]);
+  // The "link to a client" menu: a search field once the list gets long.
+  const [clientQuery, setClientQuery] = React.useState("");
+  const shownClients = React.useMemo(() => {
+    const q = clientQuery.trim().toLowerCase();
+    return q ? allClients.filter((c) => c.name.toLowerCase().includes(q)) : allClients;
+  }, [allClients, clientQuery]);
   const clientName = allClients.find((c) => c.id === clientId)?.name ?? null;
   const [creatingClient, setCreatingClient] = React.useState<string | null>(null);
   const [feedMemory, setFeedMemory] = React.useState(props.conversation?.feedMemory ?? true);
@@ -698,8 +706,10 @@ export function ChatView(props: Props) {
     }
   }
 
-  async function changeClient(next: string | null) {
+  /** Links the conversation to a client, or unlinks it (null). A new chat is linked when it is created. */
+  async function changeClient(next: string | null, nextName?: string) {
     const previous = clientId;
+    const previousName = clientName;
     setClientId(next);
     if (!conversationId) return;
     const result = await setConversationClientAction({ conversationId, clientId: next });
@@ -708,7 +718,8 @@ export function ChatView(props: Props) {
       toast.error(result.error === "no_client_access" ? tErrors("no_client_access") : t("clientLinkFailed"));
       return;
     }
-    chatList.upsert({ id: conversationId, clientId: next, clientName: allClients.find((c) => c.id === next)?.name ?? null });
+    chatList.upsert({ id: conversationId, clientId: next, clientName: next ? (nextName ?? allClients.find((c) => c.id === next)?.name ?? null) : null });
+    if (!next && previousName) toast.success(t("clientUnlinked", { name: previousName }));
   }
 
   async function addFiles(files: FileList | null) {
@@ -839,22 +850,51 @@ export function ChatView(props: Props) {
           </span>
         ) : null}
         {isOwner ? (
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(open) => !open && setClientQuery("")}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className={cn("max-w-52 gap-1.5 text-muted-foreground", clientName && "text-foreground")}>
                 <BriefcaseIcon />
                 <span className="truncate">{clientName ?? t("linkClient")}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-80 w-60 overflow-y-auto">
-              <DropdownMenuLabel>{t("clientLabel")}</DropdownMenuLabel>
-              <DropdownMenuItem onSelect={() => changeClient(null)}>{t("noClient")}</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-64">
+              {allClients.length > 6 ? (
+                <div className="p-1 pb-1.5">
+                  <Input
+                    value={clientQuery}
+                    onChange={(e) => setClientQuery(e.target.value)}
+                    // Typing goes to the field, not to the menu's type-to-select.
+                    onKeyDown={(e) => e.stopPropagation()}
+                    placeholder={t("clientSearch")}
+                    aria-label={t("clientSearch")}
+                    className="h-8 text-[13px]"
+                  />
+                </div>
+              ) : null}
+              {allClients.length > 0 ? (
+                <div className="max-h-64 overflow-y-auto">
+                  {shownClients.map((c) => (
+                    <DropdownMenuItem key={c.id} onSelect={() => void changeClient(c.id, c.name)}>
+                      <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                      {c.id === clientId ? <CheckIcon className="text-brand" /> : null}
+                    </DropdownMenuItem>
+                  ))}
+                  {shownClients.length === 0 ? <p className="px-2 py-1.5 text-[13px] text-muted-foreground">{t("clientNoMatch")}</p> : null}
+                </div>
+              ) : null}
               {allClients.length > 0 ? <DropdownMenuSeparator /> : null}
-              {allClients.map((c) => (
-                <DropdownMenuItem key={c.id} onSelect={() => changeClient(c.id)}>
-                  <span className="truncate">{c.name}</span>
+              {/* Not linked: create a client and link it at once. Linked: detach the conversation from it. */}
+              {clientId ? (
+                <DropdownMenuItem onSelect={() => void changeClient(null)}>
+                  <UnlinkIcon />
+                  <span className="truncate">{t("unlinkClient", { name: clientName ?? "" })}</span>
                 </DropdownMenuItem>
-              ))}
+              ) : (
+                <DropdownMenuItem onSelect={() => setCreatingClient(clientQuery.trim())}>
+                  <PlusIcon />
+                  {t("newClient")}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : clientName ? (
@@ -1144,9 +1184,10 @@ export function ChatView(props: Props) {
         onOpenChange={(open) => !open && setCreatingClient(null)}
         canRestrict={props.canRestrictClients}
         defaultName={creatingClient ?? undefined}
-        onCreated={(id) => {
-          setCreatedClients((list) => [...list, { id, name: creatingClient ?? "" }]);
-          void changeClient(id);
+        linkConversationId={conversationId ?? undefined}
+        onCreated={(id, name) => {
+          setCreatedClients((list) => [...list, { id, name }]);
+          void changeClient(id, name);
         }}
       />
       <ConfrontDialog target={confrontTarget} onOpenChange={(open) => !open && setConfrontTarget(null)} onRun={confront} />

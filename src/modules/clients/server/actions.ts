@@ -28,7 +28,10 @@ function revalidateClients() {
  * Anyone in the company creates an open client (CLAUDE.md §11); a restricted one needs client
  * management (Owner, client Admins) or the Manager role. Re-checked by the clients policy.
  */
-export async function createClientAction(_: unknown, formData: FormData): Promise<ActionResult<{ id: string }>> {
+export async function createClientAction(
+  _: unknown,
+  formData: FormData,
+): Promise<ActionResult<{ id: string; name: string; linked: boolean }>> {
   const ctx = await memberOrNull();
   if (!ctx) return { ok: false, error: "forbidden" };
   const parsed = clientSchema.safeParse({
@@ -66,8 +69,21 @@ export async function createClientAction(_: unknown, formData: FormData): Promis
     );
     if (assignError) return { ok: false, error: toErrorCode(assignError) };
   }
+  // Created from a conversation: link it now, on the server, so the link never depends on the page
+  // staying open. Same rule as linking by hand: the conversations policy decides (owner, client access).
+  const linkConversation = z.uuid().safeParse(formData.get("linkConversation"));
+  let linked = false;
+  if (linkConversation.success) {
+    const { error: linkError, count } = await supabase
+      .from("conversations")
+      .update({ client_id: data.id }, { count: "exact" })
+      .eq("id", linkConversation.data)
+      .eq("company_id", ctx.active.companyId);
+    linked = !linkError && Boolean(count);
+    if (linked) revalidatePath("/chat", "layout");
+  }
   revalidateClients();
-  return { ok: true, data: { id: data.id } };
+  return { ok: true, data: { id: data.id, name: parsed.data.name, linked } };
 }
 
 export async function updateClientAction(input: {
