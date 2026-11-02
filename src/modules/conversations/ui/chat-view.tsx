@@ -3,13 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowRightLeftIcon,
   ArrowUpIcon,
   AtSignIcon,
+  BrainIcon,
   BriefcaseIcon,
+  GitBranchIcon,
   LightbulbIcon,
   LogOutIcon,
   WandSparklesIcon,
@@ -45,6 +47,7 @@ import {
   removePendingAttachmentAction,
   renameConversationAction,
   setConversationClientAction,
+  setConversationFeedMemoryAction,
   setConversationModelAction,
 } from "../server/actions";
 import { titleFromMessage, useChatList } from "./chat-list";
@@ -56,6 +59,9 @@ import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
 import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
 import { CastPicker, CastRail, CastStack, type Cast } from "@/modules/avatars/ui/conversation-cast";
+import { detectClientMention } from "@/modules/clients/detect";
+import { autoClientMemoryAction, undoAutoMemoryAction } from "@/modules/memory/server/actions";
+import { NewClientDialog } from "@/modules/clients/ui/new-client-dialog";
 import type { AssistantId } from "@/modules/avatars/assistants";
 import { leaveConversationAction, loadParticipantsAction, loadTimelineMessagesAction } from "@/modules/collaboration/server/actions";
 import type { Colleague, Handover, Participant } from "@/modules/collaboration/server/queries";
@@ -63,6 +69,7 @@ import { AddPeopleDialog, ParticipantsBar, TypingLine } from "@/modules/collabor
 import { TransferDialog } from "@/modules/collaboration/ui/transfer-dialog";
 import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
 import { filterMentions, MentionMenu, mentionAt, PROVIDER_TOKENS, type MentionOption } from "@/modules/collaboration/ui/mention-menu";
+import { naturalMention } from "@/modules/collaboration/mentions";
 import { useConversationRealtime } from "@/modules/collaboration/ui/use-conversation-realtime";
 import { ConfrontDialog } from "@/modules/confronter/ui/confront-dialog";
 import type { ConfrontEstimate } from "@/modules/confronter/server/actions";
@@ -92,12 +99,18 @@ type Props = {
     modelChoice: string;
     messages: TimelineMessage[];
     lastHideModes?: HideMode[];
+    /** "Do not feed the memory" when false (automatic client memory, CLAUDE.md §11). */
+    feedMemory?: boolean;
+    /** This conversation is the sender's own copy, kept after a transfer. */
+    copyOf?: { toName: string | null; at: string } | null;
   } | null;
   models: PickerModel[];
   autoEnabled: boolean;
   defaultChoice: string;
   clients: { id: string; name: string }[];
   initialClientId: string | null;
+  /** May create restricted clients (the quick "create this client" dialog). */
+  canRestrictClients: boolean;
   quota: QuotaState | null;
   fakeMode: boolean;
   memoryTargets: { spaceId: string; clientId: string | null; label: string }[];
@@ -159,6 +172,10 @@ export function ChatView(props: Props) {
   const group = participants.length > 1;
   // A new conversation is the viewer's own; otherwise the participant marked owner.
   const isOwner = participants.length === 0 || participants.some((p) => p.userId === props.me.id && p.role === "owner");
+  // Rights in a shared conversation (CLAUDE.md §11): the database enforces them; the screen follows.
+  const myRole = participants.find((p) => p.userId === props.me.id)?.role ?? "owner";
+  const canManagePeople = myRole === "owner" || myRole === "manager";
+  const readOnly = myRole === "reader";
   const participantIds = new Set(participants.map((p) => p.userId));
   // The answer this browser is streaming: real-time reloads leave it alone.
   const liveRef = React.useRef<string | null>(null);
@@ -189,8 +206,16 @@ export function ChatView(props: Props) {
 
   const blocked = quota?.state === "blocked";
   // In a group, people can still talk to each other without credits; only "@IA" is refused.
-  const inputBlocked = blocked && !group;
-  const clientName = props.clients.find((c) => c.id === clientId)?.name ?? null;
+  // Read-only participants never write (the database refuses it too).
+  const inputBlocked = (blocked && !group) || readOnly;
+  // Clients created from this conversation are known right away, before the page data reloads.
+  const [createdClients, setCreatedClients] = React.useState<{ id: string; name: string }[]>([]);
+  const allClients = React.useMemo(() => [...props.clients, ...createdClients], [props.clients, createdClients]);
+  const clientName = allClients.find((c) => c.id === clientId)?.name ?? null;
+  const [creatingClient, setCreatingClient] = React.useState<string | null>(null);
+  const [feedMemory, setFeedMemory] = React.useState(props.conversation?.feedMemory ?? true);
+  const tMemory = useTranslations("memory");
+  const [clientMentionDismissed, setMentionDismissedClient] = React.useState<string | null>(null);
   const uploading = attachments.some((a) => a.uploading);
   // An answer started before this page was opened is still being written: wait for it. In a group,
   // real time shows it when it is done and people keep talking meanwhile.
@@ -475,6 +500,8 @@ export function ChatView(props: Props) {
               ),
             );
             if (event.quota) setQuota(event.quota);
+            const target = typeof payload.conversationId === "string" ? payload.conversationId : null;
+            if (target && id && clientId && feedMemory && !options.confrontation) void feedClientMemory(target, id);
           } else if (event.type === "error") {
             const id = currentLive;
             const replaced = restoreReplaced?.status === "complete" ? restoreReplaced : null;
@@ -522,7 +549,8 @@ export function ChatView(props: Props) {
     }
     hide.setConfirming(false);
     const hideChoices = hidePayload ?? hide.payload();
-    const text = input.trim();
+    // In a group, "hello chat, …" calls the AI like "@ChatGPT" would (CLAUDE.md §11).
+    const text = group ? naturalMention(input.trim()) : input.trim();
     const ready = attachments.filter((a) => a.id);
     const id = await ensureConversation();
     if (!id) return;
@@ -633,6 +661,32 @@ export function ChatView(props: Props) {
     if (conversationId) void setConversationModelAction({ conversationId, modelChoice: choice });
   }
 
+  /** Client memory fed automatically after an answer, with "Undo" (CLAUDE.md §11). */
+  async function feedClientMemory(conversation: string, messageId: string) {
+    const result = await autoClientMemoryAction({ conversationId: conversation, messageId });
+    if (!result) return;
+    const ids = result.entries.map((e) => e.id);
+    toast(tMemory("autoAdded", { count: ids.length, client: result.clientName }), {
+      description: result.entries.map((e) => e.title).join(" · "),
+      duration: 9000,
+      action: {
+        label: tMemory("autoUndo"),
+        onClick: () => void undoAutoMemoryAction({ entryIds: ids }).then((r) => (r.ok ? toast.success(tMemory("autoUndone")) : toast.error(tErrors(r.error)))),
+      },
+    });
+  }
+
+  async function toggleFeedMemory() {
+    if (!conversationId) return setFeedMemory((v) => !v);
+    const next = !feedMemory;
+    setFeedMemory(next);
+    const result = await setConversationFeedMemoryAction({ conversationId, feed: next });
+    if (!result.ok) {
+      setFeedMemory(!next);
+      toast.error(tErrors(result.error));
+    }
+  }
+
   async function changeClient(next: string | null) {
     const previous = clientId;
     setClientId(next);
@@ -643,7 +697,7 @@ export function ChatView(props: Props) {
       toast.error(result.error === "no_client_access" ? tErrors("no_client_access") : t("clientLinkFailed"));
       return;
     }
-    chatList.upsert({ id: conversationId, clientId: next, clientName: props.clients.find((c) => c.id === next)?.name ?? null });
+    chatList.upsert({ id: conversationId, clientId: next, clientName: allClients.find((c) => c.id === next)?.name ?? null });
   }
 
   async function addFiles(files: FileList | null) {
@@ -694,6 +748,12 @@ export function ChatView(props: Props) {
   }
 
   const memoryTargets = [...props.memoryTargets].sort((a, b) => Number(b.clientId === clientId) - Number(a.clientId === clientId));
+  // A client named in an unlinked conversation: suggest linking it, or creating it (CLAUDE.md §11).
+  const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  const clientMention = !clientId && isOwner ? detectClientMention(`${lastUserText}\n${input}`, allClients) : null;
+  const mentionKey = clientMention ? (clientMention.kind === "link" ? clientMention.id : `new:${clientMention.name.toLowerCase()}`) : null;
+  const showMention = clientMention !== null && mentionKey !== clientMentionDismissed;
+
   // Avatars (Step 11): who is in the conversation, and which assistant is at work.
   const selectedAssistant: AssistantId =
     modelChoice === MODEL_CHOICE_AUTO ? "auto" : (props.models.find((m) => m.id === modelChoice)?.provider ?? "auto");
@@ -739,7 +799,34 @@ export function ChatView(props: Props) {
           </Link>
         ) : null}
         {messages.length > 0 ? <CastStack cast={cast} className="xl:hidden" /> : null}
-        <ParticipantsBar participants={participants} online={online} onAdd={() => void openAdd([])} />
+        <ParticipantsBar
+          participants={participants}
+          online={online}
+          onAdd={() => void openAdd([])}
+          canManage={canManagePeople}
+          conversationId={conversationId}
+          meId={props.me.id}
+          onChanged={() => void refreshParticipants()}
+        />
+        {showMention && clientMention ? (
+          <span className="animate-nudge inline-flex h-8 max-w-64 items-center gap-0.5 rounded-full border border-brand/40 bg-brand-soft pr-1 pl-3 text-[13px]">
+            <button
+              type="button"
+              className="truncate font-medium text-foreground"
+              onClick={() => (clientMention.kind === "link" ? void changeClient(clientMention.id) : setCreatingClient(clientMention.name))}
+            >
+              {clientMention.kind === "link" ? t("linkSuggestion", { name: clientMention.name }) : t("createClientSuggestion", { name: clientMention.name })}
+            </button>
+            <button
+              type="button"
+              aria-label={t("dismissSuggestion")}
+              onClick={() => setMentionDismissedClient(mentionKey)}
+              className="flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              {"×"}
+            </button>
+          </span>
+        ) : null}
         {isOwner ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -751,8 +838,8 @@ export function ChatView(props: Props) {
             <DropdownMenuContent align="end" className="max-h-80 w-60 overflow-y-auto">
               <DropdownMenuLabel>{t("clientLabel")}</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => changeClient(null)}>{t("noClient")}</DropdownMenuItem>
-              {props.clients.length > 0 ? <DropdownMenuSeparator /> : null}
-              {props.clients.map((c) => (
+              {allClients.length > 0 ? <DropdownMenuSeparator /> : null}
+              {allClients.map((c) => (
                 <DropdownMenuItem key={c.id} onSelect={() => changeClient(c.id)}>
                   <span className="truncate">{c.name}</span>
                 </DropdownMenuItem>
@@ -778,6 +865,12 @@ export function ChatView(props: Props) {
                 <LightbulbIcon />
                 {t("proposeMemory")}
               </DropdownMenuItem>
+              {isOwner && clientId ? (
+                <DropdownMenuItem onSelect={() => void toggleFeedMemory()}>
+                  <BrainIcon />
+                  {feedMemory ? tMemory("feedOff") : tMemory("feedOn")}
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onSelect={() => setTurning(true)} disabled={busy || !messages.some((m) => m.role === "assistant" && m.status === "complete")}>
                 <WandSparklesIcon />
                 {tCollab("turnIntoTool")}
@@ -819,6 +912,7 @@ export function ChatView(props: Props) {
         <div className="w-full xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,48rem)_minmax(0,1fr)]">
         <div aria-hidden className="hidden xl:block" />
         <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+          {props.conversation?.copyOf ? <CopyBanner copyOf={props.conversation.copyOf} /> : null}
           {props.handover ? <HandoverCard handover={props.handover} className="mb-8" /> : null}
           {props.agent?.notice ? <AgentNotice notice={props.agent.notice} className="mb-6" /> : null}
           {messages.length === 0 ? (
@@ -871,6 +965,11 @@ export function ChatView(props: Props) {
           {requestError && !requestError.startsWith("quota_") ? (
             <p role="alert" className="rounded-lg bg-destructive-soft px-3 py-2 text-[13px] text-destructive">
               {t(`requestErrors.${requestError}`)}
+            </p>
+          ) : null}
+          {readOnly ? (
+            <p role="status" className="rounded-lg bg-muted px-3 py-2 text-center text-[13px] text-muted-foreground">
+              {tCollab("readOnlyNotice")}
             </p>
           ) : null}
           {group ? <TypingLine names={typingNames} /> : null}
@@ -1028,6 +1127,16 @@ export function ChatView(props: Props) {
         </div>
       </div>
 
+      <NewClientDialog
+        open={creatingClient !== null}
+        onOpenChange={(open) => !open && setCreatingClient(null)}
+        canRestrict={props.canRestrictClients}
+        defaultName={creatingClient ?? undefined}
+        onCreated={(id) => {
+          setCreatedClients((list) => [...list, { id, name: creatingClient ?? "" }]);
+          void changeClient(id);
+        }}
+      />
       <ConfrontDialog target={confrontTarget} onOpenChange={(open) => !open && setConfrontTarget(null)} onRun={confront} />
       <FilePreview file={hide.files.find((f) => f.key === previewKey) ?? null} state={hide} onClose={() => setPreviewKey(null)} />
       {conversationId ? <ConversationSuggestions open={suggesting} onOpenChange={setSuggesting} conversationId={conversationId} /> : null}
@@ -1050,9 +1159,12 @@ export function ChatView(props: Props) {
           onOpenChange={setTransferring}
           target={{ kind: "conversation", id: conversationId }}
           colleagues={props.colleagues}
-          onTransferred={() => {
+          onTransferred={(copyId) => {
+            // The conversation forked: the sender continues in their own copy (CLAUDE.md §11).
             chatList.remove(conversationId);
-            router.push("/chat");
+            if (copyId) chatList.upsert({ id: copyId, title, clientId, clientName, kind: "copy" });
+            router.push(copyId ? `/chat/${copyId}` : "/chat");
+            router.refresh();
           }}
         />
       ) : null}
@@ -1132,6 +1244,19 @@ export function ChatView(props: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** At the top of the sender's copy after a transfer: where it comes from, and what each side sees. */
+function CopyBanner({ copyOf }: { copyOf: { toName: string | null; at: string } }) {
+  const tCollab = useTranslations("collaboration");
+  const format = useFormatter();
+  const date = format.dateTime(new Date(copyOf.at), { dateStyle: "long" });
+  return (
+    <div role="note" className="mb-8 flex items-start gap-3 rounded-xl border bg-card px-4 py-3 text-[13px] text-muted-foreground">
+      <GitBranchIcon className="mt-0.5 size-4 shrink-0 text-brand" />
+      <p>{copyOf.toName ? tCollab("copyBanner", { name: copyOf.toName, date }) : tCollab("copyBannerUnknown", { date })}</p>
     </div>
   );
 }

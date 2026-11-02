@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ArrowLeftIcon, BrainIcon, FileTextIcon, MessageSquareIcon, SquarePenIcon } from "lucide-react";
+import { ArrowLeftIcon, BrainIcon, FileTextIcon, MessageSquareIcon, SquarePenIcon, UsersIcon } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
-import { PageContainer, PageHeader } from "@/components/ui/page-header";
+import { PageContainer } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { listConversations } from "@/modules/conversations/server/queries";
@@ -14,6 +14,8 @@ import { AvatarStack, VisibilityBadge } from "@/modules/clients/ui/client-badges
 import { getEligibleColleagues, getMyHandover } from "@/modules/collaboration/server/queries";
 import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
 import { ClientTransferButton } from "@/modules/collaboration/ui/client-transfer";
+import { ClientSummaryCard } from "@/modules/clients/ui/client-summary";
+import { KindMark } from "@/modules/conversations/ui/chat-sidebar";
 
 export async function generateMetadata({ params }: PageProps<"/clients/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -30,7 +32,7 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
   if (!client || client.company_id !== ctx.active.companyId) notFound();
   const withAssignees = (await listClients(ctx.active.companyId, { includeArchived: true })).find((c) => c.id === id);
   // RLS: only the conversations this user takes part in.
-  const conversations = await listConversations(ctx.active.companyId, { clientId: id, limit: 20 });
+  const conversations = await listConversations(ctx.active.companyId, { clientId: id, limit: 50, meId: ctx.user.id });
   const format = await getFormatter();
   // Smart Handover: an assigned employee can hand a restricted client over; the recipient finds the file here.
   const canTransfer = client.visibility === "restricted" && Boolean(withAssignees?.assignees.some((a) => a.userId === ctx.user.id));
@@ -43,74 +45,101 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
     { icon: FileTextIcon, title: t("documentsSection"), body: t("documentsSectionBody"), value: space ? t("documentsCount", { count: space.documentCount }) : null },
   ];
 
+  const mine = conversations.filter((c) => c.mine);
+  const shared = conversations.filter((c) => !c.mine);
+  const list = (items: typeof conversations, empty: string) =>
+    items.length === 0 ? (
+      <p className="rounded-xl border border-dashed px-4 py-6 text-center text-[13px] text-muted-foreground">{empty}</p>
+    ) : (
+      <Card className="divide-y overflow-hidden">
+        {items.map((c) => (
+          <Link key={c.id} href={`/chat/${c.id}`} className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-accent/60">
+            <span className="min-w-0 flex-1 truncate">{c.title ?? t("untitledConversation")}</span>
+            <KindMark kind={c.kind} />
+            <time className="shrink-0 text-xs text-muted-foreground" dateTime={c.lastMessageAt}>
+              {format.dateTime(new Date(c.lastMessageAt), { dateStyle: "medium" })}
+            </time>
+          </Link>
+        ))}
+      </Card>
+    );
+
   return (
     <PageContainer>
       <Link href="/clients" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeftIcon className="size-4" />
         {t("title")}
       </Link>
-      <PageHeader
-        title={client.name}
-        description={client.sector ?? undefined}
-        actions={<VisibilityBadge visibility={client.visibility} />}
-      />
-      {client.description ? <p className="mb-8 max-w-2xl whitespace-pre-line text-sm leading-relaxed">{client.description}</p> : null}
-      {handover ? <HandoverCard handover={handover} className="mb-8 max-w-3xl" /> : null}
-      {client.visibility === "restricted" && withAssignees ? (
-        <div className="mb-8 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <AvatarStack people={withAssignees.assignees} max={8} />
-          <span>{t("assignedCount", { count: withAssignees.assignees.length })}</span>
-          {canTransfer ? <ClientTransferButton client={{ id: client.id, name: client.name }} colleagues={colleagues} /> : null}
+      <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-3xl font-semibold tracking-[-0.025em]">{client.name}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
+            {client.sector ? <span>{client.sector}</span> : null}
+            <VisibilityBadge visibility={client.visibility} />
+            {client.visibility === "restricted" && withAssignees ? (
+              <span className="inline-flex items-center gap-2">
+                <AvatarStack people={withAssignees.assignees} max={6} />
+                <span className="text-xs">{t("assignedCount", { count: withAssignees.assignees.length })}</span>
+              </span>
+            ) : null}
+          </div>
         </div>
-      ) : null}
-      <section className="mb-8 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-medium">
-            <MessageSquareIcon className="size-4 text-muted-foreground" />
-            {t("conversationsSection")}
-          </h2>
-          <Button asChild size="sm" variant="outline">
+        <div className="flex shrink-0 items-center gap-2">
+          {canTransfer ? <ClientTransferButton client={{ id: client.id, name: client.name }} colleagues={colleagues} /> : null}
+          <Button asChild>
             <Link href={`/chat?client=${client.id}`}>
               <SquarePenIcon />
               {t("newConversation")}
             </Link>
           </Button>
         </div>
-        {conversations.length === 0 ? (
-          <p className="rounded-xl border border-dashed px-4 py-6 text-center text-[13px] text-muted-foreground">{t("noConversations")}</p>
-        ) : (
-          <Card className="divide-y overflow-hidden">
-            {conversations.map((c) => (
-              <Link key={c.id} href={`/chat/${c.id}`} className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-accent/60">
-                <span className="min-w-0 flex-1 truncate">{c.title ?? t("untitledConversation")}</span>
-                <time className="shrink-0 text-xs text-muted-foreground" dateTime={c.lastMessageAt}>
-                  {format.dateTime(new Date(c.lastMessageAt), { dateStyle: "medium" })}
-                </time>
+      </header>
+
+      {handover ? <HandoverCard handover={handover} className="mb-8 max-w-3xl" /> : null}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="min-w-0 space-y-8">
+          <ClientSummaryCard clientId={client.id} />
+          <section className="space-y-3">
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <MessageSquareIcon className="size-4 text-muted-foreground" />
+              {t("myConversations")}
+            </h2>
+            {list(mine, t("noConversations"))}
+          </section>
+          <section className="space-y-3">
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <UsersIcon className="size-4 text-muted-foreground" />
+              {t("sharedWithMe")}
+            </h2>
+            {list(shared, t("noSharedConversations"))}
+          </section>
+        </div>
+
+        <aside className="space-y-3">
+          <h2 className="text-[13px] font-medium text-muted-foreground">{t("keyInfo")}</h2>
+          {client.description ? <p className="whitespace-pre-line text-sm leading-relaxed">{client.description}</p> : null}
+          <p className="text-xs text-muted-foreground">{t("createdOn", { date: format.dateTime(new Date(client.created_at), { dateStyle: "long" }) })}</p>
+          {sections.map(({ icon: Icon, title, body, value }) => {
+            const card = (
+              <Card className="h-full p-4 transition-colors hover:border-foreground/20">
+                <div className="flex items-start justify-between">
+                  <Icon className="size-4 text-muted-foreground" />
+                  {value ? <span className="text-xs text-muted-foreground">{value}</span> : null}
+                </div>
+                <p className="mt-3 text-sm font-medium">{title}</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">{body}</p>
+              </Card>
+            );
+            return space ? (
+              <Link key={title} href={`/memory/${space.spaceId}`} className="block rounded-xl">
+                {card}
               </Link>
-            ))}
-          </Card>
-        )}
-      </section>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {sections.map(({ icon: Icon, title, body, value }) => {
-          const card = (
-            <Card className="h-full p-5 transition-colors hover:border-foreground/20">
-              <div className="flex items-start justify-between">
-                <Icon className="size-4 text-muted-foreground" />
-                {value ? <span className="text-xs text-muted-foreground">{value}</span> : null}
-              </div>
-              <p className="mt-4 text-sm font-medium">{title}</p>
-              <p className="mt-1 text-[13px] text-muted-foreground">{body}</p>
-            </Card>
-          );
-          return space ? (
-            <Link key={title} href={`/memory/${space.spaceId}`} className="rounded-xl">
-              {card}
-            </Link>
-          ) : (
-            <div key={title}>{card}</div>
-          );
-        })}
+            ) : (
+              <div key={title}>{card}</div>
+            );
+          })}
+        </aside>
       </div>
     </PageContainer>
   );

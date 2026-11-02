@@ -127,6 +127,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"client_summaries": {
+                  Row: {
+                    "client_id": string,"company_id": string,"content": string,"created_at": string,"fingerprint": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "client_id": string,"company_id": string,"content": string,"created_at"?: string,"fingerprint": string,"user_id"?: string
+                  }
+                  Update: {
+                    "client_id"?: string,"company_id"?: string,"content"?: string,"created_at"?: string,"fingerprint"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "client_summaries_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "client_summaries_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "client_summaries_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"clients": {
                   Row: {
                     "archived_at": string | null,"company_id": string,"created_at": string,"created_by": string | null,"description": string | null,"id": string,"name": string,"sector": string | null,"updated_at": string,"visibility": Database["public"]['Enums']["client_visibility"]

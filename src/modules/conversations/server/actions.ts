@@ -151,5 +151,21 @@ export async function searchConversationsAction(query: string): Promise<SearchHi
 export async function loadConversationListAction() {
   const ctx = await memberOrNull();
   if (!ctx) return null;
-  return listConversations(ctx.active.companyId, { limit: 30 });
+  return listConversations(ctx.active.companyId, { limit: 30, meId: ctx.user.id });
+}
+
+/** "Do not feed the memory": no automatic client memory from this conversation (CLAUDE.md §11). Owner only (RLS). */
+export async function setConversationFeedMemoryAction(input: { conversationId: string; feed: boolean }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ conversationId: z.uuid(), feed: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const { data, error } = await (await createClient())
+    .from("conversations")
+    .update({ feed_memory: parsed.data.feed })
+    .eq("id", parsed.data.conversationId)
+    .select("id");
+  if (error) return { ok: false, error: toErrorCode(error) };
+  if (!data?.length) return { ok: false, error: "owner_only" };
+  return { ok: true };
 }

@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { listMembers } from "@/modules/organizations/server/queries";
 import { listClients } from "@/modules/clients/server/queries";
 import { HANDOVER_SECTIONS, type HandoverSections } from "./handover";
+import type { ParticipantRole } from "../rights";
 
-export type Participant = { userId: string; name: string; email: string; avatarUrl: string | null; role: "owner" | "participant"; visibleFromSeq: number };
+export type Participant = { userId: string; name: string; email: string; avatarUrl: string | null; role: ParticipantRole; visibleFromSeq: number };
 export type Colleague = { userId: string; name: string; email: string; avatarUrl: string | null; expertise: string[] };
 export type Handover = {
   id: string;

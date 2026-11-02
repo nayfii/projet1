@@ -25,6 +25,37 @@ export function parseMention(text: string): MentionTarget | null {
   }
 }
 
+/**
+ * Natural mentions (CLAUDE.md §11): in a group, "hello chat, tu peux…" or "Claude, peux-tu…" is
+ * turned into a mention ("hello @ChatGPT, tu peux…") so the AI answers. Only when the assistant is
+ * clearly addressed at the start of the message: after a greeting, or followed by a comma or colon.
+ * Ambiguous words ("chat", "IA") need one of the two. A message that already mentions stays as it is.
+ */
+const GREETING = "(?:hello|hey|hi|salut|bonjour|bonsoir|coucou|ok|okay|dis|merci|yo|alors|please|stp)";
+const NAMES: [RegExp, string][] = [
+  [/^chat\s?gpt$/i, "ChatGPT"],
+  [/^gpt$/i, "ChatGPT"],
+  [/^chat$/i, "ChatGPT"],
+  [/^claude$/i, "Claude"],
+  [/^gemini$/i, "Gemini"],
+  [/^(?:ia|ai)$/i, "IA"],
+];
+const ADDRESS = new RegExp(`^(\\s*(?:${GREETING}\\s*[,!]?\\s+)?)(chat\\s?gpt|gpt|chat|claude|gemini|ia|ai)(?=([\\s,:!?]|$))(\\s*[,:])?`, "iu");
+
+export function naturalMention(text: string): string {
+  if (parseMention(text)) return text;
+  const m = ADDRESS.exec(text);
+  if (!m) return text;
+  const [, lead, name, , punctuation] = m;
+  const greeted = /\p{L}/u.test(lead);
+  const ambiguous = /^(?:chat|ia|ai)$/i.test(name);
+  if (!greeted && !punctuation && (ambiguous || !/\S/.test(text.slice(m[0].length)))) return text;
+  if (ambiguous && !greeted && !punctuation) return text;
+  const token = NAMES.find(([re]) => re.test(name))?.[1];
+  if (!token) return text;
+  return `${lead}@${token}${text.slice(lead.length + name.length)}`;
+}
+
 /** The model that answers "@Claude" (etc.): an allowed, configured model of that provider, balanced tier first. */
 export function modelForProvider(provider: ProviderId, allowed: CatalogModel[], configured: ReadonlySet<ProviderId>): CatalogModel | null {
   if (!configured.has(provider)) return null;

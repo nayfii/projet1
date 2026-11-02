@@ -36,6 +36,21 @@ export async function listClients(companyId: string, { includeArchived = false }
 
 export type ClientRow = Awaited<ReturnType<typeof listClients>>[number];
 
+/** Clients this person can open (RLS), for the sidebar, pickers and client detection in the chat. */
+export async function listClientsLite(companyId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("clients")
+    .select("id, name, visibility")
+    .eq("company_id", companyId)
+    .is("archived_at", null)
+    .order("name")
+    .limit(500);
+  return (data ?? []).map((c) => ({ id: c.id, name: c.name, visibility: c.visibility }));
+}
+
+export type ClientLite = Awaited<ReturnType<typeof listClientsLite>>[number];
+
 export async function getClientById(clientId: string) {
   const supabase = await createClient();
   const { data } = await supabase

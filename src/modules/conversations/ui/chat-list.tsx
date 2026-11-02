@@ -4,7 +4,17 @@ import * as React from "react";
 import { useMyConversationsRealtime } from "@/modules/collaboration/ui/use-my-conversations-realtime";
 import { loadConversationListAction } from "../server/actions";
 
-export type ChatListItem = { id: string; title: string | null; clientId: string | null; clientName: string | null; lastMessageAt: string };
+import type { ConversationKind } from "../server/queries";
+
+export type ChatListItem = {
+  id: string;
+  title: string | null;
+  clientId: string | null;
+  clientName: string | null;
+  lastMessageAt: string;
+  kind?: ConversationKind;
+  otherName?: string | null;
+};
 
 type ChatListValue = {
   items: ChatListItem[];

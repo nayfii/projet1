@@ -259,7 +259,29 @@
     "noConversations": "Aucune conversation avec ce client pour l'instant.",
     "untitledConversation": "Conversation sans titre",
     "entriesCount": "{count, plural, =0 {Aucune entrée} one {# entrée} other {# entrées}}",
-    "documentsCount": "{count, plural, =0 {Aucun document} one {# document} other {# documents}}"
+    "documentsCount": "{count, plural, =0 {Aucun document} one {# document} other {# documents}}",
+    "openForEveryone": "Ce client sera ouvert : toute l'équipe pourra l'utiliser. Un administrateur ou un manager peut le restreindre ensuite.",
+    "sidebarAll": "Tous les clients",
+    "sidebarEmpty": "Aucun client pour l'instant",
+    "sidebarAdd": "Nouveau client",
+    "search": "Rechercher un client",
+    "searchNone": "Aucun client ne correspond.",
+    "createdOpen": "Client créé",
+    "summaryTitle": "En bref",
+    "summaryRefresh": "Mettre à jour",
+    "summaryLoading": "L'IA prépare le résumé du client…",
+    "summaryFootnote": "Résumé fait par l'IA à partir de ce que vous pouvez voir · {date}",
+    "summaryError": {
+      "empty": "Rien à résumer pour l'instant : ajoutez une note, un document ou commencez une conversation.",
+      "quota_exceeded": "Les crédits du mois sont épuisés : le résumé reviendra quand la limite sera relevée.",
+      "unavailable": "Le résumé n'a pas pu être préparé. Réessayez plus tard."
+    },
+    "myConversations": "Mes conversations",
+    "sharedWithMe": "Partagées avec moi",
+    "noSharedConversations": "Aucune conversation partagée avec vous.",
+    "keyInfo": "Repères",
+    "createdOn": "Client depuis {date}",
+    "openForAll": "Ouvert à toute l'équipe"
   },
   "nav": {
     "home": "Accueil",
@@ -660,7 +682,16 @@
     "castTitle": "Dans la conversation",
     "castThinking": "réfléchit",
     "castWriting": "écrit",
-    "castPick": "Choisir l'assistant"
+    "castPick": "Choisir l'assistant",
+    "kind": {
+      "private": "Privée",
+      "shared": "Partagée",
+      "copy": "Votre copie (transférée)",
+      "received": "Reçue par transfert"
+    },
+    "linkSuggestion": "Rattacher à {name} ?",
+    "createClientSuggestion": "Créer le client « {name} » ?",
+    "dismissSuggestion": "Ignorer"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -874,7 +905,8 @@
       "manual": "Saisie manuelle",
       "chat": "Depuis une conversation",
       "ai_suggestion": "Suggestion de l'IA approuvée",
-      "promotion": "Enseignement général"
+      "promotion": "Enseignement général",
+      "auto": "Ajouté automatiquement depuis une conversation"
     },
     "deleteEntryTitle": "Supprimer cette entrée ?",
     "deleteEntryBody": "L'IA ne pourra plus s'en servir. Les réponses passées qui la citent garderont le passage cité.",
@@ -916,7 +948,13 @@
     "suggestTitle": "Proposer des entrées de mémoire",
     "suggestBody": "L'IA relit la conversation et propose ce qui mérite d'être gardé. Rien n'est enregistré sans votre accord.",
     "suggestLoading": "L'IA relit la conversation…",
-    "suggestNone": "Rien à garder dans cette conversation pour l'instant."
+    "suggestNone": "Rien à garder dans cette conversation pour l'instant.",
+    "autoAdded": "{count, plural, one {# info ajoutée} other {# infos ajoutées}} à la mémoire de {client}",
+    "autoUndo": "Annuler",
+    "autoUndone": "Retiré de la mémoire.",
+    "feedOff": "Ne pas alimenter la mémoire du client",
+    "feedOn": "Alimenter de nouveau la mémoire du client",
+    "autoBadge": "Ajouté automatiquement"
   },
   "sources": {
     "title": "Sources",
@@ -1095,15 +1133,15 @@
     "leaveBody": "Vous n'y aurez plus accès, sauf si quelqu'un vous ajoute à nouveau.",
     "left": "Vous avez quitté la conversation.",
     "transferTitle": "Transférer la conversation",
-    "transferBody": "La personne choisie en devient responsable et voit tout l'historique. L'IA lui prépare un dossier de passation. Vous n'aurez plus accès à cette conversation.",
+    "transferBody": "Partager, c'est travailler ensemble. Transférer, c'est passer le relais : la personne choisie devient responsable de la conversation et la continue, avec un dossier de passation préparé par l'IA. Vous gardez votre propre copie de tout ce qui a été écrit jusqu'ici, sans voir la suite.",
     "transferClientTitle": "Transférer le client {client}",
     "transferClientBody": "La personne choisie reprend l'accès à ce client, avec vos conversations à son sujet. L'IA lui prépare un dossier de passation. Vous n'aurez plus accès à ce client.",
     "transferTo": "À qui ?",
-    "transferWarning": "Cette action est définitive pour vous : seul(e) le ou la destinataire pourra vous redonner accès.",
+    "transferWarning": "Vous ne verrez pas ce que la personne écrira ensuite, et elle ne verra pas votre copie.",
     "transferSubmit": "Transférer",
     "transferPreparing": "L'IA prépare le dossier de passation…",
-    "transferDone": "Transféré à {name}.",
-    "transferDoneNoAi": "Transféré à {name}. L'IA n'a pas pu préparer le dossier : {name} pourra le rédiger.",
+    "transferDone": "Transféré à {name}. Vous continuez dans votre copie.",
+    "transferDoneNoAi": "Transféré à {name}. L'IA n'a pas pu préparer le dossier : {name} pourra le rédiger. Vous continuez dans votre copie.",
     "transferClient": "Transférer ce client",
     "noRecipients": "Aucun collègue ne peut recevoir ce transfert.",
     "handoverTitle": "Dossier de passation",
@@ -1131,7 +1169,29 @@
     "clientMemory": "la mémoire de {client}",
     "addAnyway": "Ajouter quand même",
     "transferAnyway": "Transférer quand même",
-    "turnIntoTool": "Transformer en outil"
+    "turnIntoTool": "Transformer en outil",
+    "peopleTitle": "Personnes dans la conversation",
+    "peopleBody": "Chacun voit la conversation selon son droit. Personne d'autre ne la voit.",
+    "you": "vous",
+    "rightOf": "Droit de {name}",
+    "removePerson": "Retirer {name}",
+    "removeConfirm": "Retirer {name} de la conversation ? Elle ou il n'y aura plus accès.",
+    "remove": "Retirer",
+    "rightTitle": "Son droit",
+    "right": {
+      "owner": "Responsable",
+      "manager": "Gère",
+      "participant": "Participe",
+      "reader": "Lecture seule"
+    },
+    "rightHint": {
+      "manager": "Écrit et ajoute des personnes",
+      "participant": "Lit et écrit",
+      "reader": "Lit sans écrire"
+    },
+    "readOnlyNotice": "Vous êtes en lecture seule dans cette conversation.",
+    "copyBanner": "Conversation transférée à {name} le {date}. Ceci est votre copie : vous pouvez la continuer de votre côté. {name} ne voit pas votre copie, et vous ne voyez pas la suite de son côté.",
+    "copyBannerUnknown": "Conversation transférée le {date}. Ceci est votre copie, privée : vous pouvez la continuer de votre côté."
   },
   "confronter": {
     "title": "Confronter",
@@ -1764,5 +1824,19 @@
       "not_configured": "La création d'avatars n'est pas encore activée sur cette plateforme.",
       "forbidden": "Vous devez être connecté(e) à votre espace pour créer un avatar."
     }
+  },
+  "personalMemory": {
+    "title": "Ce que l'IA sait de moi",
+    "description": "Vos notes personnelles : l'IA s'en sert seulement pour vous, dans vos conversations seul(e) avec elle. Personne d'autre ne les voit, ni vos collègues ni l'administration.",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Effacer",
+    "empty": "Par exemple : votre rôle, votre façon d'écrire, ce que vous préférez dans les réponses.",
+    "example1": "Ex. : Réponds-moi de façon courte, en points.",
+    "example2": "Ex. : Je suis chargé(e) de compte pour les clients du secteur sport.",
+    "example3": "Ex. : Je signe mes e-mails « Charles ».",
+    "usedInChat": "Utilisé seulement quand vous êtes seul(e) avec l'IA."
   }
 }

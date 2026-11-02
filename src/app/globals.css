@@ -533,3 +533,19 @@
     pointer-events: none;
   }
 }
+
+/* A suggestion that wants a glance (e.g. "Link to Nike?"): three soft pulses, then still. */
+@keyframes nudge {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in oklch, var(--brand) 22%, transparent);
+  }
+}
+@layer utilities {
+  .animate-nudge {
+    animation: nudge 1.6s var(--ease-out-soft) 3;
+  }
+}

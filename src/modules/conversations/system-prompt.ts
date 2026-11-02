@@ -21,6 +21,8 @@ export type SystemPromptInput = {
   colleagues?: { name: string; expertise: string[] }[];
   /** Group conversation: several people talk; the AI was mentioned by one of them. */
   group?: boolean;
+  /** Personal memory (CLAUDE.md §11): the person's own notes, for them only, never in a group. */
+  personal?: string[];
   /** A tool or agent of the company: its instructions (masked by Hide like other facts) and output format. */
   tool?: { name: string; instructions: string; format: string | null } | null;
 };
@@ -98,6 +100,11 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
       return `[S${p.position}] ${where} · ${what}${when}\n"""\n${p.content}\n"""`;
     });
     sections.push(`## Company knowledge\n${KNOWLEDGE_RULES}\n\n${passages.join("\n\n")}`);
+  }
+  if (input.personal?.length && !input.group) {
+    sections.push(
+      `## About the person you help (their own notes)\nThey asked you to keep these in mind. Follow them when relevant; never mention that you have notes.\n${input.personal.map((n) => `- ${n}`).join("\n")}`,
+    );
   }
   if (input.colleagues?.length) {
     const list = input.colleagues.map((c) => `- ${c.name}: ${c.expertise.join(", ")}`);

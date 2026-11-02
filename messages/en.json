@@ -259,7 +259,29 @@
     "noConversations": "No conversation with this client yet.",
     "untitledConversation": "Untitled conversation",
     "entriesCount": "{count, plural, =0 {No entries} one {# entry} other {# entries}}",
-    "documentsCount": "{count, plural, =0 {No documents} one {# document} other {# documents}}"
+    "documentsCount": "{count, plural, =0 {No documents} one {# document} other {# documents}}",
+    "openForEveryone": "This client will be open: the whole team can use it. An administrator or a manager can restrict it later.",
+    "sidebarAll": "All clients",
+    "sidebarEmpty": "No clients yet",
+    "sidebarAdd": "New client",
+    "search": "Search clients",
+    "searchNone": "No client matches.",
+    "createdOpen": "Client created",
+    "summaryTitle": "In brief",
+    "summaryRefresh": "Update",
+    "summaryLoading": "The AI is preparing the client's summary…",
+    "summaryFootnote": "Summary made by the AI from what you can see · {date}",
+    "summaryError": {
+      "empty": "Nothing to summarise yet: add a note, a document or start a conversation.",
+      "quota_exceeded": "This month's credits are used up: the summary will come back when the limit is raised.",
+      "unavailable": "The summary could not be prepared. Try again later."
+    },
+    "myConversations": "My conversations",
+    "sharedWithMe": "Shared with me",
+    "noSharedConversations": "No conversation shared with you.",
+    "keyInfo": "Key information",
+    "createdOn": "Client since {date}",
+    "openForAll": "Open to the whole team"
   },
   "nav": {
     "home": "Home",
@@ -660,7 +682,16 @@
     "castTitle": "In the conversation",
     "castThinking": "thinking",
     "castWriting": "writing",
-    "castPick": "Choose the assistant"
+    "castPick": "Choose the assistant",
+    "kind": {
+      "private": "Private",
+      "shared": "Shared",
+      "copy": "Your copy (transferred)",
+      "received": "Received by transfer"
+    },
+    "linkSuggestion": "Link to {name}?",
+    "createClientSuggestion": "Create the client \"{name}\"?",
+    "dismissSuggestion": "Dismiss"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -874,7 +905,8 @@
       "manual": "Typed in",
       "chat": "From a conversation",
       "ai_suggestion": "Approved AI suggestion",
-      "promotion": "General learning"
+      "promotion": "General learning",
+      "auto": "Added automatically from a conversation"
     },
     "deleteEntryTitle": "Delete this entry?",
     "deleteEntryBody": "The AI will no longer use it. Past answers citing it keep the cited passage.",
@@ -916,7 +948,13 @@
     "suggestTitle": "Propose memory entries",
     "suggestBody": "The AI reads the conversation again and proposes what is worth keeping. Nothing is saved without your approval.",
     "suggestLoading": "The AI is reading the conversation…",
-    "suggestNone": "Nothing worth keeping in this conversation yet."
+    "suggestNone": "Nothing worth keeping in this conversation yet.",
+    "autoAdded": "{count, plural, one {# fact added} other {# facts added}} to {client}'s memory",
+    "autoUndo": "Undo",
+    "autoUndone": "Removed from the memory.",
+    "feedOff": "Do not feed the client's memory",
+    "feedOn": "Feed the client's memory again",
+    "autoBadge": "Added automatically"
   },
   "sources": {
     "title": "Sources",
@@ -1095,15 +1133,15 @@
     "leaveBody": "You will lose access unless someone adds you again.",
     "left": "You left the conversation.",
     "transferTitle": "Transfer the conversation",
-    "transferBody": "The person you choose becomes responsible for it and sees its whole history. The AI prepares a handover file for them. You will lose access to this conversation.",
+    "transferBody": "Sharing is working together. Transferring is handing over: the chosen person becomes responsible for the conversation and continues it, with a handover file prepared by the AI. You keep your own copy of everything written so far, without seeing what comes next.",
     "transferClientTitle": "Transfer the client {client}",
     "transferClientBody": "The person you choose takes over access to this client, with your conversations about it. The AI prepares a handover file for them. You will lose access to this client.",
     "transferTo": "To whom?",
-    "transferWarning": "This is final for you: only the recipient can give you access again.",
+    "transferWarning": "You will not see what they write next, and they will not see your copy.",
     "transferSubmit": "Transfer",
     "transferPreparing": "The AI is preparing the handover file…",
-    "transferDone": "Transferred to {name}.",
-    "transferDoneNoAi": "Transferred to {name}. The AI could not prepare the file: {name} can write it.",
+    "transferDone": "Transferred to {name}. You continue in your copy.",
+    "transferDoneNoAi": "Transferred to {name}. The AI could not prepare the handover file: {name} can write it. You continue in your copy.",
     "transferClient": "Transfer this client",
     "noRecipients": "No colleague can receive this transfer.",
     "handoverTitle": "Handover file",
@@ -1131,7 +1169,29 @@
     "clientMemory": "{client}'s memory",
     "addAnyway": "Add anyway",
     "transferAnyway": "Transfer anyway",
-    "turnIntoTool": "Turn into a tool"
+    "turnIntoTool": "Turn into a tool",
+    "peopleTitle": "People in the conversation",
+    "peopleBody": "Each person sees the conversation according to their right. Nobody else sees it.",
+    "you": "you",
+    "rightOf": "{name}'s right",
+    "removePerson": "Remove {name}",
+    "removeConfirm": "Remove {name} from the conversation? They will lose access.",
+    "remove": "Remove",
+    "rightTitle": "Their right",
+    "right": {
+      "owner": "Responsible",
+      "manager": "Manages",
+      "participant": "Participates",
+      "reader": "Read only"
+    },
+    "rightHint": {
+      "manager": "Writes and adds people",
+      "participant": "Reads and writes",
+      "reader": "Reads without writing"
+    },
+    "readOnlyNotice": "You are read-only in this conversation.",
+    "copyBanner": "Conversation transferred to {name} on {date}. This is your copy: you can continue it on your side. {name} does not see your copy, and you do not see what follows on theirs.",
+    "copyBannerUnknown": "Conversation transferred on {date}. This is your private copy: you can continue it on your side."
   },
   "confronter": {
     "title": "Confront",
@@ -1764,5 +1824,19 @@
       "not_configured": "Avatar creation is not enabled on this platform yet.",
       "forbidden": "You need to be signed in to your workspace to create an avatar."
     }
+  },
+  "personalMemory": {
+    "title": "What the AI knows about me",
+    "description": "Your personal notes: the AI uses them only for you, in conversations where you are alone with it. Nobody else sees them, neither colleagues nor administrators.",
+    "add": "Add",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "empty": "For example: your role, how you write, what you like in answers.",
+    "example1": "e.g. Answer me briefly, in bullet points.",
+    "example2": "e.g. I am an account manager for clients in sport.",
+    "example3": "e.g. I sign my e-mails \"Charles\".",
+    "usedInChat": "Used only when you are alone with the AI."
   }
 }

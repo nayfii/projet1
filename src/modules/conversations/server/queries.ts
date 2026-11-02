@@ -9,24 +9,43 @@ import { isConfrontation } from "@/modules/confronter/types";
 const STALE_STREAM_MS = 5 * 60 * 1000;
 
 /** The signed-in user's conversations (RLS: only those they take part in), most recent first. */
-export async function listConversations(companyId: string, { limit = 50, clientId }: { limit?: number; clientId?: string } = {}) {
+/**
+ * How a conversation is held (CLAUDE.md §11): private by default, shared with colleagues, the
+ * sender's own copy after a transfer, or received by transfer.
+ */
+export type ConversationKind = "private" | "shared" | "copy" | "received";
+
+export async function listConversations(
+  companyId: string,
+  { limit = 50, clientId, meId }: { limit?: number; clientId?: string; meId?: string } = {},
+) {
   const supabase = await createClient();
   let query = supabase
     .from("conversations")
-    .select("id, title, client_id, model_choice, last_message_at, created_at, client:clients(name)")
+    .select(
+      "id, title, client_id, owner_id, model_choice, last_message_at, created_at, forked_from, client:clients(name), participants:conversation_participants(count), to:profiles!conversations_transferred_to_fkey(full_name, email), from:profiles!conversations_received_from_fkey(full_name, email)",
+    )
     .eq("company_id", companyId)
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit);
   if (clientId) query = query.eq("client_id", clientId);
   const { data } = await query;
-  return (data ?? []).map((c) => ({
-    id: c.id,
-    title: c.title,
-    clientId: c.client_id,
-    clientName: c.client?.name ?? null,
-    lastMessageAt: c.last_message_at ?? c.created_at,
-  }));
+  return (data ?? []).map((c) => {
+    const people = c.participants?.[0]?.count ?? 1;
+    const kind: ConversationKind = c.forked_from ? "copy" : people > 1 || (meId && c.owner_id !== meId) ? "shared" : c.from ? "received" : "private";
+    return {
+      id: c.id,
+      title: c.title,
+      clientId: c.client_id,
+      clientName: c.client?.name ?? null,
+      lastMessageAt: c.last_message_at ?? c.created_at,
+      mine: !meId || c.owner_id === meId,
+      kind,
+      /** The colleague it was transferred to (copy) or received from. */
+      otherName: kind === "copy" ? (c.to?.full_name ?? c.to?.email ?? null) : kind === "received" ? (c.from?.full_name ?? c.from?.email ?? null) : null,
+    };
+  });
 }
 
 export type ConversationListItem = Awaited<ReturnType<typeof listConversations>>[number];
@@ -35,7 +54,7 @@ export async function getConversation(conversationId: string) {
   const supabase = await createClient();
   const { data: conversation } = await supabase
     .from("conversations")
-    .select("id, company_id, client_id, owner_id, title, model_choice, agent_id, created_at")
+    .select("id, company_id, client_id, owner_id, title, model_choice, agent_id, created_at, forked_from, transferred_at, feed_memory, to:profiles!conversations_transferred_to_fkey(full_name, email)")
     .eq("id", conversationId)
     .maybeSingle();
   if (!conversation) return null;

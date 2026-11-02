@@ -6,6 +6,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { memberOrNull } from "@/lib/auth/guards";
 import { canRestrictClients } from "@/lib/auth/context";
+import { getLocale } from "next-intl/server";
+import { clientSummary, type ClientSummary } from "./summary";
 import { toErrorCode, type ActionResult } from "@/lib/errors";
 
 const clientSchema = z.object({
@@ -134,4 +136,14 @@ export async function setClientAssignmentAction(input: {
   if (error && error.code !== "23505") return { ok: false, error: toErrorCode(error) };
   revalidateClients();
   return { ok: true };
+}
+
+/** The short brief at the top of a client's page, made from what this person may open (cached per person). */
+export async function clientSummaryAction(input: { clientId: string; refresh?: boolean }): Promise<ClientSummary> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { error: "unavailable" };
+  const parsed = z.object({ clientId: z.uuid(), refresh: z.boolean().default(false) }).safeParse(input);
+  if (!parsed.success) return { error: "unavailable" };
+  const locale = (await getLocale()) === "en" ? "en" : "fr";
+  return clientSummary(await createClient(), ctx, parsed.data.clientId, locale, parsed.data.refresh);
 }

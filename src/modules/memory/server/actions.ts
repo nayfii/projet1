@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { memberOrNull } from "@/lib/auth/guards";
 import { toErrorCode, type ActionResult } from "@/lib/errors";
 import { parseModelJson } from "../json";
-import { PROMOTE_SYSTEM, runMemoryTask, SUGGEST_ENTRIES_SYSTEM, type MemoryTaskError } from "./ai-tasks";
+import { AUTO_CLIENT_MEMORY_SYSTEM, PROMOTE_SYSTEM, runMemoryTask, SUGGEST_ENTRIES_SYSTEM, type MemoryTaskError } from "./ai-tasks";
 import { indexEntry } from "./indexer";
 import { myMemorySpaces } from "./retrieval";
 import { PLACEHOLDER_PATTERN } from "@/modules/hide/categories";
@@ -257,4 +257,117 @@ export async function proposePromotionAction(input: { entryId: string }): Promis
   if (error) return { ok: false, error: "provider_error" };
   revalidateMemory(company.spaceId);
   return { ok: true, proposed: true };
+}
+
+export type AutoMemoryResult = { entries: { id: string; title: string }[]; clientName: string; spaceId: string } | null;
+
+/**
+ * Client memory fed automatically (CLAUDE.md §11): after an answer in a conversation linked to a
+ * client, the AI keeps the useful facts about that client — the facts only, never the conversation —
+ * when the person may write in its memory, the company has not switched it off and the conversation
+ * is not marked "do not feed the memory". Each entry says it was added automatically, and can be undone.
+ */
+export async function autoClientMemoryAction(input: { conversationId: string; messageId: string }): Promise<AutoMemoryResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return null;
+  const parsed = z.object({ conversationId: z.uuid(), messageId: z.uuid() }).safeParse(input);
+  if (!parsed.success) return null;
+  const supabase = await createClient();
+  const [{ data: conversation }, { data: settings }] = await Promise.all([
+    supabase
+      .from("conversations")
+      .select("id, client_id, model_choice, feed_memory, client:clients(name)")
+      .eq("id", parsed.data.conversationId)
+      .eq("company_id", ctx.active.companyId)
+      .maybeSingle(),
+    supabase.from("company_ai_settings").select("auto_client_memory").eq("company_id", ctx.active.companyId).maybeSingle(),
+  ]);
+  if (!conversation?.client_id || !conversation.feed_memory || settings?.auto_client_memory === false) return null;
+  const space = (await myMemorySpaces(supabase, ctx.active.companyId)).find((s) => s.clientId === conversation.client_id && s.canWrite);
+  if (!space) return null;
+
+  // Once per answer, and only for a complete answer this person can see (RLS).
+  const { data: answer } = await supabase
+    .from("messages")
+    .select("seq, content, masked_content, status, author_type")
+    .eq("id", parsed.data.messageId)
+    .eq("conversation_id", conversation.id)
+    .maybeSingle();
+  if (!answer || answer.author_type !== "assistant" || answer.status !== "complete" || !answer.content) return null;
+  const { data: already } = await supabase
+    .from("memory_entries")
+    .select("id")
+    .eq("space_id", space.spaceId)
+    .eq("source_ref->>message_id", parsed.data.messageId)
+    .limit(1);
+  if (already?.length) return null;
+  const { data: question } = await supabase
+    .from("messages")
+    .select("content, masked_content")
+    .eq("conversation_id", conversation.id)
+    .eq("author_type", "user")
+    .lt("seq", answer.seq)
+    .is("superseded_at", null)
+    .order("seq", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const clientName = conversation.client?.name ?? "";
+  // As the chat model received it (Hide placeholders), then real values restored for the memory.
+  const exchange = [`User: ${question?.masked_content ?? question?.content ?? ""}`, `Assistant: ${answer.masked_content ?? answer.content}`].join("\n\n").slice(-12_000);
+  const result = await runMemoryTask(supabase, ctx, {
+    system: AUTO_CLIENT_MEMORY_SYSTEM.replace("{CLIENT}", clientName),
+    user: exchange,
+    modelChoice: conversation.model_choice,
+  });
+  if (!result.ok) return null;
+  const items = parseModelJson(result.text);
+  const masked = answer.masked_content !== null || question?.masked_content != null;
+  const values = masked && hideConfigured() ? await conversationValues(conversation.id, [exchange]) : new Map<string, string>();
+  const valid = (Array.isArray(items) ? items : [])
+    .map((i) =>
+      entrySchema.safeParse({
+        title: restorePlaceholders(String((i as { title?: unknown }).title ?? ""), values).slice(0, 200),
+        content: restorePlaceholders(String((i as { content?: unknown }).content ?? ""), values),
+      }),
+    )
+    .filter((r) => r.success)
+    .map((r) => r.data!)
+    // Nothing that still carries a placeholder (a value this person was not shown).
+    .filter((e) => !new RegExp(PLACEHOLDER_PATTERN.source).test(`${e.title}\n${e.content}`))
+    .slice(0, 3);
+  if (valid.length === 0) return null;
+  const { data: created, error } = await supabase
+    .from("memory_entries")
+    .insert(
+      valid.map((e) => ({
+        space_id: space.spaceId,
+        title: e.title,
+        content: e.content,
+        source_type: "auto",
+        source_ref: { conversation_id: conversation.id, message_id: parsed.data.messageId },
+      })),
+    )
+    .select("id, title, content");
+  if (error || !created) return null;
+  for (const entry of created) await indexEntry(supabase, ctx, entry);
+  revalidateMemory(space.spaceId);
+  return { entries: created.map((e) => ({ id: e.id, title: e.title })), clientName, spaceId: space.spaceId };
+}
+
+/** "Undo" right after an automatic addition: the entries are deleted (the person wrote them). */
+export async function undoAutoMemoryAction(input: { entryIds: string[] }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ entryIds: z.array(z.uuid()).min(1).max(5) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("memory_entries")
+    .delete()
+    .in("id", parsed.data.entryIds)
+    .eq("source_type", "auto")
+    .eq("author_id", ctx.user.id);
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidateMemory();
+  return { ok: true };
 }

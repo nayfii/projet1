@@ -17,7 +17,7 @@ export type MemoryTaskError = "quota_exceeded" | "no_model_available" | "provide
 export async function runMemoryTask(
   supabase: UserClient,
   ctx: MemberContext,
-  task: { system: string; user: string; modelChoice?: string; feature?: "memory" | "handover" | "agent" },
+  task: { system: string; user: string; modelChoice?: string; feature?: "memory" | "handover" | "agent" | "client_summary" },
 ): Promise<{ ok: true; text: string } | { ok: false; error: MemoryTaskError }> {
   const quota = await getMyQuota(ctx.active.companyId);
   if (!quota || quota.state.state === "blocked") return { ok: false, error: "quota_exceeded" };
@@ -74,6 +74,14 @@ export const SUGGEST_ENTRIES_SYSTEM = [
   "You read a conversation from a company's AI workspace and propose durable knowledge worth saving in the company's memory: facts, decisions, preferences, procedures, contacts or deadlines that will still be useful later.",
   "Leave out greetings, questions, drafts, generic advice and anything uncertain.",
   'Return ONLY JSON: an array of at most 5 objects {"title": "short title, max 80 characters", "content": "the fact or decision in 1 to 3 self-contained sentences"}, written in the language of the conversation. Return [] if nothing is worth saving.',
+].join("\n");
+
+/** Same prefix as SUGGEST_ENTRIES_SYSTEM (one family of tasks), focused on one client's lasting facts. */
+export const AUTO_CLIENT_MEMORY_SYSTEM = [
+  "Task: extract memory entries.",
+  "Focus: the client {CLIENT}. Read one exchange from a company's AI workspace and keep only lasting facts about this client that colleagues will need later: preferences, decisions, constraints, contacts' roles, deadlines, history.",
+  "Leave out the question itself, advice, drafts, generic knowledge, opinions, anything uncertain, and anything not about this client.",
+  'Return ONLY JSON: an array of at most 3 objects {"title": "short title, max 80 characters", "content": "the fact in 1 or 2 self-contained sentences"}, written in the language of the exchange. Return [] when there is nothing worth keeping, which is often the case.',
 ].join("\n");
 
 export const PROMOTE_SYSTEM = [

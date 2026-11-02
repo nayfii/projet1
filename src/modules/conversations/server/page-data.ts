@@ -2,6 +2,7 @@ import "server-only";
 import type { MemberContext } from "@/lib/auth/guards";
 import { fakeProviderEnabled } from "@/lib/env";
 import { listClients } from "@/modules/clients/server/queries";
+import { canRestrictClients } from "@/lib/auth/context";
 import { defaultChoice, getCompanyModels } from "@/modules/providers/server/models";
 import { getMyQuota } from "@/modules/usage/server/quota";
 import type { PickerModel } from "../ui/model-picker";
@@ -53,6 +54,7 @@ export async function getChatPageData(ctx: MemberContext) {
     // Hide: the company's default modes and the categories Automatic masks.
     hide,
     me: { id: ctx.user.id, name: ctx.profile.fullName },
+    canRestrictClients: canRestrictClients(ctx.active),
     // "Turn into a tool": what the tool editor needs.
     toolEditor: { models: picker, autoEnabled: models.autoEnabled, hasTeam: Boolean(membership?.team_id), canApprove: hasScope(ctx.active, "agents") },
   };

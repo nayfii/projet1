@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
-import { MessageSquareIcon, SearchIcon } from "lucide-react";
+import { ArrowDownLeftIcon, GitBranchIcon, MessageSquareIcon, SearchIcon, UsersIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
@@ -59,7 +59,10 @@ export function ChatSidebarSection() {
                 active ? "bg-sidebar-accent font-medium text-foreground" : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
               )}
             >
-              <span className="truncate">{c.title ?? t("untitled")}</span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate">{c.title ?? t("untitled")}</span>
+                <KindMark kind={c.kind} />
+              </span>
               {c.clientName ? <span className="truncate text-[11px] font-normal text-muted-foreground/80">{c.clientName}</span> : null}
             </Link>
           );
@@ -73,6 +76,20 @@ export function ChatSidebarSection() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/** Private is the default and shows nothing; shared, copy and received get a small mark. */
+export function KindMark({ kind, className }: { kind?: string; className?: string }) {
+  const t = useTranslations("chat");
+  if (kind !== "shared" && kind !== "copy" && kind !== "received") return null;
+  const Icon = kind === "shared" ? UsersIcon : kind === "copy" ? GitBranchIcon : ArrowDownLeftIcon;
+  const label = t(`kind.${kind}`);
+  return (
+    <span title={label} className={cn("inline-flex shrink-0 text-muted-foreground/70", className)}>
+      <Icon aria-hidden className="size-3" />
+      <span className="sr-only">{label}</span>
+    </span>
   );
 }
 

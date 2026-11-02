@@ -3,26 +3,46 @@
 import * as React from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { TriangleAlertIcon, UserPlusIcon } from "lucide-react";
+import { TriangleAlertIcon, UserMinusIcon, UserPlusIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/form";
-import { Tooltip } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { TimelineMessage } from "@/modules/conversations/types";
-import { addParticipantsAction, checkSharedHistoryAction, type HistoryWarning } from "../server/actions";
+import { addParticipantsAction, checkSharedHistoryAction, removeParticipantAction, setParticipantRightAction, type HistoryWarning } from "../server/actions";
+import { PARTICIPANT_RIGHTS, type ParticipantRight } from "../rights";
 import type { Colleague, Participant } from "../server/queries";
 
-/** In the conversation header: who takes part (a dot when they are here) and "Ajouter". */
-export function ParticipantsBar({ participants, online, onAdd }: { participants: Participant[]; online: Set<string>; onAdd: () => void }) {
+/**
+ * In the conversation header: who takes part (a dot when they are here). A click opens the list of
+ * people and their rights; "Ajouter" only for those who may manage participants.
+ */
+export function ParticipantsBar({
+  participants,
+  online,
+  onAdd,
+  canManage,
+  conversationId,
+  meId,
+  onChanged,
+}: {
+  participants: Participant[];
+  online: Set<string>;
+  onAdd: () => void;
+  canManage: boolean;
+  conversationId: string | null;
+  meId: string;
+  onChanged: () => void;
+}) {
   const t = useTranslations("collaboration");
+  const [open, setOpen] = React.useState(false);
   return (
     <div className="flex items-center gap-1.5">
       {participants.length > 1 ? (
-        <Tooltip content={participants.map((p) => p.name).join(", ")}>
-          <div className="flex -space-x-1" aria-label={t("participants", { count: participants.length })}>
+        <button type="button" onClick={() => setOpen(true)} className="rounded-full" aria-label={t("participants", { count: participants.length })}>
+          <span className="flex -space-x-1">
             {participants.slice(0, 5).map((p) => (
               <span key={p.userId} className="relative">
                 <Avatar name={p.name} src={p.avatarUrl} className="size-6 ring-2 ring-background" />
@@ -34,14 +54,127 @@ export function ParticipantsBar({ participants, online, onAdd }: { participants:
                 {`+${participants.length - 5}`}
               </span>
             ) : null}
-          </div>
-        </Tooltip>
+          </span>
+        </button>
       ) : null}
-      <Button variant="ghost" size="sm" onClick={onAdd} className="gap-1.5 text-muted-foreground">
-        <UserPlusIcon />
-        <span className="hidden sm:inline">{t("add")}</span>
-      </Button>
+      {canManage ? (
+        <Button variant="ghost" size="sm" onClick={onAdd} className="gap-1.5 text-muted-foreground">
+          <UserPlusIcon />
+          <span className="hidden sm:inline">{t("add")}</span>
+        </Button>
+      ) : null}
+      <PeopleDialog
+        open={open}
+        onOpenChange={setOpen}
+        participants={participants}
+        online={online}
+        canManage={canManage}
+        conversationId={conversationId}
+        meId={meId}
+        onChanged={onChanged}
+      />
     </div>
+  );
+}
+
+/** Who is here and with which right; managers and the owner change rights or remove someone. */
+function PeopleDialog({
+  open,
+  onOpenChange,
+  participants,
+  online,
+  canManage,
+  conversationId,
+  meId,
+  onChanged,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  participants: Participant[];
+  online: Set<string>;
+  canManage: boolean;
+  conversationId: string | null;
+  meId: string;
+  onChanged: () => void;
+}) {
+  const t = useTranslations("collaboration");
+  const tErrors = useTranslations("errors");
+  const tCommon = useTranslations("common");
+  const [busy, startBusy] = React.useTransition();
+  const [removing, setRemoving] = React.useState<Participant | null>(null);
+  const run = (action: () => Promise<{ ok: boolean; error?: string }>) =>
+    startBusy(async () => {
+      const result = await action();
+      if (!result.ok) toast.error(tErrors((result.error ?? "unknown") as "unknown"));
+      else onChanged();
+    });
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md" closeLabel={tCommon("close")}>
+        <DialogHeader>
+          <DialogTitle>{t("peopleTitle")}</DialogTitle>
+          <DialogDescription>{t("peopleBody")}</DialogDescription>
+        </DialogHeader>
+        <ul className="space-y-1">
+          {participants.map((p) => (
+            <li key={p.userId} className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+              <span className="relative">
+                <Avatar name={p.name} src={p.avatarUrl} className="size-8" />
+                {online.has(p.userId) ? <span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full bg-success ring-2 ring-popover" /> : null}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm">
+                {p.name}
+                {p.userId === meId ? <span className="text-muted-foreground">{` · ${t("you")}`}</span> : null}
+              </span>
+              {p.role === "owner" || !canManage || !conversationId || p.userId === meId ? (
+                <span className="text-xs text-muted-foreground">{t(`right.${p.role}`)}</span>
+              ) : (
+                <>
+                  <select
+                    aria-label={t("rightOf", { name: p.name })}
+                    value={p.role}
+                    disabled={busy}
+                    onChange={(e) => run(() => setParticipantRightAction({ conversationId, userId: p.userId, role: e.target.value as ParticipantRight }))}
+                    className="h-8 rounded-md border border-input bg-transparent px-2 text-xs"
+                  >
+                    {PARTICIPANT_RIGHTS.map((r) => (
+                      <option key={r} value={r}>
+                        {t(`right.${r}`)}
+                      </option>
+                    ))}
+                  </select>
+                  <Button variant="ghost" size="icon-sm" aria-label={t("removePerson", { name: p.name })} disabled={busy} onClick={() => setRemoving(p)}>
+                    <UserMinusIcon />
+                  </Button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+        {removing && conversationId ? (
+          <div role="alertdialog" className="space-y-3 rounded-lg border border-destructive/30 bg-destructive-soft/50 p-3 text-sm">
+            <p>{t("removeConfirm", { name: removing.name })}</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setRemoving(null)}>
+                {tCommon("cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={busy}
+                onClick={() => {
+                  const who = removing;
+                  setRemoving(null);
+                  run(() => removeParticipantAction({ conversationId, userId: who.userId }));
+                }}
+              >
+                {t("remove")}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -121,6 +254,7 @@ export function AddPeopleDialog({
   const format = useFormatter();
   const [selected, setSelected] = React.useState<Set<string>>(new Set(preselected));
   const [history, setHistory] = React.useState<HistoryChoice>("now");
+  const [right, setRight] = React.useState<ParticipantRight>("participant");
   const [saving, startSaving] = React.useTransition();
   const [openedFor, setOpenedFor] = React.useState<string | null>(null);
   const key = open ? preselected.join(",") || "open" : null;
@@ -129,6 +263,7 @@ export function AddPeopleDialog({
     if (open) {
       setSelected(new Set(preselected));
       setHistory("now");
+      setRight("participant");
     }
   }
   const timeline = messages.filter((m) => m.content && m.id !== "pending-user");
@@ -138,7 +273,7 @@ export function AddPeopleDialog({
   const submit = () =>
     startSaving(async () => {
       if (!conversationId) return;
-      const result = await addParticipantsAction({ conversationId, userIds: [...selected], fromSeq });
+      const result = await addParticipantsAction({ conversationId, userIds: [...selected], fromSeq, role: right });
       if (!result.ok) {
         toast.error(tErrors(result.error));
         return;
@@ -183,6 +318,24 @@ export function AddPeopleDialog({
             ))}
           </fieldset>
         )}
+
+        <fieldset className="space-y-2">
+          <legend className="mb-1 text-sm font-medium">{t("rightTitle")}</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {PARTICIPANT_RIGHTS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                aria-pressed={right === r}
+                onClick={() => setRight(r)}
+                className={cn("rounded-lg border px-3 py-2 text-left text-sm transition-colors", right === r ? "border-brand/50 bg-brand-soft" : "hover:bg-accent")}
+              >
+                <span className="block font-medium">{t(`right.${r}`)}</span>
+                <span className="block text-xs text-muted-foreground">{t(`rightHint.${r}`)}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
         <fieldset className="space-y-2">
           <legend className="mb-1 text-sm font-medium">{t("historyTitle")}</legend>

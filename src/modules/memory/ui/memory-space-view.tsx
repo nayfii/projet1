@@ -254,7 +254,7 @@ function SourceBadge({ entry }: { entry: EntryRow }) {
       </Link>
     );
   }
-  return <Badge variant={entry.sourceType === "promotion" || entry.sourceType === "ai_suggestion" ? "brand" : "outline"}>{label}</Badge>;
+  return <Badge variant={entry.sourceType === "promotion" || entry.sourceType === "ai_suggestion" || entry.sourceType === "auto" ? "brand" : "outline"}>{label}</Badge>;
 }
 
 function DocumentsList({ documents, canWrite, spaceId }: { documents: DocumentRow[]; canWrite: boolean; spaceId: string }) {

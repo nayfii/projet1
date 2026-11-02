@@ -79,6 +79,20 @@ type AttachmentRow = {
 
 const fail = (error: ChatRequestError, status: number): Prepared => ({ ok: false, error, status });
 
+/** A personal note, shaped like a memory passage so Hide masks it the same way (never shown as a source). */
+const PERSONAL_NOTE = {
+  sourceType: "memory_entry" as const,
+  documentId: null,
+  spaceId: "personal",
+  spaceKind: "company" as const,
+  clientName: null,
+  title: "",
+  page: null,
+  charStart: null,
+  charEnd: null,
+  sourceDate: null,
+};
+
 /**
  * Everything that can be refused is checked here, before anything is saved or sent to a provider:
  * conversation access (RLS), model rules, quotas. Then `run` streams the answer and records usage.
@@ -377,7 +391,25 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         clientName: p.clientName ? masker!.protect(p.clientName) : p.clientName,
       }))
     : inertKnowledge;
+  // Personal memory: this person's own notes, only when they are alone with the AI; masked like memory.
+  const personalNotes = group
+    ? []
+    : ((await supabase.from("personal_memory").select("content").eq("company_id", companyId).eq("user_id", ctx.user.id).order("created_at").limit(50)).data ?? []).map((n) =>
+        neutralizePlaceholders(n.content),
+      );
+  const promptPersonal =
+    masker && personalNotes.length
+      ? (
+          await maskPassages(
+            masker,
+            personalNotes.map((content, i) => ({ ...PERSONAL_NOTE, position: i + 1, id: `personal-${i}`, content })),
+            hideModes,
+            autoCategories,
+          )
+        ).map((p) => masker!.protect(p.content))
+      : personalNotes;
   const system = buildSystemPrompt({
+    personal: promptPersonal,
     company: { name: companyRes.data?.name ?? ctx.active.companyName, industry: companyRes.data?.industry, description: promptFacts.companyDescription },
     client: promptFacts.client,
     user: { name: promptFacts.userName },

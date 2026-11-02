@@ -28,7 +28,8 @@ export function TransferDialog({
   onOpenChange: (open: boolean) => void;
   target: { kind: "conversation"; id: string } | { kind: "client"; id: string; name: string };
   colleagues: Colleague[];
-  onTransferred: () => void;
+  /** The sender's own copy after a conversation transfer (it forks), null for a client. */
+  onTransferred: (copyId: string | null) => void;
 }) {
   const t = useTranslations("collaboration");
   const tErrors = useTranslations("errors");
@@ -53,7 +54,8 @@ export function TransferDialog({
     }
     toast.success(result.data?.aiGenerated ? t("transferDone", { name: recipient.name }) : t("transferDoneNoAi", { name: recipient.name }));
     onOpenChange(false);
-    onTransferred();
+    const copyId = result.data && "copyId" in result.data && typeof result.data.copyId === "string" ? result.data.copyId : null;
+    onTransferred(copyId);
   }
 
   return (

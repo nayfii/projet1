@@ -14,11 +14,19 @@ export function ClientForm({
   submitLabel,
   onCreated,
   secondary,
+  canRestrict = true,
+  showAssignees = true,
+  defaultName,
 }: {
   members: { userId: string; name: string }[];
   submitLabel: string;
   onCreated?: (id: string) => void;
   secondary?: React.ReactNode;
+  /** Restricted clients: Owner, client Admins and Managers (CLAUDE.md §11). Others create open ones. */
+  canRestrict?: boolean;
+  /** The quick dialog skips choosing people: access is managed on the client's page. */
+  showAssignees?: boolean;
+  defaultName?: string;
 }) {
   const t = useTranslations("clients");
   const tErrors = useTranslations("errors");
@@ -32,15 +40,16 @@ export function ClientForm({
   return (
     <form action={action} className="space-y-5">
       <Field label={t("name")} htmlFor="client-name" error={state && !state.ok && state.fields?.name ? t("nameRequired") : undefined}>
-        <Input id="client-name" name="name" required maxLength={160} placeholder={t("namePlaceholder")} />
+        <Input id="client-name" name="name" required maxLength={160} placeholder={t("namePlaceholder")} defaultValue={defaultName} autoFocus={Boolean(defaultName)} />
       </Field>
       <Field label={t("sector")} htmlFor="client-sector">
         <Input id="client-sector" name="sector" maxLength={120} placeholder={t("sectorPlaceholder")} />
       </Field>
 
+      <input type="hidden" name="visibility" value={visibility} />
+      {canRestrict ? (
       <fieldset className="space-y-2">
         <legend className="text-[13px] font-medium">{t("visibility")}</legend>
-        <input type="hidden" name="visibility" value={visibility} />
         <div className="grid gap-2 sm:grid-cols-2">
           {(["open", "restricted"] as const).map((v) => {
             const Icon = v === "open" ? GlobeIcon : LockIcon;
@@ -67,8 +76,11 @@ export function ClientForm({
           })}
         </div>
       </fieldset>
+      ) : (
+        <p className="text-xs text-muted-foreground">{t("openForEveryone")}</p>
+      )}
 
-      {visibility === "restricted" ? (
+      {visibility === "restricted" && showAssignees ? (
         <fieldset className="space-y-2">
           <legend className="text-[13px] font-medium">{t("assignees")}</legend>
           {members.length > 0 ? (
