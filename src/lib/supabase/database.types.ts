@@ -181,14 +181,14 @@ isOneToOne: false
                   ]
                 },"companies": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"default_locale": string,"description": string | null,"id": string,"industry": string | null,"name": string,"onboarding_completed_at": string | null,"plan_id": string | null,"size_range": string | null,"status": Database["public"]['Enums']["company_status"],"updated_at": string,"website": string | null
+                    "created_at": string,"created_by": string | null,"default_locale": string,"description": string | null,"id": string,"industry": string | null,"is_demo": boolean,"name": string,"onboarding_completed_at": string | null,"plan_id": string | null,"size_range": string | null,"status": Database["public"]['Enums']["company_status"],"updated_at": string,"website": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"default_locale"?: string,"description"?: string | null,"id"?: string,"industry"?: string | null,"name": string,"onboarding_completed_at"?: string | null,"plan_id"?: string | null,"size_range"?: string | null,"status"?: Database["public"]['Enums']["company_status"],"updated_at"?: string,"website"?: string | null
+                    "created_at"?: string,"created_by"?: string | null,"default_locale"?: string,"description"?: string | null,"id"?: string,"industry"?: string | null,"is_demo"?: boolean,"name": string,"onboarding_completed_at"?: string | null,"plan_id"?: string | null,"size_range"?: string | null,"status"?: Database["public"]['Enums']["company_status"],"updated_at"?: string,"website"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"default_locale"?: string,"description"?: string | null,"id"?: string,"industry"?: string | null,"name"?: string,"onboarding_completed_at"?: string | null,"plan_id"?: string | null,"size_range"?: string | null,"status"?: Database["public"]['Enums']["company_status"],"updated_at"?: string,"website"?: string | null
+                    "created_at"?: string,"created_by"?: string | null,"default_locale"?: string,"description"?: string | null,"id"?: string,"industry"?: string | null,"is_demo"?: boolean,"name"?: string,"onboarding_completed_at"?: string | null,"plan_id"?: string | null,"size_range"?: string | null,"status"?: Database["public"]['Enums']["company_status"],"updated_at"?: string,"website"?: string | null
                   }
                   Relationships: [
                     {
@@ -971,6 +971,40 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"platform_check_runs": {
+                  Row: {
+                    "commit_sha": string | null,"finished_at": string,"github_run_id": number | null,"id": string,"results": NonNullable<Json>,"started_at": string,"status": string,"version": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "commit_sha"?: string | null,"finished_at"?: string,"github_run_id"?: number | null,"id"?: string,"results"?: NonNullable<Json>,"started_at"?: string,"status": string,"version"?: string | null
+                  }
+                  Update: {
+                    "commit_sha"?: string | null,"finished_at"?: string,"github_run_id"?: number | null,"id"?: string,"results"?: NonNullable<Json>,"started_at"?: string,"status"?: string,"version"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"platform_fix_requests": {
+                  Row: {
+                    "created_at": string,"id": string,"request": string,"requested_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"request": string,"requested_by"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"request"?: string,"requested_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "platform_fix_requests_requested_by_fkey"
+      columns: ["requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"platform_settings": {
                   Row: {
                     "avatar_cost_usd": number,"avatar_credits": number,"dictation_cost_usd_per_minute": number,"dictation_credits_per_minute": number,"id": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null
@@ -1299,6 +1333,9 @@ isOneToOne: false
               "company_id": string,"invitation_id": string,"token": string
             }[]
                            },
+"platform_create_fix_request":
+{ Args: { "p_request": string }; Returns: string
+                           },
 "platform_grant_credits":
 { Args: { "p_company": string,"p_credits": number,"p_note"?: string,"p_pool"?: string }; Returns: undefined
                            },
@@ -1310,8 +1347,14 @@ isOneToOne: false
 "platform_log_provider_test":
 { Args: { "p_code": string,"p_latency_ms": number,"p_ok": boolean,"p_provider": string }; Returns: undefined
                            },
+"platform_log_release_event":
+{ Args: { "p_action": string,"p_target": string,"p_version": string }; Returns: undefined
+                           },
 "platform_provider_health":
 { Args: { "p_hours"?: number }; Returns: Json
+                           },
+"platform_seed_demo_company":
+{ Args: { "p_member": string,"p_owner": string }; Returns: string
                            },
 "platform_set_avatar_rate":
 { Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined

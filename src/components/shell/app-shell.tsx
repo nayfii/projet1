@@ -33,6 +33,9 @@ import {
   BriefcaseIcon,
   ArrowLeftIcon,
   SquarePenIcon,
+  RocketIcon,
+  MonitorCheckIcon,
+  WrenchIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +81,9 @@ const ICONS = {
   shield: ShieldIcon,
   back: ArrowLeftIcon,
   newChat: SquarePenIcon,
+  releases: RocketIcon,
+  preview: MonitorCheckIcon,
+  debug: WrenchIcon,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -98,6 +104,8 @@ export type ShellLabels = {
   themeDark: string;
   themeLight: string;
   themeSystem: string;
+  /** "Version v1.2": the version running, shown at the bottom of the account menu. */
+  version: string;
 };
 
 type ShellProps = {
@@ -301,6 +309,9 @@ function UserMenu({
             </button>
           </DropdownMenuItem>
         </form>
+        <p className="px-2 pb-1 pt-1.5 text-[11px] text-muted-foreground/80" data-testid="app-version">
+          {labels.version}
+        </p>
       </DropdownMenuContent>
     </DropdownMenu>
   );

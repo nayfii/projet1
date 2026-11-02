@@ -18,6 +18,14 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       ],
     },
     {
+      label: t("product"),
+      items: [
+        { href: "/platform/releases", label: t("releases"), icon: "releases" },
+        { href: "/platform/preview", label: t("preview"), icon: "preview" },
+        { href: "/platform/debug", label: t("debug"), icon: "debug" },
+      ],
+    },
+    {
       label: t("monitoring"),
       items: [
         { href: "/platform/usage", label: t("usage"), icon: "usage" },

@@ -1,6 +1,7 @@
 import "server-only";
 import { getTranslations } from "next-intl/server";
 import type { ShellLabels } from "./app-shell";
+import { APP_VERSION } from "@/lib/version";
 
 export async function getShellLabels(): Promise<ShellLabels> {
   const t = await getTranslations("shell");
@@ -16,5 +17,6 @@ export async function getShellLabels(): Promise<ShellLabels> {
     themeDark: t("themeDark"),
     themeLight: t("themeLight"),
     themeSystem: t("themeSystem"),
+    version: t("version", { version: APP_VERSION }),
   };
 }

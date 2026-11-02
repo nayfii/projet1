@@ -18,6 +18,13 @@ on:
       - "scripts/supabase-production-config.mjs"
       - ".github/workflows/deploy-database.yml"
   workflow_dispatch:
+  # Called by the launch workflow (release.yml), with the commit of the version being launched.
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: false
+        default: ""
 
 concurrency:
   group: supabase-deploy
@@ -48,17 +55,33 @@ jobs:
           fi
           if [ -n "$APP_URL" ]; then echo "app_url=true" >> "$GITHUB_OUTPUT"; fi
 
+      # Once versions are launched from our console (a "production" branch exists), the database is
+      # updated by each launch, not by every push to the development branch.
+      - name: Launches in use?
+        if: steps.check.outputs.ready == 'true' && github.event_name == 'push'
+        id: launches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BRANCH: ${{ vars.RELEASE_BRANCH || 'production' }}
+        run: |
+          if gh api "repos/${{ github.repository }}/branches/$RELEASE_BRANCH" --silent 2>/dev/null; then
+            echo "::notice::Versions are launched from the console: the database is updated by the launch (Platform → Versions)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v5
-        if: steps.check.outputs.ready == 'true'
+        if: steps.check.outputs.ready == 'true' && steps.launches.outputs.skip != 'true'
+        with:
+          ref: ${{ inputs.ref || '' }}
 
       - uses: supabase/setup-cli@v1
-        if: steps.check.outputs.ready == 'true'
+        if: steps.check.outputs.ready == 'true' && steps.launches.outputs.skip != 'true'
         with:
           version: 2.121.0
 
       # The CLI reads SUPABASE_DB_PASSWORD from the environment: it never appears on a command line.
       - name: Connect to the project
-        if: steps.check.outputs.ready == 'true'
+        if: steps.check.outputs.ready == 'true' && steps.launches.outputs.skip != 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -66,14 +89,14 @@ jobs:
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Apply the migrations
-        if: steps.check.outputs.ready == 'true'
+        if: steps.check.outputs.ready == 'true' && steps.launches.outputs.skip != 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: supabase db push --linked --yes
 
       - name: Apply the sign-in settings (addresses, email templates, mail server)
-        if: steps.check.outputs.ready == 'true' && steps.check.outputs.app_url == 'true'
+        if: steps.check.outputs.ready == 'true' && steps.launches.outputs.skip != 'true' && steps.check.outputs.app_url == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -89,6 +112,6 @@ jobs:
           supabase config push --project-ref "$SUPABASE_PROJECT_REF" --yes
 
       - name: Sign-in settings skipped
-        if: steps.check.outputs.ready == 'true' && steps.check.outputs.app_url != 'true'
+        if: steps.check.outputs.ready == 'true' && steps.launches.outputs.skip != 'true' && steps.check.outputs.app_url != 'true'
         run: |
           echo "::notice::APP_URL is missing: sign-in links and email templates were not configured (see docs/DEPLOY.md)."

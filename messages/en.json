@@ -19,7 +19,8 @@
     "appearance": "Appearance",
     "themeDark": "Dark",
     "themeLight": "Light",
-    "themeSystem": "Match device"
+    "themeSystem": "Match device",
+    "version": "Version {version}"
   },
   "roles": {
     "owner": "Owner",
@@ -463,7 +464,13 @@
       "settings_exchange_rate": "set the exchange rate used for estimates: $1 = €{rate}",
       "conversation_participant_role": "changed the rights of {person} in a conversation",
       "conversation_participant_removed": "removed {person} from a conversation",
-      "ai_features_updated": "changed the AI features (automatic memory, dictation)"
+      "ai_features_updated": "changed the AI features (automatic memory, dictation)",
+      "settings_dictation_rate": "set the voice dictation rate",
+      "release_launched": "launched version {version}",
+      "check_requested": "asked for a check of the live version",
+      "fix_requested": "asked Claude Code for a change",
+      "fix_accepted": "accepted a change prepared by Claude Code",
+      "fix_rejected": "refused a change prepared by Claude Code"
     },
     "filterCategory": "Type",
     "filterPerson": "Person",
@@ -500,7 +507,11 @@
     "usage": "Usage and margins",
     "health": "Provider health",
     "backToApp": "My company workspace",
-    "models": "Models and pricing"
+    "models": "Models and pricing",
+    "product": "Product",
+    "releases": "Versions",
+    "preview": "Preview",
+    "debug": "Debug"
   },
   "platform": {
     "companiesTitle": "Companies",
@@ -1912,6 +1923,106 @@
       "disabled": "Voice dictation is turned off in your company.",
       "forbidden": "Access denied.",
       "empty": "No speech detected."
+    }
+  },
+  "platformReleases": {
+    "title": "Versions",
+    "description": "The version live for every company, what the next one will contain, and the history.",
+    "live": "Live for every company",
+    "liveSince": "Since {date}",
+    "liveBadge": "Live",
+    "nextTitle": "Next version: {version}",
+    "changesCount": "{count, plural, one {# change} other {# changes}} since the last version:",
+    "firstRelease": "First launch with this button: it publishes everything there is. Latest changes ({count}):",
+    "nothingNew": "Nothing new since {version}.",
+    "notesLabel": "Release notes (optional, shown in the history)",
+    "notesPlaceholder": "E.g. new \"Link to a client\" menu, voice dictation…",
+    "launch": "Launch {version}",
+    "confirmTitle": "Launch {version}?",
+    "confirmBody": "In this order: the database is updated, then the site. Every company moves to {version} within a few minutes, then an automatic check runs with a demo boss and a demo employee.",
+    "confirmLaunch": "Launch {version}",
+    "cancel": "Cancel",
+    "launched": "Launch of {version} started. This page updates itself.",
+    "launchRunning": "A launch is in progress.",
+    "runsTitle": "Recent launches",
+    "run": {
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "failed": "Failed"
+    },
+    "details": "Details",
+    "historyTitle": "Version history",
+    "historyEmpty": "No other version than {version} yet.",
+    "branchMismatch": "One setting left: the live site comes from the \"{live}\" branch instead of \"{production}\". Until this is fixed in Vercel (Settings → Environments → Production → Branch Tracking), every change goes live without the Launch button.",
+    "notConfiguredShort": "GitHub is not connected to the console yet.",
+    "setupTitle": "Connect GitHub to launch versions",
+    "setupBody": "Add the GITHUB_RELEASE_TOKEN variable in Vercel (a GitHub token limited to this project), set the production branch to \"production\", then redeploy. For Debug, also add Claude Code's key in GitHub. The exact steps are in docs/DEPLOY.md, part 5.",
+    "previewTitle": "Preview and check",
+    "previewDescription": "Each live version is opened by a demo boss and a demo employee (a fictional company, never a customer): every screen is checked and captured.",
+    "checkNow": "Check now",
+    "checkStarted": "Check started: the captures arrive within a few minutes.",
+    "checkRunning": "A check is in progress.",
+    "checkedVersion": "Version checked: {version}",
+    "checkStatus": {
+      "passed": "All good",
+      "failed": "Problem found"
+    },
+    "screensOk": "{ok} of {total} screens OK",
+    "role": {
+      "owner": "Boss view",
+      "member": "Employee view"
+    },
+    "screen": {
+      "home": "Home",
+      "chat": "New conversation",
+      "clients": "Clients",
+      "memory": "Memory",
+      "admin": "Administration",
+      "members": "Employees",
+      "usage": "Usage",
+      "profile": "Profile",
+      "admin_denied": "Administration refused"
+    },
+    "screenAlt": "{screen} — {role}",
+    "previewEmptyTitle": "No check yet",
+    "previewEmpty": "The first one comes after the first launch, or when you click \"Check now\".",
+    "checksHistory": "Previous checks",
+    "debugTitle": "Debug with Claude Code",
+    "debugDescription": "Describe a problem or a change. Claude Code prepares the change and checks it; you accept or refuse it; accepted changes leave with the next version.",
+    "fixLabel": "Problem or change to make",
+    "fixPlaceholder": "E.g. on the Clients page, the \"New client\" button does not show on phones.",
+    "fixSend": "Send to Claude Code",
+    "fixSent": "Request sent. Claude Code is working on it (a few minutes).",
+    "debugPrivacy": "Claude Code receives your text and the product's code, never your customers' data. Each request uses Claude credit (API key or subscription).",
+    "requestsTitle": "Requests",
+    "requestsEmptyTitle": "No request",
+    "requestsEmpty": "Your requests to Claude Code will show here, with their state.",
+    "fix": {
+      "sending": "Sent",
+      "not_sent": "Not started",
+      "working": "Claude Code is working…",
+      "ready": "Ready: accept or refuse",
+      "checks_failed": "Checks failed",
+      "no_change": "No change needed",
+      "failed": "Failed",
+      "accepted": "Accepted: leaves with the next version",
+      "rejected": "Refused"
+    },
+    "seeChanges": "See the changes",
+    "claudeSummary": "Claude Code's summary",
+    "checksFailedHelp": "The automatic checks (types, code rules, tests) failed: refuse and rephrase the request.",
+    "accept": "Accept",
+    "reject": "Refuse",
+    "fixAccepted": "Change accepted: it will leave with the next version.",
+    "fixRejected": "Change refused.",
+    "errors": {
+      "not_configured": "GitHub is not connected to the console yet.",
+      "forbidden": "GitHub refuses: the token lacks the needed rights.",
+      "not_found": "Not found on GitHub (workflow file or request).",
+      "conflict": "GitHub refuses for now (change already handled or in conflict).",
+      "unavailable": "GitHub does not answer. Try again in a moment.",
+      "validation": "Invalid request.",
+      "unknown": "Unexpected error."
     }
   }
 }

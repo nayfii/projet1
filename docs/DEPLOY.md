@@ -159,6 +159,38 @@ mêmes noms. Une nouvelle session les prend en compte.
 
 ---
 
+## Partie 5 — Versions, aperçu et Debug avec Claude Code (console de notre équipe)
+
+Une fois fait, **rien ne part en ligne sans votre clic** sur « Lancer » (Plateforme → Versions). Comptez 15 minutes.
+
+1. **Un jeton GitHub** — sur github.com : votre photo → *Settings → Developer settings → Personal access tokens →
+   Fine-grained tokens → Generate new token*. Nom : « Console Cendr » ; *Repository access* : **Only select
+   repositories** → `nayfii/projet1` ; *Permissions* → *Repository permissions* : **Actions**, **Contents**,
+   **Pull requests** et **Workflows** en *Read and write*. Générez, copiez-le.
+2. **Collez ce même jeton à deux endroits** :
+   - Vercel → *Settings → Environment Variables* : `GITHUB_RELEASE_TOKEN` ;
+   - GitHub → dépôt → *Settings → Secrets and variables → Actions → New repository secret* : `RELEASE_TOKEN`.
+3. **GitHub → dépôt → *Settings → Actions → General*** : *Workflow permissions* → **Read and write permissions**, et
+   cochez **Allow GitHub Actions to create and approve pull requests**. Enregistrez.
+4. **Claude Code (partie Debug)** — dans les mêmes secrets GitHub, ajoutez **l'un des deux** :
+   - `ANTHROPIC_API_KEY` : une clé de **console.anthropic.com** (facturée à l'usage) ;
+   - `CLAUDE_CODE_OAUTH_TOKEN` : avec un abonnement Claude Pro ou Max, tapez `claude setup-token` dans un terminal
+     où Claude Code est installé, et collez le jeton affiché.
+5. **Vercel → *Settings → Environments → Production → Branch Tracking*** : remplacez la branche par **`production`**,
+   enregistrez. Puis *Deployments → ⋯ → Redeploy* (pour que `GITHUB_RELEASE_TOKEN` soit pris en compte).
+   Le site reste sur sa version actuelle jusqu'au premier lancement.
+6. **Premier lancement** — **/platform/releases** → « **Lancer la v1.1** ». En quelques minutes : la base est mise à
+   jour, puis le site, pour toutes les entreprises. Ensuite **/platform/preview** montre la vérification faite avec
+   un gérant et une employée de démonstration (entreprise fictive « Démo — vérification »).
+
+Ensuite, à chaque fois :
+- **Debug** (**/platform/debug**) : décrivez le problème → « Envoyer à Claude Code » → quelques minutes plus tard,
+  « Voir les changements », puis **Accepter** ou **Refuser**.
+- **Versions** : la liste « Prochaine version » montre tout ce qui a été accepté ou ajouté depuis ; « Lancer » publie.
+- **Aperçu** : « Vérifier maintenant » refait la vérification de la version en ligne.
+
+---
+
 ## Ce qui ne marchera pas encore en ligne
 
 - **Les vidéos** (Motion Design, montage) : l'aperçu animé fonctionne, mais le MP4 reste « En attente » tant que le moteur vidéo n'est pas hébergé (il demande un serveur à part, en Europe : décision à prendre, question 14 de `docs/STATUS.md`). La page **Plateforme → État des fournisseurs** l'indique comme « Bloqué » au bout de 3 minutes.

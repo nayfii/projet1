@@ -77,3 +77,16 @@ export function hideSecret(): string | undefined {
   const value = process.env.HIDE_ENCRYPTION_KEY?.trim();
   return value && value.length >= 32 ? value : undefined;
 }
+
+/**
+ * Releases from our console (CLAUDE.md §11): a GitHub token that may start the repository's workflows
+ * and merge the changes Claude Code prepares. Server only; never sent to the browser.
+ */
+export function releaseConfig(): { token: string | undefined; repository: string; sourceBranch: string; releaseBranch: string } {
+  return {
+    token: process.env.GITHUB_RELEASE_TOKEN?.trim() || undefined,
+    repository: process.env.GITHUB_REPOSITORY?.trim() || "nayfii/projet1",
+    sourceBranch: process.env.RELEASE_SOURCE_BRANCH?.trim() || "claude/amazing-davinci-5th459",
+    releaseBranch: process.env.RELEASE_BRANCH?.trim() || "production",
+  };
+}

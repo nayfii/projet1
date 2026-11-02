@@ -67,6 +67,12 @@ const KNOWN = new Set<string>([
   "render_rate_changed",
   "provider_tested",
   "settings_exchange_rate",
+  "settings_dictation_rate",
+  "release_launched",
+  "check_requested",
+  "fix_requested",
+  "fix_accepted",
+  "fix_rejected",
 ]);
 
 type EventLike = { action: string; target_id: string | null; metadata: Json };

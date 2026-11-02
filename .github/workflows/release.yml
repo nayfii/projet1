@@ -1,0 +1,120 @@
+# Launches a new version: the "Lancer" button in our console (Platform → Versions) starts it.
+#   1. Writes the next version (v1.1, v1.2, …) into release.json and CHANGELOG.md on the development
+#      branch, and tags it.
+#   2. Updates the database (the same job as deploy-database.yml), before the site needs it.
+#   3. Moves the production branch to that commit: Vercel publishes the site for every company.
+#   4. Publishes a GitHub release, waits until the site runs the new version, then checks it with the
+#      demo boss and the demo employee (verify.yml).
+# Secrets: RELEASE_TOKEN (a fine-grained GitHub token for this repository with Contents and Workflows
+# read/write: GitHub's built-in token may not publish changes to workflow files), plus those of
+# deploy-database.yml and verify.yml. Optional repository variables: RELEASE_SOURCE_BRANCH (default
+# claude/amazing-davinci-5th459), RELEASE_BRANCH (default production).
+name: Launch a version
+run-name: Launch a version ${{ inputs.requested_by && format('({0})', inputs.requested_by) || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: Release notes (optional)
+        required: false
+        default: ""
+      requested_by:
+        description: Who launched it (shown in the run's title)
+        required: false
+        default: ""
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  SOURCE_BRANCH: ${{ vars.RELEASE_SOURCE_BRANCH || 'claude/amazing-davinci-5th459' }}
+  RELEASE_BRANCH: ${{ vars.RELEASE_BRANCH || 'production' }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.bump.outputs.sha }}
+    steps:
+      - name: Check the settings
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "::error::Add RELEASE_TOKEN to the repository secrets (docs/DEPLOY.md, part 5)."
+            exit 1
+          fi
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Write the next version
+        id: bump
+        env:
+          NOTES: ${{ inputs.notes }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$RELEASE_BRANCH" 2>/dev/null || true
+          if git rev-parse --verify -q "origin/$RELEASE_BRANCH" >/dev/null; then
+            range="origin/$RELEASE_BRANCH..HEAD"
+          else
+            range="-n 60 HEAD"
+          fi
+          # shellcheck disable=SC2086
+          git log --no-merges --format='%s' $range | grep -v '^Release v' > "$RUNNER_TEMP/changes.txt" || true
+          version=$(node scripts/release/bump.mjs "$NOTES" "$RUNNER_TEMP/changes.txt")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release.json CHANGELOG.md
+          git commit -m "Release v$version"
+          git tag -a "v$version" -m "v$version"
+          git push origin "HEAD:$SOURCE_BRANCH" "v$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  database:
+    needs: prepare
+    uses: ./.github/workflows/deploy-database.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+    secrets: inherit
+
+  publish:
+    needs: [prepare, database]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+      - name: Move the production branch to this version
+        env:
+          SHA: ${{ needs.prepare.outputs.sha }}
+        run: git push origin "$SHA:refs/heads/$RELEASE_BRANCH"
+      - name: Publish the release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          awk -v v="## v$VERSION " 'index($0, v) == 1 { on = 1; next } on && /^## v/ { exit } on' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          gh release create "v$VERSION" --verify-tag --title "v$VERSION" --notes-file "$RUNNER_TEMP/notes.md"
+
+  verify:
+    needs: [prepare, publish]
+    uses: ./.github/workflows/verify.yml
+    with:
+      expect_version: v${{ needs.prepare.outputs.version }}
+    secrets: inherit

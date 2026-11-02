@@ -19,7 +19,8 @@
     "appearance": "Apparence",
     "themeDark": "Sombre",
     "themeLight": "Clair",
-    "themeSystem": "Comme l'appareil"
+    "themeSystem": "Comme l'appareil",
+    "version": "Version {version}"
   },
   "roles": {
     "owner": "Propriétaire",
@@ -463,7 +464,13 @@
       "settings_exchange_rate": "a réglé le taux de change utilisé pour les estimations : 1 $ = {rate} €",
       "conversation_participant_role": "a changé les droits de {person} dans une conversation",
       "conversation_participant_removed": "a retiré {person} d'une conversation",
-      "ai_features_updated": "a modifié les fonctionnalités de l'IA (mémoire automatique, dictée)"
+      "ai_features_updated": "a modifié les fonctionnalités de l'IA (mémoire automatique, dictée)",
+      "settings_dictation_rate": "a réglé le tarif de la dictée vocale",
+      "release_launched": "a lancé la version {version}",
+      "check_requested": "a demandé une vérification de la version en ligne",
+      "fix_requested": "a demandé une modification à Claude Code",
+      "fix_accepted": "a accepté une modification préparée par Claude Code",
+      "fix_rejected": "a refusé une modification préparée par Claude Code"
     },
     "filterCategory": "Type",
     "filterPerson": "Personne",
@@ -500,7 +507,11 @@
     "usage": "Consommation et marges",
     "health": "État des fournisseurs",
     "backToApp": "Mon espace entreprise",
-    "models": "Modèles et tarifs"
+    "models": "Modèles et tarifs",
+    "product": "Produit",
+    "releases": "Versions",
+    "preview": "Aperçu",
+    "debug": "Debug"
   },
   "platform": {
     "companiesTitle": "Entreprises",
@@ -1912,6 +1923,106 @@
       "disabled": "La dictée vocale est désactivée dans votre entreprise.",
       "forbidden": "Accès refusé.",
       "empty": "Aucune parole détectée."
+    }
+  },
+  "platformReleases": {
+    "title": "Versions",
+    "description": "La version en ligne pour toutes les entreprises, ce que contiendra la prochaine, et l'historique.",
+    "live": "En ligne pour toutes les entreprises",
+    "liveSince": "Depuis le {date}",
+    "liveBadge": "En ligne",
+    "nextTitle": "Prochaine version : {version}",
+    "changesCount": "{count, plural, one {# modification} other {# modifications}} depuis la dernière version :",
+    "firstRelease": "Premier lancement par ce bouton : il publie tout ce qui existe. Dernières modifications ({count}) :",
+    "nothingNew": "Rien de nouveau depuis la {version}.",
+    "notesLabel": "Notes de version (facultatif, visibles dans l'historique)",
+    "notesPlaceholder": "Ex. : nouveau menu « Rattacher à un client », dictée vocale…",
+    "launch": "Lancer la {version}",
+    "confirmTitle": "Lancer la {version} ?",
+    "confirmBody": "Dans l'ordre : la base de données est mise à jour, puis le site. Toutes les entreprises passent à la {version} en quelques minutes, puis une vérification automatique est faite avec un gérant et une employée de démonstration.",
+    "confirmLaunch": "Lancer la {version}",
+    "cancel": "Annuler",
+    "launched": "Lancement de la {version} démarré. Cette page se met à jour toute seule.",
+    "launchRunning": "Un lancement est en cours.",
+    "runsTitle": "Lancements récents",
+    "run": {
+      "running": "En cours",
+      "succeeded": "Réussi",
+      "failed": "Échec"
+    },
+    "details": "Détails",
+    "historyTitle": "Historique des versions",
+    "historyEmpty": "Pas encore d'autre version que la {version}.",
+    "branchMismatch": "Dernier réglage à faire : le site en ligne vient de la branche « {live} » au lieu de « {production} ». Tant que ce n'est pas corrigé dans Vercel (Settings → Environments → Production → Branch Tracking), chaque modification part en ligne sans passer par le bouton Lancer.",
+    "notConfiguredShort": "GitHub n'est pas encore relié à la console.",
+    "setupTitle": "Relier GitHub pour lancer des versions",
+    "setupBody": "Ajoutez dans Vercel la variable GITHUB_RELEASE_TOKEN (un jeton GitHub limité à ce projet), réglez la branche de production sur « production », puis redéployez. Pour la partie Debug, ajoutez aussi la clé de Claude Code dans GitHub. Les étapes exactes sont dans docs/DEPLOY.md, partie 5.",
+    "previewTitle": "Aperçu et vérification",
+    "previewDescription": "Chaque version en ligne est ouverte par un gérant et une employée de démonstration (entreprise fictive, jamais un client) : chaque écran est vérifié et photographié.",
+    "checkNow": "Vérifier maintenant",
+    "checkStarted": "Vérification démarrée : les captures arrivent dans quelques minutes.",
+    "checkRunning": "Une vérification est en cours.",
+    "checkedVersion": "Version vérifiée : {version}",
+    "checkStatus": {
+      "passed": "Tout est bon",
+      "failed": "Problème détecté"
+    },
+    "screensOk": "{ok} sur {total} écrans OK",
+    "role": {
+      "owner": "Vue du gérant",
+      "member": "Vue d'une employée"
+    },
+    "screen": {
+      "home": "Accueil",
+      "chat": "Nouvelle conversation",
+      "clients": "Clients",
+      "memory": "Mémoire",
+      "admin": "Administration",
+      "members": "Employés",
+      "usage": "Utilisation",
+      "profile": "Profil",
+      "admin_denied": "Administration refusée"
+    },
+    "screenAlt": "{screen} — {role}",
+    "previewEmptyTitle": "Aucune vérification pour l'instant",
+    "previewEmpty": "La première arrive après le premier lancement, ou quand vous cliquez « Vérifier maintenant ».",
+    "checksHistory": "Vérifications précédentes",
+    "debugTitle": "Debug avec Claude Code",
+    "debugDescription": "Décrivez un problème ou une modification. Claude Code prépare le changement et le vérifie ; vous l'acceptez ou le refusez ; les changements acceptés partent avec la prochaine version.",
+    "fixLabel": "Problème ou modification à faire",
+    "fixPlaceholder": "Ex. : sur la page Clients, le bouton « Nouveau client » ne s'affiche pas sur téléphone.",
+    "fixSend": "Envoyer à Claude Code",
+    "fixSent": "Demande envoyée. Claude Code y travaille (quelques minutes).",
+    "debugPrivacy": "Claude Code reçoit votre texte et le code du produit, jamais les données de vos clients. Chaque demande consomme du crédit Claude (clé API ou abonnement).",
+    "requestsTitle": "Demandes",
+    "requestsEmptyTitle": "Aucune demande",
+    "requestsEmpty": "Vos demandes à Claude Code apparaîtront ici, avec leur état.",
+    "fix": {
+      "sending": "Envoyée",
+      "not_sent": "Non partie",
+      "working": "Claude Code travaille…",
+      "ready": "Prête : à accepter ou refuser",
+      "checks_failed": "Vérifications en échec",
+      "no_change": "Aucun changement nécessaire",
+      "failed": "Échec",
+      "accepted": "Acceptée : partira avec la prochaine version",
+      "rejected": "Refusée"
+    },
+    "seeChanges": "Voir les changements",
+    "claudeSummary": "Résumé de Claude Code",
+    "checksFailedHelp": "Les vérifications automatiques (types, règles de code, tests) ont échoué : refusez et reformulez la demande.",
+    "accept": "Accepter",
+    "reject": "Refuser",
+    "fixAccepted": "Modification acceptée : elle partira avec la prochaine version.",
+    "fixRejected": "Modification refusée.",
+    "errors": {
+      "not_configured": "GitHub n'est pas encore relié à la console.",
+      "forbidden": "GitHub refuse : le jeton n'a pas les droits nécessaires.",
+      "not_found": "Introuvable sur GitHub (fichier de workflow ou demande).",
+      "conflict": "GitHub refuse pour l'instant (changement déjà traité ou en conflit).",
+      "unavailable": "GitHub ne répond pas. Réessayez dans un instant.",
+      "validation": "Demande invalide.",
+      "unknown": "Erreur inattendue."
     }
   }
 }

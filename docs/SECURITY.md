@@ -70,6 +70,7 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Client summary "En bref" (Step 12) | Client name, sector and description; up to 25 entries of the client's memory **the reader may open** (400 characters each); up to 20 document names; titles of up to 10 of the reader's own conversations about the client. At most 12,000 characters, masked when Automatic is on by default. The text is kept per reader (`client_summaries`) and redone only when that material changes | The company's default model (or the one Auto picks) | When someone opens a client page and their summary is out of date, or clicks "Actualiser" |
 | Automatic client memory (Step 12) | The last question and answer of a conversation linked to a client, as the chat model received them (masked when Hide was on), at most 12,000 characters, and the client's name — or its placeholder when the exchange was masked. The facts that come back are written to the client's memory under the person's name, without the conversation | The conversation's model (or the one Auto picks) | After each answer in a conversation linked to a client, when the company switch is on, the conversation is not set to "Ne pas alimenter la mémoire", and the person may write to that memory |
 | Personal memory (Step 12) | The person's own notes ("Ce que l'IA sait de moi", up to 50), masked by Hide like the rest of the system prompt | The chat model | Each answer when the person is alone with the AI; never in group conversations |
+| Claude Code change (our console, Debug) | The request typed by our team (never customer data) and the product's source code, read by Claude Code on a GitHub-hosted runner | **Anthropic** (Claude API key or Claude subscription, as a GitHub secret) | When our team clicks "Envoyer à Claude Code" |
 | Voice dictation (Step 12) | **The person's voice recording** (up to 5 minutes; a voice is personal data). **Hide cannot mask a voice**: everything said reaches OpenAI as spoken. The transcript comes back into the person's message box; Hide masks it when they send it, before any chat model. We keep neither the recording nor the transcript (usage records the duration's credits only) | **OpenAI** transcription model (`DICTATION_MODEL`, default `gpt-4o-transcribe`); in test mode nothing is sent | When the person clicks the microphone and stops the recording; the company can switch dictation off (Administration → Modèles) |
 
 **Important limits today**
@@ -107,10 +108,23 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Personal memory (Step 12) | `personal_memory` | One person's notes for the AI; readable and writable by that person only (no Owner, Admin, Manager or colleague policy); deleted with the account or the company |
 | Client summaries (Step 12) | `client_summaries` | The "En bref" text per client **and per reader** (each made from what that reader may open), readable by that reader only; deleted with the client |
 | Sender's copy after a transfer (Step 12) | `conversations` (`forked_from`, `transferred_to`), `messages`, `message_sources`, `conversation_attachments`, `chat-attachments`, `hide_mappings` | A full private copy of the conversation up to the transfer, owned by the sender: files are copied (each branch can be deleted on its own) and Hide values re-encrypted for the copy |
+| Version checks (our console) | `platform_check_runs`, bucket `platform-checks` (private; platform admins read, only the check workflow writes with the service key) | Screen names, outcomes and captures of the **fictional demo company** only ("Démo — vérification", `companies.is_demo`). The check signs in only as its two demo accounts; `platform_seed_demo_company` refuses any account that belongs to a real company |
+| Claude Code requests (our console) | `platform_fix_requests` | The text our team typed and who typed it; platform admins only. The platform audit log records the request id, never the text |
 | Usage | `usage_events` | Token counts, credits, estimated cost, model, status (chat, embeddings, memory tasks). No content |
 | Activity | `audit_log` | Ids and settings only (e.g. "request blocked: personal limit"). No content |
 
 ## 4. Remaining risks before accepting real customer data
+
+- **Release tokens (our console).** `GITHUB_RELEASE_TOKEN` (Vercel) and `RELEASE_TOKEN` (GitHub secret) can change the
+  product's code and launch versions. They are limited to this repository and used only by platform-admin server
+  actions and the launch workflow; whoever controls a platform admin account can launch a version. Platform admin
+  accounts must therefore be protected like production access (their own e-mail, nobody else's).
+- **Claude Code changes** are reviewed by a person in the console before they are accepted, and go live only with a
+  launch. The workflow lets Claude Code edit files and run the type check, lint and tests only; it cannot change the
+  workflows themselves (GitHub refuses it), secrets or existing migrations. A change should still be read before it
+  is accepted.
+- **The version check** reads the Supabase secret key from the Supabase management API at run time (masked in the logs),
+  signs in as two demo accounts with one-time links, and stores captures of the demo company only.
 
 1. Hide is imperfect by nature (see section 2). Real values remain in our database (messages as typed): Hide protects what goes to AI providers, not our own storage.
 2. Hosting: a test deployment runs in the EU (Supabase Frankfurt, Vercel `fra1`) on free plans; production plans, backups, monitoring and an incident procedure are still to be set up (`docs/DEPLOY.md`, `docs/ROADMAP.md`).

@@ -249,6 +249,24 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Support access by consent (our team asks for one conversation; the owner approves by e-mail; read-only, time-limited, logged) | **not started**: built with our back-office (second round). Awaiting the founder's confirmation that the e-mail goes to the conversation's owner |
 | Product name "Cendr" in the interface | **not started** (Step 13) |
 
+## Our console: versions, preview, Debug with Claude Code (2026-11-02)
+
+Founder's request: see a boss's and an employee's view of the version that runs, launch new versions from the
+console for every company, numbered v1.1, v1.2… and shown in the console and the customers' app; a Debug part with
+Claude Code. Recorded in CLAUDE.md §11.
+
+| Item | Status |
+|---|---|
+| Version number (`release.json`, v1.0 today) shown in the account menu of the app and of our console, and at `/api/version` | **done** |
+| **Versions** page (Plateforme → Versions): live version, the changes the next launch will publish, "Lancer la v1.x" with confirmation, recent launches, history | **done**; launching needs the GitHub setup (DEPLOY.md, part 5), **not tried online yet** |
+| Launch workflow (`.github/workflows/release.yml`): next version written and tagged, database updated, then the production branch moved (Vercel publishes the site for every company), release notes, then the check | **written, not run yet** (needs the setup); the render worker is not part of it until it is hosted |
+| **Aperçu** page: the live version opened by a demo boss and a demo employee of a fictional company; 12 screens checked (errors, sign-in, the employee refused from Administration) with captures; "Vérifier maintenant"; history | **done**; the check itself ran for real against the local server (12/12) and is tested end to end; online it runs after each launch once set up |
+| **Debug** page: request → Claude Code (GitHub Actions, `claude-code-action`) prepares a branch with the checks → pull request → Accepter / Refuser in the console → leaves with the next launch | **written, not run yet**: needs the GitHub token and a Claude key or subscription token |
+| Rollback to a previous version from the console | **not started** (Vercel's "Instant Rollback" can bring the site back; database changes stay) |
+
+**Important change of habit:** once the setup is done, my own work is no longer published by itself: it appears in
+"Prochaine version" and goes live when the founder clicks "Lancer".
+
 ## Connecting the real AIs (2026-11-02)
 
 - **"Tester chaque modèle"** (Platform → État des fournisseurs): tries every enabled chat model, the search index model,
