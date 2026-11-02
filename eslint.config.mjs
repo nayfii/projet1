@@ -25,6 +25,7 @@ const eslintConfig = defineConfig([
       "src/modules/usage/server/record.ts",
       "src/modules/avatars/server/store.ts",
       "src/modules/collaboration/server/fork.ts",
+      "src/modules/clients/server/purge-files.ts",
       "src/modules/conversations/server/assistant-writer.ts",
       "src/modules/hide/server/store.ts",
       "src/modules/agents/server/builtin-sync.ts",

@@ -8,6 +8,7 @@ import { memberOrNull } from "@/lib/auth/guards";
 import { canRestrictClients } from "@/lib/auth/context";
 import { getLocale } from "next-intl/server";
 import { clientSummary, type ClientSummary } from "./summary";
+import { purgeClientDocumentFiles } from "./purge-files";
 import { toErrorCode, type ActionResult } from "@/lib/errors";
 
 const clientSchema = z.object({
@@ -110,18 +111,22 @@ export async function updateClientAction(input: {
   return { ok: true };
 }
 
+/**
+ * Gives or removes access to a restricted client: client Admins for everyone, Managers for their own
+ * team on clients they can open (client_assignments policies decide).
+ */
 export async function setClientAssignmentAction(input: {
   clientId: string;
   userId: string;
   assigned: boolean;
 }): Promise<ActionResult> {
-  const ctx = await memberOrNull("clients");
-  if (!ctx) return { ok: false, error: "forbidden" };
+  const ctx = await memberOrNull();
+  if (!ctx || !canRestrictClients(ctx.active)) return { ok: false, error: "forbidden" };
   const parsed = z.object({ clientId: z.uuid(), userId: z.uuid(), assigned: z.boolean() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
 
   const supabase = await createClient();
-  const { error } = parsed.data.assigned
+  const { error, count } = parsed.data.assigned
     ? await supabase.from("client_assignments").insert({
         client_id: parsed.data.clientId,
         company_id: ctx.active.companyId,
@@ -130,11 +135,30 @@ export async function setClientAssignmentAction(input: {
       })
     : await supabase
         .from("client_assignments")
-        .delete()
+        .delete({ count: "exact" })
         .eq("client_id", parsed.data.clientId)
         .eq("user_id", parsed.data.userId);
   if (error && error.code !== "23505") return { ok: false, error: toErrorCode(error) };
+  if (!error && !parsed.data.assigned && !count) return { ok: false, error: "forbidden" };
   revalidateClients();
+  revalidatePath(`/clients/${parsed.data.clientId}`);
+  return { ok: true };
+}
+
+/** Deletes an archived client for good: the Owner only, retyping its name (checked again by delete_client). */
+export async function deleteClientAction(input: { clientId: string; confirmName: string }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx || ctx.active.role !== "owner") return { ok: false, error: "owner_only" };
+  const parsed = z.object({ clientId: z.uuid(), confirmName: z.string().max(200) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const { data: paths, error } = await (await createClient()).rpc("delete_client", {
+    p_client: parsed.data.clientId,
+    p_confirm_name: parsed.data.confirmName,
+  });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  await purgeClientDocumentFiles(paths ?? []);
+  revalidateClients();
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 

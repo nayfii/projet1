@@ -55,6 +55,7 @@ import { AttachmentChip, MessageItem, ModelSwitchDivider, type PeopleLookup } fr
 import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
 import { AutoSwitch, FilePreview, HideBar, HideOverlay, useHideComposer, type HidePayload } from "@/modules/hide/ui/hide-composer";
+import { DictationButton } from "@/modules/dictation/ui/dictation-button";
 import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
 import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
@@ -111,6 +112,8 @@ type Props = {
   initialClientId: string | null;
   /** May create restricted clients (the quick "create this client" dialog). */
   canRestrictClients: boolean;
+  /** Voice dictation is on for the company. */
+  dictation: boolean;
   quota: QuotaState | null;
   fakeMode: boolean;
   memoryTargets: { spaceId: string; clientId: string | null; label: string }[];
@@ -305,12 +308,15 @@ export function ChatView(props: Props) {
     return creating.current;
   }, [conversationId, clientId, modelChoice, chatList, clientName, t]);
 
+  // Set once this person hands the conversation over: the page is about to show their copy instead.
+  const departed = React.useRef(false);
   const refreshParticipants = React.useCallback(async () => {
-    if (!conversationId) return;
+    if (!conversationId || departed.current) return;
     const next = await loadParticipantsAction({ conversationId });
+    if (departed.current) return;
     // Nobody visible: the viewer no longer has access (transferred or removed from another window).
     if (next.length === 0) {
-      router.push("/chat");
+      if (window.location.pathname === `/chat/${conversationId}`) router.push("/chat");
       return;
     }
     setParticipants(next);
@@ -372,6 +378,11 @@ export function ChatView(props: Props) {
       ? filterMentions(mentionOptions, mention.query)
       : [];
   const activeMention = Math.min(mentionIndex, Math.max(mentionMatches.length - 1, 0));
+
+  /** Dictated text follows what was already typed, then the caret waits after it for a read-through. */
+  function insertDictation(text: string) {
+    insertAtCaret(input.length, input.length, (input && !/\s$/.test(input) ? " " : "") + text);
+  }
 
   function insertAtCaret(start: number, end: number, text: string) {
     const el = textarea.current;
@@ -1085,6 +1096,7 @@ export function ChatView(props: Props) {
                   </Button>
                 </Tooltip>
               ) : null}
+              {props.dictation ? <DictationButton disabled={inputBlocked} onText={insertDictation} /> : null}
               {group ? (
                 <Tooltip content={tCollab("mentionButton")}>
                   <Button variant="ghost" size="icon-sm" aria-label={tCollab("mentionButton")} disabled={inputBlocked} onClick={startMention}>
@@ -1161,6 +1173,7 @@ export function ChatView(props: Props) {
           colleagues={props.colleagues}
           onTransferred={(copyId) => {
             // The conversation forked: the sender continues in their own copy (CLAUDE.md §11).
+            departed.current = true;
             chatList.remove(conversationId);
             if (copyId) chatList.upsert({ id: copyId, title, clientId, clientName, kind: "copy" });
             router.push(copyId ? `/chat/${copyId}` : "/chat");

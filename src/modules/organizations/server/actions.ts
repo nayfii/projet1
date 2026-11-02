@@ -196,7 +196,7 @@ export async function acceptInvitationAction(input: { invitationId?: string; tok
 
 const memberUpdateSchema = z.object({
   userId: z.uuid(),
-  role: z.enum(["member", "admin"]).optional(),
+  role: z.enum(["member", "admin", "manager"]).optional(),
   scopes: z.array(z.enum(ADMIN_SCOPES)).optional(),
   status: z.enum(["active", "deactivated"]).optional(),
   jobTitle: z.string().max(120).optional(),

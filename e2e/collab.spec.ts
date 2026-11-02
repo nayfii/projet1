@@ -81,7 +81,7 @@ test("setup: Client A is restricted to Olivier, with a memory entry; Nathalie de
   await ownerPage.getByRole("button", { name: "Terminé" }).click();
 
   await olivierPage.goto("/memory");
-  await olivierPage.getByRole("link", { name: /Client A/ }).click();
+  await olivierPage.getByRole("main").getByRole("link", { name: /Client A/ }).click();
   await olivierPage.getByRole("button", { name: "Nouvelle entrée" }).first().click();
   const dialog = olivierPage.getByRole("dialog");
   await dialog.getByLabel("Titre").fill("Budget Client A");
@@ -188,18 +188,22 @@ test("@Claude answers with only what both can access: Client A's memory is left 
   await shot(nathaliePage, "66-group-answer-live");
 });
 
-test("transfer with Smart Handover: Olivier loses access, Nathalie gets the whole history and the file", async () => {
+test("transfer with Smart Handover (a fork): Olivier keeps his own copy, Nathalie continues with the whole history and the file", async () => {
   await olivierPage.getByRole("button", { name: "Actions sur la conversation" }).click();
   await olivierPage.getByRole("menuitem", { name: "Transférer…" }).click();
   const dialog = olivierPage.getByRole("dialog", { name: "Transférer la conversation" });
   await dialog.getByRole("radio", { name: /Nathalie Durand/ }).check();
   await expect(dialog.getByRole("alert")).toContainText("Cette conversation cite la mémoire de Client A");
-  await expect(dialog).toContainText("Cette action est définitive pour vous");
+  await expect(dialog).toContainText("Vous gardez votre propre copie de tout ce qui a été écrit jusqu'ici");
   await shot(olivierPage, "67-transfer-dialog");
   await dialog.getByRole("button", { name: "Transférer quand même" }).click();
   await expect(olivierPage.getByText("Transféré à Nathalie Durand.")).toBeVisible({ timeout: 20_000 });
-  await expect(olivierPage).toHaveURL(/\/chat$/);
-  await expect(olivierPage.getByRole("link", { name: /Quel est le budget annuel du Client A/ })).toHaveCount(0);
+  // Olivier lands on his own copy (CLAUDE.md §11): everything up to the transfer, his to continue.
+  await expect(olivierPage).not.toHaveURL(conversationUrl, { timeout: 10_000 });
+  await expect(olivierPage).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
+  await expect(olivierPage.getByText(/Conversation transférée à Nathalie Durand le/)).toBeVisible();
+  await expect(userMessages(olivierPage).first()).toContainText("Quel est le budget annuel du Client A ?");
+  // The original is Nathalie's now: Olivier no longer opens it.
   await olivierPage.goto(conversationUrl);
   await expect(olivierPage.getByRole("heading", { name: "Page introuvable" })).toBeVisible();
 
@@ -230,7 +234,7 @@ test("client transfer: Olivier hands Client A over to Nathalie and loses access"
   await dialog.getByRole("button", { name: "Transférer", exact: true }).click();
   await expect(olivierPage.getByText("Transféré à Nathalie Durand.")).toBeVisible({ timeout: 20_000 });
   await expect(olivierPage).toHaveURL(/\/clients$/);
-  await expect(olivierPage.getByText("Aucun client ne vous a encore été attribué.")).toBeVisible();
+  await expect(olivierPage.getByRole("main").getByText("Aucun client pour l'instant")).toBeVisible();
 
   await nathaliePage.goto("/clients");
   await nathaliePage.getByRole("link", { name: /^Client A Restreint/ }).click();

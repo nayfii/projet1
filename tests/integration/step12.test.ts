@@ -156,3 +156,54 @@ describe("client memory fed automatically", () => {
     expect((await bruno.client.from("memory_entries").insert({ ...entry, space_id: hiddenSpace })).error).not.toBeNull();
   });
 });
+
+describe("company switches for automatic client memory and dictation", () => {
+  it("are set by the Owner (or an Admin with the models scope), logged, and refused to others", async () => {
+    expect((await ana.client.rpc("admin_set_ai_features", { p_company: company, p_dictation_enabled: false })).error?.message).toBe("forbidden");
+    expect((await manager.client.rpc("admin_set_ai_features", { p_company: company, p_auto_client_memory: false })).error?.message).toBe("forbidden");
+    expect((await owner.client.rpc("admin_set_ai_features", { p_company: company, p_auto_client_memory: false })).error).toBeNull();
+    expect((await owner.client.rpc("admin_set_ai_features", { p_company: company, p_dictation_enabled: false })).error).toBeNull();
+    // Members read the switches (the chat hides the microphone), nobody writes the row directly.
+    expect((await ana.client.from("company_ai_settings").select("auto_client_memory, dictation_enabled").eq("company_id", company).single()).data).toEqual({
+      auto_client_memory: false,
+      dictation_enabled: false,
+    });
+    expect((await owner.client.from("company_ai_settings").update({ dictation_enabled: true }).eq("company_id", company).select("company_id")).data ?? []).toEqual([]);
+    const logged = await sql<{ metadata: Record<string, unknown> }>(
+      "select metadata from public.audit_log where company_id = $1 and action = 'ai.features_updated' order by created_at",
+      [company],
+    );
+    expect(logged.map((l) => l.metadata)).toEqual([{ auto_client_memory: false }, { dictation: false }]);
+    await owner.client.rpc("admin_set_ai_features", { p_company: company, p_auto_client_memory: true, p_dictation_enabled: true });
+  });
+
+  it("dictation rates are our team's only", async () => {
+    expect((await owner.client.rpc("platform_set_dictation_rate", { p_credits: 0, p_cost_usd: 0 })).error?.message).toBe("forbidden");
+    expect((await owner.client.from("platform_settings").select("dictation_credits_per_minute")).data ?? []).toEqual([]);
+  });
+});
+
+describe("the Manager role", () => {
+  it("needs a team: nobody is made Manager without one", async () => {
+    const { error } = await owner.client.rpc("admin_update_member", { p_company: company, p_user: bruno.id, p_role: "manager" });
+    expect(error?.code).toBe("23514");
+    expect(error?.message).toContain("company_members_manager_team");
+  });
+});
+
+describe("deleting a client for good", () => {
+  it("returns the files of its documents to remove, and nothing to anyone else", async () => {
+    const id = await createClientRecord(owner, company, "Reebok", "open");
+    const [{ id: space }] = await sql<{ id: string }>("select id from public.memory_spaces where client_id = $1", [id]);
+    await sql(
+      "insert into public.documents (company_id, space_id, filename, mime_type, size_bytes, storage_path, uploaded_by) values ($1, $2, 'brief.pdf', 'application/pdf', 10, $3, $4)",
+      [company, space, `${space}/brief.pdf`, owner.id],
+    );
+    await owner.client.from("clients").update({ archived_at: new Date().toISOString() }).eq("id", id);
+    expect((await manager.client.rpc("delete_client", { p_client: id, p_confirm_name: "Reebok" })).error?.message).toBe("not_found");
+    const { data, error } = await owner.client.rpc("delete_client", { p_client: id, p_confirm_name: "Reebok" });
+    expect(error).toBeNull();
+    expect(data).toEqual([`${space}/brief.pdf`]);
+    expect(await sql("select 1 from public.documents where space_id = $1", [space])).toHaveLength(0);
+  });
+});

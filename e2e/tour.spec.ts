@@ -54,7 +54,7 @@ test("the owner's screens", async () => {
 
   await visit(ownerPage, "/", "t04-home-owner");
   await visit(ownerPage, "/clients", "t05-clients");
-  await ownerPage.getByRole("link", { name: /^Client A/ }).click();
+  await ownerPage.getByRole("main").getByRole("link", { name: /^Client A/ }).click();
   await ownerPage.waitForLoadState("networkidle");
   await shot(ownerPage, "t06-client-page");
   await visit(ownerPage, "/memory", "t07-memory-home");

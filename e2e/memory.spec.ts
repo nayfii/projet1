@@ -83,7 +83,7 @@ test("onboarding: the first document goes into the company memory", async () => 
 test("a document added to Client A's memory is read and split into passages", async () => {
   await page.goto("/memory");
   await shot(page, "31-memory-home");
-  await page.getByRole("link", { name: /Client A/ }).click();
+  await page.getByRole("main").getByRole("link", { name: /Client A/ }).click();
   await expect(page).toHaveURL(/\/memory\/[0-9a-f-]{36}$/);
   clientSpaceUrl = page.url();
   await page.getByRole("tab", { name: /Documents/ }).click();
@@ -144,7 +144,7 @@ test("an answer can be saved to memory, after rereading it", async () => {
   await expect(page.getByText("Entrée enregistrée en mémoire.")).toBeVisible();
 });
 
-test("the AI proposes memory entries; nothing is saved until approved", async () => {
+test("the AI proposes memory entries, saved once approved; the client memory is also fed automatically", async () => {
   await page.getByRole("button", { name: "Actions sur la conversation" }).click();
   await page.getByRole("menuitem", { name: "Proposer des entrées de mémoire" }).click();
   const dialog = page.getByRole("dialog", { name: "Proposer des entrées de mémoire" });
@@ -156,9 +156,11 @@ test("the AI proposes memory entries; nothing is saved until approved", async ()
 
   await page.goto(clientSpaceUrl);
   await expect(page.getByText("Remise annuelle Client A")).toBeVisible();
-  await expect(page.getByText("[TEST] Point clé")).toBeVisible();
+  // One approved by hand, one added automatically after the answers (CLAUDE.md §11), each with its origin.
+  await expect(page.getByText("[TEST] Point clé").first()).toBeVisible();
   await expect(page.getByText("Depuis une conversation").first()).toBeVisible();
   await expect(page.getByText("Suggestion de l'IA approuvée")).toBeVisible();
+  await expect(page.getByText("Ajouté automatiquement depuis une conversation").first()).toBeVisible();
   await shot(page, "38-client-memory-entries");
 });
 

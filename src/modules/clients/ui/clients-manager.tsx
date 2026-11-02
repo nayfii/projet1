@@ -4,18 +4,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { ArchiveIcon, ArchiveRestoreIcon, BriefcaseIcon, MoreHorizontalIcon, PlusIcon, UsersIcon } from "lucide-react";
+import { ArchiveIcon, ArchiveRestoreIcon, BriefcaseIcon, MoreHorizontalIcon, PlusIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ClientRow } from "../server/queries";
-import { setClientAssignmentAction, updateClientAction } from "../server/actions";
+import { deleteClientAction, setClientAssignmentAction, updateClientAction } from "../server/actions";
 import { ClientForm } from "./client-form";
 import { AvatarStack } from "./client-badges";
 
@@ -26,11 +27,13 @@ export function ClientsManager({
   clients,
   members,
   startWithNew,
+  isOwner,
 }: {
   header: { title: string; description: string };
   clients: ClientRow[];
   members: Member[];
   startWithNew: boolean;
+  isOwner: boolean;
 }) {
   const t = useTranslations("clients");
   const tErrors = useTranslations("errors");
@@ -38,6 +41,7 @@ export function ClientsManager({
   const router = useRouter();
   const [creating, setCreating] = useState(startWithNew);
   const [assigning, setAssigning] = useState<ClientRow | null>(null);
+  const [deleting, setDeleting] = useState<ClientRow | null>(null);
   const [pending, startTransition] = useTransition();
 
   const update = (input: Parameters<typeof updateClientAction>[0], success: string) =>
@@ -133,6 +137,12 @@ export function ClientsManager({
                   <ArchiveRestoreIcon />
                   {t("restore")}
                 </Button>
+                {isOwner ? (
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" disabled={pending} onClick={() => setDeleting(c)}>
+                    <Trash2Icon />
+                    {t("deleteForGood")}
+                  </Button>
+                ) : null}
               </div>
             ))}
           </Card>
@@ -157,17 +167,74 @@ export function ClientsManager({
       </Dialog>
 
       {assigning ? (
-        <AssignDialog
+        <ClientAccessDialog
           client={assigning}
           members={members}
           onClose={() => setAssigning(null)}
         />
       ) : null}
+      {deleting ? <DeleteClientDialog client={deleting} onClose={() => setDeleting(null)} /> : null}
     </div>
   );
 }
 
-function AssignDialog({ client, members, onClose }: { client: ClientRow; members: Member[]; onClose: () => void }) {
+/** Permanent deletion of an archived client: the Owner retypes its name (CLAUDE.md §11). */
+function DeleteClientDialog({ client, onClose }: { client: ClientRow; onClose: () => void }) {
+  const t = useTranslations("clients");
+  const tErrors = useTranslations("errors");
+  const tCommon = useTranslations("common");
+  const [name, setName] = useState("");
+  const [pending, startTransition] = useTransition();
+  const matches = name.trim().toLowerCase() === client.name.trim().toLowerCase();
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent closeLabel={tCommon("close")}>
+        <DialogHeader>
+          <DialogTitle>{t("deleteTitle", { name: client.name })}</DialogTitle>
+          <DialogDescription>{t("deleteDescription")}</DialogDescription>
+        </DialogHeader>
+        <label className="grid gap-2 text-sm">
+          <span className="text-muted-foreground">{t("deleteTypeName", { name: client.name })}</span>
+          <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" aria-label={t("deleteTypeName", { name: client.name })} />
+        </label>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            {tCommon("cancel")}
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={!matches || pending}
+            onClick={() =>
+              startTransition(async () => {
+                const result = await deleteClientAction({ clientId: client.id, confirmName: name });
+                if (result.ok) {
+                  toast.success(t("deletedToast"));
+                  onClose();
+                } else toast.error(tErrors(result.error));
+              })
+            }
+          >
+            {t("deleteConfirm")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Who may open a restricted client. Client Admins see everyone; a Manager sees their own team. */
+export function ClientAccessDialog({
+  client,
+  members,
+  note,
+  onClose,
+}: {
+  client: Pick<ClientRow, "id" | "name" | "assignees">;
+  members: Member[];
+  note?: string;
+  onClose: () => void;
+}) {
   const t = useTranslations("clients");
   const tErrors = useTranslations("errors");
   const tCommon = useTranslations("common");
@@ -206,7 +273,7 @@ function AssignDialog({ client, members, onClose }: { client: ClientRow; members
             ))}
           </div>
         )}
-        <p className="text-xs text-muted-foreground">{t("transferLater")}</p>
+        <p className="text-xs text-muted-foreground">{note ?? t("transferLater")}</p>
         <DialogFooter>
           <Button onClick={onClose}>{tCommon("done")}</Button>
         </DialogFooter>

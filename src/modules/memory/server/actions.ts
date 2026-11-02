@@ -314,15 +314,18 @@ export async function autoClientMemoryAction(input: { conversationId: string; me
   const clientName = conversation.client?.name ?? "";
   // As the chat model received it (Hide placeholders), then real values restored for the memory.
   const exchange = [`User: ${question?.masked_content ?? question?.content ?? ""}`, `Assistant: ${answer.masked_content ?? answer.content}`].join("\n\n").slice(-12_000);
+  const masked = answer.masked_content !== null || question?.masked_content != null;
+  const values = masked && hideConfigured() ? await conversationValues(conversation.id, [exchange]) : new Map<string, string>();
+  // When Hide masked the exchange, the client is named as the model saw it there ([CLIENT_1]), never in clear.
+  const placeholder = [...values].find(([, value]) => value.trim().toLowerCase() === clientName.trim().toLowerCase())?.[0];
+  const clientRef = masked ? (placeholder ?? "linked to this conversation") : clientName;
   const result = await runMemoryTask(supabase, ctx, {
-    system: AUTO_CLIENT_MEMORY_SYSTEM.replace("{CLIENT}", clientName),
+    system: AUTO_CLIENT_MEMORY_SYSTEM.replace("{CLIENT}", clientRef),
     user: exchange,
     modelChoice: conversation.model_choice,
   });
   if (!result.ok) return null;
   const items = parseModelJson(result.text);
-  const masked = answer.masked_content !== null || question?.masked_content != null;
-  const values = masked && hideConfigured() ? await conversationValues(conversation.id, [exchange]) : new Map<string, string>();
   const valid = (Array.isArray(items) ? items : [])
     .map((i) =>
       entrySchema.safeParse({

@@ -4,7 +4,8 @@ import type { ProviderId } from "@/modules/providers/types";
 
 /**
  * AUDITED service-role module (docs/ARCHITECTURE.md §5). Writes usage rows and "blocked request"
- * activity entries, which users must not be able to forge. Metadata only: never prompt or answer text.
+ * activity entries, which users must not be able to forge, and reads the per-feature rates our team
+ * sets (platform settings, not readable by customers). Metadata only: never prompt or answer text.
  */
 
 export type UsageEvent = {
@@ -67,4 +68,13 @@ export async function logBlockedRequest(companyId: string, userId: string, reaso
     metadata: { reason },
   });
   if (error) console.error("audit_log insert failed", { code: error.code, companyId });
+}
+
+/** Voice dictation rate set by our team (platform_settings): credits and estimated provider cost per minute. */
+export async function dictationRate(): Promise<{ creditsPerMinute: number; costUsdPerMinute: number }> {
+  const { data } = await createAdminClient()
+    .from("platform_settings")
+    .select("dictation_credits_per_minute, dictation_cost_usd_per_minute")
+    .single();
+  return { creditsPerMinute: Number(data?.dictation_credits_per_minute ?? 0), costUsdPerMinute: Number(data?.dictation_cost_usd_per_minute ?? 0) };
 }

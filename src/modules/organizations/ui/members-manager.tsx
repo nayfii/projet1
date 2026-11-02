@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { MailIcon, MoreHorizontalIcon, PlusIcon, ShieldIcon, UserMinusIcon, UserCheckIcon, PencilIcon } from "lucide-react";
+import { MailIcon, MoreHorizontalIcon, PlusIcon, ShieldIcon, UserMinusIcon, UserCheckIcon, PencilIcon, UsersRoundIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +47,7 @@ export function MembersManager({
   const tCommon = useTranslations("common");
   const format = useFormatter();
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [editing, setEditing] = useState<MemberRow | null>(null);
+  const [editing, setEditing] = useState<{ member: MemberRow; asManager: boolean } | null>(null);
   const [scopesFor, setScopesFor] = useState<MemberRow | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -75,7 +75,8 @@ export function MembersManager({
       <Card className="divide-y overflow-hidden">
         {members.map((m) => {
           const isSelf = m.userId === currentUserId;
-          const canEdit = m.role !== "owner" && (isOwner || m.role === "member");
+          // Admins manage Members and Managers' details; roles are the Owner's call (enforced in admin_update_member).
+          const canEdit = m.role !== "owner" && (isOwner || m.role === "member" || m.role === "manager");
           return (
             <div key={m.userId} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap">
               <Avatar name={m.fullName ?? m.email} src={m.avatarUrl} />
@@ -108,30 +109,31 @@ export function MembersManager({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onSelect={() => setEditing(m)}>
+                      <DropdownMenuItem onSelect={() => setEditing({ member: m, asManager: false })}>
                         <PencilIcon />
                         {t("editDetails")}
                       </DropdownMenuItem>
                       {isOwner ? (
-                        m.role === "member" ? (
+                        <>
                           <DropdownMenuItem onSelect={() => setScopesFor(m)}>
                             <ShieldIcon />
-                            {t("makeAdmin")}
+                            {m.role === "admin" ? t("editScopes") : t("makeAdmin")}
                           </DropdownMenuItem>
-                        ) : (
-                          <>
-                            <DropdownMenuItem onSelect={() => setScopesFor(m)}>
-                              <ShieldIcon />
-                              {t("editScopes")}
+                          {m.role !== "manager" ? (
+                            <DropdownMenuItem onSelect={() => setEditing({ member: m, asManager: true })}>
+                              <UsersRoundIcon />
+                              {t("makeManager")}
                             </DropdownMenuItem>
+                          ) : null}
+                          {m.role !== "member" ? (
                             <DropdownMenuItem
                               onSelect={() => run(() => updateMemberAction({ userId: m.userId, role: "member" }), t("updated"))}
                             >
                               <UserMinusIcon />
                               {t("makeMember")}
                             </DropdownMenuItem>
-                          </>
-                        )
+                          ) : null}
+                        </>
                       ) : null}
                       <DropdownMenuSeparator />
                       {m.status === "active" ? (
@@ -203,7 +205,8 @@ export function MembersManager({
 
       {editing ? (
         <EditMemberDialog
-          member={editing}
+          member={editing.member}
+          asManager={editing.asManager}
           teams={[...new Set(members.map((m) => m.teamName).filter((n): n is string => Boolean(n)))]}
           onClose={() => setEditing(null)}
         />
@@ -213,7 +216,18 @@ export function MembersManager({
   );
 }
 
-function EditMemberDialog({ member, teams, onClose }: { member: MemberRow; teams: string[]; onClose: () => void }) {
+/** Details of an employee; with asManager, the same form names them Manager of the team typed here. */
+function EditMemberDialog({
+  member,
+  teams,
+  asManager,
+  onClose,
+}: {
+  member: MemberRow;
+  teams: string[];
+  asManager: boolean;
+  onClose: () => void;
+}) {
   const t = useTranslations("members");
   const tErrors = useTranslations("errors");
   const tCommon = useTranslations("common");
@@ -226,7 +240,8 @@ function EditMemberDialog({ member, teams, onClose }: { member: MemberRow; teams
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent closeLabel={tCommon("close")}>
         <DialogHeader>
-          <DialogTitle>{member.fullName ?? member.email}</DialogTitle>
+          <DialogTitle>{asManager ? t("managerTitle", { name: member.fullName ?? member.email }) : (member.fullName ?? member.email)}</DialogTitle>
+          {asManager ? <DialogDescription>{t("managerDescription")}</DialogDescription> : null}
         </DialogHeader>
         <div className="space-y-4">
           <Field label={t("jobTitle")} htmlFor="edit-job">
@@ -235,7 +250,7 @@ function EditMemberDialog({ member, teams, onClose }: { member: MemberRow; teams
           <Field label={t("expertise")} htmlFor="edit-expertise" hint={t("expertiseHint")}>
             <Input id="edit-expertise" value={expertise} onChange={(e) => setExpertise(e.target.value)} />
           </Field>
-          <Field label={t("team")} htmlFor="edit-team" hint={t("teamHint")}>
+          <Field label={t("team")} htmlFor="edit-team" hint={asManager ? t("managerTeamHint") : t("teamHint")}>
             <Input id="edit-team" list="edit-team-options" value={team} onChange={(e) => setTeam(e.target.value)} maxLength={80} />
             <datalist id="edit-team-options">
               {teams.map((name) => (
@@ -249,7 +264,7 @@ function EditMemberDialog({ member, teams, onClose }: { member: MemberRow; teams
             {tCommon("cancel")}
           </Button>
           <Button
-            disabled={pending}
+            disabled={pending || (asManager && !team.trim())}
             onClick={() =>
               startTransition(async () => {
                 const result = await updateMemberAction({
@@ -258,18 +273,16 @@ function EditMemberDialog({ member, teams, onClose }: { member: MemberRow; teams
                   expertise: expertise.split(",").map((s) => s.trim()).filter(Boolean),
                 });
                 const teamResult = result.ok && team.trim() !== (member.teamName ?? "") ? await setMemberTeamAction({ userId: member.userId, team }) : result;
-                if (!teamResult.ok) {
-                  toast.error(tErrors(teamResult.error));
-                  return;
-                }
-                if (result.ok) {
+                // A Manager always leads a team: the team is set first, then the role.
+                const roleResult = teamResult.ok && asManager ? await updateMemberAction({ userId: member.userId, role: "manager" }) : teamResult;
+                if (roleResult.ok) {
                   toast.success(t("updated"));
                   onClose();
-                } else toast.error(tErrors(result.error));
+                } else toast.error(tErrors(roleResult.error));
               })
             }
           >
-            {tCommon("save")}
+            {asManager ? t("makeManagerConfirm") : tCommon("save")}
           </Button>
         </DialogFooter>
       </DialogContent>

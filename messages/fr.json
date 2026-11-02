@@ -71,7 +71,12 @@
     "video_quota_exceeded": "Plus assez de crédits vidéo ce mois-ci. Un administrateur peut en demander davantage.",
     "render_in_progress": "Cette vidéo est déjà en cours de fabrication.",
     "render_invalid": "La vidéo ne peut pas être fabriquée : la composition ou le plan de montage de l'IA est incomplet. Demandez-lui de le corriger.",
-    "render_missing_file": "Un fichier utilisé par la vidéo est introuvable dans cette conversation."
+    "render_missing_file": "Un fichier utilisé par la vidéo est introuvable dans cette conversation.",
+    "archive_first": "Archivez d'abord ce client. La suppression définitive vient ensuite.",
+    "name_mismatch": "Le nom tapé ne correspond pas au nom du client.",
+    "manager_needs_team": "Un manager dirige une équipe : choisissez d'abord son équipe.",
+    "busy": "Une réponse est en cours d'écriture. Réessayez dans un instant.",
+    "dictation_disabled": "La dictée vocale est désactivée dans votre entreprise."
   },
   "auth": {
     "signInTitle": "Connexion",
@@ -207,7 +212,12 @@
     "scopesTitle": "Droits de {name}",
     "scopesDescription": "Un administrateur ne gère que ce que vous cochez ici.",
     "team": "Équipe",
-    "teamHint": "Pour partager des outils « Mon équipe ». Tapez un nouveau nom pour créer une équipe, videz le champ pour n'en mettre aucune."
+    "teamHint": "Pour partager des outils « Mon équipe ». Tapez un nouveau nom pour créer une équipe, videz le champ pour n'en mettre aucune.",
+    "makeManager": "Nommer manager",
+    "managerTitle": "Nommer {name} manager",
+    "managerDescription": "Un manager donne aux membres de son équipe l'accès aux clients restreints qu'il suit. Il ne lit jamais leurs conversations.",
+    "managerTeamHint": "L'équipe qu'il ou elle dirige. Tapez un nouveau nom pour créer une équipe.",
+    "makeManagerConfirm": "Nommer manager"
   },
   "clients": {
     "title": "Clients",
@@ -248,7 +258,7 @@
     "manageAccess": "Gérer les accès",
     "accessTitle": "Accès à {name}",
     "accessDescription": "Cochez les personnes qui peuvent utiliser ce client et sa mémoire.",
-    "transferLater": "Le transfert d'un client avec dossier de passation arrive dans une prochaine version.",
+    "transferLater": "Pour confier un client à un collègue avec un dossier de passation, utilisez « Transférer » sur la page du client.",
     "archive": "Archiver",
     "archivedToast": "Client archivé",
     "archivedTitle": "Clients archivés",
@@ -281,7 +291,14 @@
     "noSharedConversations": "Aucune conversation partagée avec vous.",
     "keyInfo": "Repères",
     "createdOn": "Client depuis {date}",
-    "openForAll": "Ouvert à toute l'équipe"
+    "openForAll": "Ouvert à toute l'équipe",
+    "managerAccessNote": "Vous gérez l'accès des membres de votre équipe « {team} ».",
+    "deleteForGood": "Supprimer définitivement",
+    "deleteTitle": "Supprimer {name} définitivement ?",
+    "deleteDescription": "Le client, sa mémoire et ses documents sont effacés pour de bon. Les conversations restent chez leurs auteurs, sans lien vers ce client. C'est irréversible.",
+    "deleteTypeName": "Tapez « {name} » pour confirmer",
+    "deleteConfirm": "Supprimer pour de bon",
+    "deletedToast": "Client supprimé définitivement"
   },
   "nav": {
     "home": "Accueil",
@@ -411,7 +428,7 @@
       "model_updated": "a modifié un modèle du catalogue",
       "model_deleted": "a retiré un modèle du catalogue",
       "credits_granted": "a ajouté des crédits à une entreprise",
-      "memory_entry_created": "a ajouté une entrée de mémoire{kind, select, chat { (depuis une conversation)} ai_suggestion { (suggestion de l'IA approuvée)} promotion { (enseignement général approuvé)} other {}}",
+      "memory_entry_created": "a ajouté une entrée de mémoire{kind, select, chat { (depuis une conversation)} ai_suggestion { (suggestion de l'IA approuvée)} promotion { (enseignement général approuvé)} auto { (ajoutée automatiquement par l'IA)} other {}}",
       "memory_entry_updated": "a modifié une entrée de mémoire",
       "memory_entry_deleted": "a supprimé une entrée de mémoire",
       "memory_document_added": "a ajouté un document en mémoire",
@@ -443,7 +460,10 @@
       "render_failed": "n'a pas pu terminer une vidéo ({kind, select, motion {Motion design} video_edit {montage} other {vidéo}} ; crédits rendus)",
       "render_rate_changed": "a changé le tarif vidéo ({kind, select, motion {Motion design} video_edit {montage} other {vidéo}}) : {credits} crédits par seconde",
       "provider_tested": "a testé {provider, select, openai {ChatGPT (OpenAI)} anthropic {Claude (Anthropic)} google {Gemini (Google)} other {un fournisseur}} : {ok, select, yes {répond} other {en erreur}}",
-      "settings_exchange_rate": "a réglé le taux de change utilisé pour les estimations : 1 $ = {rate} €"
+      "settings_exchange_rate": "a réglé le taux de change utilisé pour les estimations : 1 $ = {rate} €",
+      "conversation_participant_role": "a changé les droits de {person} dans une conversation",
+      "conversation_participant_removed": "a retiré {person} d'une conversation",
+      "ai_features_updated": "a modifié les fonctionnalités de l'IA (mémoire automatique, dictée)"
     },
     "filterCategory": "Type",
     "filterPerson": "Personne",
@@ -755,7 +775,9 @@
       "router": "Choix automatique du modèle",
       "render": "Vidéo",
       "other": "Autre",
-      "avatar": "Avatars 3D"
+      "avatar": "Avatars 3D",
+      "client_summary": "Résumés des clients",
+      "dictation": "Dictée vocale"
     },
     "limitLabel": "Limite : {limit}",
     "noLimit": "Sans limite personnelle",
@@ -846,7 +868,13 @@
     "avatarRateCredits": "Crédits par création",
     "avatarRateCost": "Coût estimé ($ par création)",
     "avatarRateSave": "Enregistrer",
-    "avatarRateSaved": "Tarif des avatars enregistré."
+    "avatarRateSaved": "Tarif des avatars enregistré.",
+    "dictationRateTitle": "Dictée vocale",
+    "dictationRateHint": "Crédits décomptés par minute de parole transcrite (modèle : {model}), et son coût estimé chez le fournisseur. Ce ne sont pas des prix.",
+    "dictationRateCredits": "Crédits par minute",
+    "dictationRateCost": "Coût estimé ($ par minute)",
+    "dictationRateSave": "Enregistrer",
+    "dictationRateSaved": "Tarif de la dictée enregistré."
   },
   "memory": {
     "title": "Mémoire",
@@ -1838,5 +1866,36 @@
     "example2": "Ex. : Je suis chargé(e) de compte pour les clients du secteur sport.",
     "example3": "Ex. : Je signe mes e-mails « Charles ».",
     "usedInChat": "Utilisé seulement quand vous êtes seul(e) avec l'IA."
+  },
+  "aiFeatures": {
+    "title": "Fonctionnalités de l'IA",
+    "description": "Valable pour toute l'entreprise. Chaque changement est enregistré tout de suite et noté dans le journal d'activité.",
+    "autoMemoryTitle": "Mémoire client automatique",
+    "autoMemoryBody": "Après une réponse liée à un client, l'IA ajoute les faits utiles à la mémoire de ce client, si la personne a le droit d'y écrire. Chaque ajout indique son auteur et sa date, et peut être annulé.",
+    "dictationTitle": "Dictée vocale",
+    "dictationBody": "Un micro dans la conversation. La voix est transcrite par le modèle de transcription d'OpenAI ; la voix elle-même lui parvient non masquée. Le texte passe par Hide avant d'être envoyé.",
+    "saved": "Réglage enregistré"
+  },
+  "dictation": {
+    "start": "Dicter",
+    "stop": "Terminer et transcrire",
+    "cancel": "Annuler l'enregistrement",
+    "recording": "Enregistrement en cours",
+    "transcribing": "Transcription…",
+    "tooShort": "Enregistrement trop court : maintenez la parole au moins une seconde.",
+    "errors": {
+      "unsupported": "Ce navigateur ne permet pas d'enregistrer la voix.",
+      "denied": "Le micro n'est pas autorisé. Autorisez-le dans les réglages du navigateur.",
+      "network": "Connexion interrompue. Réessayez.",
+      "invalid_audio": "Enregistrement illisible. Réessayez.",
+      "too_large": "Enregistrement trop long (5 minutes au plus).",
+      "too_long": "Enregistrement trop long (5 minutes au plus).",
+      "quota": "Limite de crédits atteinte.",
+      "failed": "La transcription a échoué. Réessayez.",
+      "not_configured": "La dictée n'est pas encore configurée (clé OpenAI manquante).",
+      "disabled": "La dictée vocale est désactivée dans votre entreprise.",
+      "forbidden": "Accès refusé.",
+      "empty": "Aucune parole détectée."
+    }
   }
 }

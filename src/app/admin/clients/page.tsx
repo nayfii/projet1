@@ -28,6 +28,7 @@ export default async function AdminClientsPage({ searchParams }: PageProps<"/adm
           .filter((m) => m.status === "active" && m.role !== "owner")
           .map((m) => ({ userId: m.userId, name: m.fullName ?? m.email }))}
         startWithNew={params.new === "1"}
+        isOwner={ctx.active.role === "owner"}
       />
     </PageContainer>
   );

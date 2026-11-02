@@ -34,6 +34,11 @@ export const ERROR_CODES = [
   "render_in_progress",
   "render_invalid",
   "render_missing_file",
+  "archive_first",
+  "name_mismatch",
+  "manager_needs_team",
+  "busy",
+  "dictation_disabled",
   "unknown",
 ] as const;
 
@@ -43,6 +48,8 @@ export function toErrorCode(error: { message?: string; code?: string } | null | 
   if (!error) return "unknown";
   const message = error.message ?? "";
   if ((ERROR_CODES as readonly string[]).includes(message)) return message as ErrorCode;
+  // A Manager always leads a team (check constraint company_members_manager_team).
+  if (error.code === "23514" && message.includes("company_members_manager_team")) return "manager_needs_team";
   // 42501 = insufficient privilege, raised by RLS "with check" violations.
   if (error.code === "42501") return "forbidden";
   return "unknown";

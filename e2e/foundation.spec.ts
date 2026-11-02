@@ -101,7 +101,9 @@ test("owner restricts Client A to Olivier; Nathalie cannot see it", async ({ bro
   const nathaliePage = await (await browser.newContext()).newPage();
   await signIn(nathaliePage, nathalie);
   await nathaliePage.goto("/clients");
-  await expect(nathaliePage.getByText("Aucun client ne vous a encore été attribué.")).toBeVisible();
+  // Step 12: everyone can add clients; a restricted client stays invisible to those without access.
+  await expect(nathaliePage.getByRole("main").getByText("Aucun client pour l'instant")).toBeVisible();
+  await expect(nathaliePage.getByText("Client A")).toHaveCount(0);
   const clientUrl = ownerPage.url().replace("/admin/clients", "/clients");
   void clientUrl;
   await nathaliePage.goto("/admin");
@@ -111,8 +113,8 @@ test("owner restricts Client A to Olivier; Nathalie cannot see it", async ({ bro
   const olivierPage = await (await browser.newContext()).newPage();
   await signIn(olivierPage, olivier);
   await olivierPage.goto("/clients");
-  await expect(olivierPage.getByText("Client A")).toBeVisible();
-  await olivierPage.getByText("Client A").click();
+  await expect(olivierPage.getByRole("main").getByText("Client A")).toBeVisible();
+  await olivierPage.getByRole("main").getByText("Client A").click();
   await expect(olivierPage.getByRole("heading", { name: "Client A" })).toBeVisible();
   const directUrl = olivierPage.url();
   await shot(olivierPage, "13-member-client-page");
@@ -144,7 +146,7 @@ test("works on a phone", async ({ browser }) => {
   await shot(page, "16-mobile-home");
   await page.getByRole("button", { name: "Ouvrir le menu" }).click();
   await shot(page, "17-mobile-menu");
-  await page.getByRole("link", { name: "Clients" }).click();
+  await page.getByRole("link", { name: "Clients", exact: true }).click();
   await expect(page).toHaveURL(/\/clients$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.goto("/admin/members");

@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 11 (art direction, AI avatars, personal avatars), 2026-10-30.
+Last update: Step 12 (clients, permissions and collaboration, personal memory, voice dictation), 2026-11-02.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -65,7 +65,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | AI answers only when mentioned (@Claude, @ChatGPT, @Gemini, @AI) | **done**: "@" opens a menu (@IA = the selected model or Auto, @Claude, @ChatGPT, @Gemini, only allowed providers; keyboard or click); without a mention the message is simply posted, at no cost. The mention is decided on the server. Hide never masks the mention itself |
 | History on join (from arrival by default) + "Share history" selector | **done**: by default "À partir de maintenant"; or "Toute la conversation"; or a chosen message on a timeline. Nobody can share more than they see. Enforced in SQL for messages, files, cited sources, stored files and search. **The conversation's title is visible to everyone who joins** (the dialog shows it, with a hint to rename) |
 | AI context = history visible to all + intersection of permissions, with indicator | **done**: the AI gets only the messages every current participant can see and only the memories all of them may read (`conversation_shared_spaces`); "Contexte limité à ce que tout le monde ici peut voir" under the answer when that removed something. Placeholders are restored only if the model was shown them |
-| Conversation transfer (ownership change, sender loses access, logged) | **done**: "Transférer…" (person responsible only), confirmation dialog saying it is final; the recipient sees the whole history; the sender loses access; other participants stay; logged |
+| Conversation transfer (ownership change, logged) | **done, changed at Step 12 (CLAUDE.md §11): a transfer forks the conversation.** "Transférer…" (person responsible only); the recipient gets the conversation with its whole history and continues it; the sender keeps a private copy of everything written up to the transfer (files and Hide values copied too) and lands in it; neither sees the other's branch afterwards; other participants stay on the original; logged without content |
 | Smart Handover (conversation, restricted client, project) | **done for conversations and restricted clients** (no "project" object, open question 2): the AI drafts summary, decisions, useful documents, remaining tasks and next actions (through Hide, real values restored for the recipient); the recipient finds it at the top of the conversation or client page and can edit it; only the recipient can read it. If the AI fails, the transfer still happens and the recipient writes the file. **Before sharing history or transferring, the app warns when the shared messages cite a memory the recipient cannot read** ("Ajouter quand même" / "Transférer quand même") |
 | Client transfer (restricted client) | **done**: "Transférer ce client" on the client page for an assigned employee; the assignment and the sender's conversations about that client move to the recipient (open question 3), the sender loses all access; logged |
 | Who Can Help (expertise, suggestions, invite button, opt-out) | **done**: colleagues with declared expertise who did not opt out are listed to the AI (names masked by Hide); when the answer names one, an "Inviter Nathalie Durand" button opens the Add dialog with her preselected. Never based on private conversations; people already in the conversation are not suggested. With a real model the suggestion depends on the model following the rule (tested with the simulated provider only) |
@@ -223,6 +223,42 @@ onboarding without rebuilding it. Details: `docs/DESIGN.md`.
 **Known issue found and fixed at Step 11:** Turbopack's file-system cache served an old compile of `globals.css`
 (stale design tokens in dev and in a production build). The cache is now off for dev and builds (`next.config.ts`);
 builds take a little longer but always use the current styles.
+
+## Step 12 — Clients, permissions, collaboration, personal memory, dictation (2026-11-02)
+
+Built from the founder's framing decisions (CLAUDE.md §11).
+
+| Item | Status |
+|---|---|
+| **Manager role**: the Owner names a Manager (Employés → ⋯ → Nommer manager, team chosen in the same dialog); a Manager gives the members of their own team access to the restricted clients they follow ("Gérer l'accès" on the client page), and never reads conversations | **done**, enforced in the database (client assignment policies) and tested |
+| Everyone creates open clients; restricted clients only by the Owner, client Admins and Managers (the creator keeps access) | **done**, enforced in the database |
+| "Clients" in the sidebar: recent clients, "+" to add in place, "Tous les clients" (search on the Clients page) | **done** |
+| Client space: "En bref" (short summary made only from what the viewer may open, cached per person, refresh button), key information, memory and documents, "Mes conversations", "Partagées avec moi", "Nouvelle conversation" | **done** (with the simulated AI; the summary goes through Hide) |
+| In a chat, a named client that is not linked: "Rattacher à … ?" (or "Créer le client « … » ?") with a light animation | **done** (detection runs in the browser; nothing is sent anywhere) |
+| Archive first, then permanent deletion by the Owner only, after retyping the client's name; the client's document files are removed too | **done** (Clients et accès → Archivés → Supprimer définitivement) |
+| Conversations private by default; Owner and Admins never read them | **done** (since Step 2), re-tested |
+| Participant rights: read only, participate, manage participants (click the people in the conversation header) | **done**, enforced in the database (a reader cannot post or attach files) |
+| Natural mentions in group conversations ("bonjour chat, …" becomes "@ChatGPT"); the AI still answers only when mentioned | **done** |
+| Transfer = fork (see 4.4) | **done**, tested in the database and in two browsers |
+| An employee who leaves: their conversations stay closed unless they transfer them first | **done** by design (nobody else can open a private conversation); no special departure screen |
+| **Personal memory** ("Ce que l'IA sait de moi" on the profile page): up to 50 notes, used only for that person, only when they are alone with the AI, masked by Hide, never visible to anyone else | **done** (simple version, as chosen) |
+| **Client memory fed automatically**: after an answer in a conversation linked to a client, the AI adds the useful facts to that client's memory if the person may write there; a toast offers "Annuler"; each entry shows "Ajouté automatiquement depuis une conversation", its author and date; per conversation "Ne pas alimenter la mémoire" (⋯ menu); company switch (Administration → Modèles → Fonctionnalités de l'IA) | **done** with the simulated AI; **quality with real models not verified yet** (no provider credit) |
+| **Voice dictation**: microphone in the chat; click, speak, click to stop; the text lands in the message box to be read before sending; Hide masks it then; 5 minutes per recording; credits per minute set by our team; company switch | **done** in test mode (Chromium's fake microphone); **not verified against OpenAI's real transcription model** (no OpenAI credit). The voice reaches OpenAI unmasked (docs/SECURITY.md) |
+| Who Can Help also uses authorship of shared memory entries | **partial**: still based on declared expertise only; using memory authorship needs a reordering of how colleagues are chosen, planned with Step 13 |
+| Support access by consent (our team asks for one conversation; the owner approves by e-mail; read-only, time-limited, logged) | **not started**: built with our back-office (second round). Awaiting the founder's confirmation that the e-mail goes to the conversation's owner |
+| Product name "Cendr" in the interface | **not started** (Step 13) |
+
+## Tests (Step 12)
+
+| Suite | Result |
+|---|---|
+| Unit (`pnpm test`) | 238 passed (9 new: client detection, natural mentions, dictation recordings and credits) |
+| Integration (`pnpm test:integration`) | 196 passed (12 in `step12.test.ts`: clients for everyone, deletion rules and files, Manager scope and team rule, Managers never read conversations, participant rights, transfer fork, personal memory privacy, automatic memory authorship and access, company switches, dictation rates) |
+| End to end (`npx playwright test`, test provider, render worker running) | 93 passed (6 new in `step12.spec.ts`: client from the sidebar, link suggestion, automatic memory with Undo, dictation with a fake microphone, personal notes, admin switches, deletion for good); older specs updated for the sidebar clients and the transfer fork |
+| Type check, lint, production build | OK |
+
+**Bug found and fixed by the tests:** after transferring a *group* conversation, the sender was sent to an empty page
+instead of their copy (a live "participants changed" update fired on the old page). Fixed in `chat-view.tsx`.
 
 ## Tests (Step 11)
 
@@ -403,6 +439,9 @@ Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `doc
 The founder answered the 72 points of the framing page (60 as recommended) and clarified the transfer in the conversation. The result is written into **CLAUDE.md §11** (which now wins over older sections). Built next: Step 12 (clients, permissions and collaboration, personal memory, voice dictation) and Step 13 (Applications, our console's app catalogue, launch choices: invitation-only sign-up, credits only, video and Application Review hidden, onboarding checklist, Hide switch, name "Cendr").
 
 ## Open questions for the founder
+
+**Step 12:** (a) support access by consent — confirm that the authorization e-mail goes to the conversation's owner (built with the back-office); (b) dictation costs 2 credits per minute and automatic client memory runs one small AI task per answer in a linked conversation: starting values, adjustable in our console.
+
 
 The founder asked to proceed ("je suis prêt à construire le tout") without answering these yet: the proposals below are applied as **defaults** and can be changed.
 

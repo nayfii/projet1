@@ -137,7 +137,7 @@ test("2–3. Olivier and Nathalie (finance) join; Client A is restricted to Oliv
 
 test("4. the Owner adds a Client A document and saves a Client A memory entry", async () => {
   await ownerPage.goto("/memory");
-  await ownerPage.getByRole("link", { name: /Client A/ }).click();
+  await ownerPage.getByRole("main").getByRole("link", { name: /Client A/ }).click();
   await expect(ownerPage).toHaveURL(/\/memory\/[0-9a-f-]{36}$/);
   clientSpaceUrl = ownerPage.url();
   await ownerPage.getByRole("tab", { name: /Documents/ }).click();

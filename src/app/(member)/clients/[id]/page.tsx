@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { ArrowLeftIcon, BrainIcon, FileTextIcon, MessageSquareIcon, SquarePenIcon, UsersIcon } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
+import { hasScope } from "@/lib/auth/context";
+import { listMembers } from "@/modules/organizations/server/queries";
+import { ClientAccessButton } from "@/modules/clients/ui/client-access-button";
 import { PageContainer } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +39,19 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
   const format = await getFormatter();
   // Smart Handover: an assigned employee can hand a restricted client over; the recipient finds the file here.
   const canTransfer = client.visibility === "restricted" && Boolean(withAssignees?.assignees.some((a) => a.userId === ctx.user.id));
-  const [handover, colleagues] = await Promise.all([getMyHandover({ clientId: id }), canTransfer ? getEligibleColleagues(ctx, null) : Promise.resolve([])]);
+  // Access to a restricted client: client Admins give it to anyone, a Manager to their own team (CLAUDE.md §11).
+  const accessAll = hasScope(ctx.active, "clients");
+  const accessTeam = !accessAll && ctx.active.role === "manager";
+  const canManageAccess = client.visibility === "restricted" && !client.archived_at && (accessAll || accessTeam);
+  const [handover, colleagues, members] = await Promise.all([
+    getMyHandover({ clientId: id }),
+    canTransfer ? getEligibleColleagues(ctx, null) : Promise.resolve([]),
+    canManageAccess ? listMembers(ctx.active.companyId) : Promise.resolve([]),
+  ]);
+  const myTeam = members.find((m) => m.userId === ctx.user.id)?.teamName ?? null;
+  const accessMembers = members
+    .filter((m) => m.status === "active" && m.role !== "owner" && m.userId !== ctx.user.id && (accessAll || (myTeam && m.teamName === myTeam)))
+    .map((m) => ({ userId: m.userId, name: m.fullName ?? m.email }));
 
   // The client's memory, if this person can read it (same rights as everywhere else).
   const space = (await listMemorySpaces(ctx)).find((s) => s.clientId === id);
@@ -85,6 +100,13 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {canManageAccess && withAssignees ? (
+            <ClientAccessButton
+              client={{ id: client.id, name: client.name, assignees: withAssignees.assignees }}
+              members={accessMembers}
+              note={accessTeam && myTeam ? t("managerAccessNote", { team: myTeam }) : undefined}
+            />
+          ) : null}
           {canTransfer ? <ClientTransferButton client={{ id: client.id, name: client.name }} colleagues={colleagues} /> : null}
           <Button asChild>
             <Link href={`/chat?client=${client.id}`}>

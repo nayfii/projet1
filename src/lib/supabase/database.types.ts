@@ -973,14 +973,14 @@ isOneToOne: false
                   ]
                 },"platform_settings": {
                   Row: {
-                    "avatar_cost_usd": number,"avatar_credits": number,"id": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null
+                    "avatar_cost_usd": number,"avatar_credits": number,"dictation_cost_usd_per_minute": number,"dictation_credits_per_minute": number,"id": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
                   }
                   Update: {
-                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
                   }
                   Relationships: [
                     {
@@ -1179,6 +1179,9 @@ isOneToOne: false
 "admin_set_agent_settings":
 { Args: { "p_agent": string,"p_company": string,"p_settings": Json }; Returns: undefined
                            },
+"admin_set_ai_features":
+{ Args: { "p_auto_client_memory"?: boolean,"p_company": string,"p_dictation_enabled"?: boolean }; Returns: undefined
+                           },
 "admin_set_default_user_quota":
 { Args: { "p_company": string,"p_credits": number }; Returns: undefined
                            },
@@ -1227,7 +1230,7 @@ isOneToOne: false
 { Args: { "p_agent": string,"p_approve": boolean }; Returns: undefined
                            },
 "delete_client":
-{ Args: { "p_client": string,"p_confirm_name": string }; Returns: undefined
+{ Args: { "p_client": string,"p_confirm_name": string }; Returns: (string)[]
                            },
 "delete_tool":
 { Args: { "p_agent": string }; Returns: undefined
@@ -1311,6 +1314,9 @@ isOneToOne: false
 { Args: { "p_hours"?: number }; Returns: Json
                            },
 "platform_set_avatar_rate":
+{ Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
+                           },
+"platform_set_dictation_rate":
 { Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
                            },
 "platform_set_exchange_rate":

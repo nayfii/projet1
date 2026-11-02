@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("usage") };
 }
 
-const FEATURES = new Set(["chat", "agent", "confronter", "embedding", "memory", "handover", "router"]);
+const FEATURES = new Set(["chat", "agent", "confronter", "embedding", "memory", "handover", "router", "avatar", "client_summary", "dictation"]);
 
 /** One company's usage for our team: per day, model and feature. Never per person, never content. */
 export default async function PlatformCompanyPage({ params, searchParams }: PageProps<"/platform/companies/[id]">) {

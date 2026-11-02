@@ -25,6 +25,7 @@ export async function getChatPageData(ctx: MemberContext) {
     getHideSettings(supabase, companyId),
     supabase.from("company_members").select("team_id").eq("company_id", companyId).eq("user_id", ctx.user.id).maybeSingle(),
   ]);
+  const { data: features } = await supabase.from("company_ai_settings").select("dictation_enabled").eq("company_id", companyId).maybeSingle();
   const clientName = new Map(clients.map((c) => [c.id, c.name]));
   const picker: PickerModel[] = models.allowed.map((m) => ({
     id: m.id,
@@ -55,6 +56,8 @@ export async function getChatPageData(ctx: MemberContext) {
     hide,
     me: { id: ctx.user.id, name: ctx.profile.fullName },
     canRestrictClients: canRestrictClients(ctx.active),
+    // Voice dictation (the company can switch it off).
+    dictation: features?.dictation_enabled ?? true,
     // "Turn into a tool": what the tool editor needs.
     toolEditor: { models: picker, autoEnabled: models.autoEnabled, hasTeam: Boolean(membership?.team_id), canApprove: hasScope(ctx.active, "agents") },
   };

@@ -57,6 +57,11 @@ export function avatarImageModel(): string {
   return process.env.AVATAR_IMAGE_MODEL?.trim() || "gpt-image-1.5";
 }
 
+/** Voice dictation: OpenAI's transcription model (CLAUDE.md §11). */
+export function dictationModel(): string {
+  return process.env.DICTATION_MODEL?.trim() || "gpt-4o-transcribe";
+}
+
 /** Embeddings (search index of memory and documents). The vector size must match the database (1536). */
 export function embeddingsConfig(): { provider: "openai" | "google"; model: string; dimensions: number } {
   const provider = process.env.EMBEDDINGS_PROVIDER === "google" ? "google" : "openai";

@@ -71,7 +71,12 @@
     "video_quota_exceeded": "Not enough video credits left this month. An administrator can ask for more.",
     "render_in_progress": "This video is already being made.",
     "render_invalid": "The video cannot be made: the AI's composition or edit plan is incomplete. Ask it to fix it.",
-    "render_missing_file": "A file the video uses cannot be found in this conversation."
+    "render_missing_file": "A file the video uses cannot be found in this conversation.",
+    "archive_first": "Archive this client first. Permanent deletion comes after.",
+    "name_mismatch": "The name typed does not match the client's name.",
+    "manager_needs_team": "A manager leads a team: choose their team first.",
+    "busy": "An answer is being written. Try again in a moment.",
+    "dictation_disabled": "Voice dictation is turned off in your company."
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -207,7 +212,12 @@
     "scopesTitle": "{name}'s permissions",
     "scopesDescription": "An admin only manages what you tick here.",
     "team": "Team",
-    "teamHint": "Used to share “My team” tools. Type a new name to create a team; clear the field for none."
+    "teamHint": "Used to share “My team” tools. Type a new name to create a team; clear the field for none.",
+    "makeManager": "Make manager",
+    "managerTitle": "Make {name} a manager",
+    "managerDescription": "A manager gives the members of their team access to the restricted clients they follow. They never read their conversations.",
+    "managerTeamHint": "The team they lead. Type a new name to create a team.",
+    "makeManagerConfirm": "Make manager"
   },
   "clients": {
     "title": "Clients",
@@ -248,7 +258,7 @@
     "manageAccess": "Manage access",
     "accessTitle": "Access to {name}",
     "accessDescription": "Tick the people who can use this client and its memory.",
-    "transferLater": "Transferring a client with a handover file arrives in a later version.",
+    "transferLater": "To hand a client over to a colleague with a handover file, use \"Transfer\" on the client's page.",
     "archive": "Archive",
     "archivedToast": "Client archived",
     "archivedTitle": "Archived clients",
@@ -281,7 +291,14 @@
     "noSharedConversations": "No conversation shared with you.",
     "keyInfo": "Key information",
     "createdOn": "Client since {date}",
-    "openForAll": "Open to the whole team"
+    "openForAll": "Open to the whole team",
+    "managerAccessNote": "You manage access for the members of your team \"{team}\".",
+    "deleteForGood": "Delete for good",
+    "deleteTitle": "Delete {name} for good?",
+    "deleteDescription": "The client, its memory and its documents are erased for good. Conversations stay with their authors, no longer linked to this client. This cannot be undone.",
+    "deleteTypeName": "Type \"{name}\" to confirm",
+    "deleteConfirm": "Delete for good",
+    "deletedToast": "Client deleted for good"
   },
   "nav": {
     "home": "Home",
@@ -411,7 +428,7 @@
       "model_updated": "updated a catalogue model",
       "model_deleted": "removed a model from the catalogue",
       "credits_granted": "added credits to a company",
-      "memory_entry_created": "added a memory entry{kind, select, chat { (from a conversation)} ai_suggestion { (approved AI suggestion)} promotion { (approved general learning)} other {}}",
+      "memory_entry_created": "added a memory entry{kind, select, chat { (from a conversation)} ai_suggestion { (approved AI suggestion)} promotion { (approved general learning)} auto { (added automatically by the AI)} other {}}",
       "memory_entry_updated": "edited a memory entry",
       "memory_entry_deleted": "deleted a memory entry",
       "memory_document_added": "added a document to memory",
@@ -443,7 +460,10 @@
       "render_failed": "could not finish a video ({kind, select, motion {Motion Design} video_edit {edit} other {video}}; credits released)",
       "render_rate_changed": "changed the video rate ({kind, select, motion {Motion Design} video_edit {edit} other {video}}): {credits} credits per second",
       "provider_tested": "tested {provider, select, openai {ChatGPT (OpenAI)} anthropic {Claude (Anthropic)} google {Gemini (Google)} other {a provider}}: {ok, select, yes {answering} other {failing}}",
-      "settings_exchange_rate": "set the exchange rate used for estimates: $1 = €{rate}"
+      "settings_exchange_rate": "set the exchange rate used for estimates: $1 = €{rate}",
+      "conversation_participant_role": "changed the rights of {person} in a conversation",
+      "conversation_participant_removed": "removed {person} from a conversation",
+      "ai_features_updated": "changed the AI features (automatic memory, dictation)"
     },
     "filterCategory": "Type",
     "filterPerson": "Person",
@@ -755,7 +775,9 @@
       "router": "Automatic model choice",
       "render": "Video",
       "other": "Other",
-      "avatar": "3D avatars"
+      "avatar": "3D avatars",
+      "client_summary": "Client summaries",
+      "dictation": "Voice dictation"
     },
     "limitLabel": "Limit: {limit}",
     "noLimit": "No personal limit",
@@ -846,7 +868,13 @@
     "avatarRateCredits": "Credits per creation",
     "avatarRateCost": "Estimated cost ($ per creation)",
     "avatarRateSave": "Save",
-    "avatarRateSaved": "Avatar rate saved."
+    "avatarRateSaved": "Avatar rate saved.",
+    "dictationRateTitle": "Voice dictation",
+    "dictationRateHint": "Credits charged per minute of transcribed speech (model: {model}), and its estimated provider cost. These are not prices.",
+    "dictationRateCredits": "Credits per minute",
+    "dictationRateCost": "Estimated cost ($ per minute)",
+    "dictationRateSave": "Save",
+    "dictationRateSaved": "Dictation rate saved."
   },
   "memory": {
     "title": "Memory",
@@ -1838,5 +1866,36 @@
     "example2": "e.g. I am an account manager for clients in sport.",
     "example3": "e.g. I sign my e-mails \"Charles\".",
     "usedInChat": "Used only when you are alone with the AI."
+  },
+  "aiFeatures": {
+    "title": "AI features",
+    "description": "For the whole company. Each change is saved at once and noted in the activity log.",
+    "autoMemoryTitle": "Automatic client memory",
+    "autoMemoryBody": "After an answer about a client, the AI adds the useful facts to that client's memory, if the person may write there. Each addition shows its author and date, and can be undone.",
+    "dictationTitle": "Voice dictation",
+    "dictationBody": "A microphone in the conversation. Speech is transcribed by OpenAI's transcription model; the voice itself reaches it unmasked. The text goes through Hide before it is sent.",
+    "saved": "Setting saved"
+  },
+  "dictation": {
+    "start": "Dictate",
+    "stop": "Finish and transcribe",
+    "cancel": "Cancel the recording",
+    "recording": "Recording",
+    "transcribing": "Transcribing…",
+    "tooShort": "Recording too short: speak for at least a second.",
+    "errors": {
+      "unsupported": "This browser cannot record your voice.",
+      "denied": "The microphone is not allowed. Allow it in the browser settings.",
+      "network": "Connection lost. Try again.",
+      "invalid_audio": "Unreadable recording. Try again.",
+      "too_large": "Recording too long (5 minutes at most).",
+      "too_long": "Recording too long (5 minutes at most).",
+      "quota": "Credit limit reached.",
+      "failed": "Transcription failed. Try again.",
+      "not_configured": "Dictation is not set up yet (OpenAI key missing).",
+      "disabled": "Voice dictation is turned off in your company.",
+      "forbidden": "Access denied.",
+      "empty": "No speech detected."
+    }
   }
 }
