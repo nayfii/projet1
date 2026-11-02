@@ -24,6 +24,7 @@
   "roles": {
     "owner": "Owner",
     "admin": "Admin",
+    "manager": "Manager",
     "member": "Member"
   },
   "scopes": {

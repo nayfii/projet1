@@ -201,14 +201,14 @@ isOneToOne: false
                   ]
                 },"company_ai_settings": {
                   Row: {
-                    "auto_enabled": boolean,"company_id": string,"default_model_id": string | null,"default_user_monthly_credits": number | null,"updated_at": string,"updated_by": string | null
+                    "auto_client_memory": boolean,"auto_enabled": boolean,"company_id": string,"default_model_id": string | null,"default_user_monthly_credits": number | null,"dictation_enabled": boolean,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "auto_enabled"?: boolean,"company_id": string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"updated_at"?: string,"updated_by"?: string | null
+                    "auto_client_memory"?: boolean,"auto_enabled"?: boolean,"company_id": string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"dictation_enabled"?: boolean,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "auto_enabled"?: boolean,"company_id"?: string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"updated_at"?: string,"updated_by"?: string | null
+                    "auto_client_memory"?: boolean,"auto_enabled"?: boolean,"company_id"?: string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"dictation_enabled"?: boolean,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -387,14 +387,14 @@ isOneToOne: false
                   ]
                 },"conversations": {
                   Row: {
-                    "agent_id": string | null,"client_id": string | null,"company_id": string,"created_at": string,"id": string,"is_group": boolean,"last_message_at": string | null,"last_seq": number,"model_choice": string,"owner_id": string,"title": string | null,"updated_at": string
+                    "agent_id": string | null,"client_id": string | null,"company_id": string,"created_at": string,"feed_memory": boolean,"forked_from": string | null,"id": string,"is_group": boolean,"last_message_at": string | null,"last_seq": number,"model_choice": string,"owner_id": string,"received_from": string | null,"title": string | null,"transferred_at": string | null,"transferred_to": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "agent_id"?: string | null,"client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"title"?: string | null,"updated_at"?: string
+                    "agent_id"?: string | null,"client_id"?: string | null,"company_id": string,"created_at"?: string,"feed_memory"?: boolean,"forked_from"?: string | null,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"received_from"?: string | null,"title"?: string | null,"transferred_at"?: string | null,"transferred_to"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "agent_id"?: string | null,"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"title"?: string | null,"updated_at"?: string
+                    "agent_id"?: string | null,"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"feed_memory"?: boolean,"forked_from"?: string | null,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"received_from"?: string | null,"title"?: string | null,"transferred_at"?: string | null,"transferred_to"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -418,6 +418,18 @@ isOneToOne: false
     },{
       foreignKeyName: "conversations_owner_id_fkey"
       columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "conversations_received_from_fkey"
+      columns: ["received_from"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "conversations_transferred_to_fkey"
+      columns: ["transferred_to"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -873,6 +885,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"personal_memory": {
+                  Row: {
+                    "company_id": string,"content": string,"created_at": string,"id": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": string,"content": string,"created_at"?: string,"id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "company_id"?: string,"content"?: string,"created_at"?: string,"id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "personal_memory_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "personal_memory_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"plans": {
                   Row: {
                     "created_at": string,"description": string | null,"id": string,"is_active": boolean,"is_default": boolean,"monthly_credits": number,"monthly_price_per_seat": number | null,"name": string,"price_currency": string,"price_label": string | null,"seat_limit": number | null,"updated_at": string,"video_credits": number
@@ -1093,7 +1131,7 @@ isOneToOne: false
 { Args: { "p_invitation"?: string,"p_token"?: string }; Returns: string
                            },
 "add_conversation_participants":
-{ Args: { "p_conversation": string,"p_from_seq"?: number,"p_users": (string)[] }; Returns: undefined
+{ Args: { "p_conversation": string,"p_from_seq"?: number,"p_role"?: string,"p_users": (string)[] }; Returns: undefined
                            },
 "admin_delete_category":
 { Args: { "p_category": string,"p_company": string }; Returns: undefined
@@ -1155,6 +1193,9 @@ isOneToOne: false
                            },
 "decide_tool":
 { Args: { "p_agent": string,"p_approve": boolean }; Returns: undefined
+                           },
+"delete_client":
+{ Args: { "p_client": string,"p_confirm_name": string }; Returns: undefined
                            },
 "delete_tool":
 { Args: { "p_agent": string }; Returns: undefined
@@ -1257,6 +1298,9 @@ isOneToOne: false
 "record_sign_in":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
+"remove_conversation_participant":
+{ Args: { "p_conversation": string,"p_user": string }; Returns: undefined
+                           },
 "render_claim_job":
 { Args: { "p_worker": string }; Returns: Json
                            },
@@ -1280,6 +1324,9 @@ isOneToOne: false
               "client_id": string,"conversation_id": string,"matched_at": string,"snippet": string,"title": string
             }[]
                            },
+"set_participant_role":
+{ Args: { "p_conversation": string,"p_role": string,"p_user": string }; Returns: undefined
+                           },
 "set_tool_roles":
 { Args: { "p_agent": string,"p_roles": (Database["public"]['Enums']["company_role"])[] }; Returns: undefined
                            },
@@ -1290,14 +1337,14 @@ isOneToOne: false
 { Args: { "p_ai_generated": boolean,"p_client": string,"p_sections": Json,"p_to": string }; Returns: string
                            },
 "transfer_conversation":
-{ Args: { "p_ai_generated": boolean,"p_conversation": string,"p_sections": Json,"p_to": string }; Returns: string
+{ Args: { "p_ai_generated": boolean,"p_conversation": string,"p_sections": Json,"p_to": string }; Returns: Json
                            },
 "update_my_member_card":
 { Args: { "p_company": string,"p_expertise": (string)[],"p_job_title": string,"p_opt_out": boolean }; Returns: undefined
                            }
           }
           Enums: {
-            "ai_provider": "openai"|"anthropic"|"google","client_visibility": "open"|"restricted","company_role": "owner"|"admin"|"member","company_status": "active"|"suspended","member_status": "active"|"deactivated","memory_kind": "company"|"client","model_tier": "fast"|"balanced"|"advanced"
+            "ai_provider": "openai"|"anthropic"|"google","client_visibility": "open"|"restricted","company_role": "owner"|"admin"|"member"|"manager","company_status": "active"|"suspended","member_status": "active"|"deactivated","memory_kind": "company"|"client","model_tier": "fast"|"balanced"|"advanced"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1413,7 +1460,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "ai_provider": ["openai", "anthropic", "google"],"client_visibility": ["open", "restricted"],"company_role": ["owner", "admin", "member"],"company_status": ["active", "suspended"],"member_status": ["active", "deactivated"],"memory_kind": ["company", "client"],"model_tier": ["fast", "balanced", "advanced"]
+            "ai_provider": ["openai", "anthropic", "google"],"client_visibility": ["open", "restricted"],"company_role": ["owner", "admin", "member", "manager"],"company_status": ["active", "suspended"],"member_status": ["active", "deactivated"],"memory_kind": ["company", "client"],"model_tier": ["fast", "balanced", "advanced"]
           }
         }
 } as const

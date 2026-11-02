@@ -15,7 +15,7 @@ import { deleteCategoryAction, saveCategoryAction, setSpaceGrantsAction } from "
 
 type Category = { id: string; name: string; description: string | null; systemKey: "everyone" | "management" | null; members: string[] };
 type Space = { id: string; kind: "company" | "client"; clientName: string | null; read: string[]; write: string[] };
-type Member = { userId: string; name: string; role: "owner" | "admin" | "member" };
+type Member = { userId: string; name: string; role: "owner" | "admin" | "manager" | "member" };
 
 export function PermissionsManager({ categories, spaces, members }: { categories: Category[]; spaces: Space[]; members: Member[] }) {
   const t = useTranslations("permissions");

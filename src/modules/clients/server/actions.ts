@@ -1,9 +1,11 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { memberOrNull } from "@/lib/auth/guards";
+import { canRestrictClients } from "@/lib/auth/context";
 import { toErrorCode, type ActionResult } from "@/lib/errors";
 
 const clientSchema = z.object({
@@ -19,8 +21,12 @@ function revalidateClients() {
   revalidatePath("/admin/clients");
 }
 
+/**
+ * Anyone in the company creates an open client (CLAUDE.md §11); a restricted one needs client
+ * management (Owner, client Admins) or the Manager role. Re-checked by the clients policy.
+ */
 export async function createClientAction(_: unknown, formData: FormData): Promise<ActionResult<{ id: string }>> {
-  const ctx = await memberOrNull("clients");
+  const ctx = await memberOrNull();
   if (!ctx) return { ok: false, error: "forbidden" };
   const parsed = clientSchema.safeParse({
     name: formData.get("name"),
@@ -30,21 +36,21 @@ export async function createClientAction(_: unknown, formData: FormData): Promis
     assignees: formData.getAll("assignees").map(String),
   });
   if (!parsed.success) return { ok: false, error: "validation", fields: { name: "required" } };
+  if (parsed.data.visibility === "restricted" && !canRestrictClients(ctx.active)) return { ok: false, error: "forbidden" };
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("clients")
-    .insert({
-      company_id: ctx.active.companyId,
-      name: parsed.data.name,
-      visibility: parsed.data.visibility,
-      sector: parsed.data.sector ?? null,
-      description: parsed.data.description ?? null,
-      created_by: ctx.user.id,
-    })
-    .select("id")
-    .single();
-  if (error || !data) return { ok: false, error: toErrorCode(error) };
+  // The id is ours: a restricted client is only readable once its creator is assigned (by a trigger).
+  const data = { id: randomUUID() };
+  const { error } = await supabase.from("clients").insert({
+    id: data.id,
+    company_id: ctx.active.companyId,
+    name: parsed.data.name,
+    visibility: parsed.data.visibility,
+    sector: parsed.data.sector ?? null,
+    description: parsed.data.description ?? null,
+    created_by: ctx.user.id,
+  });
+  if (error) return { ok: false, error: toErrorCode(error) };
 
   if (parsed.data.visibility === "restricted" && parsed.data.assignees.length > 0) {
     const { error: assignError } = await supabase.from("client_assignments").insert(

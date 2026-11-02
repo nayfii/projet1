@@ -173,7 +173,7 @@ export async function decideToolAction(input: { id: string; approve: boolean }):
 export async function setToolRolesAction(input: { id: string; roles: string[] }): Promise<ActionResult> {
   const ctx = await memberOrNull();
   if (!ctx) return { ok: false, error: "forbidden" };
-  const parsed = z.object({ id: z.uuid(), roles: z.array(z.enum(["owner", "admin", "member"])).max(3) }).safeParse(input);
+  const parsed = z.object({ id: z.uuid(), roles: z.array(z.enum(["owner", "admin", "manager", "member"])).max(4) }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
   const { error } = await (await createClient()).rpc("set_tool_roles", { p_agent: parsed.data.id, p_roles: parsed.data.roles });
   if (error) return { ok: false, error: toErrorCode(error) };
@@ -227,7 +227,7 @@ const settingsSchema = z.object({
   agentId: z.uuid(),
   settings: z.object({
     enabled: z.boolean(),
-    enabledRoles: z.array(z.enum(["owner", "admin", "member"])).max(3),
+    enabledRoles: z.array(z.enum(["owner", "admin", "manager", "member"])).max(4),
     instructionsAddition: z.string().max(4000),
     tone: z.string().max(200),
     defaultModel: z.string().regex(/^[a-z0-9][a-z0-9._-]{1,62}$/).nullable(),

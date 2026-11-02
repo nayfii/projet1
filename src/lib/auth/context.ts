@@ -72,3 +72,8 @@ export function hasScope(membership: Membership | null, scope: AdminScope): bool
 export function isCompanyAdmin(membership: Membership | null): boolean {
   return membership?.role === "owner" || membership?.role === "admin";
 }
+
+/** May make a client restricted and manage who can open it (CLAUDE.md §11): client Admins, the Owner, Managers. */
+export function canRestrictClients(m: Membership): boolean {
+  return m.role === "manager" || hasScope(m, "clients");
+}

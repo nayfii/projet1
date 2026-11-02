@@ -26,7 +26,7 @@ import { ADMIN_SCOPES, AVAILABLE_SCOPES, type AdminScope } from "../scopes";
 import type { MemberRow } from "../server/queries";
 import { InviteForm } from "./invite-form";
 
-type Invitation = { id: string; email: string; role: "owner" | "admin" | "member"; createdAt: string };
+type Invitation = { id: string; email: string; role: "owner" | "admin" | "manager" | "member"; createdAt: string };
 
 export function MembersManager({
   header,

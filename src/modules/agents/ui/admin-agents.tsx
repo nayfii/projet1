@@ -22,7 +22,7 @@ import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import type { PickerModel } from "@/modules/conversations/ui/model-picker";
 import { AgentBadges } from "./agent-badges";
 
-const ROLES = ["owner", "admin", "member"] as const;
+const ROLES = ["owner", "admin", "manager", "member"] as const;
 
 /** Administration → Agents and tools (CLAUDE.md §4.8): approve company-wide tools, choose roles. */
 export function AdminAgents({

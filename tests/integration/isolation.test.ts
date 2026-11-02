@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   addMember,
@@ -155,9 +156,13 @@ describe("member restrictions", () => {
     expect(data).toEqual([]);
   });
 
-  it("does not let a member create or change clients", async () => {
-    const insert = await nathalie.client.from("clients").insert({ company_id: companyA, name: "Mine" });
-    expect(insert.error).not.toBeNull();
+  it("lets a member create an open client (CLAUDE.md §11), never a restricted one, and not change clients", async () => {
+    const mine = randomUUID();
+    expect((await nathalie.client.from("clients").insert({ id: mine, company_id: companyA, name: "Mine" })).error).toBeNull();
+    expect((await nathalie.client.from("clients").insert({ company_id: companyA, name: "Hidden", visibility: "restricted" })).error).not.toBeNull();
+    await nathalie.client.from("clients").update({ name: "Renamed" }).eq("id", mine);
+    expect((await sql<{ name: string }>("select name from public.clients where id = $1", [mine]))[0].name).toBe("Mine");
+    await sql("delete from public.clients where id = $1", [mine]);
     await nathalie.client.from("clients").update({ visibility: "open" }).eq("id", clientA);
     const [row] = await sql<{ visibility: string }>("select visibility from public.clients where id = $1", [clientA]);
     expect(row.visibility).toBe("restricted");
@@ -233,7 +238,7 @@ describe("admin scopes delegated by the Owner", () => {
   });
 
   it("does not give an Admin the powers they were not delegated", async () => {
-    const client = await adminA.client.from("clients").insert({ company_id: companyA, name: "Admin client" });
+    const client = await adminA.client.from("clients").insert({ company_id: companyA, name: "Admin client", visibility: "restricted" });
     expect(client.error).not.toBeNull();
     const audit = await adminA.client.from("audit_log").select("id").eq("company_id", companyA);
     expect(audit.data).toEqual([]);

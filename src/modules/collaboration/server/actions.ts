@@ -8,13 +8,28 @@ import { toErrorCode, type ActionResult } from "@/lib/errors";
 import { getTimelineMessages } from "@/modules/conversations/server/queries";
 import { draftClientHandover, draftConversationHandover, HANDOVER_SECTIONS } from "./handover";
 import { getConversationPeople } from "./queries";
+import { completeFork } from "./fork";
+import { PARTICIPANT_RIGHTS, type ParticipantRight } from "../rights";
 
-/** Adds colleagues to a conversation. `fromSeq`: first message they will see (null = from now). Re-checked in SQL. */
-export async function addParticipantsAction(input: { conversationId: string; userIds: string[]; fromSeq: number | null }): Promise<ActionResult> {
+/**
+ * Adds colleagues to a conversation with a right (read only, participate, manage participants).
+ * `fromSeq`: first message they will see (null = from now). Re-checked in SQL.
+ */
+export async function addParticipantsAction(input: {
+  conversationId: string;
+  userIds: string[];
+  fromSeq: number | null;
+  role?: ParticipantRight;
+}): Promise<ActionResult> {
   const ctx = await memberOrNull();
   if (!ctx) return { ok: false, error: "forbidden" };
   const parsed = z
-    .object({ conversationId: z.uuid(), userIds: z.array(z.uuid()).min(1).max(20), fromSeq: z.number().int().min(1).nullable() })
+    .object({
+      conversationId: z.uuid(),
+      userIds: z.array(z.uuid()).min(1).max(20),
+      fromSeq: z.number().int().min(1).nullable(),
+      role: z.enum(PARTICIPANT_RIGHTS).default("participant"),
+    })
     .safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
   const supabase = await createClient();
@@ -22,6 +37,36 @@ export async function addParticipantsAction(input: { conversationId: string; use
     p_conversation: parsed.data.conversationId,
     p_users: parsed.data.userIds,
     p_from_seq: parsed.data.fromSeq ?? undefined,
+    p_role: parsed.data.role,
+  });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  return { ok: true };
+}
+
+/** Changes a participant's right (managers and the owner only; never the owner's). */
+export async function setParticipantRightAction(input: { conversationId: string; userId: string; role: ParticipantRight }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ conversationId: z.uuid(), userId: z.uuid(), role: z.enum(PARTICIPANT_RIGHTS) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("set_participant_role", {
+    p_conversation: parsed.data.conversationId,
+    p_user: parsed.data.userId,
+    p_role: parsed.data.role,
+  });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  return { ok: true };
+}
+
+/** Removes someone from a conversation (managers and the owner only). */
+export async function removeParticipantAction(input: { conversationId: string; userId: string }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ conversationId: z.uuid(), userId: z.uuid() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("remove_conversation_participant", {
+    p_conversation: parsed.data.conversationId,
+    p_user: parsed.data.userId,
   });
   if (error) return { ok: false, error: toErrorCode(error) };
   return { ok: true };
@@ -40,9 +85,13 @@ export async function leaveConversationAction(input: { conversationId: string })
 
 /**
  * Gives the conversation to a colleague, with a handover file drafted by the AI (the transfer happens
- * even if the AI cannot draft it: the recipient then writes it). The sender loses access.
+ * even if the AI cannot draft it: the recipient then writes it). The conversation forks: the
+ * recipient continues it, the sender keeps a private copy up to now and never sees what follows.
  */
-export async function transferConversationAction(input: { conversationId: string; toUserId: string }): Promise<ActionResult<{ aiGenerated: boolean }>> {
+export async function transferConversationAction(input: {
+  conversationId: string;
+  toUserId: string;
+}): Promise<ActionResult<{ aiGenerated: boolean; copyId: string | null }>> {
   const ctx = await memberOrNull();
   if (!ctx) return { ok: false, error: "forbidden" };
   const parsed = z.object({ conversationId: z.uuid(), toUserId: z.uuid() }).safeParse(input);
@@ -58,15 +107,17 @@ export async function transferConversationAction(input: { conversationId: string
   if (conversation.owner_id !== ctx.user.id) return { ok: false, error: "owner_only" };
 
   const sections = await draftConversationHandover(supabase, ctx, parsed.data.conversationId);
-  const { error } = await supabase.rpc("transfer_conversation", {
+  const { data, error } = await supabase.rpc("transfer_conversation", {
     p_conversation: parsed.data.conversationId,
     p_to: parsed.data.toUserId,
     p_sections: sections ?? {},
     p_ai_generated: sections !== null,
   });
   if (error) return { ok: false, error: toErrorCode(error) };
+  const fork = forkResult(data);
+  if (fork) await completeFork({ from: parsed.data.conversationId, copy: fork.copy, messages: fork.messages });
   revalidatePath("/chat", "layout");
-  return { ok: true, data: { aiGenerated: sections !== null } };
+  return { ok: true, data: { aiGenerated: sections !== null, copyId: fork?.copy ?? null } };
 }
 
 /** Hands a restricted client over to a colleague (assignment, own conversations about it, handover file). */
@@ -163,4 +214,9 @@ export async function checkSharedHistoryAction(input: { conversationId: string; 
     bySpace.set(row.space_id, warning);
   }
   return [...bySpace.values()];
+}
+
+function forkResult(value: unknown): { copy: string; messages: Record<string, string> } | null {
+  const parsed = z.object({ copy: z.uuid(), messages: z.record(z.string(), z.string()) }).safeParse(value);
+  return parsed.success ? parsed.data : null;
 }

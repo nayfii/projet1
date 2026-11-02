@@ -134,7 +134,9 @@ describe("group conversations: history on join", () => {
   it("lets the inviter share history from a chosen message, never more than they see themselves", async () => {
     expect((await olivier.client.rpc("add_conversation_participants", { p_conversation: conversation, p_users: [paul.id], p_from_seq: later.seq })).error).toBeNull();
     expect(await visibleContents(paul, conversation)).toEqual(["Nathalie, peux-tu regarder le prévisionnel ?", "Oui, je regarde."]);
-    // Nathalie sees from `later` on: she cannot give Fanny anything older.
+    // Nathalie sees from `later` on: even once she may manage participants, she cannot give Fanny anything older.
+    expect((await nathalie.client.rpc("add_conversation_participants", { p_conversation: conversation, p_users: [fanny.id] })).error?.message).toBe("not_found");
+    expect((await olivier.client.rpc("set_participant_role", { p_conversation: conversation, p_user: nathalie.id, p_role: "manager" })).error).toBeNull();
     const tooFar = await nathalie.client.rpc("add_conversation_participants", { p_conversation: conversation, p_users: [fanny.id], p_from_seq: early.seq });
     expect(tooFar.error?.message).toBe("validation");
     expect(await visibleContents(fanny, conversation)).toEqual([]);
@@ -150,7 +152,12 @@ describe("group conversations: history on join", () => {
       "select action, metadata from public.audit_log where target_id = $1 and action like 'conversation.%' order by created_at",
       [conversation],
     );
-    expect(log.map((l) => l.action)).toEqual(["conversation.participant_added", "conversation.participant_added", "conversation.history_shared"]);
+    expect(log.map((l) => l.action)).toEqual([
+      "conversation.participant_added",
+      "conversation.participant_added",
+      "conversation.participant_role",
+      "conversation.history_shared",
+    ]);
     expect(JSON.stringify(log)).not.toContain("confidentielle");
     expect(log[0].metadata).toMatchObject({ user_id: nathalie.id, history_shared: false });
   });
@@ -324,7 +331,7 @@ describe("transfer a conversation (Smart Handover)", () => {
   it("logs the transfer with ids only", async () => {
     const log = await sql<{ metadata: Record<string, unknown> }>("select metadata from public.audit_log where target_id = $1 and action = 'conversation.transferred'", [conversation]);
     expect(log).toHaveLength(1);
-    expect(log[0].metadata).toEqual({ user_id: nathalie.id });
+    expect(log[0].metadata).toEqual({ user_id: nathalie.id, copy_kept: true });
   });
 
   it("refuses to transfer a client conversation to someone without access to the client", async () => {
