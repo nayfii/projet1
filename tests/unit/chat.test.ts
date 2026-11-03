@@ -386,3 +386,34 @@ describe("automatic conversation titles", () => {
     expect(cleanTitle("x".repeat(200))).toHaveLength(80);
   });
 });
+
+describe("web search and files", () => {
+  const prompt = (webSearch: boolean) =>
+    buildSystemPrompt({ company: { name: "Atelier" }, client: null, user: { name: "Claire" }, locale: "fr", today: "2026-11-03", webSearch });
+
+  it("tells the model it may search the web only when the company allows it, never with placeholders", () => {
+    expect(prompt(true)).toContain("## Web search");
+    expect(prompt(true)).toMatch(/never put them, or any guess of what they hide, in a search/);
+    expect(prompt(false)).not.toContain("## Web search");
+  });
+
+  it("tells the model the workspace turns its answer into a PDF, Word or Excel file", () => {
+    expect(prompt(false)).toMatch(/never say that you cannot create files/);
+  });
+
+  it("test mode: a search is counted and its page cited, only when web search is on", async () => {
+    const run = async (webSearch: boolean) => {
+      const events = [];
+      for await (const e of createFakeProvider("anthropic").stream(
+        { apiModelId: "test", system: "S", messages: [{ role: "user", content: [{ type: "text", text: "Les actualités du jour [[web]]" }] }], maxOutputTokens: 100, webSearch },
+        new AbortController().signal,
+      ))
+        events.push(e);
+      return events;
+    };
+    const on = await run(true);
+    expect(on.filter((e) => e.type === "web_search")).toHaveLength(1);
+    expect(on.find((e) => e.type === "web_source")).toEqual({ type: "web_source", url: "https://example.com/actualite", title: "[TEST] Une actualité" });
+    expect((await run(false)).some((e) => e.type === "web_search")).toBe(false);
+  });
+});

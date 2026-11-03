@@ -10,4 +10,5 @@ export const openaiProvider = createAiSdkProvider({
   // Explicit base URL: an OPENAI_BASE_URL variable on the host must never redirect customer data.
   model: (apiModelId, apiKey) => createOpenAI({ apiKey, baseURL: "https://api.openai.com/v1" })(apiModelId),
   providerOptions: { openai: { store: false } },
+  webSearchTools: (apiKey) => ({ web_search: createOpenAI({ apiKey, baseURL: "https://api.openai.com/v1" }).tools.webSearch({ searchContextSize: "medium" }) }),
 });

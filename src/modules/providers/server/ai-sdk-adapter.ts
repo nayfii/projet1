@@ -1,5 +1,5 @@
 import "server-only";
-import { streamText, type LanguageModel, type ModelMessage } from "ai";
+import { streamText, type LanguageModel, type ModelMessage, type ToolSet } from "ai";
 import { normalizeProviderError } from "../errors";
 import type { ChatEvent, ChatMessage, ChatProvider, ChatRequest, ProviderId } from "../types";
 
@@ -14,6 +14,8 @@ export function createAiSdkProvider(options: {
   apiKey: () => string | undefined;
   model: (apiModelId: string, apiKey: string) => LanguageModel;
   providerOptions?: ProviderOptions;
+  /** The provider's own web search tool (run by the provider, results cited as sources). */
+  webSearchTools?: (apiKey: string) => ToolSet;
 }): ChatProvider {
   return {
     id: options.id,
@@ -34,12 +36,17 @@ export function createAiSdkProvider(options: {
           abortSignal: signal,
           maxRetries: 1,
           providerOptions: options.providerOptions,
+          tools: request.webSearch && options.webSearchTools ? options.webSearchTools(apiKey) : undefined,
           // The SDK's default handler logs the full error, which can include the prompt. Never log it.
           onError: () => {},
         });
         for await (const part of result.stream) {
           if (part.type === "text-delta") {
             if (part.text) yield { type: "text", delta: part.text };
+          } else if (part.type === "tool-call" && part.providerExecuted) {
+            yield { type: "web_search" };
+          } else if (part.type === "source" && part.sourceType === "url") {
+            yield { type: "web_source", url: part.url, title: part.title ?? null };
           } else if (part.type === "finish") {
             const usage = part.totalUsage;
             const input = usage.inputTokens ?? 0;

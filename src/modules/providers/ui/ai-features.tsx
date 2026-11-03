@@ -3,19 +3,19 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { BrainIcon, MicIcon } from "lucide-react";
+import { BrainIcon, GlobeIcon, MicIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { saveAiFeaturesAction } from "../server/actions";
 
-/** Two company switches: client memory fed automatically, and voice dictation. Each saves at once. */
-export function AiFeatures({ initial }: { initial: { autoClientMemory: boolean; dictation: boolean } }) {
+/** Company switches: client memory fed automatically, voice dictation, web search. Each saves at once. */
+export function AiFeatures({ initial }: { initial: { autoClientMemory: boolean; dictation: boolean; webSearch: boolean } }) {
   const t = useTranslations("aiFeatures");
   const tErrors = useTranslations("errors");
   const [state, setState] = useState(initial);
   const [pending, startTransition] = useTransition();
 
-  const save = (key: "autoClientMemory" | "dictation", value: boolean) => {
+  const save = (key: "autoClientMemory" | "dictation" | "webSearch", value: boolean) => {
     const previous = state;
     setState((s) => ({ ...s, [key]: value }));
     startTransition(async () => {
@@ -31,6 +31,7 @@ export function AiFeatures({ initial }: { initial: { autoClientMemory: boolean; 
   const rows = [
     { key: "autoClientMemory" as const, icon: BrainIcon, title: t("autoMemoryTitle"), body: t("autoMemoryBody") },
     { key: "dictation" as const, icon: MicIcon, title: t("dictationTitle"), body: t("dictationBody") },
+    { key: "webSearch" as const, icon: GlobeIcon, title: t("webSearchTitle"), body: t("webSearchBody") },
   ];
 
   return (

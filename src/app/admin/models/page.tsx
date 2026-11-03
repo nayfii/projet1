@@ -18,7 +18,7 @@ export default async function AdminModelsPage() {
   const supabase = await createClient();
   const [models, { data: features }] = await Promise.all([
     getCompanyModels(ctx.active.companyId),
-    supabase.from("company_ai_settings").select("auto_client_memory, dictation_enabled").eq("company_id", ctx.active.companyId).maybeSingle(),
+    supabase.from("company_ai_settings").select("auto_client_memory, dictation_enabled, web_search_enabled").eq("company_id", ctx.active.companyId).maybeSingle(),
   ]);
   return (
     <PageContainer className="max-w-3xl">
@@ -34,7 +34,13 @@ export default async function AdminModelsPage() {
         initial={{ allowed: models.allowed.map((m) => m.id), defaultModelId: models.defaultModelId, autoEnabled: models.autoEnabled }}
       />
       <div className="mt-10">
-        <AiFeatures initial={{ autoClientMemory: features?.auto_client_memory ?? true, dictation: features?.dictation_enabled ?? true }} />
+        <AiFeatures
+          initial={{
+            autoClientMemory: features?.auto_client_memory ?? true,
+            dictation: features?.dictation_enabled ?? true,
+            webSearch: features?.web_search_enabled ?? true,
+          }}
+        />
       </div>
     </PageContainer>
   );

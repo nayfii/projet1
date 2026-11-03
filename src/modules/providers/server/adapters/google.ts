@@ -12,4 +12,5 @@ export const googleProvider = createAiSdkProvider({
   apiKey: () => aiProviderKey("google"),
   model: (apiModelId, apiKey) =>
     createGoogle({ apiKey, baseURL: "https://generativelanguage.googleapis.com/v1beta" })(apiModelId),
+  webSearchTools: (apiKey) => ({ google_search: createGoogle({ apiKey, baseURL: "https://generativelanguage.googleapis.com/v1beta" }).tools.googleSearch({}) }),
 });

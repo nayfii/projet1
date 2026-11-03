@@ -65,3 +65,14 @@ export async function setOpenSignupAction(open: boolean): Promise<ActionResult> 
   revalidatePath("/platform/companies");
   return { ok: true };
 }
+
+/** Platform → Modèles: what one web search costs in credits, and its estimated provider cost. */
+export async function setWebSearchRateAction(input: { credits: number; costUsd: number }): Promise<ActionResult> {
+  if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ credits: z.number().min(0).max(100_000), costUsd: z.number().min(0).max(100) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("platform_set_web_search_rate", { p_credits: parsed.data.credits, p_cost_usd: parsed.data.costUsd });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/platform/models");
+  return { ok: true };
+}

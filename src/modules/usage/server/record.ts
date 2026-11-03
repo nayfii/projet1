@@ -27,6 +27,8 @@ export type UsageEvent = {
   status: "ok" | "error" | "aborted";
   errorCode: string | null;
   latencyMs: number;
+  /** Web searches the model ran for this answer (charged at our team's rate, included in `credits`). */
+  webSearches?: number;
 };
 
 export async function recordUsage(event: UsageEvent): Promise<void> {
@@ -49,6 +51,7 @@ export async function recordUsage(event: UsageEvent): Promise<void> {
     status: event.status,
     error_code: event.errorCode,
     latency_ms: event.latencyMs,
+    web_searches: event.webSearches ?? 0,
   });
   // Never silently lose usage: it is what quotas and billing rely on. Log metadata only.
   if (error) console.error("usage_events insert failed", { code: error.code, companyId: event.companyId });
@@ -77,4 +80,10 @@ export async function dictationRate(): Promise<{ creditsPerMinute: number; costU
     .select("dictation_credits_per_minute, dictation_cost_usd_per_minute")
     .single();
   return { creditsPerMinute: Number(data?.dictation_credits_per_minute ?? 0), costUsdPerMinute: Number(data?.dictation_cost_usd_per_minute ?? 0) };
+}
+
+/** Web search rate set by our team (platform_settings): credits and estimated provider cost per search. */
+export async function webSearchRate(): Promise<{ credits: number; costUsd: number }> {
+  const { data } = await createAdminClient().from("platform_settings").select("web_search_credits, web_search_cost_usd").single();
+  return { credits: Number(data?.web_search_credits ?? 0), costUsd: Number(data?.web_search_cost_usd ?? 0) };
 }

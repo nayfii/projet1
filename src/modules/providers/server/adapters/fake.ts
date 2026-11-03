@@ -95,8 +95,15 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
       );
       // A tool's instructions are in the system prompt: say which tool, like a real model would follow it.
       const tool = /^## Tool: (.+)$/m.exec(request.system)?.[1];
+      // Web search (test mode): "[[web]]" in the question makes the model search once and cite a page.
+      const searched = Boolean(request.webSearch) && text.includes("[[web]]");
+      if (searched) {
+        yield { type: "web_search" };
+        yield { type: "web_source", url: "https://example.com/actualite", title: "[TEST] Une actualité" };
+      }
       const answer = [
         `[TEST] Simulated answer from **${request.apiModelId}**.`,
+        ...(searched ? ["", "[TEST] D'après une recherche sur internet (example.com)."] : []),
         "",
         `- Messages received: ${request.messages.length} (${userTurns} from people)`,
         `- Images received: ${images}`,

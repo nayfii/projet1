@@ -34,16 +34,17 @@ export async function saveModelSettingsAction(input: {
   return { ok: true };
 }
 
-/** Company admin ("models" scope): automatic client memory and voice dictation on or off (CLAUDE.md §11). */
-export async function saveAiFeaturesAction(input: { autoClientMemory?: boolean; dictation?: boolean }): Promise<ActionResult> {
+/** Company admin ("models" scope): automatic client memory, voice dictation and web search on or off (CLAUDE.md §11). */
+export async function saveAiFeaturesAction(input: { autoClientMemory?: boolean; dictation?: boolean; webSearch?: boolean }): Promise<ActionResult> {
   const ctx = await memberOrNull("models");
   if (!ctx) return { ok: false, error: "forbidden" };
-  const parsed = z.object({ autoClientMemory: z.boolean().optional(), dictation: z.boolean().optional() }).safeParse(input);
+  const parsed = z.object({ autoClientMemory: z.boolean().optional(), dictation: z.boolean().optional(), webSearch: z.boolean().optional() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
   const { error } = await (await createClient()).rpc("admin_set_ai_features", {
     p_company: ctx.active.companyId,
     p_auto_client_memory: parsed.data.autoClientMemory,
     p_dictation_enabled: parsed.data.dictation,
+    p_web_search: parsed.data.webSearch,
   });
   if (error) return { ok: false, error: toErrorCode(error) };
   revalidatePath("/admin/models");

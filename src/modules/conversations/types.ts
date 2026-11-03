@@ -1,5 +1,5 @@
 import type { ProviderId } from "@/modules/providers/types";
-import type { RoutingInfo, SuggestedColleague } from "./stream-events";
+import type { RoutingInfo, SuggestedColleague, WebSource } from "./stream-events";
 import type { SourceProof } from "@/modules/memory/types";
 import type { HideCounts, Span } from "@/modules/hide/categories";
 import type { Confrontation } from "@/modules/confronter/types";
@@ -31,6 +31,10 @@ export type TimelineMessage = {
   contextLimited: boolean;
   /** Who Can Help: colleagues the answer suggests asking. */
   suggestedColleagues: SuggestedColleague[];
+  /** Web pages the answer relies on (the provider's web search). */
+  webSources: WebSource[];
+  /** While streaming here: the model is searching the web. */
+  searching?: boolean;
   /** Confronter: this answer is the synthesis of a confrontation. */
   confrontation: Confrontation | null;
 };

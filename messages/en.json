@@ -741,7 +741,10 @@
     "unlinkClient": "Unlink from {name}",
     "clientUnlinked": "Conversation unlinked from {name}",
     "clientSearch": "Search clients",
-    "clientNoMatch": "No client found"
+    "clientNoMatch": "No client found",
+    "searchingWeb": "Searching the web…",
+    "webSources": "Sources on the web",
+    "downloadPdf": "Download the PDF"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -905,7 +908,13 @@
     "dictationRateCredits": "Credits per minute",
     "dictationRateCost": "Estimated cost ($ per minute)",
     "dictationRateSave": "Save",
-    "dictationRateSaved": "Dictation rate saved."
+    "dictationRateSaved": "Dictation rate saved.",
+    "webSearchRateTitle": "Web search",
+    "webSearchRateHint": "Credits counted per search run by ChatGPT, Claude or Gemini, and its estimated provider cost. These are not prices.",
+    "webSearchRateCredits": "Credits per search",
+    "webSearchRateCost": "Estimated cost ($ per search)",
+    "webSearchRateSave": "Save",
+    "webSearchRateSaved": "Search rate saved."
   },
   "memory": {
     "title": "Memory",
@@ -1929,7 +1938,9 @@
     "autoMemoryBody": "After an answer about a client, the AI adds the useful facts to that client's memory, if the person may write there. Each addition shows its author and date, and can be undone.",
     "dictationTitle": "Voice dictation",
     "dictationBody": "A microphone in the conversation. Speech is transcribed by OpenAI's transcription model; the voice itself reaches it unmasked. The text goes through Hide before it is sent.",
-    "saved": "Setting saved"
+    "saved": "Setting saved",
+    "webSearchTitle": "Web search",
+    "webSearchBody": "ChatGPT, Claude and Gemini can search the web (news, prices, recent facts) and cite the pages they used. The search is run by the AI provider, from what it received (after Hide). Each search costs credits."
   },
   "dictation": {
     "start": "Dictate",

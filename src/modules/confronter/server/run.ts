@@ -228,7 +228,7 @@ export async function* runConfrontation(p: {
   }
   yield { type: "delta", text: content };
   const quota = await getMyQuota(p.ctx.active.companyId);
-  yield { type: "done", credits: confrontation.credits, quota: quota?.state ?? null, sources, masked: synthesis && maskedRecommended !== content ? maskedRecommended : null, suggestedColleagues: [] };
+  yield { type: "done", credits: confrontation.credits, quota: quota?.state ?? null, sources, masked: synthesis && maskedRecommended !== content ? maskedRecommended : null, suggestedColleagues: [], webSources: [] };
 }
 
 /** Yields each promise's result as soon as it settles (the calls never reject). */

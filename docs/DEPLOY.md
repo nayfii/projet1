@@ -132,7 +132,9 @@ Chaque fournisseur facture à l'usage : il faut **un compte, du crédit et une c
    pour tester). Si vous n'avez pas encore de clé dans Vercel : *API keys → Create new secret key*.
    Cette clé sert aussi à la recherche dans les documents, à la dictée et aux avatars.
 2. **Claude (Anthropic)** — sur **console.anthropic.com** : *Settings → Billing → Buy credits* (5 $ minimum), puis
-   *API keys → Create Key*.
+   *API keys → Create Key*. Pour que Claude puisse **chercher sur internet**, activez la recherche web dans les
+   réglages de l'organisation de la console (*Settings → Privacy*, option « Web search »). ChatGPT et Gemini n'ont
+   rien à activer.
 3. **Gemini (Google)** — sur **aistudio.google.com** : *Get API key → Create API key*, puis **activez la facturation**
    (*Set up billing*, une carte bancaire). Sans facturation, Google peut utiliser les données pour améliorer ses produits.
 4. **Vercel** — projet → *Settings → Environment Variables* (environnement *Production*) :

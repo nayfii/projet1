@@ -741,7 +741,10 @@
     "unlinkClient": "Détacher de {name}",
     "clientUnlinked": "Conversation détachée de {name}",
     "clientSearch": "Rechercher un client",
-    "clientNoMatch": "Aucun client trouvé"
+    "clientNoMatch": "Aucun client trouvé",
+    "searchingWeb": "Recherche sur internet…",
+    "webSources": "Sources sur internet",
+    "downloadPdf": "Télécharger le PDF"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -905,7 +908,13 @@
     "dictationRateCredits": "Crédits par minute",
     "dictationRateCost": "Coût estimé ($ par minute)",
     "dictationRateSave": "Enregistrer",
-    "dictationRateSaved": "Tarif de la dictée enregistré."
+    "dictationRateSaved": "Tarif de la dictée enregistré.",
+    "webSearchRateTitle": "Recherche sur internet",
+    "webSearchRateHint": "Crédits décomptés par recherche faite par ChatGPT, Claude ou Gemini, et son coût estimé chez le fournisseur. Ce ne sont pas des prix.",
+    "webSearchRateCredits": "Crédits par recherche",
+    "webSearchRateCost": "Coût estimé ($ par recherche)",
+    "webSearchRateSave": "Enregistrer",
+    "webSearchRateSaved": "Tarif de la recherche enregistré."
   },
   "memory": {
     "title": "Mémoire",
@@ -1929,7 +1938,9 @@
     "autoMemoryBody": "Après une réponse liée à un client, l'IA ajoute les faits utiles à la mémoire de ce client, si la personne a le droit d'y écrire. Chaque ajout indique son auteur et sa date, et peut être annulé.",
     "dictationTitle": "Dictée vocale",
     "dictationBody": "Un micro dans la conversation. La voix est transcrite par le modèle de transcription d'OpenAI ; la voix elle-même lui parvient non masquée. Le texte passe par Hide avant d'être envoyé.",
-    "saved": "Réglage enregistré"
+    "saved": "Réglage enregistré",
+    "webSearchTitle": "Recherche sur internet",
+    "webSearchBody": "ChatGPT, Claude et Gemini peuvent chercher sur internet (actualités, prix, faits récents) et citent les pages utilisées. La recherche est faite par le fournisseur de l'IA, à partir de ce qu'il a reçu (après Hide). Chaque recherche coûte des crédits."
   },
   "dictation": {
     "start": "Dicter",

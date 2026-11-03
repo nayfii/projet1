@@ -11,7 +11,7 @@ import { estimateTokens } from "@/modules/providers/tokens";
 import type { ChatUsage, ProviderError } from "@/modules/providers/types";
 import { computeCharge } from "@/modules/usage/credits";
 import { getMyQuota } from "@/modules/usage/server/quota";
-import { logBlockedRequest, recordUsage } from "@/modules/usage/server/record";
+import { logBlockedRequest, recordUsage, webSearchRate } from "@/modules/usage/server/record";
 import { buildChatContext, contextBudget, IMAGE_LOOKBACK_MESSAGES, type HistoryAttachment, type HistoryMessage } from "../context";
 import { buildSystemPrompt } from "../system-prompt";
 import type { ChatRequestError, ChatStreamEvent, RoutingInfo } from "../stream-events";
@@ -27,7 +27,7 @@ import { logMaskingEvent, saveAttachmentMasks, saveMessageMask } from "@/modules
 import { maskPassages, maskTurn } from "@/modules/hide/server/turn";
 import { modelForProvider, parseMention, suggestedColleagues } from "@/modules/collaboration/mentions";
 import { conversationScope, myMemorySpaces } from "@/modules/memory/server/retrieval";
-import type { SuggestedColleague } from "../stream-events";
+import type { SuggestedColleague, WebSource } from "../stream-events";
 import { planConfrontation } from "@/modules/confronter/server/plan";
 import { runConfrontation } from "@/modules/confronter/server/run";
 import { resolveRunAgent } from "@/modules/agents/server/queries";
@@ -228,14 +228,17 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     await supabase.from("conversations").update({ model_choice: input.modelChoice }).eq("id", conversation.id);
   }
 
-  const [companyRes, clientRes, locale, hideSettings] = await Promise.all([
+  const [companyRes, clientRes, locale, hideSettings, aiSettingsRes] = await Promise.all([
     supabase.from("companies").select("name, industry, description").eq("id", companyId).single(),
     conversation.client_id
       ? supabase.from("clients").select("name, sector, description").eq("id", conversation.client_id).maybeSingle()
       : Promise.resolve({ data: null }),
     resolveLocale(),
     getHideSettings(supabase, companyId),
+    supabase.from("company_ai_settings").select("web_search_enabled").eq("company_id", companyId).maybeSingle(),
   ]);
+  // Web search (news, prices, recent facts): on unless the company switched it off.
+  const webSearch = aiSettingsRes.data?.web_search_enabled ?? true;
 
   // Hide: masking happens here, on our server, before anything is saved or sent. A new message uses
   // the modes chosen above the input (company defaults otherwise); Regenerate reuses the question's.
@@ -457,6 +460,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     protectedValues: masker !== null,
     colleagues: colleaguesForPrompt,
     group,
+    webSearch,
     tool: agent ? { name: agent.name, instructions: promptFacts.toolInstructions ?? agent.instructions, format: outputFormatInstruction(agent.outputFormat) } : null,
   });
   const context = buildChatContext({ system, history, budgetTokens: contextBudget(models.allowed) });
@@ -509,6 +513,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         shownPlaceholders,
         contextLimited: group && (historyLimited || memoryLimited),
         colleagues: colleagues.map((c) => ({ userId: c.userId, name: c.name })),
+        webSearch,
       }),
   };
 }
@@ -530,6 +535,8 @@ async function* runTurn(p: {
   contextLimited: boolean;
   /** Who Can Help: colleagues the answer may suggest (real names). */
   colleagues: SuggestedColleague[];
+  /** The model may search the web with its provider's tool (each search costs credits). */
+  webSearch: boolean;
 }): AsyncGenerator<ChatStreamEvent> {
   const started = Date.now();
   // A failed or stopped answer is replaced right away; a good one only once the new one succeeds.
@@ -541,7 +548,7 @@ async function* runTurn(p: {
       conversationId: p.conversationId,
       model: p.model,
       routing: p.routing as Json | null,
-      contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, []),
+      contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, [], []),
     });
   } catch {
     yield { type: "error", code: "server_error", retryable: true };
@@ -565,6 +572,8 @@ async function* runTurn(p: {
   let shown = "";
   let usage: ChatUsage | null = null;
   let providerError: ProviderError | null = null;
+  let searches = 0;
+  const webSources: WebSource[] = [];
   // The answer is written to the end even if the browser goes away (reload, closed tab):
   // only the Stop button stops it, through a flag checked every second.
   const stop = new AbortController();
@@ -583,6 +592,7 @@ async function* runTurn(p: {
         system: p.context.system,
         messages: p.context.messages,
         maxOutputTokens: Math.min(p.model.maxOutputTokens, 16_000),
+        webSearch: p.webSearch,
       },
       stop.signal,
     )) {
@@ -595,6 +605,13 @@ async function* runTurn(p: {
         }
       } else if (event.type === "usage") {
         usage = event.usage;
+      } else if (event.type === "web_search") {
+        searches += 1;
+        if (searches === 1) yield { type: "searching" };
+      } else if (event.type === "web_source") {
+        if (/^https?:\/\//i.test(event.url) && webSources.length < 8 && !webSources.some((w) => w.url === event.url)) {
+          webSources.push({ url: event.url.slice(0, 2000), title: event.title?.slice(0, 300) ?? null });
+        }
       } else if (event.type === "error") {
         providerError = event.error;
       }
@@ -620,7 +637,13 @@ async function* runTurn(p: {
   const counted: ChatUsage = usage ?? (tokensEstimated
     ? { inputTokens: p.context.estimatedTokens, outputTokens: estimateTokens(text), cachedInputTokens: 0 }
     : { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 });
-  const charge = computeCharge(p.model.pricing, counted);
+  const tokenCharge = computeCharge(p.model.pricing, counted);
+  // Each web search the provider ran is charged at our team's rate, on top of the tokens.
+  const searchRate = searches > 0 ? await webSearchRate() : { credits: 0, costUsd: 0 };
+  const charge = {
+    credits: tokenCharge.credits + searches * searchRate.credits,
+    estimatedCostUsd: tokenCharge.estimatedCostUsd + searches * searchRate.costUsd,
+  };
 
   // Source Proof: the passages the answer actually cited. Saved first: other participants reload the
   // answer when it is marked finished (real time), and must find its sources by then.
@@ -629,7 +652,7 @@ async function* runTurn(p: {
   await finishAssistantMessage(assistant.id, {
     content: shown,
     maskedContent: masked,
-    contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, suggested),
+    contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, suggested, webSources),
     status,
     errorCode: providerError?.code ?? null,
     inputTokens: usage?.inputTokens ?? null,
@@ -654,6 +677,7 @@ async function* runTurn(p: {
     status: providerError ? "error" : aborted ? "aborted" : "ok",
     errorCode: providerError?.code ?? null,
     latencyMs: Date.now() - started,
+    webSearches: searches,
   });
   if (status === "complete" && p.target?.complete) await supersedeMessage(p.target.id, p.conversationId);
 
@@ -663,7 +687,7 @@ async function* runTurn(p: {
   }
   if (aborted) return;
   const quota = await getMyQuota(p.ctx.active.companyId);
-  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources, masked, suggestedColleagues: suggested };
+  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources, masked, suggestedColleagues: suggested, webSources };
 }
 
 function contextPlaceholders(context: ReturnType<typeof buildChatContext>): Set<string> {
@@ -671,11 +695,12 @@ function contextPlaceholders(context: ReturnType<typeof buildChatContext>): Set<
   return new Set(texts.flatMap((text) => [...text.matchAll(PLACEHOLDER_PATTERN)].map((m) => m[0])));
 }
 
-function contextMeta(omitted: number, limited: boolean, suggested: SuggestedColleague[]): Json | null {
+function contextMeta(omitted: number, limited: boolean, suggested: SuggestedColleague[], web: WebSource[]): Json | null {
   const meta: Record<string, Json> = {};
   if (omitted) meta.omitted_messages = omitted;
   if (limited) meta.context_limited = true;
   if (suggested.length) meta.suggested_colleagues = suggested;
+  if (web.length) meta.web_sources = web;
   return Object.keys(meta).length ? meta : null;
 }
 

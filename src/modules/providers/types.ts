@@ -19,6 +19,8 @@ export type ChatRequest = {
   system: string;
   messages: ChatMessage[];
   maxOutputTokens: number;
+  /** The model may search the web (news, prices, recent facts) with its provider's own search tool. */
+  webSearch?: boolean;
 };
 
 /** Token counts returned by the provider. */
@@ -56,6 +58,10 @@ export type ChatEvent =
   | { type: "text"; delta: string }
   | { type: "usage"; usage: ChatUsage }
   | { type: "done"; finishReason: string }
+  /** The model ran a web search (counted in credits). */
+  | { type: "web_search" }
+  /** A web page the answer relies on. */
+  | { type: "web_source"; url: string; title: string | null }
   | { type: "error"; error: ProviderError };
 
 export interface ChatProvider {

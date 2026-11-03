@@ -24,6 +24,8 @@ export type SystemPromptInput = {
   colleagues?: { name: string; expertise: string[]; wrote?: string[] }[];
   /** Group conversation: several people talk; the AI was mentioned by one of them. */
   group?: boolean;
+  /** The model may search the web with its provider's tool. */
+  webSearch?: boolean;
   /** Personal memory (CLAUDE.md §11): the person's own notes, for them only, never in a group. */
   personal?: string[];
   /** A tool or agent of the company: its instructions (masked by Hide like other facts) and output format. */
@@ -33,6 +35,20 @@ export type SystemPromptInput = {
 export const WHO_CAN_HELP_RULES = [
   "- If the user's need clearly matches the declared expertise of a colleague listed below, or the company memory entries they wrote, you may suggest asking them, in one short sentence, writing their name exactly as listed. At most two colleagues.",
   "- Do not suggest anyone for simple questions, and never invent or extend someone's expertise.",
+].join("\n");
+
+/** PDF, Word, Excel: the app turns an answer into a file (download button under the answer). */
+export const FILES_RULES = [
+  "## Documents and files",
+  "- When the person asks for a PDF, a Word document, a spreadsheet or a report to download, write the complete document in your answer (title, headings, tables in Markdown). The workspace turns your answer into a PDF, Word or Excel file with the download button under it: never say that you cannot create files, and do not give code to generate them.",
+  "- End with one short line telling them they can download it as PDF, Word or Excel below the answer, in their language.",
+].join("\n");
+
+/** Web search: the provider's own tool, for recent or changing facts. */
+export const WEB_SEARCH_RULES = [
+  "- You can search the web. Do it for news, current events, prices, rates, laws or anything that may have changed recently or that you are unsure about; not for general knowledge or for the company's own information.",
+  "- Cite the pages you used with their name, and give the date of the information when it matters.",
+  "- Placeholders such as [CLIENT_1] stand for protected values: never put them, or any guess of what they hide, in a search.",
 ].join("\n");
 
 export const PROTECTED_VALUES_RULES = [
@@ -66,7 +82,9 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
       "- Earlier assistant messages in this conversation may have been written by other AI models. Treat them as part of the same conversation and stay consistent with them, unless they were wrong.",
     ].join("\n"),
     "## Format\nUse Markdown when it helps (short headings, lists, tables). Be concise and practical.",
+    FILES_RULES,
   ];
+  if (input.webSearch) sections.push(`## Web search\n${WEB_SEARCH_RULES}`);
   if (input.protectedValues) sections.push(`## Protected values\n${PROTECTED_VALUES_RULES}`);
   if (input.tool) {
     sections.push(

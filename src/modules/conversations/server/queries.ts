@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { RoutingInfo, SuggestedColleague } from "../stream-events";
+import type { RoutingInfo, SuggestedColleague, WebSource } from "../stream-events";
 import type { AttachmentKind, TimelineMessage } from "../types";
 import { isHideMode, type HideCounts, type Span } from "@/modules/hide/categories";
 import type { SourceProof } from "@/modules/memory/types";
@@ -142,6 +142,9 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
     contextLimited: Boolean((m.context_meta as { context_limited?: boolean } | null)?.context_limited),
     suggestedColleagues: ((m.context_meta as { suggested_colleagues?: SuggestedColleague[] } | null)?.suggested_colleagues ?? []).filter(
       (c) => typeof c?.userId === "string" && typeof c?.name === "string",
+    ),
+    webSources: ((m.context_meta as { web_sources?: WebSource[] } | null)?.web_sources ?? []).filter(
+      (w) => typeof w?.url === "string" && /^https?:\/\//i.test(w.url),
     ),
     confrontation: isConfrontation(m.confrontation) ? m.confrontation : null,
   }));

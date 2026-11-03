@@ -9,4 +9,5 @@ export const anthropicProvider = createAiSdkProvider({
   apiKey: () => aiProviderKey("anthropic"),
   // Explicit base URL: an ANTHROPIC_BASE_URL variable on the host must never redirect customer data.
   model: (apiModelId, apiKey) => createAnthropic({ apiKey, baseURL: "https://api.anthropic.com/v1" })(apiModelId),
+  webSearchTools: (apiKey) => ({ web_search: createAnthropic({ apiKey, baseURL: "https://api.anthropic.com/v1" }).tools.webSearch_20250305({ maxUses: 3 }) }),
 });

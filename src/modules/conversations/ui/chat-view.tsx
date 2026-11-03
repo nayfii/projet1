@@ -542,10 +542,14 @@ export function ChatView(props: Props) {
                   hideSpans: [],
                   contextLimited: event.contextLimited,
                   suggestedColleagues: [],
+                  webSources: [],
                   confrontation: options.confrontation ?? null,
                 },
               ];
             });
+          } else if (event.type === "searching") {
+            const id = currentLive;
+            setMessages((list) => list.map((m) => (m.id === id ? { ...m, searching: true } : m)));
           } else if (event.type === "delta") {
             const id = currentLive;
             setMessages((list) => list.map((m) => (m.id === id ? { ...m, content: m.content + event.text } : m)));
@@ -555,7 +559,15 @@ export function ChatView(props: Props) {
             setMessages((list) =>
               list.map((m) =>
                 m.id === id
-                  ? { ...m, status: "complete", sources: event.sources ?? [], maskedContent: event.masked ?? null, suggestedColleagues: event.suggestedColleagues ?? [] }
+                  ? {
+                      ...m,
+                      status: "complete",
+                      searching: false,
+                      sources: event.sources ?? [],
+                      maskedContent: event.masked ?? null,
+                      suggestedColleagues: event.suggestedColleagues ?? [],
+                      webSources: event.webSources ?? [],
+                    }
                   : m,
               ),
             );
@@ -651,6 +663,7 @@ export function ChatView(props: Props) {
         hideSpans: [],
         contextLimited: false,
         suggestedColleagues: [],
+        webSources: [],
         confrontation: null,
       },
     ]);
@@ -1062,6 +1075,7 @@ export function ChatView(props: Props) {
                       people={people}
                       group={group}
                       myToken={myToken}
+                      pdfAsked={m.role === "assistant" && /\bpdf\b/i.test(messages.slice(0, index).reverse().find((x) => x.role === "user")?.content ?? "")}
                     />
                   </React.Fragment>
                 );

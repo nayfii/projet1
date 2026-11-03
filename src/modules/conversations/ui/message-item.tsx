@@ -11,6 +11,7 @@ import {
   DownloadIcon,
   FileTextIcon,
   FilmIcon,
+  GlobeIcon,
   ImageIcon,
   RefreshCwIcon,
   ScaleIcon,
@@ -81,6 +82,7 @@ export function MessageItem({
   people,
   group = false,
   myToken = null,
+  pdfAsked = false,
 }: {
   message: TimelineMessage;
   people?: PeopleLookup;
@@ -88,6 +90,8 @@ export function MessageItem({
   group?: boolean;
   /** The viewer as a mention token: their mentions are highlighted. */
   myToken?: PersonToken | null;
+  /** The question asked for a PDF: a visible download button under the answer. */
+  pdfAsked?: boolean;
   /** Video agents: the answer may hold a composition or an edit plan to make into MP4s. */
   render?: RenderProps | null;
   /** The answer is streaming right now in this browser. */
@@ -131,6 +135,7 @@ export function MessageItem({
       confrontProgress={confrontProgress}
       render={render}
       bubble={group}
+      pdfAsked={pdfAsked}
     />
   );
 }
@@ -348,10 +353,12 @@ function AssistantMessage({
   confrontProgress,
   render,
   bubble = false,
+  pdfAsked = false,
 }: {
   message: TimelineMessage;
   render?: RenderProps | null;
   bubble?: boolean;
+  pdfAsked?: boolean;
   live?: boolean;
   isLastAnswer: boolean;
   busy: boolean;
@@ -400,7 +407,9 @@ function AssistantMessage({
         />
       ) : waiting ? (
         <p className="flex h-7 items-center gap-2 text-[14px]" role="status">
-          <span className="text-shimmer font-medium">{brand ? t("thinkingNamed", { name: brand }) : t("thinking")}</span>
+          <span className="text-shimmer font-medium">
+            {message.searching ? t("searchingWeb") : brand ? t("thinkingNamed", { name: brand }) : t("thinking")}
+          </span>
         </p>
       ) : message.content ? (
         bubble ? (
@@ -427,6 +436,15 @@ function AssistantMessage({
       ) : null}
       {!live ? <MaskedView kind="answer" maskedContent={message.maskedContent} counts={null} /> : null}
       <SourceList sources={message.sources} onOpen={setOpenSource} />
+      {message.webSources.length > 0 ? <WebSourceList sources={message.webSources} /> : null}
+      {pdfAsked && message.status === "complete" && message.content.trim() && !live ? (
+        <Button asChild variant="outline" size="sm" className="gap-1.5">
+          <a href={`/api/messages/${message.id}/export?format=pdf`} download>
+            <DownloadIcon />
+            {t("downloadPdf")}
+          </a>
+        </Button>
+      ) : null}
       <SourceSheet source={message.sources.find((x) => x.position === openSource) ?? null} onClose={() => setOpenSource(null)} />
       {message.omittedMessages > 0 ? (
         <p className="text-xs text-muted-foreground">{t("omitted", { count: message.omittedMessages })}</p>
@@ -523,6 +541,41 @@ export function ModelSwitchDivider({ provider, label }: { provider: ProviderId; 
 }
 
 /** Download an answer as Word or PDF, and its tables as CSV or Excel (built on our server). */
+/** The web pages an answer relies on (the provider's own search), opened in a new tab. */
+function WebSourceList({ sources }: { sources: TimelineMessage["webSources"] }) {
+  const t = useTranslations("chat");
+  const host = (url: string) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  };
+  return (
+    <div className="space-y-1.5" data-testid="web-sources">
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <GlobeIcon className="size-3.5" />
+        {t("webSources")}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {sources.map((s) => (
+          <a
+            key={s.url}
+            href={s.url}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            title={s.title ?? s.url}
+            className="inline-flex max-w-64 items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs hover:bg-accent"
+          >
+            <span className="truncate font-medium">{s.title || host(s.url)}</span>
+            <span className="shrink-0 text-muted-foreground">{host(s.url)}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ExportMenu({ messageId, table }: { messageId: string; table: boolean }) {
   const t = useTranslations("chat");
   const formats = [

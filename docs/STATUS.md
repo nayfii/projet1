@@ -261,6 +261,11 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | **Customers see credits only**: estimated costs removed from the company usage page and from the database answers customers can read | **done** |
 | **Shorter onboarding**: name, company, avatar, then straight into the first conversation; inviting the team, the first client and the first document become a "Pour bien démarrer" list on the home page (each opens its own short screen and returns home); invited employees go straight to the chat after their welcome screen | **done** |
 | **Hide**: one visible switch; a small menu next to it with the three modes (the message, attached files, Manual) | **done** |
+| **Natural mentions**, typed or dictated: "Coucou Claude, …" becomes "@Claude" and Claude answers (alone too; the model picker follows); in a group "Coucou Olivier, …" becomes "@Olivier", highlighted, with a "vous mentionne" badge and a notice; colleagues are in the "@" menu | **done** |
+| **Chat à trois**: my messages on the right; the AI's answers in a bubble on the left; each colleague's bubble in their own soft colour | **done** |
+| **Automatic titles** written by a fast model after the first answer, then every third question if the subject changed; a title renamed by hand stays | **done** (with the test provider; a real model gives real titles) |
+| **Web search** for ChatGPT, Claude and Gemini (each provider's own search), pages cited under the answer, "Recherche sur internet…" while it searches; credits per search set in our console (Plateforme → Modèles, default 10 credits, estimated $0.01); company switch (Administration → Modèles) | **done, not tried with the real providers yet** (needs the keys online). For Claude, web search must be switched on in the Claude Console (organisation settings) |
+| **PDF from the chat**: the AI writes the full document and says it can be downloaded; a "Télécharger le PDF" button appears under the answer when the question asked for a PDF (Word and Excel stay in the download menu) | **done** |
 | **Who Can Help** also uses the company memory entries a colleague wrote (only those the person may read, in a private conversation; titles masked by Hide like memory passages) | **done** |
 
 ## Our console: versions, preview, Debug with Claude Code (2026-11-02)

@@ -16,6 +16,9 @@ export type StreamModel = { id: string; provider: ProviderId; label: string };
 
 export type SuggestedColleague = { userId: string; name: string };
 
+/** A web page an answer relies on (the provider's own web search). */
+export type WebSource = { url: string; title: string | null };
+
 export type ChatStreamEvent =
   | {
       type: "meta";
@@ -34,6 +37,8 @@ export type ChatStreamEvent =
   /** Group conversation without a mention: the message was posted, the AI does not answer. */
   | { type: "posted"; userMessage: NonNullable<Extract<ChatStreamEvent, { type: "meta" }>["userMessage"]> }
   | { type: "delta"; text: string }
+  /** The model is searching the web (shown while it waits). */
+  | { type: "searching" }
   | {
       type: "done";
       credits: number;
@@ -43,6 +48,8 @@ export type ChatStreamEvent =
       masked: string | null;
       /** Who Can Help: colleagues the answer suggests asking (Invite button). */
       suggestedColleagues: SuggestedColleague[];
+      /** Web pages the answer relies on. */
+      webSources: WebSource[];
     }
   /** Confronter: a model started or finished a stage. */
   | { type: "confront"; stage: ConfrontationStage; modelId: string; status: "running" | "complete" | "error" }
