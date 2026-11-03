@@ -16,6 +16,11 @@ export function getProvider(id: ProviderId): ChatProvider {
   return fakeProviderEnabled() ? createFakeProvider(id) : REAL[id];
 }
 
+/** Providers whose real API key is set, whatever the test mode (our console's provider health). */
+export function providersWithKeys(): Set<ProviderId> {
+  return new Set((Object.keys(REAL) as ProviderId[]).filter((id) => REAL[id].isConfigured()));
+}
+
 export function configuredProviders(): Set<ProviderId> {
   return new Set((Object.keys(REAL) as ProviderId[]).filter((id) => getProvider(id).isConfigured()));
 }

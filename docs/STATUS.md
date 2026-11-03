@@ -279,6 +279,7 @@ Claude Code. Recorded in CLAUDE.md §11.
   no key yet. **To do by the founder:** credit on OpenAI, Anthropic and Google keys with billing, all three in Vercel
   (`docs/DEPLOY.md`, Partie 4), then "Tester chaque modèle" online.
 - Documents added while embeddings were unavailable stay searchable by their words only (no automatic re-indexing yet).
+- **Fixed (founder's report, 2026-11-03):** in test mode the provider health page showed every provider as working, Gemini included without a key. It now says "Mode test", counts only real keys, and turns the live tests off.
 
 ## Tests (Step 12)
 

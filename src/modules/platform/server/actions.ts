@@ -147,6 +147,8 @@ export async function testProviderAction(input: {
   provider: string;
 }): Promise<ActionResult<{ ok: boolean; code: ProviderErrorCode | null; latencyMs: number }>> {
   if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
+  // In test mode no real AI is called: a "success" would say nothing about the real keys.
+  if (fakeProviderEnabled()) return { ok: false, error: "test_mode" };
   const provider = PROVIDER_IDS.find((p) => p === input.provider);
   if (!provider) return { ok: false, error: "validation" };
   const supabase = await createClient();

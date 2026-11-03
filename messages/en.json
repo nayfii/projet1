@@ -77,7 +77,8 @@
     "name_mismatch": "The name typed does not match the client's name.",
     "manager_needs_team": "A manager leads a team: choose their team first.",
     "busy": "An answer is being written. Try again in a moment.",
-    "dictation_disabled": "Voice dictation is turned off in your company."
+    "dictation_disabled": "Voice dictation is turned off in your company.",
+    "test_mode": "Test mode is on: no real AI is called. Remove AI_FAKE_PROVIDER in Vercel and redeploy."
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -1842,7 +1843,9 @@
       "embedding": "Document search",
       "dictation": "Voice dictation",
       "avatar": "3D avatars"
-    }
+    },
+    "testModeBanner": "Test mode is on (AI_FAKE_PROVIDER): no real AI is called, answers are simulated. The cards below only show whether a real key is present; tests are turned off. Remove AI_FAKE_PROVIDER in Vercel and redeploy to connect the real AIs.",
+    "testModeBadge": "Test mode · key present"
   },
   "avatar": {
     "title": "My avatar",

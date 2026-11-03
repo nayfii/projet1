@@ -9,8 +9,9 @@ import { getLastProviderTests, getProviderHealth } from "@/modules/platform/serv
 import { classifyProvider, classifyRenderQueue, type HealthStatus, type RenderStatus } from "@/modules/platform/health";
 import { ProviderTestButton } from "@/modules/platform/ui/provider-test-button";
 import { ModelCheckPanel } from "@/modules/platform/ui/model-check-panel";
-import { configuredProviders } from "@/modules/providers/server/registry";
-import { embeddingModelName, embeddingsAvailable } from "@/modules/providers/server/embeddings";
+import { providersWithKeys } from "@/modules/providers/server/registry";
+import { aiProviderKey, embeddingsConfig, fakeProviderEnabled } from "@/lib/env";
+import { embeddingModelName } from "@/modules/providers/server/embeddings";
 import { PROVIDER_BRANDS, PROVIDER_ERROR_CODES, PROVIDER_IDS } from "@/modules/providers/types";
 
 /** "Test each model" waits for every model at once (30 seconds at most each). */
@@ -41,7 +42,10 @@ export default async function PlatformHealthPage() {
   const format = await getFormatter();
   const now = new Date();
   const [health, tests] = await Promise.all([getProviderHealth(), getLastProviderTests()]);
-  const configured = configuredProviders();
+  // Real keys only: in test mode the simulated AI would make every provider look connected.
+  const configured = providersWithKeys();
+  const testMode = fakeProviderEnabled();
+  const embeddingsKey = Boolean(aiProviderKey(embeddingsConfig().provider));
   const ago = (iso: string | null) => (iso ? format.relativeTime(new Date(iso), now) : t("never"));
   const n = (v: number) => format.number(v, { maximumFractionDigits: 0 });
   const renderStatus = classifyRenderQueue(health.render, now.getTime());
@@ -49,6 +53,11 @@ export default async function PlatformHealthPage() {
   return (
     <PageContainer className="max-w-5xl">
       <PageHeader title={t("title")} description={t("description")} />
+      {testMode ? (
+        <p className="mb-6 rounded-xl border border-warning/40 bg-warning-soft px-4 py-3 text-[13px] text-warning" role="alert" data-testid="test-mode">
+          {t("testModeBanner")}
+        </p>
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-3">
         {PROVIDER_IDS.map((id) => {
@@ -61,7 +70,11 @@ export default async function PlatformHealthPage() {
             <Card key={id} className="flex flex-col p-5" data-testid={`provider-${id}`}>
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-medium">{name}</h2>
-                <Badge variant={STATUS_BADGE[status]}>{t(`status.${status}`)}</Badge>
+                {testMode && configured.has(id) ? (
+                  <Badge variant="neutral">{t("testModeBadge")}</Badge>
+                ) : (
+                  <Badge variant={STATUS_BADGE[status]}>{t(`status.${status}`)}</Badge>
+                )}
               </div>
               <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
                 <div>
@@ -93,7 +106,7 @@ export default async function PlatformHealthPage() {
                       : t("lastTestFailed", { when: ago(test.at), reason: t(`codes.${knownCode(test.code)}`) })
                     : t("noTest")}
                 </p>
-                {configured.has(id) ? <ProviderTestButton provider={id} name={name} /> : <span className="text-[12px] text-muted-foreground">{t("addKey")}</span>}
+                {configured.has(id) ? <ProviderTestButton provider={id} name={name} disabled={testMode} /> : <span className="text-[12px] text-muted-foreground">{t("addKey")}</span>}
               </div>
             </Card>
           );
@@ -135,7 +148,7 @@ export default async function PlatformHealthPage() {
               <DatabaseIcon className="size-4 text-muted-foreground" />
               {t("embeddingsTitle")}
             </h2>
-            <Badge variant={embeddingsAvailable() ? "success" : "outline"}>{t(embeddingsAvailable() ? "configured" : "status.not_configured")}</Badge>
+            <Badge variant={embeddingsKey ? "success" : "outline"}>{t(embeddingsKey ? "configured" : "status.not_configured")}</Badge>
           </div>
           <p className="mt-4 text-[13px] text-muted-foreground">{t("embeddingsBody", { model: embeddingModelName() })}</p>
         </Card>

@@ -120,24 +120,23 @@ test("our team prices a plan, then sees revenue, AI cost and margin per company"
   await admin.context().close();
 });
 
-test("provider health, with a live test", async ({ browser }) => {
+test("provider health in test mode: says so, and never claims a provider works", async ({ browser }) => {
   const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
   await signIn(admin, "platform@demo.local");
   await admin.goto("/platform/health");
   await expect(admin.getByRole("heading", { name: "État des fournisseurs" })).toBeVisible();
-  const claude = admin.getByTestId("provider-anthropic");
-  await claude.getByRole("button", { name: "Tester Claude maintenant" }).click();
-  await expect(admin.getByText(/Claude répond \(\d+ ms\)\./)).toBeVisible();
-  await expect(claude).toContainText(/Dernier test : OK en \d+ ms/);
-  // Operational, or disturbed if other tests just simulated errors: never down after a successful test.
-  await expect(claude.getByText(/^(Opérationnel|Perturbé)$/)).toBeVisible();
+  await expect(admin.getByTestId("test-mode")).toContainText("aucune vraie IA n'est appelée");
+  // Only real keys count: a provider without one is "not configured", whatever the simulated answers.
+  for (const id of ["openai", "anthropic", "google"]) {
+    const card = admin.getByTestId(`provider-${id}`);
+    await expect(card.getByText(/^(Non configuré|Mode test · clé présente)$/)).toBeVisible();
+    const button = card.getByRole("button", { name: /^Tester .* maintenant$/ });
+    if (await button.count()) await expect(button).toBeDisabled();
+  }
   await expect(admin.getByTestId("render-queue")).toBeVisible();
   // "Test each model" says plainly when the platform runs in test mode (no real AI is called).
   await admin.getByRole("button", { name: "Tester chaque modèle" }).click();
-  await expect(admin.getByText(/Mode test activé \(AI_FAKE_PROVIDER\)/)).toBeVisible();
+  await expect(admin.getByText(/Mode test activé \(AI_FAKE_PROVIDER\) : aucune vraie IA n'est appelée\. Retirez/)).toBeVisible();
   await shot(admin, "106-platform-health");
-
-  await admin.goto("/platform/audit");
-  await expect(admin.getByText("a testé Claude (Anthropic) : répond").first()).toBeVisible();
   await admin.context().close();
 });

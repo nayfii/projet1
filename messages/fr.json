@@ -77,7 +77,8 @@
     "name_mismatch": "Le nom tapé ne correspond pas au nom du client.",
     "manager_needs_team": "Un manager dirige une équipe : choisissez d'abord son équipe.",
     "busy": "Une réponse est en cours d'écriture. Réessayez dans un instant.",
-    "dictation_disabled": "La dictée vocale est désactivée dans votre entreprise."
+    "dictation_disabled": "La dictée vocale est désactivée dans votre entreprise.",
+    "test_mode": "Mode test activé : aucune vraie IA n'est appelée. Retirez AI_FAKE_PROVIDER dans Vercel puis redéployez."
   },
   "auth": {
     "signInTitle": "Connexion",
@@ -1842,7 +1843,9 @@
       "embedding": "Recherche dans les documents",
       "dictation": "Dictée vocale",
       "avatar": "Avatars 3D"
-    }
+    },
+    "testModeBanner": "Mode test activé (AI_FAKE_PROVIDER) : aucune vraie IA n'est appelée, les réponses sont simulées. Les cartes ci-dessous indiquent seulement si une vraie clé est présente ; les tests sont désactivés. Retirez AI_FAKE_PROVIDER dans Vercel puis redéployez pour brancher les vraies IA.",
+    "testModeBadge": "Mode test · clé présente"
   },
   "avatar": {
     "title": "Mon avatar",

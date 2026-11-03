@@ -39,6 +39,7 @@ export const ERROR_CODES = [
   "manager_needs_team",
   "busy",
   "dictation_disabled",
+  "test_mode",
   "unknown",
 ] as const;
 

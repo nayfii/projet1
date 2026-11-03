@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/form";
 import { testProviderAction } from "../server/actions";
 
 /** "Test now": a tiny request to the provider, without any customer data, then the page refreshes. */
-export function ProviderTestButton({ provider, name }: { provider: string; name: string }) {
+export function ProviderTestButton({ provider, name, disabled = false }: { provider: string; name: string; disabled?: boolean }) {
   const t = useTranslations("platformHealth");
   const tErrors = useTranslations("errors");
   const router = useRouter();
@@ -19,7 +19,7 @@ export function ProviderTestButton({ provider, name }: { provider: string; name:
     <Button
       variant="outline"
       size="sm"
-      disabled={pending}
+      disabled={pending || disabled}
       aria-label={t("testAria", { name })}
       onClick={() =>
         start(async () => {
