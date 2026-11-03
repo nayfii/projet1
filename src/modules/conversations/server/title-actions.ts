@@ -37,7 +37,8 @@ export async function refreshTitleAction(input: { conversationId: string }): Pro
   // A small, fast model is enough for a title.
   const models = await getCompanyModels(ctx.active.companyId);
   const fast = models.allowed.find((m) => m.tier === "fast" && models.configured.has(m.provider));
-  const request = titleRequest(conversation.title, questions);
+  // The first title replaces the provisional one (the start of the first message, set by the database).
+  const request = titleRequest(questions.length === 1 ? null : conversation.title, questions);
   const result = await runMemoryTask(supabase, ctx, { system: TITLE_SYSTEM, user: request, modelChoice: fast?.id, feature: "title" });
   if (!result.ok) return null;
   const masked = (rows ?? []).some((m) => m.masked_content !== null);
