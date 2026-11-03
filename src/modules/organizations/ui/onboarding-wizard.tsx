@@ -18,10 +18,9 @@ import { AvatarStudio } from "@/modules/avatars/ui/avatar-studio";
 import { cn } from "@/lib/utils";
 import type { ErrorCode } from "@/lib/errors";
 
-export type OnboardingStep = "start" | "avatar" | "company" | SetupStep;
-/** Set up later from the home page's checklist (CLAUDE.md §11): each one returns to the home page. */
-export type SetupStep = "invite" | "client" | "document";
-export const SETUP_STEPS: SetupStep[] = ["invite", "client", "document"];
+import type { OnboardingStep } from "../onboarding-steps";
+
+export type { OnboardingStep } from "../onboarding-steps";
 
 /** The onboarding itself: the name, the company and the avatar, then straight to the first conversation. */
 const PROGRESS: OnboardingStep[] = ["start", "avatar", "company"];

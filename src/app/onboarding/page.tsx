@@ -4,7 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { getCompany, getMyPendingInvitations, listMembers } from "@/modules/organizations/server/queries";
-import { OnboardingWizard, SETUP_STEPS, type OnboardingStep, type SetupStep } from "@/modules/organizations/ui/onboarding-wizard";
+import { OnboardingWizard } from "@/modules/organizations/ui/onboarding-wizard";
+import { isSetupStep, type OnboardingStep } from "@/modules/organizations/onboarding-steps";
 import { createClient } from "@/lib/supabase/server";
 import { listMemorySpaces } from "@/modules/memory/server/queries";
 import type { MemberContext } from "@/lib/auth/guards";
@@ -44,9 +45,8 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
   // Invited members and admins without the company scope have nothing to set up here.
   if (!hasScope(ctx.active, "company")) redirect("/");
   const requested = typeof params.step === "string" ? params.step : "company";
-  const setup = (SETUP_STEPS as string[]).includes(requested);
-  if (!setup && ctx.active.onboardingCompletedAt) redirect("/");
-  const step: OnboardingStep = setup ? (requested as SetupStep) : requested === "avatar" ? "avatar" : "company";
+  if (!isSetupStep(requested) && ctx.active.onboardingCompletedAt) redirect("/");
+  const step: OnboardingStep = isSetupStep(requested) ? requested : requested === "avatar" ? "avatar" : "company";
   const company = await getCompany(ctx.active.companyId);
   const members = step === "client" ? await listMembers(ctx.active.companyId) : [];
   const companySpaceId =
