@@ -47,6 +47,7 @@ import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
 import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
 import { MaskedView } from "@/modules/hide/ui/masked-view";
 import { ProtectedText } from "@/modules/hide/ui/hide-composer";
+import { mentionsPerson, type PersonToken } from "@/modules/collaboration/mentions";
 import { ConfrontationView } from "@/modules/confronter/ui/confrontation-view";
 import type { ConfrontationProgress } from "@/modules/confronter/types";
 import { hasTable } from "@/modules/exports/blocks";
@@ -78,9 +79,15 @@ export function MessageItem({
   confrontProgress,
   render,
   people,
+  group = false,
+  myToken = null,
 }: {
   message: TimelineMessage;
   people?: PeopleLookup;
+  /** Group conversation: the AI's answers sit in a bubble on the left, like colleagues'. */
+  group?: boolean;
+  /** The viewer as a mention token: their mentions are highlighted. */
+  myToken?: PersonToken | null;
   /** Video agents: the answer may hold a composition or an edit plan to make into MP4s. */
   render?: RenderProps | null;
   /** The answer is streaming right now in this browser. */
@@ -100,6 +107,7 @@ export function MessageItem({
       <UserMessage
         message={message}
         mine={mine}
+        mentionsMe={!mine && myToken !== null && mentionsPerson(message.content, myToken)}
         avatarUrl={message.author ? (people?.get(message.author.id)?.avatarUrl ?? null) : null}
         memoryTargets={memoryTargets}
         conversationId={conversationId}
@@ -122,8 +130,36 @@ export function MessageItem({
       onConfront={onConfront}
       confrontProgress={confrontProgress}
       render={render}
+      bubble={group}
     />
   );
+}
+
+/** "@Claude", "@Olivier": shown in the accent colour inside a message. */
+function withMentions(text: string, key: string): React.ReactNode {
+  const parts = text.split(/((?:^|(?<=[\s(,;:"«]))@[\p{L}][\p{L}\p{N}_-]*)/u);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <span key={`${key}-${i}`} className="font-medium text-brand">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
+/** Colleagues' bubbles: one soft tint per person, distinct from the AI's neutral bubble. */
+const PERSON_TINTS = ["--pastel-sky", "--pastel-mint", "--pastel-peach", "--pastel-lavender"];
+function personTint(id: string | undefined): React.CSSProperties {
+  let hash = 0;
+  for (const c of id ?? "") hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  const token = PERSON_TINTS[hash % PERSON_TINTS.length];
+  return {
+    backgroundColor: `color-mix(in oklch, var(${token}) 16%, var(--card))`,
+    borderColor: `color-mix(in oklch, var(${token}) 38%, transparent)`,
+  };
 }
 
 function ConfrontButton({ onConfront, className }: { onConfront?: () => void; className?: string }) {
@@ -165,11 +201,12 @@ function SaveToMemory({ message, memoryTargets, conversationId, className }: { m
 function UserMessage({
   message,
   mine,
+  mentionsMe = false,
   avatarUrl,
   memoryTargets,
   conversationId,
   onConfront,
-}: { message: TimelineMessage; mine: boolean; avatarUrl: string | null } & MemoryProps & ConfrontProps) {
+}: { message: TimelineMessage; mine: boolean; mentionsMe?: boolean; avatarUrl: string | null } & MemoryProps & ConfrontProps) {
   const hover = "mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100";
   const t = useTranslations("collaboration");
   if (!mine) {
@@ -180,6 +217,7 @@ function UserMessage({
         <div className="flex items-center gap-2 text-[13px]">
           <Avatar name={name} src={avatarUrl} className="size-7" />
           <span className="font-medium">{name}</span>
+          {mentionsMe ? <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand">{t("mentionsYou")}</span> : null}
         </div>
         {message.attachments.length > 0 ? (
           <div className="flex max-w-[85%] flex-wrap gap-1.5">
@@ -190,8 +228,15 @@ function UserMessage({
         ) : null}
         {message.content ? (
           <div className="flex max-w-[85%] items-start gap-1">
-            <div className="whitespace-pre-wrap break-words rounded-2xl rounded-tl-md border bg-card px-4 py-2.5 text-[15px] leading-relaxed">
-              <ProtectedText text={message.content} spans={message.hideSpans} />
+            <div
+              data-testid="colleague-bubble"
+              style={personTint(message.author?.id)}
+              className={cn(
+                "whitespace-pre-wrap break-words rounded-2xl rounded-tl-md border px-4 py-2.5 text-[15px] leading-relaxed",
+                mentionsMe && "ring-2 ring-brand/50",
+              )}
+            >
+              <ProtectedText text={message.content} spans={message.hideSpans} renderPlain={withMentions} />
             </div>
             <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
             <ConfrontButton onConfront={onConfront} className={hover} />
@@ -215,7 +260,7 @@ function UserMessage({
           <ConfrontButton onConfront={onConfront} className={hover} />
           <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
           <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-4 py-2.5 text-[15px] leading-relaxed">
-            <ProtectedText text={message.content} spans={message.hideSpans} />
+            <ProtectedText text={message.content} spans={message.hideSpans} renderPlain={withMentions} />
           </div>
         </div>
       ) : null}
@@ -302,9 +347,11 @@ function AssistantMessage({
   onConfront,
   confrontProgress,
   render,
+  bubble = false,
 }: {
   message: TimelineMessage;
   render?: RenderProps | null;
+  bubble?: boolean;
   live?: boolean;
   isLastAnswer: boolean;
   busy: boolean;
@@ -356,7 +403,13 @@ function AssistantMessage({
           <span className="text-shimmer font-medium">{brand ? t("thinkingNamed", { name: brand }) : t("thinking")}</span>
         </p>
       ) : message.content ? (
-        <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
+        bubble ? (
+          <div data-testid="ai-bubble" className="w-fit max-w-[92%] rounded-2xl rounded-tl-md border bg-card px-4 py-3">
+            <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
+          </div>
+        ) : (
+          <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
+        )
       ) : null}
       {render && !live && message.status === "complete" && message.content ? (
         <RenderPanel key={message.id} messageId={message.id} kind={render.kind} content={message.content} attachments={render.attachments} />

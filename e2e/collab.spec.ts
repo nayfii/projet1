@@ -45,7 +45,8 @@ async function join(page: Page, email: string, name: string, expertise?: string)
   await page.getByLabel("Votre nom").fill(name);
   if (expertise) await page.getByLabel("Domaines d'expertise").fill(expertise);
   await page.getByRole("button", { name: "Continuer" }).click();
-  await expect(page.getByRole("heading", { name: `Bonjour ${name.split(" ")[0]}` })).toBeVisible();
+  // Straight into the first conversation (CLAUDE.md §11).
+  await expect(page.getByRole("heading", { name: "Que puis-je faire pour vous ?" })).toBeVisible();
 }
 
 test("setup: Client A is restricted to Olivier, with a memory entry; Nathalie declares finance", async () => {

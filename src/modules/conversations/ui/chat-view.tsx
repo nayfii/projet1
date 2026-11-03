@@ -54,6 +54,7 @@ import {
   setConversationModelAction,
 } from "../server/actions";
 import { titleFromMessage, useChatList } from "./chat-list";
+import { refreshTitleAction } from "../server/title-actions";
 import { AttachmentChip, MessageItem, ModelSwitchDivider, type PeopleLookup } from "./message-item";
 import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
@@ -73,7 +74,7 @@ import { AddPeopleDialog, ParticipantsBar, TypingLine } from "@/modules/collabor
 import { TransferDialog } from "@/modules/collaboration/ui/transfer-dialog";
 import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
 import { filterMentions, MentionMenu, mentionAt, PROVIDER_TOKENS, type MentionOption } from "@/modules/collaboration/ui/mention-menu";
-import { naturalMention } from "@/modules/collaboration/mentions";
+import { mentionsPerson, naturalMention, parseMention, personTokens, type PersonToken } from "@/modules/collaboration/mentions";
 import { AppPickerMenu, filterApps, usePickerApps } from "@/modules/agents/ui/app-picker";
 import { useConversationRealtime } from "@/modules/collaboration/ui/use-conversation-realtime";
 import { ConfrontDialog } from "@/modules/confronter/ui/confront-dialog";
@@ -341,6 +342,7 @@ export function ChatView(props: Props) {
 
   // Real time: colleagues' messages and the answers they ask for, as this person may see them.
   const incoming = React.useRef(new Set<string>());
+  const myTokenRef = React.useRef<PersonToken | null>(null);
   const flushing = React.useRef(false);
   const { online, typing, notifyTyping, stopTyping } = useConversationRealtime({
     conversationId,
@@ -358,6 +360,10 @@ export function ChatView(props: Props) {
           ids.forEach((x) => incoming.current.delete(x));
           const fresh = await loadTimelineMessagesAction({ conversationId: target, ids });
           if (mounted.current) setMessages((list) => mergeMessages(list, ids, fresh, liveRef.current, props.me.id));
+          // A colleague mentions this person ("@Olivier"): a short notice, besides the highlighted message.
+          const mine = myTokenRef.current;
+          const called = mine ? fresh.find((m) => m.role === "user" && m.author && m.author.id !== props.me.id && mentionsPerson(m.content, mine)) : undefined;
+          if (called && mounted.current) toast(tCollab("mentionedYou", { name: called.author!.name ?? tCollab("someone") }));
         }
         flushing.current = false;
       }, 250);
@@ -389,10 +395,20 @@ export function ChatView(props: Props) {
     }
     return options;
   }, [props.models, modelChoice, tCollab]);
+  // Colleagues of the conversation as mention tokens ("@Olivier"): the viewer's own is used to notice mentions.
+  const tokens = React.useMemo(() => personTokens(participants.map((p) => ({ id: p.userId, name: p.name }))), [participants]);
+  const myToken = tokens.get(props.me.id) ?? null;
+  React.useEffect(() => {
+    myTokenRef.current = myToken;
+  }, [myToken]);
+  const otherTokens = participants.filter((p) => p.userId !== props.me.id).flatMap((p) => (tokens.get(p.userId) ? [{ ...tokens.get(p.userId)!, person: p }] : []));
+  const allMentionOptions: MentionOption[] = group
+    ? [...mentionOptions, ...otherTokens.map((o) => ({ token: o.token, aliases: [], provider: null, hint: o.person.name, person: { name: o.person.name, avatarUrl: o.person.avatarUrl } }))]
+    : mentionOptions;
   const mention = group ? mentionAt(input, caret) : null;
   const mentionMatches =
-    mention && mention.start !== mentionDismissed && !mentionOptions.some((o) => [o.token, ...o.aliases].some((n) => n.toLowerCase() === mention.query.toLowerCase()))
-      ? filterMentions(mentionOptions, mention.query)
+    mention && mention.start !== mentionDismissed && !allMentionOptions.some((o) => [o.token, ...o.aliases].some((n) => n.toLowerCase() === mention.query.toLowerCase()))
+      ? filterMentions(allMentionOptions, mention.query)
       : [];
   const activeMention = Math.min(mentionIndex, Math.max(mentionMatches.length - 1, 0));
   const slash = /^\/[^\s/]*$/.test(input) && !slashDismissed ? input.slice(1) : null;
@@ -593,8 +609,20 @@ export function ChatView(props: Props) {
     }
     hide.setConfirming(false);
     const hideChoices = hidePayload ?? hide.payload();
-    // In a group, "hello chat, …" calls the AI like "@ChatGPT" would (CLAUDE.md §11).
-    const text = group ? naturalMention(input.trim()) : input.trim();
+    // Natural mentions (CLAUDE.md §11), typed or dictated: "Coucou Claude, …" calls Claude like "@Claude"
+    // would; in a group, "Coucou Olivier, …" mentions Olivier.
+    const text = naturalMention(input.trim(), group ? otherTokens : []);
+    // Alone with the AI, naming an assistant hands the conversation to it ("Continue with Claude").
+    const named = !group ? parseMention(text) : null;
+    let choice = modelChoice;
+    if (named && named !== "selected") {
+      const usable = props.models.filter((m) => m.provider === named && m.available);
+      const target = usable.find((m) => m.tier === "balanced") ?? usable[0];
+      if (target && target.id !== modelChoice) {
+        choice = target.id;
+        setModelChoice(target.id);
+      }
+    }
     const ready = attachments.filter((a) => a.id);
     const id = await ensureConversation();
     if (!id) return;
@@ -633,7 +661,7 @@ export function ChatView(props: Props) {
     }
 
     await stream(
-      { conversationId: id, modelChoice, message: { content: text, attachmentIds: ready.map((a) => a.id) }, hide: hideChoices },
+      { conversationId: id, modelChoice: choice, message: { content: text, attachmentIds: ready.map((a) => a.id) }, hide: hideChoices },
       {
         // Refused before anything was saved: give the user their text and files back.
         onRefused: () => {
@@ -643,6 +671,14 @@ export function ChatView(props: Props) {
         },
       },
     );
+    // Automatic title (like ChatGPT or Claude), once the AI has answered: kept unless renamed by hand.
+    if (!group || parseMention(text)) {
+      void refreshTitleAction({ conversationId: id }).then((result) => {
+        if (!result || !mounted.current) return;
+        setTitle(result.title);
+        chatList.upsert({ id, title: result.title });
+      });
+    }
   }
 
   /** Stop button: the server stops writing (and saves what was written), then the local stream closes. */
@@ -1024,6 +1060,8 @@ export function ChatView(props: Props) {
                       confrontProgress={confrontProgress[m.id]}
                       render={renderKind ? { kind: renderKind, attachments: conversationFiles } : null}
                       people={people}
+                      group={group}
+                      myToken={myToken}
                     />
                   </React.Fragment>
                 );

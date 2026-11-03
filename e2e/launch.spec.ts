@@ -65,7 +65,8 @@ async function join(p: Page, email: string, name: string, expertise?: string) {
   await p.getByLabel("Votre nom").fill(name);
   if (expertise) await p.getByLabel("Domaines d'expertise").fill(expertise);
   await p.getByRole("button", { name: "Continuer" }).click();
-  await expect(p.getByRole("heading", { name: `Bonjour ${name.split(" ")[0]}` })).toBeVisible();
+  // Straight into the first conversation (CLAUDE.md §11).
+  await expect(p.getByRole("heading", { name: "Que puis-je faire pour vous ?" })).toBeVisible();
 }
 
 test("1. our team creates a plan; the Owner signs up, completes onboarding and gets the plan", async () => {

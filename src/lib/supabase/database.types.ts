@@ -451,14 +451,14 @@ isOneToOne: false
                   ]
                 },"conversations": {
                   Row: {
-                    "agent_id": string | null,"client_id": string | null,"company_id": string,"created_at": string,"feed_memory": boolean,"forked_from": string | null,"id": string,"is_group": boolean,"last_message_at": string | null,"last_seq": number,"model_choice": string,"owner_id": string,"received_from": string | null,"title": string | null,"transferred_at": string | null,"transferred_to": string | null,"updated_at": string
+                    "agent_id": string | null,"client_id": string | null,"company_id": string,"created_at": string,"feed_memory": boolean,"forked_from": string | null,"id": string,"is_group": boolean,"last_message_at": string | null,"last_seq": number,"model_choice": string,"owner_id": string,"received_from": string | null,"title": string | null,"title_auto": boolean,"transferred_at": string | null,"transferred_to": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "agent_id"?: string | null,"client_id"?: string | null,"company_id": string,"created_at"?: string,"feed_memory"?: boolean,"forked_from"?: string | null,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"received_from"?: string | null,"title"?: string | null,"transferred_at"?: string | null,"transferred_to"?: string | null,"updated_at"?: string
+                    "agent_id"?: string | null,"client_id"?: string | null,"company_id": string,"created_at"?: string,"feed_memory"?: boolean,"forked_from"?: string | null,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"received_from"?: string | null,"title"?: string | null,"title_auto"?: boolean,"transferred_at"?: string | null,"transferred_to"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "agent_id"?: string | null,"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"feed_memory"?: boolean,"forked_from"?: string | null,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"received_from"?: string | null,"title"?: string | null,"transferred_at"?: string | null,"transferred_to"?: string | null,"updated_at"?: string
+                    "agent_id"?: string | null,"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"feed_memory"?: boolean,"forked_from"?: string | null,"id"?: string,"is_group"?: boolean,"last_message_at"?: string | null,"last_seq"?: number,"model_choice"?: string,"owner_id"?: string,"received_from"?: string | null,"title"?: string | null,"title_auto"?: boolean,"transferred_at"?: string | null,"transferred_to"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1459,6 +1459,9 @@ isOneToOne: false
 { Args: { "p_company": string,"p_limit"?: number,"p_query": string }; Returns: {
               "client_id": string,"conversation_id": string,"matched_at": string,"snippet": string,"title": string
             }[]
+                           },
+"set_auto_title":
+{ Args: { "p_conversation": string,"p_title": string }; Returns: boolean
                            },
 "set_participant_role":
 { Args: { "p_conversation": string,"p_role": string,"p_user": string }; Returns: undefined

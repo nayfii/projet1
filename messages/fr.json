@@ -807,7 +807,8 @@
       "other": "Autre",
       "avatar": "Avatars 3D",
       "client_summary": "Résumés des clients",
-      "dictation": "Dictée vocale"
+      "dictation": "Dictée vocale",
+      "title": "Titres des conversations"
     },
     "limitLabel": "Limite : {limit}",
     "noLimit": "Sans limite personnelle",
@@ -1256,7 +1257,9 @@
     },
     "readOnlyNotice": "Vous êtes en lecture seule dans cette conversation.",
     "copyBanner": "Conversation transférée à {name} le {date}. Ceci est votre copie : vous pouvez la continuer de votre côté. {name} ne voit pas votre copie, et vous ne voyez pas la suite de son côté.",
-    "copyBannerUnknown": "Conversation transférée le {date}. Ceci est votre copie, privée : vous pouvez la continuer de votre côté."
+    "copyBannerUnknown": "Conversation transférée le {date}. Ceci est votre copie, privée : vous pouvez la continuer de votre côté.",
+    "mentionsYou": "vous mentionne",
+    "mentionedYou": "{name} vous a mentionné(e)"
   },
   "confronter": {
     "title": "Confronter",

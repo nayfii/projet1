@@ -1,3 +1,4 @@
+import { cleanTitle, shouldRetitle, titleRequest } from "@/modules/conversations/titles";
 import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
 import type { CatalogModel } from "@/modules/providers/catalog";
@@ -363,5 +364,25 @@ describe("attachments are read on our server", () => {
     const { text, truncated } = await extractText(new TextEncoder().encode("a".repeat(50_000)), "txt");
     expect(truncated).toBe(true);
     expect(text.length).toBe(40_000);
+  });
+});
+
+describe("automatic conversation titles", () => {
+  it("are asked after the first answer, then every third question", () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 9].map(shouldRetitle)).toEqual([true, false, true, false, false, true, false, true]);
+  });
+
+  it("send the current title and the latest questions only", () => {
+    const request = titleRequest("Devis Dupont", ["a", "b", "c", "d", "e", "f", "g"]);
+    expect(request).toContain("Current title: Devis Dupont");
+    expect(request).not.toContain("1. a");
+    expect(request).toContain("6. g");
+    expect(titleRequest(null, ["Bonjour"])).toContain("Current title: (none)");
+  });
+
+  it("keep a clean title from what the model wrote", () => {
+    expect(cleanTitle('Titre : "Relance du devis [CLIENT_1]".')).toBe("Relance du devis [CLIENT_1]");
+    expect(cleanTitle("**Plan marketing 2027**\nAutre ligne")).toBe("Plan marketing 2027");
+    expect(cleanTitle("x".repeat(200))).toHaveLength(80);
   });
 });

@@ -75,6 +75,11 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         );
         return;
       }
+      if (request.system.startsWith("Task: title a conversation.")) {
+        const latest = text.trim().split("\n").at(-1)?.replace(/^\d+\.\s*/, "") ?? "";
+        yield* simulated(`[TEST] ${latest.split(/\s+/).slice(0, 5).join(" ")}`);
+        return;
+      }
       if (request.system.startsWith("Task: generalise a client note.")) {
         yield* simulated(JSON.stringify({ general: true, title: "[TEST] Enseignement général", content: "[TEST] Les clients de ce secteur préfèrent des points courts et réguliers." }));
         return;

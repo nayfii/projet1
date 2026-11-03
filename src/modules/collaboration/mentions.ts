@@ -42,7 +42,63 @@ const NAMES: [RegExp, string][] = [
 ];
 const ADDRESS = new RegExp(`^(\\s*(?:${GREETING}\\s*[,!]?\\s+)?)(chat\\s?gpt|gpt|chat|claude|gemini|ia|ai)(?=([\\s,:!?]|$))(\\s*[,:])?`, "iu");
 
-export function naturalMention(text: string): string {
+/** A colleague in the conversation, as a mention token ("Olivier", or "OlivierD" when two share a first name). */
+export type PersonToken = { token: string; names: string[] };
+
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Mention tokens for the people of a conversation: their first name, made unique with their last name's initial. */
+export function personTokens(people: { id: string; name: string }[]): Map<string, PersonToken> {
+  const firsts = new Map<string, number>();
+  const parts = people.map((p) => p.name.trim().split(/\s+/).filter(Boolean));
+  for (const words of parts) if (words[0]) firsts.set(words[0].toLowerCase(), (firsts.get(words[0].toLowerCase()) ?? 0) + 1);
+  const out = new Map<string, PersonToken>();
+  people.forEach((p, i) => {
+    const words = parts[i];
+    if (!words[0]) return;
+    const unique = firsts.get(words[0].toLowerCase()) === 1;
+    const token = (unique || words.length < 2 ? words[0] : `${words[0]}${words[words.length - 1][0]}`).replace(/[^\p{L}\p{N}_-]/gu, "");
+    if (!token) return;
+    out.set(p.id, { token, names: [...new Set([words.join(" "), ...(unique ? [words[0]] : [])])] });
+  });
+  return out;
+}
+
+/** Whether a message mentions this person ("@Olivier"). */
+export function mentionsPerson(text: string, person: PersonToken): boolean {
+  return new RegExp(`(?:^|[\\s(,;:"«])@${escape(person.token)}(?![\\p{L}\\p{N}_])`, "iu").test(text);
+}
+
+/**
+ * "Coucou Olivier, tu peux…" in a group: the colleague addressed at the start of the message is turned
+ * into a mention ("Coucou @Olivier, tu peux…"), after a greeting or followed by a comma or colon.
+ */
+function naturalPersonMention(text: string, people: PersonToken[]): string {
+  if (people.length === 0 || /(?:^|\s)@\p{L}/u.test(text.slice(0, 40))) return text;
+  for (const person of people) {
+    for (const name of [...person.names].sort((a, b) => b.length - a.length)) {
+      const re = new RegExp(`^(\\s*(?:${GREETING}\\s*[,!]?\\s+)?)(${escape(name)})(?=([\\s,:!?]|$))(\\s*[,:])?`, "iu");
+      const m = re.exec(text);
+      if (!m) continue;
+      const [, lead, matched, , punctuation] = m;
+      if (!/\p{L}/u.test(lead) && !punctuation) continue;
+      return `${lead}@${person.token}${text.slice(lead.length + matched.length)}`;
+    }
+  }
+  return text;
+}
+
+/**
+ * Natural mentions (CLAUDE.md §11), typed or dictated: "Coucou Claude, …" becomes "Coucou @Claude, …"
+ * (and Claude answers), "Coucou Olivier, …" in a group becomes "Coucou @Olivier, …".
+ */
+export function naturalMention(text: string, people: PersonToken[] = []): string {
+  const withPerson = naturalPersonMention(text, people);
+  if (withPerson !== text) return withPerson;
+  return naturalAssistantMention(text);
+}
+
+function naturalAssistantMention(text: string): string {
   if (parseMention(text)) return text;
   const m = ADDRESS.exec(text);
   if (!m) return text;

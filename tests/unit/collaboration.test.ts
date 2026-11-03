@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogModel } from "@/modules/providers/catalog";
-import { modelForProvider, parseMention, suggestedColleagues } from "@/modules/collaboration/mentions";
+import { mentionsPerson, modelForProvider, naturalMention, parseMention, personTokens, suggestedColleagues } from "@/modules/collaboration/mentions";
 import { filterMentions, mentionAt, type MentionOption } from "@/modules/collaboration/ui/mention-menu";
 
 const model = (id: string, provider: CatalogModel["provider"], tier: CatalogModel["tier"]) => ({ id, provider, tier }) as CatalogModel;
@@ -70,5 +70,43 @@ describe("Who Can Help: colleagues the answer names", () => {
     expect(suggestedColleagues("Demandez à Paul.", colleagues)).toEqual([]);
     expect(suggestedColleagues("Al pourrait aider.", colleagues)).toEqual([]);
     expect(suggestedColleagues("Les Nathaliennes", colleagues)).toEqual([]);
+  });
+});
+
+describe("natural mentions of colleagues and assistants (typed or dictated)", () => {
+  const people = [
+    { id: "1", name: "Olivier Durand" },
+    { id: "2", name: "Nathalie Petit" },
+    { id: "3", name: "Nathalie Roux" },
+  ];
+  const tokens = personTokens(people);
+
+  it("gives each colleague a short, unique token", () => {
+    expect(tokens.get("1")?.token).toBe("Olivier");
+    expect(tokens.get("2")?.token).toBe("NathalieP");
+    expect(tokens.get("3")?.token).toBe("NathalieR");
+  });
+
+  it("turns a colleague addressed at the start of a message into a mention", () => {
+    const list = [...tokens.values()];
+    expect(naturalMention("Coucou Olivier, tu peux regarder le devis ?", list)).toBe("Coucou @Olivier, tu peux regarder le devis ?");
+    expect(naturalMention("Olivier: le client a rappelé", list)).toBe("@Olivier: le client a rappelé");
+    expect(naturalMention("Nathalie Petit, tu as les chiffres ?", list)).toBe("@NathalieP, tu as les chiffres ?");
+    // Not addressed: left as it is.
+    expect(naturalMention("Olivier a envoyé le devis hier", list)).toBe("Olivier a envoyé le devis hier");
+    expect(naturalMention("J'ai vu Olivier, il est d'accord", list)).toBe("J'ai vu Olivier, il est d'accord");
+  });
+
+  it("still calls the assistants, alone or in a group", () => {
+    expect(naturalMention("Coucou Claude, résume ce document")).toBe("Coucou @Claude, résume ce document");
+    expect(naturalMention("Coucou Claude, résume ce document", [...tokens.values()])).toBe("Coucou @Claude, résume ce document");
+    expect(parseMention(naturalMention("Coucou Claude, résume ce document"))).toBe("anthropic");
+  });
+
+  it("notices when a message mentions someone", () => {
+    expect(mentionsPerson("Coucou @Olivier, tu peux ?", tokens.get("1")!)).toBe(true);
+    expect(mentionsPerson("Coucou @olivier", tokens.get("1")!)).toBe(true);
+    expect(mentionsPerson("Coucou @Olivia", tokens.get("1")!)).toBe(false);
+    expect(mentionsPerson("olivier@exemple.fr", tokens.get("1")!)).toBe(false);
   });
 });

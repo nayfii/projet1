@@ -164,8 +164,9 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   }
 
   // In a group, the AI answers only when mentioned (@Claude, @ChatGPT, @Gemini, @IA); Regenerate is
-  // an explicit request too. Otherwise the message is simply posted for the others.
-  const mention = input.message && group ? parseMention(newText) : null;
+  // an explicit request too. Otherwise the message is simply posted for the others. Alone with the AI,
+  // naming an assistant ("Coucou @Claude, …") hands that turn to it.
+  const mention = input.message ? parseMention(newText) : null;
   const aiRequested = !group || Boolean(input.regenerate) || Boolean(input.confront) || mention !== null;
 
   // Model: the mentioned provider, else the explicit choice, else the conversation's. Auto routes with simple rules.

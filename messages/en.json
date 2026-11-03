@@ -807,7 +807,8 @@
       "other": "Other",
       "avatar": "3D avatars",
       "client_summary": "Client summaries",
-      "dictation": "Voice dictation"
+      "dictation": "Voice dictation",
+      "title": "Conversation titles"
     },
     "limitLabel": "Limit: {limit}",
     "noLimit": "No personal limit",
@@ -1256,7 +1257,9 @@
     },
     "readOnlyNotice": "You are read-only in this conversation.",
     "copyBanner": "Conversation transferred to {name} on {date}. This is your copy: you can continue it on your side. {name} does not see your copy, and you do not see what follows on theirs.",
-    "copyBannerUnknown": "Conversation transferred on {date}. This is your private copy: you can continue it on your side."
+    "copyBannerUnknown": "Conversation transferred on {date}. This is your private copy: you can continue it on your side.",
+    "mentionsYou": "mentions you",
+    "mentionedYou": "{name} mentioned you"
   },
   "confronter": {
     "title": "Confront",

@@ -4,9 +4,10 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { ProviderId } from "@/modules/providers/types";
 import { AssistantAvatar } from "@/modules/avatars/ui/assistant-avatar";
+import { Avatar } from "@/components/ui/avatar";
 
-/** One way to call the AI in a group conversation: "@IA", "@Claude", "@ChatGPT", "@Gemini". */
-export type MentionOption = { token: string; aliases: string[]; provider: ProviderId | null; hint: string };
+/** One way to call the AI in a group conversation ("@IA", "@Claude", "@ChatGPT", "@Gemini"), or a colleague ("@Olivier"). */
+export type MentionOption = { token: string; aliases: string[]; provider: ProviderId | null; hint: string; person?: { name: string; avatarUrl: string | null } };
 
 export const PROVIDER_TOKENS: Record<ProviderId, { token: string; aliases: string[] }> = {
   anthropic: { token: "Claude", aliases: [] },
@@ -43,7 +44,7 @@ export function MentionMenu({ options, active, onPick }: { options: MentionOptio
           onClick={() => onPick(o)}
           className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm", i === active ? "bg-accent" : "hover:bg-accent/60")}
         >
-          <AssistantAvatar provider={o.provider ?? "auto"} size={24} />
+          {o.person ? <Avatar name={o.person.name} src={o.person.avatarUrl} className="size-6" /> : <AssistantAvatar provider={o.provider ?? "auto"} size={24} />}
           <span className="font-medium">{`@${o.token}`}</span>
           <span className="ml-auto truncate text-xs text-muted-foreground">{o.hint}</span>
         </button>

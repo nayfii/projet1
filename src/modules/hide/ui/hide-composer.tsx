@@ -400,14 +400,15 @@ export function FilePreview({ file, state, onClose }: { file: HideComposerState[
 }
 
 /** Text of a sent message with its protected values struck through in green. */
-export function ProtectedText({ text, spans }: { text: string; spans: Span[] }) {
+export function ProtectedText({ text, spans, renderPlain }: { text: string; spans: Span[]; renderPlain?: (plain: string, key: string) => React.ReactNode }) {
   const t = useTranslations("hide");
-  if (spans.length === 0) return <>{text}</>;
+  const plain = (value: string, key: string) => (renderPlain ? <React.Fragment key={key}>{renderPlain(value, key)}</React.Fragment> : value);
+  if (spans.length === 0) return <>{plain(text, "all")}</>;
   const out: React.ReactNode[] = [];
   let cursor = 0;
   for (const s of [...spans].sort((a, b) => a.start - b.start)) {
     if (s.start < cursor || s.end > text.length) continue;
-    out.push(text.slice(cursor, s.start));
+    out.push(plain(text.slice(cursor, s.start), `p${cursor}`));
     out.push(
       <span key={s.start} title={t("protectedTitle")} className={HIDE_PROTECTED_CLASS}>
         {text.slice(s.start, s.end)}
@@ -415,6 +416,6 @@ export function ProtectedText({ text, spans }: { text: string; spans: Span[] }) 
     );
     cursor = s.end;
   }
-  out.push(text.slice(cursor));
+  out.push(plain(text.slice(cursor), `p${cursor}`));
   return <>{out}</>;
 }

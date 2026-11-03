@@ -42,7 +42,8 @@ export async function renameConversationAction(input: { conversationId: string; 
   const supabase = await createClient();
   const { error, count } = await supabase
     .from("conversations")
-    .update({ title: parsed.data.title }, { count: "exact" })
+    // Renamed by hand: automatic titles stop for this conversation.
+    .update({ title: parsed.data.title, title_auto: false }, { count: "exact" })
     .eq("id", parsed.data.conversationId);
   if (error) return { ok: false, error: toErrorCode(error) };
   if (!count) return { ok: false, error: "not_found" };
