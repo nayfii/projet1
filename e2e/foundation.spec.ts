@@ -126,7 +126,7 @@ test("owner restricts Client A to Olivier; Nathalie cannot see it", async ({ bro
 
 test("platform admin sees companies but no content", async ({ page }) => {
   await signIn(page, "platform@demo.local");
-  await page.goto("/platform");
+  await page.goto("/platform/companies");
   await expect(page.getByText(`Atelier Martin ${run}`)).toBeVisible();
   await expect(page.getByText(owner)).toBeVisible();
   await shot(page, "14-platform-companies");

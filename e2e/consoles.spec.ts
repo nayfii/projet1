@@ -94,14 +94,14 @@ test("our team prices a plan, then sees revenue, AI cost and margin per company"
   await expect(admin.getByText("35,00 € par place et par mois").first()).toBeVisible();
   await shot(admin, "103-platform-plan-price");
 
-  await admin.goto("/platform");
+  await admin.goto("/platform/companies");
   const row = admin.getByRole("row").filter({ hasText: companyName });
   await row.getByRole("combobox").first().click();
   await admin.getByRole("option", { name: planName }).click();
   await expect(admin.getByText("Modification enregistrée")).toBeVisible();
 
   await admin.goto("/platform/usage");
-  await expect(admin.getByRole("heading", { name: "Consommation et marges" })).toBeVisible();
+  await expect(admin.getByRole("heading", { name: "Consommation", exact: true })).toBeVisible();
   await admin.getByLabel("Taux de change").fill("0,92");
   await admin.getByRole("button", { name: "Enregistrer" }).click();
   await expect(admin.getByText("Taux de change enregistré.")).toBeVisible();
@@ -124,7 +124,7 @@ test("provider health in test mode: says so, and never claims a provider works",
   const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
   await signIn(admin, "platform@demo.local");
   await admin.goto("/platform/health");
-  await expect(admin.getByRole("heading", { name: "État des fournisseurs" })).toBeVisible();
+  await expect(admin.getByRole("heading", { name: "Fournisseurs", exact: true })).toBeVisible();
   await expect(admin.getByTestId("test-mode")).toContainText("aucune vraie IA n'est appelée");
   // Only real keys count: a provider without one is "not configured", whatever the simulated answers.
   for (const id of ["openai", "anthropic", "google"]) {
@@ -138,5 +138,22 @@ test("provider health in test mode: says so, and never claims a provider works",
   await admin.getByRole("button", { name: "Tester chaque modèle" }).click();
   await expect(admin.getByText(/Mode test activé \(AI_FAKE_PROVIDER\) : aucune vraie IA n'est appelée\. Retirez/)).toBeVisible();
   await shot(admin, "106-platform-health");
+  await admin.context().close();
+});
+
+test("our console opens on the morning dashboard, with shortcuts, and no way into a company space", async ({ browser }) => {
+  const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
+  await signIn(admin, "platform@demo.local");
+  await admin.goto("/platform");
+  await expect(admin.getByRole("heading", { name: /^Bonjour/ })).toBeVisible();
+  const kpis = admin.getByTestId("dashboard-kpis");
+  for (const label of ["Entreprises actives", "Personnes actives aujourd'hui", "Demandes à l'IA aujourd'hui", "Coût IA ce mois (estimé)"]) {
+    await expect(kpis.getByText(label)).toBeVisible();
+  }
+  const vercel = admin.getByTestId("deck-tools").getByRole("link", { name: /Vercel/ });
+  await expect(vercel).toHaveAttribute("target", "_blank");
+  await expect(admin.getByRole("link", { name: "Nouveau client" })).toHaveAttribute("href", "/platform/companies?new=1");
+  await expect(admin.getByRole("link", { name: "Mon espace entreprise" })).toHaveCount(0);
+  await shot(admin, "107-platform-home");
   await admin.context().close();
 });

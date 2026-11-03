@@ -102,7 +102,7 @@ test("1. our team creates a plan; the Owner signs up, completes onboarding and g
   await ownerPage.getByRole("button", { name: "Accéder à mon espace" }).click();
   await expect(ownerPage.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
 
-  await platformPage.goto("/platform");
+  await platformPage.goto("/platform/companies");
   const row = platformPage.getByRole("row").filter({ hasText: company });
   await row.getByRole("combobox").first().click();
   await platformPage.getByRole("option", { name: plan }).click();

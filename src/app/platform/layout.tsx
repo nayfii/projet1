@@ -11,10 +11,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   const sections: NavSection[] = [
     {
       items: [
-        { href: "/platform", label: t("companies"), icon: "companies", exact: true },
+        { href: "/platform", label: t("home"), icon: "home", exact: true },
+        { href: "/platform/companies", label: t("companies"), icon: "companies" },
         { href: "/platform/plans", label: t("plans"), icon: "plans" },
-        { href: "/platform/models", label: t("models"), icon: "models" },
-        { href: "/platform/audit", label: t("audit"), icon: "audit" },
       ],
     },
     {
@@ -30,6 +29,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       items: [
         { href: "/platform/usage", label: t("usage"), icon: "usage" },
         { href: "/platform/health", label: t("health"), icon: "health" },
+        { href: "/platform/models", label: t("models"), icon: "models" },
+        { href: "/platform/audit", label: t("audit"), icon: "audit" },
       ],
     },
   ];
@@ -40,7 +41,6 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       context={{ title: t("title"), subtitle: t("subtitle") }}
       user={{ name: ctx.profile.fullName, email: ctx.user.email, avatarUrl: ctx.profile.avatarUrl }}
       menuLinks={[]}
-      footerLink={ctx.active ? { href: "/", label: t("backToApp"), icon: "back" } : undefined}
       locale={(await getLocale()) as "fr" | "en"}
       labels={await getShellLabels()}
     >

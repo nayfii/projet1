@@ -99,7 +99,8 @@ test("a member's screens", async ({ browser }) => {
 test("the platform console (our team)", async ({ page }) => {
   await signIn(page, "platform@demo.local");
   for (const [path, name] of [
-    ["/platform", "t26-platform-companies"],
+    ["/platform", "t26-platform-home"],
+    ["/platform/companies", "t26b-platform-companies"],
     ["/platform/plans", "t27-platform-plans"],
     ["/platform/models", "t28-platform-models"],
     ["/platform/audit", "t29-platform-audit"],

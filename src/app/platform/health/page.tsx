@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getLastProviderTests, getProviderHealth } from "@/modules/platform/server/queries";
 import { classifyProvider, classifyRenderQueue, type HealthStatus, type RenderStatus } from "@/modules/platform/health";
-import { ProviderTestButton } from "@/modules/platform/ui/provider-test-button";
 import { ModelCheckPanel } from "@/modules/platform/ui/model-check-panel";
 import { providersWithKeys } from "@/modules/providers/server/registry";
 import { aiProviderKey, embeddingsConfig, fakeProviderEnabled } from "@/lib/env";
@@ -106,7 +105,7 @@ export default async function PlatformHealthPage() {
                       : t("lastTestFailed", { when: ago(test.at), reason: t(`codes.${knownCode(test.code)}`) })
                     : t("noTest")}
                 </p>
-                {configured.has(id) ? <ProviderTestButton provider={id} name={name} disabled={testMode} /> : <span className="text-[12px] text-muted-foreground">{t("addKey")}</span>}
+                {configured.has(id) ? null : <span className="text-[12px] text-muted-foreground">{t("addKey")}</span>}
               </div>
             </Card>
           );
@@ -156,7 +155,6 @@ export default async function PlatformHealthPage() {
 
       <div className="mt-6 space-y-1 text-[13px] text-muted-foreground">
         <p>{t("noteSource")}</p>
-        <p>{t("noteTest")}</p>
       </div>
     </PageContainer>
   );

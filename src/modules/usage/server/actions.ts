@@ -61,6 +61,6 @@ export async function grantCreditsAction(input: { companyId: string; credits: nu
     p_pool: parsed.data.pool,
   });
   if (error) return { ok: false, error: toErrorCode(error) };
-  revalidatePath("/platform");
+  revalidatePath("/platform", "layout");
   return { ok: true };
 }

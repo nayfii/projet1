@@ -1336,6 +1336,9 @@ isOneToOne: false
 "platform_create_fix_request":
 { Args: { "p_request": string }; Returns: string
                            },
+"platform_dashboard":
+{ Args: { "p_tz"?: string }; Returns: Json
+                           },
 "platform_grant_credits":
 { Args: { "p_company": string,"p_credits": number,"p_note"?: string,"p_pool"?: string }; Returns: undefined
                            },

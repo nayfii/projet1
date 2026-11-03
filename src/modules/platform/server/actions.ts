@@ -7,8 +7,7 @@ import { platformAdminOrNull } from "@/lib/auth/guards";
 import { toErrorCode, type ActionResult } from "@/lib/errors";
 import { resolveLocale } from "@/i18n/request";
 import { invitationUrl, sendInvitationEmail } from "@/modules/organizations/server/invitation-email";
-import { getProvider } from "@/modules/providers/server/registry";
-import { PROVIDER_IDS, type ProviderErrorCode } from "@/modules/providers/types";
+import { PROVIDER_IDS } from "@/modules/providers/types";
 import { fakeProviderEnabled } from "@/lib/env";
 import { checkAllModels, type ModelCheck } from "./model-check";
 
@@ -98,7 +97,7 @@ export async function createCompanyForCustomerAction(
   if (error || !row) return { ok: false, error: toErrorCode(error) };
 
   const emailSent = await sendInvitationEmail(parsed.data.ownerEmail, row.token, await resolveLocale());
-  revalidatePath("/platform");
+  revalidatePath("/platform", "layout");
   return { ok: true, data: { link: invitationUrl(row.token), emailSent } };
 }
 
@@ -119,7 +118,7 @@ export async function updateCompanyForPlatformAction(input: {
     p_status: parsed.data.status,
   });
   if (error) return { ok: false, error: toErrorCode(error) };
-  revalidatePath("/platform");
+  revalidatePath("/platform", "layout");
   return { ok: true };
 }
 
@@ -135,67 +134,6 @@ export async function setExchangeRateAction(_: unknown, formData: FormData): Pro
   if (error) return { ok: false, error: toErrorCode(error) };
   revalidatePath("/platform", "layout");
   return { ok: true };
-}
-
-const TEST_TIMEOUT_MS = 30_000;
-
-/**
- * Live check of one provider: a tiny request with no customer data, on its cheapest enabled model.
- * Our own cost (a few tokens), not counted against any company. Only the outcome is logged.
- */
-export async function testProviderAction(input: {
-  provider: string;
-}): Promise<ActionResult<{ ok: boolean; code: ProviderErrorCode | null; latencyMs: number }>> {
-  if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
-  // In test mode no real AI is called: a "success" would say nothing about the real keys.
-  if (fakeProviderEnabled()) return { ok: false, error: "test_mode" };
-  const provider = PROVIDER_IDS.find((p) => p === input.provider);
-  if (!provider) return { ok: false, error: "validation" };
-  const supabase = await createClient();
-  const adapter = getProvider(provider);
-
-  let code: ProviderErrorCode | null = null;
-  const started = Date.now();
-  if (!adapter.isConfigured()) {
-    code = "missing_key";
-  } else {
-    const { data: model } = await supabase
-      .from("ai_models")
-      .select("api_model_id")
-      .eq("provider", provider)
-      .eq("kind", "chat")
-      .eq("is_enabled", true)
-      .order("input_usd_per_mtok")
-      .limit(1)
-      .maybeSingle();
-    if (!model) {
-      code = "model_not_found";
-    } else {
-      let answered = false;
-      try {
-        for await (const event of adapter.stream(
-          {
-            apiModelId: model.api_model_id,
-            system: "Health check. Reply with the single word OK.",
-            messages: [{ role: "user", content: [{ type: "text", text: "OK?" }] }],
-            maxOutputTokens: 256,
-          },
-          AbortSignal.timeout(TEST_TIMEOUT_MS),
-        )) {
-          if (event.type === "error") code = event.error.code;
-          if (event.type === "text" || event.type === "done") answered = true;
-        }
-      } catch {
-        code = "unknown";
-      }
-      if (!answered && !code) code = Date.now() - started >= TEST_TIMEOUT_MS ? "unavailable" : "unknown";
-    }
-  }
-  const latencyMs = Date.now() - started;
-  const ok = code === null;
-  await supabase.rpc("platform_log_provider_test", { p_provider: provider, p_ok: ok, p_code: code as string, p_latency_ms: latencyMs });
-  revalidatePath("/platform/health");
-  return { ok: true, data: { ok, code, latencyMs } };
 }
 
 /**

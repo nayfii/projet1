@@ -285,7 +285,7 @@ test("another company cannot open the conversation", async ({ browser }) => {
 test("the platform admin sees credits per company and the model catalogue, not conversations", async ({ browser }) => {
   const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
   await signIn(admin, "platform@demo.local");
-  await admin.goto("/platform");
+  await admin.goto("/platform/companies");
   const row = admin.getByRole("row").filter({ hasText: company });
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Ajouter des crédits" }).click();

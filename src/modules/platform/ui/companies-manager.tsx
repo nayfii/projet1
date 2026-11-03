@@ -37,16 +37,18 @@ export function CompaniesManager({
   header,
   companies,
   plans,
+  startWithNew = false,
 }: {
   header: { title: string; description: string };
   companies: Company[];
   plans: { id: string; name: string }[];
+  startWithNew?: boolean;
 }) {
   const t = useTranslations("platform");
   const tErrors = useTranslations("errors");
   const tCommon = useTranslations("common");
   const format = useFormatter();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(startWithNew && plans.length > 0);
   const [granting, setGranting] = useState<Company | null>(null);
   const [pending, startTransition] = useTransition();
 
