@@ -63,6 +63,38 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"app_favorites": {
+                  Row: {
+                    "agent_id": string,"company_id": string,"created_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "agent_id": string,"company_id": string,"created_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "agent_id"?: string,"company_id"?: string,"created_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "app_favorites_agent_id_fkey"
+      columns: ["agent_id"]
+isOneToOne: false
+      referencedRelation: "agents"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "app_favorites_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "app_favorites_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"audit_log": {
                   Row: {
                     "action": string,"actor_id": string | null,"company_id": string | null,"created_at": string,"id": number,"metadata": NonNullable<Json>,"scope": string,"target_id": string | null,"target_type": string | null
@@ -1007,14 +1039,14 @@ isOneToOne: false
                   ]
                 },"platform_settings": {
                   Row: {
-                    "avatar_cost_usd": number,"avatar_credits": number,"dictation_cost_usd_per_minute": number,"dictation_credits_per_minute": number,"id": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null
+                    "app_review_enabled": boolean,"avatar_cost_usd": number,"avatar_credits": number,"dictation_cost_usd_per_minute": number,"dictation_credits_per_minute": number,"id": boolean,"open_signup": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null,"video_apps_enabled": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                    "app_review_enabled"?: boolean,"avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"open_signup"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null,"video_apps_enabled"?: boolean
                   }
                   Update: {
-                    "avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null
+                    "app_review_enabled"?: boolean,"avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"open_signup"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null,"video_apps_enabled"?: boolean
                   }
                   Relationships: [
                     {
@@ -1237,11 +1269,19 @@ isOneToOne: false
 "admin_update_model_settings":
 { Args: { "p_allowed": (string)[],"p_auto": boolean,"p_company": string,"p_default": string }; Returns: undefined
                            },
+"app_availability":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "cancel_render_job":
 { Args: { "p_job": string }; Returns: undefined
                            },
 "clear_user_password":
 { Args: { "p_user": string }; Returns: undefined
+                           },
+"company_popular_apps":
+{ Args: { "p_company": string }; Returns: {
+              "agent_id": string,"uses": number
+            }[]
                            },
 "company_usage_summary":
 { Args: { "p_company": string,"p_from": string,"p_to": string }; Returns: Json
@@ -1339,6 +1379,9 @@ isOneToOne: false
 "platform_dashboard":
 { Args: { "p_tz"?: string }; Returns: Json
                            },
+"platform_delete_app":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
 "platform_grant_credits":
 { Args: { "p_company": string,"p_credits": number,"p_note"?: string,"p_pool"?: string }; Returns: undefined
                            },
@@ -1356,8 +1399,14 @@ isOneToOne: false
 "platform_provider_health":
 { Args: { "p_hours"?: number }; Returns: Json
                            },
+"platform_save_app":
+{ Args: { "p_department": string,"p_description": string,"p_enabled": boolean,"p_fields": Json,"p_id": string,"p_instructions": string,"p_memory_scope": string,"p_name": string,"p_output_format": string,"p_tools": (string)[] }; Returns: string
+                           },
 "platform_seed_demo_company":
 { Args: { "p_member": string,"p_owner": string }; Returns: string
+                           },
+"platform_set_app_switches":
+{ Args: { "p_app_review"?: boolean,"p_video"?: boolean }; Returns: undefined
                            },
 "platform_set_avatar_rate":
 { Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
@@ -1367,6 +1416,9 @@ isOneToOne: false
                            },
 "platform_set_exchange_rate":
 { Args: { "p_usd_to_eur": number }; Returns: undefined
+                           },
+"platform_set_open_signup":
+{ Args: { "p_open": boolean }; Returns: undefined
                            },
 "platform_set_render_rate":
 { Args: { "p_credits_per_second": number,"p_kind": string }; Returns: undefined
@@ -1416,6 +1468,9 @@ isOneToOne: false
                            },
 "share_conversation_history":
 { Args: { "p_conversation": string,"p_from_seq": number,"p_user": string }; Returns: undefined
+                           },
+"signup_open":
+{ Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "transfer_client":
 { Args: { "p_ai_generated": boolean,"p_client": string,"p_sections": Json,"p_to": string }; Returns: string

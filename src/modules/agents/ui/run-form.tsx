@@ -40,17 +40,24 @@ export function RunForm({
   clients,
   editor,
   canDelete,
+  initialClient,
 }: {
   agent: AgentDetail;
   clients: { id: string; name: string }[];
   editor: ToolEditorContext;
   canDelete: boolean;
+  /** Opened from a conversation linked to a client: its client fields start on that client. */
+  initialClient?: string;
 }) {
   const t = useTranslations("tools");
   const tErrors = useTranslations("errors");
   const tCommon = useTranslations("common");
   const router = useRouter();
-  const [values, setValues] = React.useState<Record<string, string>>({});
+  const [values, setValues] = React.useState<Record<string, string>>(() =>
+    initialClient && clients.some((c) => c.id === initialClient)
+      ? Object.fromEntries(agent.inputFields.filter((f) => f.type === "client").map((f) => [f.key, initialClient]))
+      : {},
+  );
   // Files chosen in "files" fields, uploaded with the first message once the run starts.
   const [files, setFiles] = React.useState<Record<string, File[]>>({});
   const [running, startRunning] = React.useTransition();
@@ -214,7 +221,7 @@ export function RunForm({
                   return;
                 }
                 toast.success(t("deleted"));
-                router.push("/library");
+                router.push("/apps");
               }}
             >
               {t("delete")}

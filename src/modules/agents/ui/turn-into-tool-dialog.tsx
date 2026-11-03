@@ -73,7 +73,7 @@ export function TurnIntoToolDialog({
       }
       toast.success(result.data.publication === "pending" ? t("savedPending") : t("saved"));
       close(false);
-      router.push(`/library/${result.data.id}`);
+      router.push(`/apps/${result.data.id}`);
     });
 
   return (

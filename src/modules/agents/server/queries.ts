@@ -37,6 +37,10 @@ export type AgentSummary = {
   /** Built-in agents: their key (names, labels and notices are translated from it) and notice. */
   builtinKey: string | null;
   notice: AgentNotice | null;
+  /** Launch choices (CLAUDE.md §11): "soon" for video apps until the render worker is hosted. */
+  availability: "ok" | "soon";
+  /** Added by our team for every customer (Platform → Applis). */
+  fromCendr: boolean;
 };
 
 /** A company's adaptation of a built-in agent (Administration → Agents and tools). */
@@ -65,6 +69,25 @@ export type AgentDetail = AgentSummary & {
 const SELECT =
   "id, company_id, builtin_key, kind, department, name, description, instructions, input_fields, allowed_models, default_model, tools, memory_scope, output_format, visibility, team_id, publication, enabled_roles, created_by, created_at, creator:profiles!agents_created_by_fkey(full_name, email)";
 
+/** Launch switches set by our team: video apps, and the Application Review Assistant (hidden until reviewed). */
+type Availability = { video: boolean; app_review: boolean };
+const VIDEO_APPS = new Set(["motion_design", "video_editor"]);
+const REVIEW_APPS = new Set(["application_review"]);
+
+async function appAvailability(supabase: UserClient): Promise<Availability> {
+  const { data } = await supabase.rpc("app_availability");
+  const value = (data ?? {}) as Partial<Availability>;
+  return { video: value.video === true, app_review: value.app_review === true };
+}
+
+function hiddenAtLaunch(builtinKey: string | null, availability: Availability): boolean {
+  return Boolean(builtinKey && REVIEW_APPS.has(builtinKey) && !availability.app_review);
+}
+
+function launchState(builtinKey: string | null, availability: Availability): "ok" | "soon" {
+  return builtinKey && VIDEO_APPS.has(builtinKey) && !availability.video ? "soon" : "ok";
+}
+
 function fields(value: unknown): AgentField[] {
   return Array.isArray(value) ? value.flatMap((f) => (fieldSchema.safeParse(f).success ? [f as AgentField] : [])) : [];
 }
@@ -76,7 +99,13 @@ function usable(a: AgentRow, settings: SettingsRow | undefined, ctx: MemberConte
   return a.enabled_roles.includes(ctx.active.role);
 }
 
-function toDetail(a: AgentRow & { creator: { full_name: string | null; email: string } | null }, settings: SettingsRow | undefined, ctx: MemberContext): AgentDetail {
+function toDetail(
+  a: AgentRow & { creator: { full_name: string | null; email: string } | null },
+  settings: SettingsRow | undefined,
+  ctx: MemberContext,
+  availability: Availability,
+): AgentDetail {
+  const state = launchState(a.builtin_key, availability);
   return {
     id: a.id,
     kind: a.kind as AgentDetail["kind"],
@@ -87,7 +116,9 @@ function toDetail(a: AgentRow & { creator: { full_name: string | null; email: st
     visibility: a.visibility as Visibility,
     publication: a.publication as AgentSummary["publication"],
     mine: a.created_by === ctx.user.id,
-    usable: usable(a, settings, ctx),
+    usable: state === "ok" && usable(a, settings, ctx),
+    availability: state,
+    fromCendr: Boolean(a.builtin_key?.startsWith("platform_")),
     creatorName: a.creator?.full_name ?? a.creator?.email ?? null,
     builtinKey: a.builtin_key,
     notice: builtinAgent(a.builtin_key)?.notice ?? null,
@@ -123,20 +154,22 @@ export async function listLibrary(ctx: MemberContext): Promise<AgentDetail[]> {
   await ensureBuiltinAgents();
   const supabase = await createClient();
   const companyId = ctx.active.companyId;
-  const [{ data }, settings] = await Promise.all([
+  const [{ data }, settings, availability] = await Promise.all([
     supabase.from("agents").select(SELECT).or(`company_id.eq.${companyId},company_id.is.null`).order("name"),
     settingsFor(supabase, companyId),
+    appAvailability(supabase),
   ]);
-  return (data ?? []).map((a) => toDetail(a, settings.get(a.id), ctx));
+  return (data ?? []).filter((a) => !hiddenAtLaunch(a.builtin_key, availability)).map((a) => toDetail(a, settings.get(a.id), ctx, availability));
 }
 
 export async function getAgent(ctx: MemberContext, id: string): Promise<AgentDetail | null> {
   await ensureBuiltinAgents();
   const supabase = await createClient();
-  const { data } = await supabase.from("agents").select(SELECT).eq("id", id).maybeSingle();
+  const [{ data }, availability] = await Promise.all([supabase.from("agents").select(SELECT).eq("id", id).maybeSingle(), appAvailability(supabase)]);
   if (!data || (data.company_id !== null && data.company_id !== ctx.active.companyId)) return null;
+  if (hiddenAtLaunch(data.builtin_key, availability)) return null;
   const settings = data.company_id === null ? (await settingsFor(supabase, ctx.active.companyId)).get(data.id) : undefined;
-  return toDetail(data, settings, ctx);
+  return toDetail(data, settings, ctx, availability);
 }
 
 /** What the AI gets when a conversation runs a tool or agent; null when the viewer may not run it. */
@@ -152,10 +185,11 @@ export type RunAgent = {
 };
 
 export async function resolveRunAgent(supabase: UserClient, ctx: MemberContext, agentId: string): Promise<RunAgent | null> {
-  const { data } = await supabase.from("agents").select(SELECT).eq("id", agentId).maybeSingle();
+  const [{ data }, availability] = await Promise.all([supabase.from("agents").select(SELECT).eq("id", agentId).maybeSingle(), appAvailability(supabase)]);
   if (!data || (data.company_id !== null && data.company_id !== ctx.active.companyId)) return null;
+  if (hiddenAtLaunch(data.builtin_key, availability)) return null;
   const settings = data.company_id === null ? (await settingsFor(supabase, ctx.active.companyId)).get(data.id) : undefined;
-  const agent = toDetail(data, settings, ctx);
+  const agent = toDetail(data, settings, ctx, availability);
   if (!agent.usable) return null;
   // A company's adaptations of a built-in agent come after its own instructions.
   const addition = [settings?.instructions_addition?.trim(), settings?.tone?.trim() ? `Tone: ${settings.tone.trim()}` : ""].filter(Boolean).join("\n");
@@ -180,4 +214,18 @@ export async function listAdminAgents(ctx: MemberContext) {
     shared: companyTools.filter((a) => a.visibility !== "private" && a.publication !== "pending" && a.publication !== "rejected"),
     builtins: all.filter((a) => a.builtin),
   };
+}
+
+/** Favourite apps of the viewer, in this company. */
+export async function listFavoriteApps(ctx: MemberContext): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("app_favorites").select("agent_id").eq("company_id", ctx.active.companyId);
+  return new Set((data ?? []).map((f) => f.agent_id));
+}
+
+/** How often each app was started in the company over 30 days (counts only). */
+export async function popularApps(ctx: MemberContext): Promise<Map<string, number>> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("company_popular_apps", { p_company: ctx.active.companyId });
+  return new Map((data ?? []).map((r) => [r.agent_id, Number(r.uses)]));
 }

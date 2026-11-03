@@ -248,15 +248,15 @@ otp_expiry = 3600
 
 # Links point to /auth/confirm with a token hash (works even if opened in another browser).
 [auth.email.template.magic_link]
-subject = "Votre lien de connexion / Your sign-in link"
+subject = "Cendr — Votre lien de connexion / Your sign-in link"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.confirmation]
-subject = "Confirmez votre adresse / Confirm your email"
+subject = "Cendr — Confirmez votre adresse / Confirm your email"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.invite]
-subject = "Vous êtes invité(e) / You have been invited"
+subject = "Cendr — Vous êtes invité(e) / You have been invited"
 content_path = "./supabase/templates/invite.html"
 
 # Uncomment to customize notification email template

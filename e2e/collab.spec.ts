@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 5, with two people in two browsers (CLAUDE.md §10, steps 8, 9 and 13): Who Can Help, adding a
@@ -56,18 +56,20 @@ test("setup: Client A is restricted to Olivier, with a memory entry; Nathalie de
   await skipAvatarStep(ownerPage);
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "invite");
   await expect(ownerPage.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await ownerPage.getByLabel("Adresses e-mail").fill(`${olivier}, ${nathalie}`);
   await ownerPage.getByRole("button", { name: "Envoyer les invitations" }).click();
   await expect(ownerPage.getByText("E-mail envoyé")).toHaveCount(2);
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "client");
   await expect(ownerPage.getByRole("heading", { name: "Ajoutez un premier client" })).toBeVisible();
   await ownerPage.getByLabel("Nom du client").fill("Client A");
   await ownerPage.getByRole("button", { name: /Restreint/ }).click();
   await ownerPage.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(ownerPage, "document");
   await expect(ownerPage.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
-  await ownerPage.getByRole("button", { name: "Accéder à mon espace" }).click();
   await expect(ownerPage.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
 
   await join(olivierPage, olivier, "Olivier Martin");

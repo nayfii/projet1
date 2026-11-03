@@ -1,25 +1,46 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRightIcon, BookOpenIcon, BrainIcon, BriefcaseIcon, MessageSquareIcon } from "lucide-react";
-import { requireMember } from "@/lib/auth/guards";
+import { ArrowRightIcon, BriefcaseIcon, BrainIcon, CheckIcon, FileTextIcon, LayoutGridIcon, MessageSquareIcon, UsersIcon } from "lucide-react";
+import { requireMember, type MemberContext } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
+import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 import { PageContainer } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { listClients } from "@/modules/clients/server/queries";
+
+/** The setup checklist (CLAUDE.md §11): what onboarding no longer asks, done when the company has it. */
+async function setupChecklist(ctx: MemberContext, clientCount: number) {
+  const supabase = await createClient();
+  const companyId = ctx.active.companyId;
+  const [members, invitations, documents] = await Promise.all([
+    supabase.from("company_members").select("user_id", { count: "exact", head: true }).eq("company_id", companyId).eq("status", "active"),
+    supabase.from("invitations").select("id", { count: "exact", head: true }).eq("company_id", companyId).is("accepted_at", null).is("revoked_at", null),
+    supabase.from("documents").select("id", { count: "exact", head: true }).eq("company_id", companyId),
+  ]);
+  return [
+    { key: "invite", icon: UsersIcon, done: (members.count ?? 0) > 1 || (invitations.count ?? 0) > 0 },
+    { key: "client", icon: BriefcaseIcon, done: clientCount > 0 },
+    { key: "document", icon: FileTextIcon, done: (documents.count ?? 0) > 0 },
+  ] as const;
+}
 
 export default async function HomePage() {
   const ctx = await requireMember();
   const t = await getTranslations("home");
   const clients = await listClients(ctx.active.companyId);
   const firstName = ctx.profile.fullName?.split(" ")[0];
-  const setupPending = hasScope(ctx.active, "company") && !ctx.active.onboardingCompletedAt;
+  const canSetUp = hasScope(ctx.active, "company");
+  const setupPending = canSetUp && !ctx.active.onboardingCompletedAt;
+  const checklist = canSetUp ? await setupChecklist(ctx, clients.length) : [];
+  const showChecklist = checklist.some((item) => !item.done);
 
   const tiles = [
     { icon: MessageSquareIcon, title: t("askTitle"), body: t("askBody"), href: "/chat" },
     { icon: BriefcaseIcon, title: t("clientsTitle"), body: t("clientsBody", { count: clients.length }), href: "/clients" },
     { icon: BrainIcon, title: t("memoryTitle"), body: t("memoryBody"), href: "/memory" },
-    { icon: BookOpenIcon, title: t("libraryTitle"), body: t("libraryBody"), href: "/library" },
+    { icon: LayoutGridIcon, title: t("libraryTitle"), body: t("libraryBody"), href: "/apps" },
   ];
 
   return (
@@ -41,6 +62,39 @@ export default async function HomePage() {
             </Link>
           </Button>
         </div>
+      ) : null}
+
+      {showChecklist ? (
+        <section aria-labelledby="setup" className="mb-8" data-testid="setup-checklist">
+          <h2 id="setup" className="mb-3 text-[13px] font-medium text-muted-foreground">
+            {t("setupTitle", { done: checklist.filter((i) => i.done).length, total: checklist.length })}
+          </h2>
+          <ol className="grid gap-2 sm:grid-cols-3">
+            {checklist.map(({ key, icon: Icon, done }) => (
+              <li key={key}>
+                {done ? (
+                  <div className="flex h-full items-center gap-3 rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground">
+                    <span className="flex size-7 items-center justify-center rounded-full bg-success-soft text-success">
+                      <CheckIcon className="size-4" />
+                    </span>
+                    <span className="line-through decoration-muted-foreground/40">{t(`setup.${key}`)}</span>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/onboarding?step=${key}`}
+                    className={cn("group flex h-full items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm transition-colors hover:border-foreground/25")}
+                  >
+                    <span className="flex size-7 items-center justify-center rounded-full bg-brand-soft text-brand">
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="flex-1 font-medium">{t(`setup.${key}`)}</span>
+                    <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">

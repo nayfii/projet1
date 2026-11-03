@@ -18,8 +18,11 @@ export function WelcomeForm({
   jobTitle,
   expertise,
   avatar,
+  next,
 }: {
   companyName: string;
+  /** Where the person goes next: the company step for a new Owner, otherwise the first conversation. */
+  next: "/onboarding?step=company" | "/chat";
   fullName: string | null;
   jobTitle: string;
   expertise: string;
@@ -37,7 +40,7 @@ export function WelcomeForm({
     if (!profile.ok) return profile;
     const card = await updateMyCardAction(null, formData);
     if (!card.ok) return card;
-    router.push("/");
+    router.push(next);
     return { ok: true };
   }, null);
 

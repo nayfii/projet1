@@ -36,6 +36,7 @@ import {
   RocketIcon,
   MonitorCheckIcon,
   WrenchIcon,
+  LayoutGridIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,7 @@ const ICONS = {
   clients: BriefcaseIcon,
   memory: BrainIcon,
   library: BookOpenIcon,
+  apps: LayoutGridIcon,
   profile: UserIcon,
   overview: LayoutDashboardIcon,
   members: UsersIcon,

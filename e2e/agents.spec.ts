@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 7, the launch agents (CLAUDE.md §4.7): the library by department, agents run as forms (with files),
@@ -28,7 +28,7 @@ async function waitForAnswer() {
 }
 
 async function openAgent(name: string) {
-  await page.goto("/library");
+  await page.goto("/apps");
   await page.getByRole("link", { name: new RegExp(name) }).click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
 }
@@ -47,22 +47,25 @@ test("setup: a company and Client A", async () => {
   await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "invite");
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "client");
   await page.getByLabel("Nom du client").fill("Client A");
   await page.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(page, "document");
   await expect(page.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
-  await page.getByRole("button", { name: "Accéder à mon espace" }).click();
 });
 
 test("the library holds the 14 agents by department; the video agents come later", async () => {
-  await page.goto("/library");
+  await page.goto("/apps");
   const expected: Record<string, string[]> = {
     Ventes: ["Proposition commerciale", "Préparation de rendez-vous"],
     Comptabilité: ["Saisie de factures", "Relances de paiement"],
     Finance: ["Prévision de trésorerie", "Analyse de marge"],
-    "Ressources humaines": ["Offre d'emploi", "Aide à la lecture de candidatures"],
+    // The Application Review Assistant stays hidden until a lawyer has reviewed it (CLAUDE.md §11).
+    "Ressources humaines": ["Offre d'emploi"],
     Juridique: ["Relecture de contrat", "Modèles juridiques"],
     "Service client": ["Réponse aux e-mails", "Synthèse des retours"],
     Direction: ["Compte rendu de réunion", "Tableau de bord hebdo"],
@@ -155,10 +158,9 @@ test("Cash-flow Forecast: a chart with values on hover and its data as a table",
   await answer.getByRole("button", { name: "Masquer les données" }).click();
 });
 
-test("Application Review: the notice says a person decides", async () => {
-  await openAgent("Aide à la lecture de candidatures");
-  await expect(page.getByText("Il ne note, ne classe et n'écarte aucun candidat : une personne décide.")).toBeVisible();
-  await shot(page, "86-application-review");
+test("Application Review is hidden at launch; Contract Review says it is not legal advice", async () => {
+  await page.goto("/apps");
+  await expect(page.getByRole("link", { name: /Aide à la lecture de candidatures/ })).toHaveCount(0);
   await openAgent("Relecture de contrat");
   await expect(page.getByText("Ceci n'est pas un conseil juridique.")).toBeVisible();
 });
@@ -176,7 +178,7 @@ test("the Owner adapts an agent, and disables another", async () => {
 
   await page.getByRole("switch", { name: "Activer Relecture de contrat" }).click();
   await expect(page.getByText("Agent désactivé.")).toBeVisible();
-  await page.goto("/library");
+  await page.goto("/apps");
   await expect(page.getByRole("link", { name: /Relecture de contrat/ })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Modèles juridiques/ })).toBeVisible();
 

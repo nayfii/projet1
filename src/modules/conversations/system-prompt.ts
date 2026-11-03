@@ -17,8 +17,11 @@ export type SystemPromptInput = {
   knowledge?: KnowledgePassage[];
   /** Hide is on: some values were replaced by placeholders such as [CLIENT_1]. */
   protectedValues?: boolean;
-  /** Who Can Help: colleagues with declared expertise (never from private conversations). */
-  colleagues?: { name: string; expertise: string[] }[];
+  /**
+   * Who Can Help: colleagues with declared expertise, and the company memory entries they wrote
+   * (shared content only, never private conversations).
+   */
+  colleagues?: { name: string; expertise: string[]; wrote?: string[] }[];
   /** Group conversation: several people talk; the AI was mentioned by one of them. */
   group?: boolean;
   /** Personal memory (CLAUDE.md §11): the person's own notes, for them only, never in a group. */
@@ -28,7 +31,7 @@ export type SystemPromptInput = {
 };
 
 export const WHO_CAN_HELP_RULES = [
-  "- If the user's need clearly matches the declared expertise of a colleague listed below, you may suggest asking them, in one short sentence, writing their name exactly as listed. At most two colleagues.",
+  "- If the user's need clearly matches the declared expertise of a colleague listed below, or the company memory entries they wrote, you may suggest asking them, in one short sentence, writing their name exactly as listed. At most two colleagues.",
   "- Do not suggest anyone for simple questions, and never invent or extend someone's expertise.",
 ].join("\n");
 
@@ -107,7 +110,9 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     );
   }
   if (input.colleagues?.length) {
-    const list = input.colleagues.map((c) => `- ${c.name}: ${c.expertise.join(", ")}`);
+    const list = input.colleagues.map((c) =>
+      [`- ${c.name}: ${c.expertise.join(", ") || "—"}`, c.wrote?.length ? ` (wrote in company memory: ${c.wrote.map((w) => `"${w}"`).join(", ")})` : ""].join(""),
+    );
     sections.push(`## Colleagues who can help\n${WHO_CAN_HELP_RULES}\n\n${list.join("\n")}`);
   }
   return sections.join("\n\n");

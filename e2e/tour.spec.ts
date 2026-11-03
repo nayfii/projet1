@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * A tour of the screens the other specs do not capture (home, clients, profile, every admin and
@@ -36,20 +36,20 @@ test("the owner's screens", async () => {
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await shot(ownerPage, "t01-onboarding-company");
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "invite");
   await expect(ownerPage.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await ownerPage.getByLabel("Adresses e-mail").fill(member);
   await ownerPage.getByRole("button", { name: "Envoyer les invitations" }).click();
   await expect(ownerPage.getByText("E-mail envoyé")).toHaveCount(1);
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "client");
   await ownerPage.getByLabel("Nom du client").fill("Client A");
   await ownerPage.getByRole("button", { name: /Restreint/ }).click();
   await ownerPage.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(ownerPage, "document");
   await expect(ownerPage.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await shot(ownerPage, "t02-onboarding-document");
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
-  await expect(ownerPage.getByRole("heading", { name: "Votre première conversation" })).toBeVisible();
-  await shot(ownerPage, "t03-onboarding-first-conversation");
-  await ownerPage.getByRole("button", { name: "Accéder à mon espace" }).click();
   await expect(ownerPage.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
 
   await visit(ownerPage, "/", "t04-home-owner");
@@ -87,7 +87,7 @@ test("a member's screens", async ({ browser }) => {
   await page.getByLabel("Votre nom").fill("Olivier Durand");
   await shot(page, "t22-member-welcome");
   await page.getByRole("button", { name: "Continuer" }).click();
-  await expect(page.getByRole("heading", { name: "Bonjour Olivier" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Que puis-je faire pour vous ?" })).toBeVisible();
   await visit(page, "/", "t23-home-member");
   await visit(page, "/clients", "t24-member-clients");
   await visit(page, "/memory", "t25-member-memory");

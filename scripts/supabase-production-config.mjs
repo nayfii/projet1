@@ -31,7 +31,7 @@ const smtp = {
   port: Number(process.env.SMTP_PORT || 587),
   user: process.env.SMTP_USER?.trim(),
   senderEmail: process.env.SMTP_SENDER_EMAIL?.trim(),
-  senderName: process.env.SMTP_SENDER_NAME?.trim() || "Workspace",
+  senderName: process.env.SMTP_SENDER_NAME?.trim() || "Cendr",
 };
 if (smtp.host && smtp.user && smtp.senderEmail && process.env.SMTP_PASSWORD) {
   // With our own mail server, more than Supabase's 2 test emails per hour can go out.

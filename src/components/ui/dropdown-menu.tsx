@@ -57,6 +57,17 @@ function DropdownMenuRadioItem({ className, children, ...props }: React.Componen
   );
 }
 
+function DropdownMenuCheckboxItem({ className, children, ...props }: React.ComponentProps<typeof MenuPrimitive.CheckboxItem>) {
+  return (
+    <MenuPrimitive.CheckboxItem className={cn(itemBase, "pr-8", className)} {...props}>
+      {children}
+      <MenuPrimitive.ItemIndicator className="absolute right-2 flex items-center">
+        <CheckIcon />
+      </MenuPrimitive.ItemIndicator>
+    </MenuPrimitive.CheckboxItem>
+  );
+}
+
 function DropdownMenuLabel({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.Label>) {
   return <MenuPrimitive.Label className={cn("px-2 py-1.5 text-xs font-medium text-muted-foreground", className)} {...props} />;
 }
@@ -73,6 +84,7 @@ export {
   DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 };

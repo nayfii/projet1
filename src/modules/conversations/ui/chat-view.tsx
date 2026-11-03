@@ -9,6 +9,7 @@ import {
   ArrowRightLeftIcon,
   ArrowUpIcon,
   AtSignIcon,
+  LayoutGridIcon,
   BrainIcon,
   BriefcaseIcon,
   CheckIcon,
@@ -73,6 +74,7 @@ import { TransferDialog } from "@/modules/collaboration/ui/transfer-dialog";
 import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
 import { filterMentions, MentionMenu, mentionAt, PROVIDER_TOKENS, type MentionOption } from "@/modules/collaboration/ui/mention-menu";
 import { naturalMention } from "@/modules/collaboration/mentions";
+import { AppPickerMenu, filterApps, usePickerApps } from "@/modules/agents/ui/app-picker";
 import { useConversationRealtime } from "@/modules/collaboration/ui/use-conversation-realtime";
 import { ConfrontDialog } from "@/modules/confronter/ui/confront-dialog";
 import type { ConfrontEstimate } from "@/modules/confronter/server/actions";
@@ -158,6 +160,7 @@ export function ChatView(props: Props) {
 
   // Collaboration (CLAUDE.md §4.4): participants, real time, mentions, transfer.
   const tCollab = useTranslations("collaboration");
+  const tApps = useTranslations("apps");
   const tErrors = useTranslations("errors");
   const [participants, setParticipants] = React.useState(props.participants);
   // "Ajouter" dialog, open with these colleagues preselected (Who Can Help's "Inviter").
@@ -174,6 +177,10 @@ export function ChatView(props: Props) {
   const [caret, setCaret] = React.useState(0);
   const [mentionIndex, setMentionIndex] = React.useState(0);
   const [mentionDismissed, setMentionDismissed] = React.useState<number | null>(null);
+  // Applis (CLAUDE.md §11): the "Applis" button, or "/" at the start of a message.
+  const [appsOpen, setAppsOpen] = React.useState(false);
+  const [appIndex, setAppIndex] = React.useState(0);
+  const [slashDismissed, setSlashDismissed] = React.useState(false);
   const group = participants.length > 1;
   // A new conversation is the viewer's own; otherwise the participant marked owner.
   const isOwner = participants.length === 0 || participants.some((p) => p.userId === props.me.id && p.role === "owner");
@@ -206,6 +213,8 @@ export function ChatView(props: Props) {
     text: input,
     files: attachments.filter((a) => a.id && a.kind === "document" && a.text).map((a) => ({ key: a.key, filename: a.filename, text: a.text!, spans: a.spans ?? [] })),
     initialAuto: (props.conversation?.lastHideModes?.length ? props.conversation.lastHideModes : props.hide.defaultModes).includes("automatic"),
+    // Attached files follow the company's default (Automatic covers them unless someone turns it off).
+    initialDocuments: props.hide.defaultModes.includes("automatic") || props.hide.defaultModes.includes("documents"),
     autoCategories: props.hide.autoCategories,
   });
 
@@ -386,6 +395,22 @@ export function ChatView(props: Props) {
       ? filterMentions(mentionOptions, mention.query)
       : [];
   const activeMention = Math.min(mentionIndex, Math.max(mentionMatches.length - 1, 0));
+  const slash = /^\/[^\s/]*$/.test(input) && !slashDismissed ? input.slice(1) : null;
+  const appQuery = slash ?? (appsOpen ? "" : null);
+  const pickerApps = usePickerApps(appQuery !== null);
+  const appMatches = appQuery === null ? [] : filterApps(pickerApps, appQuery);
+  const activeApp = Math.min(appIndex, Math.max(appMatches.length - 1, 0));
+
+  function closeApps() {
+    setAppsOpen(false);
+    if (slash !== null) setSlashDismissed(true);
+  }
+
+  function pickApp(app: { id: string }) {
+    setAppsOpen(false);
+    if (slash !== null) setInput("");
+    router.push(clientId ? `/apps/${app.id}?client=${clientId}` : `/apps/${app.id}`);
+  }
 
   /** Dictated text follows what was already typed, then the caret waits after it for a read-through. */
   function insertDictation(text: string) {
@@ -813,7 +838,7 @@ export function ChatView(props: Props) {
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{title ?? t("newConversation")}</h1>
         {props.agent ? (
           <Link
-            href={`/library/${props.agent.id}`}
+            href={`/apps/${props.agent.id}`}
             className="hidden max-w-48 items-center gap-1.5 rounded-md px-2 py-1 text-[13px] text-muted-foreground hover:bg-accent hover:text-foreground sm:inline-flex"
           >
             <WandSparklesIcon className="size-3.5 shrink-0 text-brand" />
@@ -1037,6 +1062,7 @@ export function ChatView(props: Props) {
             }}
           >
             {mentionMatches.length > 0 ? <MentionMenu options={mentionMatches} active={activeMention} onPick={pickMention} /> : null}
+            {appQuery !== null ? <AppPickerMenu apps={appMatches} loading={pickerApps === null} active={activeApp} onPick={pickApp} /> : null}
             {attachments.length > 0 ? (
               <div className="flex flex-wrap gap-1.5 px-3 pt-3">
                 {attachments.map((a) => {
@@ -1073,9 +1099,29 @@ export function ChatView(props: Props) {
                   setInput(e.target.value);
                   setCaret(e.target.selectionStart);
                   setMentionIndex(0);
+                  setAppIndex(0);
+                  if (!e.target.value.startsWith("/")) setSlashDismissed(false);
                   if (group) notifyTyping();
                 }}
                 onKeyDown={(e) => {
+                  if (appQuery !== null && !e.nativeEvent.isComposing) {
+                    const count = appMatches.length;
+                    if (count > 0 && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+                      e.preventDefault();
+                      setAppIndex((activeApp + (e.key === "ArrowDown" ? 1 : count - 1)) % count);
+                      return;
+                    }
+                    if (count > 0 && ((e.key === "Enter" && !e.shiftKey) || e.key === "Tab")) {
+                      e.preventDefault();
+                      pickApp(appMatches[activeApp]);
+                      return;
+                    }
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      closeApps();
+                      return;
+                    }
+                  }
                   if (mentionMatches.length > 0 && !e.nativeEvent.isComposing) {
                     const count = mentionMatches.length;
                     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -1137,6 +1183,22 @@ export function ChatView(props: Props) {
                 </Tooltip>
               ) : null}
               {props.dictation ? <DictationButton disabled={inputBlocked} onText={insertDictation} /> : null}
+              <Tooltip content={tApps("picker")}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={tApps("picker")}
+                  aria-expanded={appQuery !== null}
+                  disabled={inputBlocked}
+                  onClick={() => {
+                    setAppIndex(0);
+                    setAppsOpen((open) => !open);
+                    textarea.current?.focus();
+                  }}
+                >
+                  <LayoutGridIcon />
+                </Button>
+              </Tooltip>
               {group ? (
                 <Tooltip content={tCollab("mentionButton")}>
                   <Button variant="ghost" size="icon-sm" aria-label={tCollab("mentionButton")} disabled={inputBlocked} onClick={startMention}>

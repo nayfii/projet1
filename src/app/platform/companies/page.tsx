@@ -5,6 +5,8 @@ import { PageContainer } from "@/components/ui/page-header";
 import { listCompaniesForPlatform, listPlans } from "@/modules/platform/server/queries";
 import { getPlatformCompanyCredits } from "@/modules/usage/server/queries";
 import { CompaniesManager } from "@/modules/platform/ui/companies-manager";
+import { SignupSwitch } from "@/modules/platform/ui/signup-switch";
+import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("platformNav");
@@ -15,7 +17,13 @@ export default async function PlatformCompaniesPage({ searchParams }: PageProps<
   await requirePlatformAdmin();
   const startWithNew = (await searchParams).new === "1";
   const t = await getTranslations("platform");
-  const [companies, plans, credits] = await Promise.all([listCompaniesForPlatform(), listPlans(), getPlatformCompanyCredits()]);
+  const supabase = await createClient();
+  const [companies, plans, credits, { data: settings }] = await Promise.all([
+    listCompaniesForPlatform(),
+    listPlans(),
+    getPlatformCompanyCredits(),
+    supabase.from("platform_settings").select("open_signup").maybeSingle(),
+  ]);
   return (
     <PageContainer className="max-w-6xl">
       <CompaniesManager
@@ -36,6 +44,9 @@ export default async function PlatformCompaniesPage({ searchParams }: PageProps<
         plans={plans.filter((p) => p.is_active).map((p) => ({ id: p.id, name: p.name }))}
         startWithNew={startWithNew}
       />
+      <div className="mt-6">
+        <SignupSwitch open={settings?.open_signup ?? false} />
+      </div>
     </PageContainer>
   );
 }

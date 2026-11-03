@@ -40,7 +40,7 @@ export async function toDocx(title: string, blocks: Block[]): Promise<Buffer> {
       children.push(new Paragraph({ text: "" }));
     }
   }
-  const doc = new Document({ creator: "Workspace", title, styles: { default: { document: { run: { font: "Calibri", size: 22 } } } }, sections: [{ children }] });
+  const doc = new Document({ creator: "Cendr", title, styles: { default: { document: { run: { font: "Calibri", size: 22 } } } }, sections: [{ children }] });
   return Packer.toBuffer(doc);
 }
 

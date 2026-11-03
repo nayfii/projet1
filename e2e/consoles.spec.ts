@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 9, the consoles (CLAUDE.md §4.8, §4.9): the company overview and its to-dos, the usage
@@ -27,13 +27,15 @@ test("setup: a company with one AI answer", async () => {
   await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "invite");
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "client");
   await page.getByLabel("Nom du client").fill("Client A");
   await page.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(page, "document");
   await expect(page.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
-  await page.getByRole("button", { name: "Accéder à mon espace" }).click();
 
   await page.goto("/chat");
   await page.getByRole("textbox", { name: "Écrivez votre message…" }).fill("Donne-moi trois idées de titre pour notre lettre d'information.");

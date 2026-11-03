@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 3, in a real browser: company and client memories, documents, Source Proof, saving to memory,
@@ -54,23 +54,25 @@ test("onboarding: the first document goes into the company memory", async () => 
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
 
+  await openSetup(page, "invite");
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await page.getByLabel("Adresses e-mail").fill(nathalie);
   await page.getByRole("button", { name: "Envoyer les invitations" }).click();
   await expect(page.getByText("E-mail envoyé")).toHaveCount(1);
   await page.getByRole("button", { name: "Continuer" }).click();
 
+  await openSetup(page, "client");
   await expect(page.getByRole("heading", { name: "Ajoutez un premier client" })).toBeVisible();
   await page.getByLabel("Nom du client").fill("Client A");
   await page.getByRole("button", { name: /Restreint/ }).click();
   await page.getByRole("button", { name: "Créer le client" }).click();
 
+  await openSetup(page, "document");
   await expect(page.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await page.getByTestId("memory-document-input").first().setInputFiles({ name: "procedure-devis.txt", mimeType: "text/plain", buffer: Buffer.from(PROCEDURE) });
   await expect(page.getByText("Document ajouté. Il est en cours de lecture")).toBeVisible();
   await shot(page, "30-onboarding-document");
   await page.getByRole("button", { name: "Continuer" }).click();
-  await page.getByRole("button", { name: "Accéder à mon espace" }).click();
   await expect(page.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
 
   await page.goto("/memory");
@@ -190,7 +192,7 @@ test("Nathalie, without access to Client A, gets nothing from it: pages, links o
   await p.getByRole("button", { name: "Accepter l'invitation" }).click();
   await p.getByLabel("Votre nom").fill("Nathalie Petit");
   await p.getByRole("button", { name: "Continuer" }).click();
-  await expect(p.getByRole("heading", { name: "Bonjour Nathalie" })).toBeVisible();
+  await expect(p.getByRole("heading", { name: "Que puis-je faire pour vous ?" })).toBeVisible();
 
   await p.goto("/memory");
   await expect(p.getByText("Aucune mémoire client accessible")).toBeVisible();

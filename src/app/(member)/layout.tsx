@@ -30,7 +30,7 @@ export default async function MemberLayout({ children }: { children: React.React
       label: t("workspace"),
       items: [
         { href: "/memory", label: t("memory"), icon: "memory" },
-        { href: "/library", label: t("library"), icon: "library" },
+        { href: "/apps", label: t("library"), icon: "apps" },
       ],
     },
   ];

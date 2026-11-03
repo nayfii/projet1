@@ -100,7 +100,7 @@ export function AdminAgents({
           <Card className="divide-y">
             {shared.map((a) => (
               <div key={a.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-                <Link href={`/library/${a.id}`} className="min-w-0 flex-1 hover:underline">
+                <Link href={`/apps/${a.id}`} className="min-w-0 flex-1 hover:underline">
                   <span className="block truncate text-sm font-medium">{a.name}</span>
                   <span className="block truncate text-xs text-muted-foreground">{a.creatorName ? t("by", { name: a.creatorName }) : null}</span>
                 </Link>

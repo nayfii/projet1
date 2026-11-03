@@ -130,6 +130,18 @@ describe("AI Clarification and system prompt", () => {
     expect(buildSystemPrompt(base)).not.toMatch(/client:/);
     expect(buildSystemPrompt({ ...base, client: { name: "Client A", sector: "Retail" } })).toMatch(/about the client: Client A/);
   });
+
+  it("Who Can Help: declared expertise and the company memory entries a colleague wrote", () => {
+    const prompt = buildSystemPrompt({
+      ...base,
+      colleagues: [
+        { name: "Nathalie Petit", expertise: ["finance"], wrote: [] },
+        { name: "Paul Bernard", expertise: [], wrote: ["Procédure de relance", "Tarifs 2026"] },
+      ],
+    });
+    expect(prompt).toContain("- Nathalie Petit: finance");
+    expect(prompt).toContain('- Paul Bernard: — (wrote in company memory: "Procédure de relance", "Tarifs 2026")');
+  });
 });
 
 describe("single context builder (model-independent knowledge)", () => {

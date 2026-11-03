@@ -1,6 +1,6 @@
 {
   "common": {
-    "productName": "Workspace",
+    "productName": "Cendr",
     "tagline": "L'espace de travail IA de votre entreprise.",
     "comingSoon": "Bientôt",
     "close": "Fermer",
@@ -78,7 +78,8 @@
     "manager_needs_team": "Un manager dirige une équipe : choisissez d'abord son équipe.",
     "busy": "Une réponse est en cours d'écriture. Réessayez dans un instant.",
     "dictation_disabled": "La dictée vocale est désactivée dans votre entreprise.",
-    "test_mode": "Mode test activé : aucune vraie IA n'est appelée. Retirez AI_FAKE_PROVIDER dans Vercel puis redéployez."
+    "test_mode": "Mode test activé : aucune vraie IA n'est appelée. Retirez AI_FAKE_PROVIDER dans Vercel puis redéployez.",
+    "invite_only": "Cendr fonctionne sur invitation. Demandez à votre entreprise de vous inviter."
   },
   "auth": {
     "signInTitle": "Connexion",
@@ -154,7 +155,10 @@
     "startConversation": "Démarrer ma première conversation",
     "documentBody": "Ajoutez un document de référence (procédure, offre, conditions générales…). Il rejoint la mémoire de l'entreprise : l'IA pourra s'y appuyer et le citer.",
     "documentAdded": "Document ajouté. Il est en cours de lecture, vous le retrouverez dans Mémoire.",
-    "documentUnavailable": "Vous pourrez ajouter des documents depuis la page Mémoire."
+    "documentUnavailable": "Vous pourrez ajouter des documents depuis la page Mémoire.",
+    "inviteOnlyTitle": "Cendr est sur invitation",
+    "inviteOnlyBody": "Aucune invitation pour {email}. Demandez à votre responsable de vous inviter avec cette adresse, puis rouvrez le lien reçu par e-mail.",
+    "later": "Plus tard"
   },
   "company": {
     "title": "Profil de l'entreprise",
@@ -308,7 +312,7 @@
     "workspace": "Travail",
     "clients": "Clients",
     "memory": "Mémoire",
-    "library": "Bibliothèque",
+    "library": "Applis",
     "profile": "Mon profil",
     "adminConsole": "Administration",
     "newConversation": "Nouvelle conversation"
@@ -325,8 +329,14 @@
     "clientsBody": "{count, plural, =0 {Aucun client pour l'instant} one {# client accessible} other {# clients accessibles}}",
     "memoryTitle": "Mémoire de l'entreprise",
     "memoryBody": "Procédures, offres et règles, toujours à jour.",
-    "libraryTitle": "Bibliothèque d'agents",
-    "libraryBody": "Des assistants prêts à l'emploi pour chaque service."
+    "libraryTitle": "Applis",
+    "libraryBody": "Des applis prêtes à l'emploi pour chaque service : propositions, factures, contrats, comptes rendus…",
+    "setupTitle": "Pour bien démarrer · {done}/{total}",
+    "setup": {
+      "invite": "Invitez votre équipe",
+      "client": "Ajoutez un premier client",
+      "document": "Ajoutez un premier document"
+    }
   },
   "profile": {
     "title": "Mon profil",
@@ -356,7 +366,7 @@
     "permissions": "Droits sur les mémoires",
     "ai": "IA",
     "models": "Modèles",
-    "agents": "Agents et outils",
+    "agents": "Applis",
     "hide": "Protection (Hide)",
     "usageSection": "Consommation",
     "usage": "Utilisation",
@@ -513,7 +523,8 @@
     "releases": "Versions",
     "preview": "Aperçu",
     "debug": "Debug",
-    "home": "Accueil"
+    "home": "Accueil",
+    "apps": "Applis"
   },
   "platform": {
     "companiesTitle": "Entreprises",
@@ -580,7 +591,10 @@
     "currencyEUR": "€ (euro)",
     "currencyUSD": "$ (dollar)",
     "seatPriceValue": "{price} par place et par mois",
-    "noSeatPrice": "Prix par place non renseigné"
+    "noSeatPrice": "Prix par place non renseigné",
+    "openSignup": "Inscription libre",
+    "openSignupOff": "Coupée : seules les entreprises que nous invitons peuvent entrer.",
+    "openSignupOn": "Ouverte : toute personne connectée peut créer son entreprise."
   },
   "system": {
     "notFoundCode": "404",
@@ -1101,7 +1115,14 @@
     "protectItem": "Protéger : {text}",
     "showItem": "Laisser visible : {text}",
     "done": "Terminé",
-    "protectedTitle": "Protégé : l’IA ne l’a pas vu"
+    "protectedTitle": "Protégé : l’IA ne l’a pas vu",
+    "modesMenu": "Ce que Hide protège",
+    "modeMessage": "Le message",
+    "modeMessageHint": "Masque automatiquement ce qui est sensible avant l'envoi.",
+    "modeDocuments": "Les fichiers joints",
+    "modeDocumentsHint": "Masque les mêmes données dans les documents.",
+    "modeManual": "Manuel",
+    "modeManualHint": "Surligne en rouge ce qui semble sensible ; un clic le protège."
   },
   "hideAdmin": {
     "title": "Protection des données (Hide)",
@@ -2070,5 +2091,54 @@
       "workspace": "Comptes e-mail",
       "gmail": "Boîte mail"
     }
+  },
+  "apps": {
+    "title": "Applis",
+    "description": "Des applis prêtes à l'emploi pour chaque service, et celles créées par votre équipe.",
+    "discover": "Découvrir",
+    "yours": "Vos applis",
+    "search": "Rechercher une appli",
+    "popular": "Les plus utilisées dans l'entreprise",
+    "departments": "Services",
+    "all": "Toutes",
+    "soon": "Bientôt",
+    "byTeam": "Fait par votre équipe",
+    "star": "Ajouter {name} à vos applis",
+    "unstar": "Retirer {name} de vos applis",
+    "yoursEmpty": "Ajoutez vos applis préférées avec l'étoile : elles apparaîtront ici et en premier dans la conversation.",
+    "noMatch": "Aucune appli trouvée.",
+    "createHint": "Pour créer votre propre appli : dans une conversation réussie, ⋯ puis « Transformer en outil ».",
+    "picker": "Applis",
+    "pickerSearch": "Lancer une appli…",
+    "pickerEmpty": "Aucune appli",
+    "pickerAll": "Toutes les applis"
+  },
+  "platformApps": {
+    "title": "Applis",
+    "description": "Ce que nos clients trouvent dans « Applis ».",
+    "launch": "Au lancement",
+    "video": "Applis vidéo (Motion Design, Montage vidéo)",
+    "videoHint": "Coupé : les clients les voient « Bientôt ». À ouvrir quand le serveur de rendu est hébergé.",
+    "review": "Assistant de tri des candidatures",
+    "reviewHint": "Caché chez tous les clients tant qu'un avocat ne l'a pas relu.",
+    "ours": "Nos applis",
+    "oursHint": "Ajoutées par notre équipe chez tous les clients. Chaque entreprise garde ses modèles et ses règles.",
+    "new": "Nouvelle appli",
+    "empty": "Aucune appli ajoutée pour l'instant.",
+    "enabled": "Active",
+    "disabled": "Coupée",
+    "enabledLabel": "Active chez tous les clients",
+    "edit": "Modifier {name}",
+    "delete": "Supprimer {name}",
+    "createTitle": "Nouvelle appli",
+    "editTitle": "Modifier l'appli",
+    "editorHint": "Nom, formulaire et consignes. Elle passe par Hide, la mémoire autorisée et les crédits comme toute demande.",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saved": "Appli enregistrée",
+    "deleted": "Appli supprimée",
+    "deleteTitle": "Supprimer « {name} » ?",
+    "deleteBody": "Elle disparaît chez tous les clients. Les conversations déjà lancées restent.",
+    "confirmDelete": "Supprimer"
   }
 }

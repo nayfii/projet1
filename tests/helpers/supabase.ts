@@ -50,7 +50,14 @@ export async function makePlatformAdmin(user: TestUser) {
   await sql("insert into public.platform_admins (user_id) values ($1) on conflict do nothing", [user.id]);
 }
 
+let signupOpened = false;
+
+/** Tests create their companies themselves: sign-up is opened once (it is by invitation by default). */
 export async function createCompany(owner: TestUser, name: string): Promise<string> {
+  if (!signupOpened) {
+    await sql("update public.platform_settings set open_signup = true where id");
+    signupOpened = true;
+  }
   const { data, error } = await owner.client.rpc("create_company", { p_name: name });
   if (error || !data) throw error ?? new Error("create_company failed");
   return data;

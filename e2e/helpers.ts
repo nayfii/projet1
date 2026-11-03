@@ -23,3 +23,9 @@ export async function skipAvatarStep(page: Page) {
   await expect(page.getByRole("heading", { name: "Créez votre avatar" })).toBeVisible();
   await page.getByRole("button", { name: "Plus tard" }).click();
 }
+
+/** Setup screens opened from the home page's checklist (invite, client, document): each returns home. */
+export async function openSetup(page: Page, step: "invite" | "client" | "document") {
+  await page.waitForURL((url) => url.pathname === "/" || url.pathname === "/chat");
+  await page.goto(`/onboarding?step=${step}`);
+}

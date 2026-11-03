@@ -4,7 +4,7 @@ import { useActionState, useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "motion/react";
-import { ArrowRightIcon, CheckIcon, FileTextIcon, MessageSquareIcon, UsersIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon, FileTextIcon, UsersIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FormMessage, SubmitButton } from "@/components/ui/form";
@@ -18,15 +18,21 @@ import { AvatarStudio } from "@/modules/avatars/ui/avatar-studio";
 import { cn } from "@/lib/utils";
 import type { ErrorCode } from "@/lib/errors";
 
-export type OnboardingStep = "start" | "avatar" | "company" | "invite" | "client" | "document" | "conversation";
+export type OnboardingStep = "start" | "avatar" | "company" | SetupStep;
+/** Set up later from the home page's checklist (CLAUDE.md §11): each one returns to the home page. */
+export type SetupStep = "invite" | "client" | "document";
+export const SETUP_STEPS: SetupStep[] = ["invite", "client", "document"];
 
-const PROGRESS: OnboardingStep[] = ["start", "avatar", "company", "invite", "client", "document", "conversation"];
+/** The onboarding itself: the name, the company and the avatar, then straight to the first conversation. */
+const PROGRESS: OnboardingStep[] = ["start", "avatar", "company"];
 
 type Props = {
   step: OnboardingStep;
   fullName: string | null;
   email: string;
   invitations?: { id: string; companyName: string; invitedBy: string | null }[];
+  /** Our team opened sign-up: anyone signed in may create their own company. */
+  signupOpen?: boolean;
   company?: CompanyProfileValues | null;
   members?: { userId: string; name: string }[];
   /** Company memory, where the first document goes. */
@@ -40,15 +46,19 @@ export function OnboardingWizard(props: Props) {
   const tAvatar = useTranslations("avatar");
   const router = useRouter();
   const go = useCallback((step: OnboardingStep) => router.push(`/onboarding?step=${step}`), [router]);
-  const skip = (step: OnboardingStep) => (
-    <Button type="button" variant="ghost" onClick={() => go(step)}>
-      {t("skip")}
-    </Button>
-  );
+  const home = useCallback(() => router.push("/"), [router]);
+  const [finishing, startFinishing] = useTransition();
+  // The last onboarding step: the company is set up, the person goes straight to the first conversation.
+  const finish = () =>
+    startFinishing(async () => {
+      const form = new FormData();
+      form.set("next", "/chat");
+      await completeOnboardingAction(form);
+    });
 
   return (
     <div className="w-full max-w-lg">
-      <Progress current={props.step} />
+      {PROGRESS.includes(props.step) ? <Progress current={props.step} /> : null}
       <motion.div
         key={props.step}
         initial={{ opacity: 0, y: 8 }}
@@ -83,8 +93,12 @@ export function OnboardingWizard(props: Props) {
             <CompanyProfileForm
               initial={props.company}
               submitLabel={t("continue")}
-              onSaved={() => go("invite")}
-              secondary={skip("invite")}
+              onSaved={finish}
+              secondary={
+                <Button type="button" variant="ghost" disabled={finishing} onClick={finish}>
+                  {t("skip")}
+                </Button>
+              }
             />
           </StepFrame>
         ) : null}
@@ -93,7 +107,7 @@ export function OnboardingWizard(props: Props) {
           <StepFrame title={t("inviteTitle")} subtitle={t("inviteSubtitle")}>
             <InviteForm canInviteAdmins={false} compact footer={null} />
             <div className="mt-8 flex justify-end">
-              <Button onClick={() => go("client")}>
+              <Button onClick={home}>
                 {t("continue")}
                 <ArrowRightIcon />
               </Button>
@@ -106,8 +120,12 @@ export function OnboardingWizard(props: Props) {
             <ClientForm
               members={props.members ?? []}
               submitLabel={t("createClient")}
-              onCreated={() => go("document")}
-              secondary={skip("document")}
+              onCreated={home}
+              secondary={
+                <Button type="button" variant="ghost" onClick={home}>
+                  {t("later")}
+                </Button>
+              }
             />
           </StepFrame>
         ) : null}
@@ -116,8 +134,7 @@ export function OnboardingWizard(props: Props) {
           <StepFrame title={t("documentTitle")} subtitle={t("documentSubtitle")}>
             <FirstDocument spaceId={props.companySpaceId ?? null} />
             <div className="mt-8 flex justify-end gap-2">
-              {skip("conversation")}
-              <Button onClick={() => go("conversation")}>
+              <Button onClick={home}>
                 {t("continue")}
                 <ArrowRightIcon />
               </Button>
@@ -125,32 +142,12 @@ export function OnboardingWizard(props: Props) {
           </StepFrame>
         ) : null}
 
-        {props.step === "conversation" ? (
-          <StepFrame title={t("conversationTitle")} subtitle={t("conversationSubtitle")}>
-            <div className="flex items-start gap-3 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-              <MessageSquareIcon className="mt-0.5 size-4 shrink-0" />
-              <p>{t("conversationBody")}</p>
-            </div>
-            <div className="mt-8 flex flex-wrap justify-end gap-2">
-              <form action={completeOnboardingAction}>
-                <SubmitButton variant="ghost">{t("finish")}</SubmitButton>
-              </form>
-              <form action={completeOnboardingAction}>
-                <input type="hidden" name="next" value="/chat" />
-                <SubmitButton variant="brand">
-                  {t("startConversation")}
-                  <ArrowRightIcon />
-                </SubmitButton>
-              </form>
-            </div>
-          </StepFrame>
-        ) : null}
       </motion.div>
     </div>
   );
 }
 
-function StartStep({ fullName, email, invitations = [] }: Props) {
+function StartStep({ fullName, email, invitations = [], signupOpen = false }: Props) {
   const t = useTranslations("onboarding");
   const tErrors = useTranslations("errors");
   const router = useRouter();
@@ -196,6 +193,13 @@ function StartStep({ fullName, email, invitations = [] }: Props) {
         </section>
       ) : null}
 
+      {!signupOpen ? (
+        invitations.length === 0 ? (
+          <section className="space-y-3" data-testid="invite-only">
+            <StepHeading title={t("inviteOnlyTitle")} subtitle={t("inviteOnlyBody", { email })} />
+          </section>
+        ) : null
+      ) : (
       <section className="space-y-6">
         <StepHeading
           title={invitations.length > 0 ? t("orCreateTitle") : t("startTitle")}
@@ -215,6 +219,7 @@ function StartStep({ fullName, email, invitations = [] }: Props) {
           </SubmitButton>
         </form>
       </section>
+      )}
     </div>
   );
 }

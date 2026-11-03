@@ -20,7 +20,7 @@ import { retrievePassages } from "@/modules/memory/server/retrieval";
 import { citedPositions, toSourceProofs } from "@/modules/memory/citations";
 import type { KnowledgePassage } from "@/modules/memory/types";
 import { HIDE_MODES, isHideMode, MAX_BLUR_CHARS, PLACEHOLDER_PATTERN, totalCount, type HideMode } from "@/modules/hide/categories";
-import { neutralizePlaceholders, type StreamRestorer } from "@/modules/hide/mask";
+import { autoSpans, neutralizePlaceholders, type StreamRestorer } from "@/modules/hide/mask";
 import { hideConfigured } from "@/modules/hide/server/crypto";
 import { createConversationMasker, getHideSettings, loadDetectionLists, type Masker } from "@/modules/hide/server/masker";
 import { logMaskingEvent, saveAttachmentMasks, saveMessageMask } from "@/modules/hide/server/store";
@@ -248,8 +248,10 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     masker = await createConversationMasker(conversation.id, await loadDetectionLists(supabase, ctx));
   }
   // Who Can Help: colleagues with declared expertise who did not opt out (never from private
-  // conversations). In a group, message authors are named too. Both are masked like other names.
-  const [{ data: memberRows }, { data: authorRows }] = await Promise.all([
+  // conversations), and the company memory entries they wrote that the person may read (solo
+  // conversations only: a group would need every participant's access). In a group, message authors
+  // are named too. Names are masked like other names; entry titles like memory passages.
+  const [{ data: memberRows }, { data: authorRows }, { data: memoryAuthorship }] = await Promise.all([
     aiRequested
       ? supabase
           .from("company_members")
@@ -259,13 +261,36 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     group
       ? supabase.from("profiles").select("id, full_name").in("id", [...new Set(base.map((r) => r.author_id).filter((id): id is string => Boolean(id)).concat(ctx.user.id))])
       : Promise.resolve({ data: [] }),
+    aiRequested && !group
+      ? supabase
+          .from("memory_entries")
+          .select("author_id, title, space:memory_spaces!inner(kind)")
+          .eq("company_id", companyId)
+          .eq("space.kind", "company")
+          .not("author_id", "is", null)
+          .order("updated_at", { ascending: false })
+          .limit(200)
+      : Promise.resolve({ data: [] }),
   ]);
+  const wroteBy = new Map<string, string[]>();
+  for (const e of memoryAuthorship ?? []) {
+    const list = wroteBy.get(e.author_id!) ?? [];
+    if (list.length < 3) wroteBy.set(e.author_id!, [...list, e.title]);
+  }
   // People already in the conversation are not suggested: they are here.
   const participantIds = new Set(participants.map((p) => p.user_id));
   const colleagues = (memberRows ?? [])
-    .filter((m) => m.status === "active" && !m.who_can_help_opt_out && !participantIds.has(m.user_id) && m.user_id !== ctx.user.id && m.expertise.length > 0 && m.profile?.full_name)
+    .filter(
+      (m) =>
+        m.status === "active" &&
+        !m.who_can_help_opt_out &&
+        !participantIds.has(m.user_id) &&
+        m.user_id !== ctx.user.id &&
+        (m.expertise.length > 0 || wroteBy.has(m.user_id)) &&
+        m.profile?.full_name,
+    )
     .slice(0, 15)
-    .map((m) => ({ userId: m.user_id, name: m.profile!.full_name!, expertise: m.expertise }));
+    .map((m) => ({ userId: m.user_id, name: m.profile!.full_name!, expertise: m.expertise, wrote: wroteBy.get(m.user_id) ?? [] }));
   const authors = (authorRows ?? []).map((a) => ({ id: a.id, name: a.full_name?.trim() || "?" }));
   const inert = (text: string | null | undefined) => (text ? neutralizePlaceholders(text) : (text ?? null));
   const facts = {
@@ -360,6 +385,18 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   const sharedBase = base.filter((r) => r.seq >= contextFrom);
   const historyLimited = sharedBase.length < base.length;
   const people = promptFacts.people;
+  // Titles of the company memory entries colleagues wrote: masked like memory passages.
+  const wroteTitles = colleagues.flatMap((c) => c.wrote);
+  const maskWrote = masker !== null && (hideModes.includes("automatic") || hideModes.includes("documents")) && wroteTitles.length > 0;
+  const maskedWrote = maskWrote
+    ? (await masker!.mask(wroteTitles.map((text) => ({ text, spans: autoSpans(masker!.detect(text), autoCategories) })))).map((r) => r.masked)
+    : wroteTitles.map((t) => neutralizePlaceholders(t));
+  let wroteCursor = 0;
+  const colleaguesForPrompt = colleagues.map((c, i) => {
+    const wrote = maskedWrote.slice(wroteCursor, wroteCursor + c.wrote.length);
+    wroteCursor += c.wrote.length;
+    return { name: people[i] ?? c.name, expertise: c.expertise, wrote };
+  });
   const authorLabel = new Map(authors.map((a, i) => [a.id, people[colleagues.length + i] ?? a.name]));
   const history = await toHistory(supabase, sharedBase, group ? authorLabel : null);
   // …and only the memories every participant may read (intersection of their permissions).
@@ -417,7 +454,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     today: new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()),
     knowledge: promptKnowledge,
     protectedValues: masker !== null,
-    colleagues: colleagues.map((c, i) => ({ name: people[i] ?? c.name, expertise: c.expertise })),
+    colleagues: colleaguesForPrompt,
     group,
     tool: agent ? { name: agent.name, instructions: promptFacts.toolInstructions ?? agent.instructions, format: outputFormatInstruction(agent.outputFormat) } : null,
   });

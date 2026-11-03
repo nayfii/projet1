@@ -2,14 +2,14 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { ProviderId } from "@/modules/providers/types";
 
-type Row = { requests: number; input_tokens: number; output_tokens: number; credits: number; estimated_cost_usd: number };
+type Row = { requests: number; input_tokens: number; output_tokens: number; credits: number };
 
 export type UsageSummary = {
   /** AI credits only (the video pool is apart, in `video`). */
   totals: Row & { errors: number; estimated_tokens_requests: number; active_users: number };
   byUser: (Row & { user_id: string | null })[];
   byModel: (Row & { model_id: string | null; provider: ProviderId | null; auto_requests: number })[];
-  byFeature: { feature: string; requests: number; credits: number; estimated_cost_usd: number }[];
+  byFeature: { feature: string; requests: number; credits: number }[];
   byDay: { day: string; requests: number; credits: number }[];
   video: { credits: number; renders: number; succeeded: number; failed: number };
 };

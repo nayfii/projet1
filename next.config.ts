@@ -38,6 +38,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // pdfkit reads its font files from its own folder at run time: it must not be bundled.
   serverExternalPackages: ["pdfkit"],
+  // The Library became "Applis" (CLAUDE.md §11): old links keep working.
+  async redirects() {
+    return [
+      { source: "/library", destination: "/apps", permanent: true },
+      { source: "/library/:id", destination: "/apps/:id", permanent: true },
+    ];
+  },
   // The Motion Design preview's open-source files, copied by scripts/copy-vendor.mjs (read at run time).
   outputFileTracingIncludes: { "/api/render/vendor/[name]": ["./.vendor/**"] },
   // The Tailwind loader's output was served from Turbopack's file-system cache after globals.css changed

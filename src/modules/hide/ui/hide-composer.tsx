@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { AlertTriangleIcon, ShieldCheckIcon, ShieldIcon, XIcon } from "lucide-react";
+import { AlertTriangleIcon, ChevronDownIcon, ShieldCheckIcon, ShieldIcon, XIcon } from "lucide-react";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet";
@@ -74,37 +75,45 @@ export function useHideComposer({
   text,
   files,
   initialAuto,
+  initialDocuments = true,
   autoCategories,
 }: {
   text: string;
   files: HideFile[];
   initialAuto: boolean;
+  /** Attached files are masked too ("Documents"), on by default. */
+  initialDocuments?: boolean;
   autoCategories: AutoCategory[];
 }) {
   const [auto, setAuto] = React.useState(initialAuto);
+  const [documents, setDocuments] = React.useState(initialDocuments);
+  const [manual, setManual] = React.useState(true);
   const [blur, setBlur] = React.useState<string[]>([]);
   const [unblur, setUnblur] = React.useState<string[]>([]);
   const [selection, setSelection] = React.useState<string | null>(null);
   const [confirming, setConfirming] = React.useState(false);
   const categories = React.useMemo(() => new Set(autoCategories), [autoCategories]);
-  // Clicks always apply ("manual"); "automatic" protects the company's categories by default.
-  const modes: HideMode[] = auto ? ["automatic", "manual"] : ["manual"];
+  // The three modes (CLAUDE.md §4.3), combined: "automatic" protects the company's categories in the
+  // message, "documents" in attached files, "manual" shows what looks sensitive in red and applies clicks.
+  const modes: HideMode[] = [...(auto ? (["automatic"] as const) : []), ...(documents ? (["documents"] as const) : []), ...(manual ? (["manual"] as const) : [])];
+  // Same rule as the server for attached files.
+  const fileModes: HideMode[] = documents ? (manual ? ["automatic", "manual"] : ["automatic"]) : manual ? ["manual"] : [];
   // Only the categories the company considers sensitive are highlighted (amounts are off by default);
   // anything else can still be protected by selecting it.
   const sensitive = (found: Span[]) => found.filter((s) => s.category !== "redacted" && categories.has(s.category));
   const detection = useDetection(text);
   const detected = sensitive(detection.spans);
 
-  const analyse = (body: string, found: Span[]) => {
-    const masked = spansToMask(body, found, categories, { modes, blur, unblur });
+  const analyse = (body: string, found: Span[], forModes: HideMode[] = modes) => {
+    const masked = spansToMask(body, found, categories, { modes: forModes, blur, unblur });
     const isMasked = (s: Span) => masked.some((m) => m.start === s.start && m.end === s.end);
     const visible = found.filter((s) => !masked.some((m) => s.start < m.end && m.start < s.end));
     return { masked, visible, isMasked };
   };
   const message = analyse(text, detected);
-  const fileStates = files.map((f) => ({ ...f, spans: sensitive(f.spans), ...analyse(f.text, sensitive(f.spans)) }));
+  const fileStates = files.map((f) => ({ ...f, spans: sensitive(f.spans), ...analyse(f.text, sensitive(f.spans), fileModes) }));
   const protectedCount = message.masked.length + fileStates.reduce((n, f) => n + f.masked.length, 0);
-  const visibleCount = message.visible.length + fileStates.reduce((n, f) => n + f.visible.length, 0);
+  const visibleCount = manual ? message.visible.length + fileStates.reduce((n, f) => n + f.visible.length, 0) : 0;
 
   const toggleValue = (value: string, category: Span["category"], masked: boolean) => {
     const key = foldKey(value);
@@ -121,9 +130,10 @@ export function useHideComposer({
   };
 
   /** Segments for drawing a text: plain, red (visible to the AI) or green struck (protected). */
-  const segments = (body: string, found: Span[]): HideSegment[] => {
-    const { masked, isMasked } = analyse(body, found);
-    const marks = [...masked, ...found.filter((d) => !masked.some((m) => d.start < m.end && m.start < d.end))].sort((a, b) => a.start - b.start);
+  const segments = (body: string, found: Span[], forModes: HideMode[] = modes): HideSegment[] => {
+    const { masked, isMasked } = analyse(body, found, forModes);
+    // Without Manual, nothing is shown in red: only what is protected.
+    const marks = [...masked, ...(manual ? found.filter((d) => !masked.some((m) => d.start < m.end && m.start < d.end)) : [])].sort((a, b) => a.start - b.start);
     const out: HideSegment[] = [];
     let cursor = 0;
     for (const s of marks) {
@@ -142,15 +152,34 @@ export function useHideComposer({
       setAuto(on);
       setConfirming(false);
     },
+    documents,
+    setDocuments: (on: boolean) => {
+      setDocuments(on);
+      setConfirming(false);
+    },
+    manual,
+    setManual: (on: boolean) => {
+      setManual(on);
+      setConfirming(false);
+    },
+    /** Hide's one visible switch: on when the message or the files are protected automatically. */
+    on: auto || documents,
+    setOn: (on: boolean) => {
+      setAuto(on);
+      setDocuments(on);
+      setConfirming(false);
+    },
+    fileSegments: (file: { text: string; spans: Span[] }) => segments(file.text, file.spans, fileModes),
     detected,
     protectedCount,
     visibleCount,
     hasDetections: protectedCount + visibleCount > 0,
     files: fileStates,
     segments,
-    toggleSegment: (segment: HideSegment) => segment.span && toggleValue(segment.text, segment.span.category, segment.state === "protected"),
+    toggleSegment: (segment: HideSegment) => manual && segment.span && toggleValue(segment.text, segment.span.category, segment.state === "protected"),
     /** Click in the input: toggles the item under the caret. */
     toggleAt: (position: number) => {
+      if (!manual) return;
       const hit = segments(text, detected).find((s) => s.span && s.span.start <= position && position <= s.span.end);
       if (hit) toggleValue(hit.text, hit.span!.category, hit.state === "protected");
     },
@@ -175,7 +204,7 @@ export function useHideComposer({
      * being sent is awaited first, so sending quickly cannot skip the check.
      */
     needsConfirmation: async (): Promise<boolean> => {
-      if (auto) return false;
+      if (auto || !manual) return false;
       const found = detection.fresh ? detected : sensitive(await detection.detectNow());
       return analyse(text, found).visible.length + fileStates.reduce((n, f) => n + f.visible.length, 0) > 0;
     },
@@ -244,15 +273,49 @@ export function HideBar({ state, onProtectAndSend, onSendAnyway }: { state: Hide
   );
 }
 
-/** In the input's toolbar: the one switch. */
+/**
+ * In the input's toolbar: Hide's one visible switch, and its three modes in a small menu
+ * (CLAUDE.md §11): the message, attached files, and Manual (what looks sensitive in red, a click
+ * protects it).
+ */
 export function AutoSwitch({ state, disabled }: { state: HideComposerState; disabled?: boolean }) {
   const t = useTranslations("hide");
+  const modes = [
+    { key: "auto", label: t("modeMessage"), hint: t("modeMessageHint"), checked: state.auto, set: state.setAuto },
+    { key: "documents", label: t("modeDocuments"), hint: t("modeDocumentsHint"), checked: state.documents, set: state.setDocuments },
+    { key: "manual", label: t("modeManual"), hint: t("modeManualHint"), checked: state.manual, set: state.setManual },
+  ];
   return (
-    <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg px-2 text-[13px] text-muted-foreground hover:bg-accent">
-      {state.auto ? <ShieldCheckIcon className="size-4 text-success" /> : <ShieldIcon className="size-4" />}
-      <span className="hidden sm:inline">{t("auto")}</span>
-      <Switch checked={state.auto} onCheckedChange={state.setAuto} disabled={disabled} aria-label={t("auto")} />
-    </label>
+    <span className="inline-flex items-center rounded-lg hover:bg-accent/60">
+      <label className="inline-flex h-8 cursor-pointer items-center gap-2 pl-2 pr-1 text-[13px] text-muted-foreground">
+        {state.on ? <ShieldCheckIcon className="size-4 text-success" /> : <ShieldIcon className="size-4" />}
+        <span className="hidden sm:inline">{t("auto")}</span>
+        <Switch checked={state.on} onCheckedChange={state.setOn} disabled={disabled} aria-label={t("auto")} />
+      </label>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={t("modesMenu")}
+            className="flex h-8 w-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <ChevronDownIcon className="size-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="top" className="w-72">
+          <DropdownMenuLabel>{t("modesMenu")}</DropdownMenuLabel>
+          {modes.map((m) => (
+            <DropdownMenuCheckboxItem key={m.key} checked={m.checked} onCheckedChange={(on) => m.set(on === true)} onSelect={(e) => e.preventDefault()}>
+              <span className="flex flex-col">
+                <span>{m.label}</span>
+                <span className="text-xs text-muted-foreground">{m.hint}</span>
+              </span>
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </span>
   );
 }
 
@@ -303,7 +366,7 @@ export function FilePreview({ file, state, onClose }: { file: HideComposerState[
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
               <div className="rounded-lg border bg-muted/30 p-4 text-sm leading-7 break-words whitespace-pre-wrap">
-                {state.segments(file.text, file.spans).map((s, i) =>
+                {state.fileSegments(file).map((s, i) =>
                   s.state === "plain" ? (
                     <React.Fragment key={i}>{s.text}</React.Fragment>
                   ) : (

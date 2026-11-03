@@ -40,6 +40,7 @@ export const ERROR_CODES = [
   "busy",
   "dictation_disabled",
   "test_mode",
+  "invite_only",
   "unknown",
 ] as const;
 

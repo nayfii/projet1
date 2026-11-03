@@ -50,7 +50,7 @@ function externalTools(): { key: string; name: string; href: string; color: stri
     { key: "aistudio", name: "AI Studio", href: "https://aistudio.google.com", color: "bg-[var(--pastel-sky)]/20 text-[var(--pastel-sky)]" },
     { key: "googlecloud", name: "Google Cloud", href: "https://console.cloud.google.com/billing", color: "bg-sky-500/15 text-sky-400" },
     { key: "hostinger", name: "Hostinger", href: "https://hpanel.hostinger.com", color: "bg-violet-500/15 text-violet-400" },
-    { key: "workspace", name: "Workspace", href: "https://admin.google.com", color: "bg-amber-500/15 text-amber-400" },
+    { key: "workspace", name: "Google Workspace", href: "https://admin.google.com", color: "bg-amber-500/15 text-amber-400" },
     { key: "gmail", name: "Gmail", href: "https://mail.google.com", color: "bg-red-500/15 text-red-400" },
   ];
 }

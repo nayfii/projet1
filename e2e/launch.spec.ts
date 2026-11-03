@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * The launch success scenario of CLAUDE.md §10, steps 1 to 15, in one run with five people in five
@@ -88,18 +88,20 @@ test("1. our team creates a plan; the Owner signs up, completes onboarding and g
   await skipAvatarStep(ownerPage);
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "invite");
   await expect(ownerPage.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await ownerPage.getByLabel("Adresses e-mail").fill(`${olivier}, ${nathalie}, ${marc}`);
   await ownerPage.getByRole("button", { name: "Envoyer les invitations" }).click();
   await expect(ownerPage.getByText("E-mail envoyé")).toHaveCount(3);
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "client");
   await expect(ownerPage.getByRole("heading", { name: "Ajoutez un premier client" })).toBeVisible();
   await ownerPage.getByLabel("Nom du client").fill("Client A");
   await ownerPage.getByRole("button", { name: /Restreint/ }).click();
   await ownerPage.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(ownerPage, "document");
   await expect(ownerPage.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
-  await ownerPage.getByRole("button", { name: "Accéder à mon espace" }).click();
   await expect(ownerPage.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
 
   await platformPage.goto("/platform/companies");
@@ -276,13 +278,13 @@ test("11. Olivier turns a conversation into a tool; the Owner publishes it compa
   await ownerPage.getByRole("button", { name: "Valider" }).click();
   await expect(ownerPage.getByText("Outil validé pour toute l'entreprise.")).toBeVisible();
   // Published: Marc, a plain member, finds it in his library.
-  await marcPage.goto("/library");
+  await marcPage.goto("/apps");
   await expect(marcPage.getByRole("link", { name: /\[TEST\] Synthèse client/ })).toBeVisible();
 });
 
 test("12. Olivier runs the Proposal Writer, then Motion Design: an MP4 is rendered", async () => {
   test.setTimeout(300_000);
-  await olivierPage.goto("/library");
+  await olivierPage.goto("/apps");
   await olivierPage.getByRole("link", { name: /Proposition commerciale/ }).click();
   await olivierPage.getByRole("combobox", { name: "Client" }).click();
   await olivierPage.getByRole("option", { name: "Client A" }).click();
@@ -292,7 +294,7 @@ test("12. Olivier runs the Proposal Writer, then Motion Design: an MP4 is render
   await waitForAnswers(olivierPage, 1);
   await expect(answers(olivierPage).last()).toContainText("Tool instructions received: Proposal Writer");
 
-  await olivierPage.goto("/library");
+  await olivierPage.goto("/apps");
   await olivierPage.getByRole("link", { name: /Motion design/ }).click();
   await olivierPage.getByLabel("Brief (message, textes, public) *").fill("Annonce de la nouvelle offre de maintenance, pour nos clients.");
   const logo = test.info().outputPath("logo.png");

@@ -4,7 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { getCompany, getMyPendingInvitations, listMembers } from "@/modules/organizations/server/queries";
-import { OnboardingWizard, type OnboardingStep } from "@/modules/organizations/ui/onboarding-wizard";
+import { OnboardingWizard, SETUP_STEPS, type OnboardingStep, type SetupStep } from "@/modules/organizations/ui/onboarding-wizard";
+import { createClient } from "@/lib/supabase/server";
 import { listMemorySpaces } from "@/modules/memory/server/queries";
 import type { MemberContext } from "@/lib/auth/guards";
 import { avatarRate } from "@/modules/avatars/server/store";
@@ -15,11 +16,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-const COMPANY_STEPS: OnboardingStep[] = ["avatar", "company", "invite", "client", "document", "conversation"];
-
 /**
- * Account → company → avatar → company profile → invite → first client → first document → first conversation.
- * Every step after company creation can be skipped.
+ * Onboarding (CLAUDE.md §11): the name, the company and the avatar, then straight to the first
+ * conversation. Inviting the team, the first client and the first document are a checklist on the home
+ * page; each opens its own short screen here and returns home.
  */
 export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
   const ctx = await requireUser();
@@ -29,22 +29,24 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
     if (ctx.memberships.some((m) => m.companyStatus === "suspended" || m.memberStatus === "deactivated")) {
       redirect("/suspended");
     }
-    const invitations = await getMyPendingInvitations();
+    const [invitations, { data: signupOpen }] = await Promise.all([getMyPendingInvitations(), (await createClient()).rpc("signup_open")]);
     return (
       <OnboardingWizard
         step="start"
         fullName={ctx.profile.fullName}
         email={ctx.user.email}
         invitations={invitations.map((i) => ({ id: i.invitation_id, companyName: i.company_name, invitedBy: i.invited_by_name }))}
+        signupOpen={signupOpen === true}
       />
     );
   }
 
   // Invited members and admins without the company scope have nothing to set up here.
-  if (!hasScope(ctx.active, "company") || ctx.active.onboardingCompletedAt) redirect("/");
-
-  const requested = typeof params.step === "string" ? (params.step as OnboardingStep) : "company";
-  const step = COMPANY_STEPS.includes(requested) ? requested : "company";
+  if (!hasScope(ctx.active, "company")) redirect("/");
+  const requested = typeof params.step === "string" ? params.step : "company";
+  const setup = (SETUP_STEPS as string[]).includes(requested);
+  if (!setup && ctx.active.onboardingCompletedAt) redirect("/");
+  const step: OnboardingStep = setup ? (requested as SetupStep) : requested === "avatar" ? "avatar" : "company";
   const company = await getCompany(ctx.active.companyId);
   const members = step === "client" ? await listMembers(ctx.active.companyId) : [];
   const companySpaceId =

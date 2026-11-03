@@ -10,7 +10,8 @@ type Labelled = { builtinKey: string | null; name: string; description: string }
  * show what their creator wrote.
  */
 export function agentText(agent: Labelled, t: DynamicT) {
-  const base = agent.builtinKey ? `launch.${agent.builtinKey}` : null;
+  // Our team's apps ("platform_…" keys) show what we wrote; the code's built-in agents are translated.
+  const base = agent.builtinKey && !agent.builtinKey.startsWith("platform_") ? `launch.${agent.builtinKey}` : null;
   return {
     name: base ? t(`${base}.name`) : agent.name,
     description: base ? t(`${base}.description`) : agent.description,

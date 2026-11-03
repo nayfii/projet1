@@ -57,10 +57,12 @@ export async function maskTurn(
 
   const choices = { modes: input.modes, ...input.choices };
   const messageIndex = input.text && (automatic || manual) ? add(input.text, spansToMask(input.text, masker.detect(input.text), auto, choices)) : -1;
-  // Files follow the message's rule; "documents" alone (older clients) masks the company categories.
-  const fileSpans = (text: string) => (automatic || manual ? spansToMask(text, masker.detect(text), auto, choices) : autoSpans(masker.detect(text), auto));
+  // Attached files (Hide's "Documents" mode): the company's categories are masked, and the person's own
+  // choices (Manual) apply as in the message. Without "Documents", only Manual choices apply.
+  const fileModes: HideMode[] = documents ? (manual ? ["automatic", "manual"] : ["automatic"]) : manual ? ["manual"] : [];
+  const fileSpans = (text: string) => spansToMask(text, masker.detect(text), auto, { ...input.choices, modes: fileModes });
   const attachmentIndexes =
-    automatic || manual || documents
+    fileModes.length > 0
       ? input.attachments.filter((a) => a.kind !== "image" && a.extracted_text).map((a) => ({ id: a.id, index: add(a.extracted_text!, fileSpans(a.extracted_text!)) }))
       : [];
 

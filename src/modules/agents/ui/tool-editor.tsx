@@ -28,6 +28,7 @@ export function ToolEditor({
   autoEnabled,
   hasTeam,
   canApprove,
+  forEveryCompany = false,
 }: {
   value: ToolInput;
   onChange: (next: ToolInput) => void;
@@ -38,6 +39,8 @@ export function ToolEditor({
   hasTeam: boolean;
   /** The person can publish company-wide without waiting (Owner, "agents" Admin). */
   canApprove: boolean;
+  /** An app our team adds for every customer: no model choice (each company's own) and no visibility. */
+  forEveryCompany?: boolean;
 }) {
   const t = useTranslations("tools");
   const set = <K extends keyof ToolInput>(key: K, next: ToolInput[K]) => onChange({ ...value, [key]: next });
@@ -133,32 +136,34 @@ export function ToolEditor({
         <Textarea id="tool-instructions" rows={8} value={value.instructions} maxLength={8000} onChange={(e) => set("instructions", e.target.value)} />
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label={t("model")}>
-          <Select
-            value={modelValue}
-            onValueChange={(v) =>
-              onChange({
-                ...value,
-                allowed_models: v === ANY_MODEL || v === MODEL_CHOICE_AUTO ? [] : [v],
-                default_model: v === ANY_MODEL ? null : v,
-              })
-            }
-          >
-            <SelectTrigger aria-label={t("model")}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ANY_MODEL}>{t("modelAny")}</SelectItem>
-              {autoEnabled ? <SelectItem value={MODEL_CHOICE_AUTO}>{t("modelAuto")}</SelectItem> : null}
-              {models.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {`${modelDisplay(m.provider, m.label).brand} · ${modelDisplay(m.provider, m.label).name}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+      <div className={cn("grid gap-4", forEveryCompany ? "sm:grid-cols-2" : "sm:grid-cols-3")}>
+        {forEveryCompany ? null : (
+          <Field label={t("model")}>
+            <Select
+              value={modelValue}
+              onValueChange={(v) =>
+                onChange({
+                  ...value,
+                  allowed_models: v === ANY_MODEL || v === MODEL_CHOICE_AUTO ? [] : [v],
+                  default_model: v === ANY_MODEL ? null : v,
+                })
+              }
+            >
+              <SelectTrigger aria-label={t("model")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY_MODEL}>{t("modelAny")}</SelectItem>
+                {autoEnabled ? <SelectItem value={MODEL_CHOICE_AUTO}>{t("modelAuto")}</SelectItem> : null}
+                {models.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {`${modelDisplay(m.provider, m.label).brand} · ${modelDisplay(m.provider, m.label).name}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
         <Field label={t("memory")}>
           <Select value={value.memory_scope} onValueChange={(v) => set("memory_scope", v as ToolInput["memory_scope"])}>
             <SelectTrigger aria-label={t("memory")}>
@@ -193,37 +198,39 @@ export function ToolEditor({
         {t("attachments")}
       </label>
 
-      <fieldset className="space-y-2">
-        <legend className="mb-1 text-sm font-medium">{t("visibility")}</legend>
-        {VISIBILITIES.map((v) => {
-          const disabled = v === "team" && !hasTeam;
-          return (
-            <label
-              key={v}
-              className={cn(
-                "flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm",
-                visibility === v && "border-brand/40 bg-brand-soft/40",
-                disabled ? "opacity-60" : "cursor-pointer",
-              )}
-            >
-              <input
-                type="radio"
-                name="tool-visibility"
-                className="mt-1 accent-[var(--brand)]"
-                checked={visibility === v}
-                disabled={disabled}
-                onChange={() => onVisibilityChange(v)}
-              />
-              <span>
-                <span className="block">{t(`visibilities.${v}`)}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {v === "team" && !hasTeam ? t("noTeamHint") : v === "company" ? (canApprove ? t("companyDirectHint") : t("companyApprovalHint")) : t(`visibilityHints.${v}`)}
+      {forEveryCompany ? null : (
+        <fieldset className="space-y-2">
+          <legend className="mb-1 text-sm font-medium">{t("visibility")}</legend>
+          {VISIBILITIES.map((v) => {
+            const disabled = v === "team" && !hasTeam;
+            return (
+              <label
+                key={v}
+                className={cn(
+                  "flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm",
+                  visibility === v && "border-brand/40 bg-brand-soft/40",
+                  disabled ? "opacity-60" : "cursor-pointer",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="tool-visibility"
+                  className="mt-1 accent-[var(--brand)]"
+                  checked={visibility === v}
+                  disabled={disabled}
+                  onChange={() => onVisibilityChange(v)}
+                />
+                <span>
+                  <span className="block">{t(`visibilities.${v}`)}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {v === "team" && !hasTeam ? t("noTeamHint") : v === "company" ? (canApprove ? t("companyDirectHint") : t("companyApprovalHint")) : t(`visibilityHints.${v}`)}
+                  </span>
                 </span>
-              </span>
-            </label>
-          );
-        })}
-      </fieldset>
+              </label>
+            );
+          })}
+        </fieldset>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 {
   "common": {
-    "productName": "Workspace",
+    "productName": "Cendr",
     "tagline": "Your company's AI workspace.",
     "comingSoon": "Coming soon",
     "close": "Close",
@@ -78,7 +78,8 @@
     "manager_needs_team": "A manager leads a team: choose their team first.",
     "busy": "An answer is being written. Try again in a moment.",
     "dictation_disabled": "Voice dictation is turned off in your company.",
-    "test_mode": "Test mode is on: no real AI is called. Remove AI_FAKE_PROVIDER in Vercel and redeploy."
+    "test_mode": "Test mode is on: no real AI is called. Remove AI_FAKE_PROVIDER in Vercel and redeploy.",
+    "invite_only": "Cendr is by invitation. Ask your company to invite you."
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -154,7 +155,10 @@
     "startConversation": "Start my first conversation",
     "documentBody": "Add a reference document (procedure, offer, terms and conditions…). It goes into the company memory: the AI will be able to rely on it and cite it.",
     "documentAdded": "Document added. It is being read; you will find it in Memory.",
-    "documentUnavailable": "You can add documents from the Memory page."
+    "documentUnavailable": "You can add documents from the Memory page.",
+    "inviteOnlyTitle": "Cendr is by invitation",
+    "inviteOnlyBody": "No invitation for {email}. Ask your manager to invite you with this address, then open the link you receive by e-mail.",
+    "later": "Later"
   },
   "company": {
     "title": "Company profile",
@@ -308,7 +312,7 @@
     "workspace": "Work",
     "clients": "Clients",
     "memory": "Memory",
-    "library": "Library",
+    "library": "Apps",
     "profile": "My profile",
     "adminConsole": "Admin",
     "newConversation": "New conversation"
@@ -325,8 +329,14 @@
     "clientsBody": "{count, plural, =0 {No clients yet} one {# client available} other {# clients available}}",
     "memoryTitle": "Company memory",
     "memoryBody": "Procedures, offers and rules, always up to date.",
-    "libraryTitle": "Agent library",
-    "libraryBody": "Ready-made assistants for every department."
+    "libraryTitle": "Apps",
+    "libraryBody": "Ready-made apps for every team: proposals, invoices, contracts, minutes…",
+    "setupTitle": "Getting started · {done}/{total}",
+    "setup": {
+      "invite": "Invite your team",
+      "client": "Add a first client",
+      "document": "Add a first document"
+    }
   },
   "profile": {
     "title": "My profile",
@@ -356,7 +366,7 @@
     "permissions": "Memory permissions",
     "ai": "AI",
     "models": "Models",
-    "agents": "Agents and tools",
+    "agents": "Apps",
     "hide": "Protection (Hide)",
     "usageSection": "Usage",
     "usage": "Usage",
@@ -513,7 +523,8 @@
     "releases": "Versions",
     "preview": "Preview",
     "debug": "Debug",
-    "home": "Home"
+    "home": "Home",
+    "apps": "Apps"
   },
   "platform": {
     "companiesTitle": "Companies",
@@ -580,7 +591,10 @@
     "currencyEUR": "€ (euro)",
     "currencyUSD": "$ (dollar)",
     "seatPriceValue": "{price} per seat per month",
-    "noSeatPrice": "No price per seat yet"
+    "noSeatPrice": "No price per seat yet",
+    "openSignup": "Open sign-up",
+    "openSignupOff": "Off: only the companies we invite can join.",
+    "openSignupOn": "On: anyone signed in can create their company."
   },
   "system": {
     "notFoundCode": "404",
@@ -1101,7 +1115,14 @@
     "protectItem": "Protect: {text}",
     "showItem": "Leave visible: {text}",
     "done": "Done",
-    "protectedTitle": "Protected: the AI did not see it"
+    "protectedTitle": "Protected: the AI did not see it",
+    "modesMenu": "What Hide protects",
+    "modeMessage": "The message",
+    "modeMessageHint": "Masks what is sensitive before sending.",
+    "modeDocuments": "Attached files",
+    "modeDocumentsHint": "Masks the same data in documents.",
+    "modeManual": "Manual",
+    "modeManualHint": "Highlights in red what looks sensitive; a click protects it."
   },
   "hideAdmin": {
     "title": "Data protection (Hide)",
@@ -2070,5 +2091,54 @@
       "workspace": "E-mail accounts",
       "gmail": "Mailbox"
     }
+  },
+  "apps": {
+    "title": "Apps",
+    "description": "Ready-made apps for every team, and the ones your team created.",
+    "discover": "Discover",
+    "yours": "Your apps",
+    "search": "Search apps",
+    "popular": "Most used in your company",
+    "departments": "Teams",
+    "all": "All",
+    "soon": "Coming soon",
+    "byTeam": "Made by your team",
+    "star": "Add {name} to your apps",
+    "unstar": "Remove {name} from your apps",
+    "yoursEmpty": "Star your favourite apps: they show up here, and first in conversations.",
+    "noMatch": "No app found.",
+    "createHint": "To create your own app: in a successful conversation, ⋯ then \"Turn into a tool\".",
+    "picker": "Apps",
+    "pickerSearch": "Start an app…",
+    "pickerEmpty": "No app",
+    "pickerAll": "All apps"
+  },
+  "platformApps": {
+    "title": "Apps",
+    "description": "What our customers find in “Apps”.",
+    "launch": "At launch",
+    "video": "Video apps (Motion Design, Video Editor)",
+    "videoHint": "Off: customers see them as “Coming soon”. Turn on once the render worker is hosted.",
+    "review": "Application Review Assistant",
+    "reviewHint": "Hidden for every customer until a lawyer has reviewed it.",
+    "ours": "Our apps",
+    "oursHint": "Added by our team for every customer. Each company keeps its own models and rules.",
+    "new": "New app",
+    "empty": "No app added yet.",
+    "enabled": "On",
+    "disabled": "Off",
+    "enabledLabel": "On for every customer",
+    "edit": "Edit {name}",
+    "delete": "Delete {name}",
+    "createTitle": "New app",
+    "editTitle": "Edit app",
+    "editorHint": "Name, form and instructions. It goes through Hide, authorised memory and credits like any request.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "App saved",
+    "deleted": "App deleted",
+    "deleteTitle": "Delete “{name}”?",
+    "deleteBody": "It disappears for every customer. Conversations already started stay.",
+    "confirmDelete": "Delete"
   }
 }

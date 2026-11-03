@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 1 foundation, as a real user would do it: sign-up by magic link, onboarding, invitations,
@@ -30,6 +30,7 @@ test("owner signs up and completes onboarding", async ({ page }) => {
   await shot(page, "03-onboarding-company");
   await page.getByRole("button", { name: "Continuer" }).click();
 
+  await openSetup(page, "invite");
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await page.getByLabel("Adresses e-mail").fill(`${olivier}, ${nathalie}`);
   await page.getByRole("button", { name: "Envoyer les invitations" }).click();
@@ -38,17 +39,17 @@ test("owner signs up and completes onboarding", async ({ page }) => {
   await shot(page, "04-onboarding-invite");
   await page.getByRole("button", { name: "Continuer" }).click();
 
+  await openSetup(page, "client");
   await expect(page.getByRole("heading", { name: "Ajoutez un premier client" })).toBeVisible();
   await page.getByLabel("Nom du client").fill("Client A");
   await page.getByRole("button", { name: /Restreint/ }).click();
   await shot(page, "05-onboarding-client");
   await page.getByRole("button", { name: "Créer le client" }).click();
 
+  await openSetup(page, "document");
   await expect(page.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Ajouter un document" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
-  await expect(page.getByRole("heading", { name: "Votre première conversation" })).toBeVisible();
-  await page.getByRole("button", { name: "Accéder à mon espace" }).click();
 
   await expect(page.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
   await shot(page, "06-home-owner");
@@ -70,7 +71,7 @@ test("invited colleagues join from their email", async ({ browser }) => {
     await page.getByLabel("Domaines d'expertise").fill(expertise);
     if (email === nathalie) await shot(page, "07-member-welcome");
     await page.getByRole("button", { name: "Continuer" }).click();
-    await expect(page.getByRole("heading", { name: `Bonjour ${name.split(" ")[0]}` })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Que puis-je faire pour vous ?" })).toBeVisible();
     await page.context().close();
   }
 });

@@ -19,6 +19,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     {
       label: t("product"),
       items: [
+        { href: "/platform/apps", label: t("apps"), icon: "apps" },
         { href: "/platform/releases", label: t("releases"), icon: "releases" },
         { href: "/platform/preview", label: t("preview"), icon: "preview" },
         { href: "/platform/debug", label: t("debug"), icon: "debug" },

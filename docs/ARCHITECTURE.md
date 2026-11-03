@@ -45,8 +45,8 @@ The company's and clients' knowledge lives **outside every LLM**, in our databas
 ├─ src/
 │  ├─ app/                       Next.js App Router
 │  │  ├─ (auth)/                 sign-in, magic link, OAuth callback, invitation acceptance
-│  │  ├─ onboarding/             company creation wizard
-│  │  ├─ (app)/                  member app: chat, clients, memory, library, tools, settings
+│  │  ├─ onboarding/             name, company, avatar; then setup screens from the home checklist
+│  │  ├─ (app)/                  member app: chat, clients, memory, apps (Applis), settings
 │  │  ├─ admin/                  company admin console (Owner / Admin)
 │  │  ├─ platform/               platform admin console (our team)
 │  │  └─ api/                    route handlers: chat stream, uploads, hide/detect, jobs
@@ -81,7 +81,7 @@ The company's and clients' knowledge lives **outside every LLM**, in our databas
 | `memory` | Memory spaces (company / client), entries, permission categories, suggestions, promotion, Source Proof |
 | `providers` | Provider interface, OpenAI / Anthropic / Google adapters, model catalogue, Smart Router, embeddings provider |
 | `hide` | Sensitive data detection, pseudonymisation, mapping vault, restore, masking events |
-| `agents` | Shared agent/tool framework, built-in agents, "Turn into a tool", library |
+| `agents` | Shared agent/tool framework, built-in agents, "Turn into a tool", Applis (catalogue, favourites, picker in the chat), apps our team adds |
 | `exports` | Word, PDF, Excel and CSV downloads of an AI answer (built from its Markdown on our server) |
 | `collaboration` | Smart Handover, Who Can Help |
 | `usage` | Usage events, credits, quotas (80 % warning / 100 % stop), pricing tables, estimates |
@@ -422,7 +422,8 @@ typed message / attachments / retrieved excerpts
 - **Confronter** (`src/modules/confronter`): `prompts.ts` (who takes part, who writes the synthesis, the credit estimate, the critique and synthesis prompts, reading the judge's JSON), `server/plan.ts` (models, estimate and credits left, checked again when it runs), `server/run.ts` (the three stages, usage per call as "confronter", Stop between stages), `ui/` (confirmation dialog, result card). It enters through `prepareChatTurn` with `confront: { messageId }`, so the context is built exactly as for a normal answer (history up to the question, Hide, permission-filtered memory, group rules); NDJSON events `confront` (progress) and `confrontation` (result) are added to the chat stream.
 - **Tools and agents** (`src/modules/agents`): `definitions.ts` (departments, field types, formats, memory scopes, the form → first message, the launch list), `prompts.ts` ("Turn into a tool"), `server/queries.ts` (library, admin lists, `resolveRunAgent`), `server/actions.ts` (draft, save, approve, roles, delete, start a run), `ui/` (editor, "Turn into a tool" dialog, run form, admin page). SQL: `save_tool`, `decide_tool`, `set_tool_roles`, `delete_tool`, `admin_set_agent_settings`, `admin_set_member_team`; `private.can_see_agent` (RLS) and `private.can_use_agent` (checked by a trigger when a run's conversation is created).
 - **A run in `prepareChatTurn`**: the conversation's agent is resolved with the person's session (null → refused); its instructions (plus the company's adaptations) are a prompt fact masked by Hide; models outside its list are replaced by its default; memory scope "none" skips retrieval and "company" narrows it to the company memory (intersected with the group rule); attachments are refused unless allowed.
-- **Starting a run**: the library page calls `startRunAction`, which creates the conversation (linked to the client chosen in the form) and returns the first message; the conversation screen reads it from `sessionStorage` (`useSyncExternalStore`, so nothing differs between server and browser rendering) and sends it when auto-protect is on.
+- **Applis (Step 13)**: `/apps` (`apps-browser.tsx`: Découvrir by department, most used, Vos applis = favourites in `app_favorites`), the picker in the chat (`app-picker.tsx`: "Applis" button or "/" at the start of a message). Launch switches in `platform_settings` (`video_apps_enabled`, `app_review_enabled`), read through `app_availability()`; `queries.ts` marks video apps "soon" and hides the Application Review Assistant while they are off. Apps our team adds for every customer are `agents` rows with `company_id` null and a `platform_` key, written by `platform_save_app` / `platform_delete_app` (Platform → Applis).
+- **Starting a run**: an app's page (`/apps/[id]`) calls `startRunAction`, which creates the conversation (linked to the client chosen in the form) and returns the first message; the conversation screen reads it from `sessionStorage` (`useSyncExternalStore`, so nothing differs between server and browser rendering) and sends it when auto-protect is on.
 - **Guard**: a unit test checks that "use server" files export only functions (Next.js only refuses other exports at run time).
 
 ## 18. Implementation notes (Step 7)
@@ -464,7 +465,7 @@ typed message / attachments / retrieved excerpts
 - **Assistant characters** (`modules/avatars`): one 3D character per provider plus Auto, pre-rendered by `scripts/avatars/render-assistants.mjs` (three.js in headless Chromium, dev only) into `public/avatars/assistants/*.webp`. The face is not baked in: `AssistantAvatar` draws eyes and mouth as SVG on the visor box printed by the script, and CSS animates them by state (`idle`, `thinking`, `speaking`, `happy`). Only the assistant at work is animated.
 - **Chat.** `MessageItem` derives the mood of a live answer (thinking before the first words, speaking while they stream, a short smile when done). `ChatView` computes the cast (assistants that answered, the one at work, the people) for `CastRail` (wide screens, a third grid column, sticky) and `CastStack` (header). The empty conversation shows `CastPicker`: clicking a character chooses its first available model.
 - **Personal avatars.** `POST /api/avatars/generate` (member of an active company): file checks by magic bytes, 6 per person per 24 h, quota check, OpenAI image edit with the fixed prompt (`prompt.ts`, versioned) through the AI SDK, then the result is stored as *pending* by the audited `avatars/server/store.ts`. Server actions keep it (`avatar_url` = `/api/avatars/<user>?v=<file>`), discard it, or go back to initials. `GET /api/avatars/<user>` checks visibility through the `profiles` policy, then streams the file (cacheable: the URL changes with the file). Usage feature `avatar`; credits and estimated cost per creation in `platform_settings` (Platform → Modèles et tarifs).
-- **Onboarding.** A skippable `avatar` step right after the company is created; invited colleagues get the same studio on their welcome screen, so the image is made while they fill in the rest.
+- **Onboarding (Step 13).** Name and company (or an Owner invitation from our team), avatar, company profile, then straight into the first conversation; inviting the team, the first client and the first document are a checklist on the home page (`/onboarding?step=invite|client|document`, each returning home). Self-serve company creation is closed unless our team opens sign-up (`signup_open()`). The avatar step is skippable; invited colleagues get the same studio on their welcome screen, so the image is made while they fill in the rest.
 
 ## 23. Implementation notes (Step 12 — clients, permissions, collaboration, personal memory, dictation)
 

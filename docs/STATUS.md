@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 12 (clients, permissions and collaboration, personal memory, voice dictation), 2026-11-02.
+Last update: Step 13 (Applis, launch choices, shorter onboarding, Hide menu), 2026-11-03.
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -249,6 +249,20 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Support access by consent (our team asks for one conversation; the owner approves by e-mail; read-only, time-limited, logged) | **not started**: built with our back-office (second round). Awaiting the founder's confirmation that the e-mail goes to the conversation's owner |
 | Product name "Cendr" in the interface | **not started** (Step 13) |
 
+## Step 13 — Applis and launch choices (2026-11-03)
+
+| Item | Status |
+|---|---|
+| Name **Cendr** in the app, e-mails and exports | **done** |
+| **Applis** replaces the Library (`/apps`, old links redirect): "Découvrir" with a shelf per department, search, "Les plus utilisées" in the company (counts only), "Vos applis" (each person's stars), "Fait par votre équipe" badge | **done** |
+| An app from the chat: "Applis" button next to the paperclip, or "/" at the start of a message (arrows, Enter, Esc); a conversation linked to a client opens the app with that client already chosen | **done** |
+| Our console → **Applis**: switch for the video apps ("Bientôt" for customers until the render worker is hosted), switch for the Application Review Assistant (hidden for everyone until a lawyer has reviewed it), our own apps added for every customer (create, edit, switch off, delete) | **done**; both switches are **off** by default |
+| **Sign-up by our invitation only**: creating one's own company is refused by the database unless our team opens it (Platform → Entreprises → "Inscription libre", off by default); someone signed in without an invitation sees "Cendr est sur invitation" | **done** |
+| **Customers see credits only**: estimated costs removed from the company usage page and from the database answers customers can read | **done** |
+| **Shorter onboarding**: name, company, avatar, then straight into the first conversation; inviting the team, the first client and the first document become a "Pour bien démarrer" list on the home page (each opens its own short screen and returns home); invited employees go straight to the chat after their welcome screen | **done** |
+| **Hide**: one visible switch; a small menu next to it with the three modes (the message, attached files, Manual) | **done** |
+| **Who Can Help** also uses the company memory entries a colleague wrote (only those the person may read, in a private conversation; titles masked by Hide like memory passages) | **done** |
+
 ## Our console: versions, preview, Debug with Claude Code (2026-11-02)
 
 Founder's request: see a boss's and an employee's view of the version that runs, launch new versions from the
@@ -331,7 +345,7 @@ Screenshots for the founder: `docs/screenshots/step-10/` (launch scenario), `doc
 - Emails go to the local test inbox (Mailpit). Production needs an SMTP provider; Supabase's default limit of 2 emails/hour must then be raised.
 - No ownership transfer (Owner → someone else) and no company switcher for people in several companies (the database supports several memberships, the UI uses the first active one).
 - A platform admin who is also a member of a company sees that company's content as a member. Our team should use separate accounts.
-- Product name ("Workspace") and accent colour are placeholders until the branding is chosen.
+- The accent colour is a placeholder until the branding is chosen (the name, Cendr, is in place).
 - **Hide is a safety net, not a guarantee.** Detection relies on rules, checksums and the company's lists: uncommon names without a title, client names not entered in the app, data inside images and anything a person turns off are sent as typed. Never present it as 100 % detection.
 - **Hide needs `HIDE_ENCRYPTION_KEY` on the server.** Without it, messages with protection on are refused with a clear message (nothing is sent unmasked). Losing or changing the key makes earlier placeholders impossible to restore in old conversations.
 - With Hide on, some answers are less precise: the AI does not know who [PERSON_1] or [CLIENT_1] is (by design), and amounts become [AMOUNT_1] if the company turns amounts on.
@@ -490,7 +504,7 @@ The founder asked to proceed ("je suis prêt à construire le tout") without ans
 9. **Knowledge export** — a company could export its whole memory (entries + documents) in open formats, which proves it is not locked in. Not in the launch spec; to confirm whether to add it.
 10. **AI provider keys (Step 2)** — to test Claude and Gemini for real, the platform needs an Anthropic API key and a Gemini API key from a billing-enabled Google project (`ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`). The current OpenAI account needs credit: GPT-6.1 Sol is refused with "no credits remaining".
 11. **Value of a credit** — proposal: 1 credit ≈ 0.001 USD of estimated AI cost (so 100,000 credits ≈ 100 USD of AI per month). The number of credits per plan and per seat should be decided together with the price (€30–40 per user per month).
-12. **Showing the estimated AI cost to customers** — CLAUDE.md §4.8 asks for it on the company usage page, so it is shown (labelled as an estimate). It reveals our approximate cost; confirm, or show credits only.
+12. **Showing the estimated AI cost to customers** — *decided (2026-11-01): credits only.* Estimated costs stay in our console (Step 13).
 13. **GSAP licence (Motion Design)** — HyperFrames compositions are animated with GSAP, whose free licence excludes "tools that allow users to build visual animations without code" competing with Webflow's animation features. Our agent generates animations from a brief, which may fall in that grey zone. Options: ask Webflow for written consent, have a lawyer read the licence, or switch compositions to CSS animations (HyperFrames supports other animation drivers; CLAUDE.md names GSAP, so switching needs your approval). Decision needed before selling Motion Design.
 14. **Render worker hosting** — the worker needs an always-on EU server (or container service) with FFmpeg and Chromium, separate from the app. To choose at Step 10 with the rest of the hosting.
 15. **Test deployment accounts (Step 9)** — to click-test online, the founder creates a Supabase project (Frankfurt) and a Vercel project (Frankfurt), then adds the keys in GitHub and Vercel settings, following `docs/DEPLOY.md`. Both free plans are enough for testing; Vercel's free plan is for non-commercial use, so a paid plan (or another EU host) is needed before selling. Optional: Resend (with a domain) to email people other than the founder.

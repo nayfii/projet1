@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 8, the video agents (CLAUDE.md §4.7): Motion Design (composition → preview → MP4) and the Video
@@ -56,14 +56,16 @@ test("setup: a company", async () => {
   await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "invite");
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "client");
   await page.getByLabel("Nom du client").fill("Client A");
   await page.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(page, "document");
   await expect(page.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
-  await page.getByRole("button", { name: "Accéder à mon espace" }).click();
-  await page.goto("/library");
+  await page.goto("/apps");
 });
 
 test("the Marketing department offers both video agents", async () => {
@@ -75,7 +77,7 @@ test("the Marketing department offers both video agents", async () => {
 
 test("Motion Design: a brief and a logo, a preview, then a real MP4", async () => {
   test.setTimeout(240_000);
-  await page.goto("/library");
+  await page.goto("/apps");
   await page.getByRole("link", { name: /Motion design/ }).click();
   await expect(page.getByText("La vidéo est fabriquée sur nos serveurs")).toBeVisible();
   await page.getByLabel("Brief (message, textes, public) *").fill("Annonce du nouvel atelier de Lyon, ouverture le 3 novembre, pour nos clients.");
@@ -119,7 +121,7 @@ test("Motion Design: a brief and a logo, a preview, then a real MP4", async () =
 
 test("Video Editor: two clips, an edit plan, then MP4s in the chosen formats", async () => {
   test.setTimeout(240_000);
-  await page.goto("/library");
+  await page.goto("/apps");
   await page.getByRole("link", { name: /Montage vidéo/ }).click();
   const a = clip(test.info().outputPath("plage.mp4"), 4, true);
   const b = clip(test.info().outputPath("atelier.mp4"), 3, false);

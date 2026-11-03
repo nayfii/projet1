@@ -14,16 +14,17 @@ import { agentText, type DynamicT } from "@/modules/agents/labels";
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
-export async function generateMetadata({ params }: PageProps<"/library/[id]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/apps/[id]">): Promise<Metadata> {
   const ctx = await requireMember();
   const { id } = await params;
   const agent = UUID.test(id) ? await getAgent(ctx, id) : null;
   return { title: agent ? agentText(agent, (await getTranslations("tools")) as unknown as DynamicT).name : undefined };
 }
 
-export default async function ToolPage({ params }: PageProps<"/library/[id]">) {
+export default async function ToolPage({ params, searchParams }: PageProps<"/apps/[id]">) {
   const ctx = await requireMember();
   const { id } = await params;
+  const { client } = await searchParams;
   const t = await getTranslations("tools");
   // RLS: a tool one may not see is "not found", without confirming it exists.
   const agent = UUID.test(id) ? await getAgent(ctx, id) : null;
@@ -33,7 +34,7 @@ export default async function ToolPage({ params }: PageProps<"/library/[id]">) {
 
   return (
     <PageContainer className="max-w-3xl">
-      <Link href="/library" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/apps" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeftIcon className="size-4" />
         {t("libraryTitle")}
       </Link>
@@ -42,7 +43,7 @@ export default async function ToolPage({ params }: PageProps<"/library/[id]">) {
         description={agentText(agent, t as unknown as DynamicT).description || undefined}
         actions={<AgentBadges agent={agent} />}
       />
-      <RunForm agent={agent} clients={clients} editor={editor} canDelete={canDelete} />
+      <RunForm agent={agent} clients={clients} editor={editor} canDelete={canDelete} initialClient={typeof client === "string" ? client : undefined} />
     </PageContainer>
   );
 }

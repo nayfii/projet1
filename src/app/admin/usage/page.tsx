@@ -43,7 +43,6 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
   const labels = new Map(models.catalog.map((m) => [m.id, m.label]));
   const n = (v: number) => format.number(v, { maximumFractionDigits: 0 });
   const credits = (v: number) => format.number(v, { maximumFractionDigits: v < 10 ? 1 : 0 });
-  const usd = (v: number) => format.number(v, { style: "currency", currency: "USD", maximumFractionDigits: v < 1 ? 4 : 2 });
   const share = (v: number, total: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
 
   const options = months.map((m) => {
@@ -66,7 +65,7 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
         <EmptyState icon={<GaugeIcon />} title={t("emptyTitle")} description={t("emptyBody")} />
       ) : (
         <div className="space-y-8">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Stat
               label={t("aiCredits")}
               value={credits(totals.credits)}
@@ -75,7 +74,6 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
             />
             <Stat label={t("aiRequests")} value={n(totals.requests)} hint={totals.errors ? t("errorsCount", { count: totals.errors }) : undefined} />
             <Stat label={t("activeUsers")} value={n(totals.active_users)} hint={t("activeUsersHint", { members: activeMembers })} />
-            <Stat label={t("estimatedCost")} value={usd(totals.estimated_cost_usd)} hint={t("estimateLabel")} />
           </div>
 
           <Chart
@@ -124,14 +122,13 @@ export default async function AdminUsagePage({ searchParams }: PageProps<"/admin
             <div className="lg:col-span-2">
               <UsageTable
                 title={t("byModel")}
-                headers={[t("colModel"), t("requests"), t("credits"), t("estimatedCostShort")]}
+                headers={[t("colModel"), t("requests"), t("credits")]}
                 rows={summary.byModel.map((r) => ({
                   key: r.model_id ?? "unknown",
                   cells: [
                     r.provider && r.model_id ? <ModelName key="m" provider={r.provider} label={labels.get(r.model_id) ?? r.model_id} /> : "—",
                     r.auto_requests ? t("requestsWithAuto", { count: n(r.requests), auto: n(r.auto_requests) }) : n(r.requests),
                     credits(r.credits),
-                    usd(r.estimated_cost_usd),
                   ],
                 }))}
               />

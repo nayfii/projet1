@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Hide, as validated with the founder: red = the AI would see it, green struck = protected.
@@ -48,11 +48,14 @@ test("auto-protect (default): detected items arrive struck in green; a click lea
   await skipAvatarStep(page);
   await expect(page.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "invite");
   await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await page.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(page, "client");
   await expect(page.getByRole("heading", { name: "Ajoutez un premier client" })).toBeVisible();
   await page.getByLabel("Nom du client").fill("Client A");
   await page.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(page, "document");
   await expect(page.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
 
   await page.goto("/chat");

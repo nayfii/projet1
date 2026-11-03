@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 6, tools (CLAUDE.md §4.6, §4.7, §10 step 11): Olivier turns a conversation into a tool and asks
@@ -32,22 +32,24 @@ test("setup: a company, Client A and Olivier", async () => {
   await skipAvatarStep(ownerPage);
   await expect(ownerPage.getByRole("heading", { name: "Présentez votre entreprise" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "invite");
   await expect(ownerPage.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
   await ownerPage.getByLabel("Adresses e-mail").fill(olivier);
   await ownerPage.getByRole("button", { name: "Envoyer les invitations" }).click();
   await expect(ownerPage.getByText("E-mail envoyé")).toHaveCount(1);
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
+  await openSetup(ownerPage, "client");
   await ownerPage.getByLabel("Nom du client").fill("Client A");
   await ownerPage.getByRole("button", { name: "Créer le client" }).click();
+  await openSetup(ownerPage, "document");
   await expect(ownerPage.getByRole("heading", { name: "Votre premier document" })).toBeVisible();
   await ownerPage.getByRole("button", { name: "Continuer" }).click();
-  await ownerPage.getByRole("button", { name: "Accéder à mon espace" }).click();
 
   await olivierPage.goto(await latestLinkFor(olivier, new Date(0)));
   await olivierPage.getByRole("button", { name: "Accepter l'invitation" }).click();
   await olivierPage.getByLabel("Votre nom").fill("Olivier Durand");
   await olivierPage.getByRole("button", { name: "Continuer" }).click();
-  await expect(olivierPage.getByRole("heading", { name: "Bonjour Olivier" })).toBeVisible();
+  await expect(olivierPage.getByRole("heading", { name: "Que puis-je faire pour vous ?" })).toBeVisible();
 });
 
 test("Olivier turns a conversation into a tool and asks to share it with the whole company", async () => {
@@ -69,20 +71,20 @@ test("Olivier turns a conversation into a tool and asks to share it with the who
   await shot(olivierPage, "75-turn-into-tool");
   await dialog.getByRole("button", { name: "Enregistrer et demander la validation" }).click();
   await expect(olivierPage.getByText("Il sera visible par toute l'entreprise après validation")).toBeVisible();
-  await expect(olivierPage).toHaveURL(/\/library\/[0-9a-f-]{36}$/);
+  await expect(olivierPage).toHaveURL(/\/apps\/[0-9a-f-]{36}$/);
   toolUrl = olivierPage.url();
   await expect(olivierPage.getByText("En attente de validation")).toBeVisible();
 });
 
 test("the library is organised by department, with the launch agents to come", async () => {
-  await olivierPage.goto("/library");
+  await olivierPage.goto("/apps");
   const sales = olivierPage.getByRole("region", { name: "Ventes" });
   await expect(sales.getByRole("link", { name: /\[TEST\] Synthèse client/ })).toBeVisible();
   await expect(sales).toContainText("Proposition commerciale");
   await expect(olivierPage.getByRole("region", { name: "Juridique" })).toContainText("Relecture de contrat");
   await shot(olivierPage, "76-library");
   // Not yet approved: invisible to the Owner's library, but waiting in Administration.
-  await ownerPage.goto("/library");
+  await ownerPage.goto("/apps");
   await expect(ownerPage.getByRole("link", { name: /\[TEST\] Synthèse client/ })).toHaveCount(0);
 });
 

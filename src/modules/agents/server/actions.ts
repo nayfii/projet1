@@ -28,7 +28,7 @@ import {
 } from "../definitions";
 import { getLocale, getTranslations } from "next-intl/server";
 import { agentText, type DynamicT } from "../labels";
-import { getAgent } from "./queries";
+import { getAgent, listFavoriteApps, listLibrary, popularApps } from "./queries";
 import { TOOL_DRAFT_SYSTEM } from "../prompts";
 
 export type ToolDraft = { tool: ToolInput; aiGenerated: boolean; specific: boolean };
@@ -140,7 +140,7 @@ export async function saveToolAction(input: z.input<typeof saveSchema>): Promise
     p_source_conversation: parsed.data.sourceConversationId ?? undefined,
   });
   if (error || !data) return { ok: false, error: toErrorCode(error) };
-  revalidatePath("/library", "layout");
+  revalidatePath("/apps", "layout");
   revalidatePath("/admin/agents");
   const { data: saved } = await supabase.from("agents").select("publication").eq("id", data).maybeSingle();
   return { ok: true, data: { id: data, publication: saved?.publication ?? "none" } };
@@ -153,7 +153,7 @@ export async function deleteToolAction(input: { id: string }): Promise<ActionRes
   if (!parsed.success) return { ok: false, error: "validation" };
   const { error } = await (await createClient()).rpc("delete_tool", { p_agent: parsed.data.id });
   if (error) return { ok: false, error: toErrorCode(error) };
-  revalidatePath("/library", "layout");
+  revalidatePath("/apps", "layout");
   revalidatePath("/admin/agents");
   return { ok: true };
 }
@@ -166,7 +166,7 @@ export async function decideToolAction(input: { id: string; approve: boolean }):
   const { error } = await (await createClient()).rpc("decide_tool", { p_agent: parsed.data.id, p_approve: parsed.data.approve });
   if (error) return { ok: false, error: toErrorCode(error) };
   revalidatePath("/admin/agents");
-  revalidatePath("/library", "layout");
+  revalidatePath("/apps", "layout");
   return { ok: true };
 }
 
@@ -178,7 +178,7 @@ export async function setToolRolesAction(input: { id: string; roles: string[] })
   const { error } = await (await createClient()).rpc("set_tool_roles", { p_agent: parsed.data.id, p_roles: parsed.data.roles });
   if (error) return { ok: false, error: toErrorCode(error) };
   revalidatePath("/admin/agents");
-  revalidatePath("/library", "layout");
+  revalidatePath("/apps", "layout");
   return { ok: true };
 }
 
@@ -260,6 +260,35 @@ export async function saveAgentSettingsAction(input: z.input<typeof settingsSche
   });
   if (error) return { ok: false, error: toErrorCode(error) };
   revalidatePath("/admin/agents");
-  revalidatePath("/library", "layout");
+  revalidatePath("/apps", "layout");
   return { ok: true };
+}
+
+/** Star an app ("Vos applis"), or remove the star. The database checks the person may see it. */
+export async function setFavoriteAppAction(input: { agentId: string; favorite: boolean }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  if (!ctx) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ agentId: z.uuid(), favorite: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const supabase = await createClient();
+  const { error } = parsed.data.favorite
+    ? await supabase.from("app_favorites").upsert({ company_id: ctx.active.companyId, agent_id: parsed.data.agentId }, { onConflict: "user_id,company_id,agent_id", ignoreDuplicates: true })
+    : await supabase.from("app_favorites").delete().eq("company_id", ctx.active.companyId).eq("agent_id", parsed.data.agentId);
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/apps");
+  return { ok: true };
+}
+
+export type PickerApp = { id: string; name: string; department: string; favorite: boolean; uses: number };
+
+/** The apps one can start from a conversation ("Applis" button or "/"), favourites and most used first. */
+export async function listPickerAppsAction(): Promise<PickerApp[]> {
+  const ctx = await memberOrNull();
+  if (!ctx) return [];
+  const t = await getTranslations("tools");
+  const [apps, favorites, uses] = await Promise.all([listLibrary(ctx), listFavoriteApps(ctx), popularApps(ctx)]);
+  return apps
+    .filter((a) => a.usable)
+    .map((a) => ({ id: a.id, name: agentText(a, t as unknown as DynamicT).name, department: a.department, favorite: favorites.has(a.id), uses: uses.get(a.id) ?? 0 }))
+    .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.uses - a.uses || a.name.localeCompare(b.name));
 }
