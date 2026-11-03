@@ -299,7 +299,9 @@ test("the platform admin sees credits per company and the model catalogue, not c
   await expect(admin.getByText("gpt-6.1-sol")).toBeVisible();
   await shot(admin, "32-platform-models");
 
-  expect((await admin.goto(conversationUrl))?.url()).toMatch(/\/platform$/);
+  // Our team never opens a conversation: "not found", without confirming it exists.
+  expect((await admin.goto(conversationUrl))?.status()).toBe(404);
+  await expect(admin.getByRole("heading", { name: "Page introuvable" })).toBeVisible();
   await admin.context().close();
 });
 
