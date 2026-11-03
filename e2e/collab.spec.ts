@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep, openSetup } from "./helpers";
+import { applyTheme, shot, signIn, skipAvatarStep, openSetup } from "./helpers";
 
 /**
  * Step 5, with two people in two browsers (CLAUDE.md §10, steps 8, 9 and 13): Who Can Help, adding a
@@ -40,6 +40,7 @@ async function waitForAnswer(p: Page, before: number) {
 }
 
 async function join(page: Page, email: string, name: string, expertise?: string) {
+  await applyTheme(page);
   await page.goto(await latestLinkFor(email, new Date(0)));
   await page.getByRole("button", { name: "Accepter l'invitation" }).click();
   await page.getByLabel("Votre nom").fill(name);

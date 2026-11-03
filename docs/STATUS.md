@@ -311,6 +311,17 @@ Claude Code. Recorded in CLAUDE.md §11.
 - Documents added while embeddings were unavailable stay searchable by their words only (no automatic re-indexing yet).
 - **Fixed (founder's report, 2026-11-03):** in test mode the provider health page showed every provider as working, Gemini included without a key. It now says "Mode test", counts only real keys, and turns the live tests off.
 
+## Tests (Step 13, chat improvements, speed and light theme)
+
+| Suite | Result |
+|---|---|
+| Unit (`pnpm test`) | 259 passed (new: colleague mentions, automatic titles, web search and PDF rules, the test model's search, the robots' face) |
+| Integration (`pnpm test:integration`) | 207 passed (`step13.test.ts`, 8: invitation-only sign-up, credits only, launch switches, our team's apps, favourites and most used apps, automatic titles, web search switch and rate) |
+| End to end (`npx playwright test`, test provider, render worker running) | 109 passed: last full run 102 passed with 3 failures caused by test expectations (fixed), then the three files concerned run again: 37/37. New: `step13.spec.ts` (9: onboarding and checklist, our console's Applis, Applis and favourites, "/" in the chat, "Coucou Claude" with web search and title, PDF, Hide menu, robots, invitation only) and the colleague mention in `collab.spec.ts`. The group chat and Hide screens were also checked in the light theme (`E2E_THEME=light`) |
+| Type check, lint, production build | OK |
+
+**Found and fixed by these runs:** pages now show a loading shape at once, after which a page can no longer answer "404": a conversation or client the person may not open answered "not found" with the wrong code (200). The proxy now answers a real 404 before the page starts (no data was shown either way). The first automatic title kept the provisional one (the start of the first message): fixed.
+
 ## Tests (Step 12)
 
 | Suite | Result |
