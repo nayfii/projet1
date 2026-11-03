@@ -120,7 +120,7 @@ test("Invoice Intake: files in the form, a table, Excel and CSV exports, the dra
   await expect(answer).toContainText("Tool instructions received: Invoice Intake");
   await expect(answer.locator("table")).toBeVisible();
   // The files went with the first message, read and protected on our servers.
-  await expect(page.getByRole("link", { name: "facture-ovh.txt" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "facture-ovh.txt", exact: true })).toBeVisible();
   await expect(page.getByText("Brouillon à vérifier par une personne")).toBeVisible();
 
   const xlsx = await download(answer, "Tableau Excel (.xlsx)");
