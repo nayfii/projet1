@@ -403,7 +403,7 @@ test("15. the Owner sees real usage and the activity log; our team sees usage bu
     await expect(platformPage.getByRole("main").getByText(name)).toHaveCount(0);
   }
   await shot(platformPage, "L15-platform-company");
-  // A conversation's address leads back to the platform console, never to its content.
-  expect((await platformPage.goto(mainConversationUrl))?.url()).toMatch(/\/platform$/);
+  // A conversation's address is "not found" for our team, never its content.
+  expect((await platformPage.goto(mainConversationUrl))?.status()).toBe(404);
   await expect(platformPage.getByText("Quelle remise annuelle")).toHaveCount(0);
 });
