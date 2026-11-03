@@ -24,19 +24,21 @@ and a stylized 3D avatar (soft volumes, diffuse light, a friendly face that read
 
 ## 2. AI assistants: a cast of characters
 
-- **One character per assistant**: ChatGPT (mint, antenna), Claude (peach, ear pods), Gemini (sky, halo), Auto (pearl, floating orb).
-  They share one recipe — same head-and-shoulders framing, soft clay materials, studio light with a rim light so they
-  read on near-black — and differ by colour and one signature detail, so each is recognizable at 24 px.
+- **One character per assistant** (since 2026-11-03, the founder's reference): the glossy 3D robot of Microsoft's
+  Fluent Emoji (MIT licence, shipped in `public/avatars/assistants/LICENSE-fluent-emoji.txt`), one colour each:
+  ChatGPT mint, Claude orange, Gemini blue, Auto the original pink and yellow. Same shape, so they read as one family;
+  the colour of the antennas and the top light tells them apart at 24 px.
 - **Clearly AI.** They are friendly robots, not human faces: in a group conversation nobody can mistake an assistant for
   a colleague (people have human avatars). The model's name is always written next to its character.
-- **Alive, not a game.** The face is drawn live on the glass visor: it blinks at rest, looks up while it thinks, talks while
-  it writes, smiles for a moment when it is done. In a long thread only the assistant at work moves.
+- **Alive, not a game.** The eyes and mouth are drawn live on the robot's visor: it blinks at rest, glances around while it
+  thinks, talks while it writes, smiles (^ ^) for a moment when it is done. In a long thread only the assistant at work moves.
 - **Where they appear**: next to each answer; in a quiet column beside the thread on wide screens (the one at work is
   larger and says "réfléchit…" or "écrit…"), as a small stack in the header on smaller screens; as a picker on the empty
   conversation (clicking a character chooses it); in the model picker and the "@" menu; around the table in Confronter
   (each one thinks, critiques, then the judge writes the synthesis).
-- **Source**: `scripts/avatars/render-assistants.mjs` renders the images (three.js, dev only). To change a character,
-  edit its line in `PERSONAS`, run the script, and copy the printed face box into `src/modules/avatars/assistants.ts`.
+- **Source**: `scripts/avatars/fluent-assistants.py` makes the four images from the Fluent robot (it removes the eyes
+  and mouth, which the app draws, and recolours the antennas). The face geometry is `ROBOT_FACE` in
+  `src/modules/avatars/assistants.ts`.
 
 ## 3. Personal avatars
 
@@ -50,8 +52,8 @@ default and stay one click away. "Ma photo telle quelle" is marked *Bientôt*.
 |---|---|
 | Likeness | Keep face shape, skin tone, eyes, eyebrows, nose, lips, hairstyle and colour, facial hair, glasses, piercings. Never change apparent age, gender or ethnicity; no beautifying, no caricature |
 | Style | Premium stylized 3D, soft rounded volumes, smooth matte clay-like skin, no pores, slightly larger head and eyes, gentle closed-mouth smile |
-| Framing | Head and top of the shoulders, centred, slight turn to the left, hair top at about 12 % from the top |
-| Clothing | Plain top, muted neutral colour, no logo, no text |
+| Framing | The head only (a hint of the neck), centred, facing the camera, about 80 % of the image height (since 2026-11, `2026-11-v2`) |
+| Style | 3D emoji-style head (founder's reference, 2026-11-03): simple rounded glossy clay shapes, big eyes in the person's own colour with a small highlight, hair as one sculpted volume — the same family as the assistants' robots |
 | Light | Soft key light from the upper left, gentle fill, subtle cool rim light |
 | Background | Solid flat charcoal `#1C1C21`: people's avatars sit on dark, assistants on pastel halos |
 | Output | One character, square 1024 × 1024, no text, watermark or frame |

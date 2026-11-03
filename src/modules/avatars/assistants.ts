@@ -1,9 +1,10 @@
 import type { ProviderId } from "@/modules/providers/types";
 
 /**
- * The AI assistants' characters. One per provider, plus "auto" (the Smart Router).
- * Images are rendered by scripts/avatars/render-assistants.mjs with a blank glass visor;
- * `face` is that visor's box on the image (fractions), where the live face is drawn.
+ * The AI assistants' characters (CLAUDE.md §11): one glossy 3D robot per provider, plus "auto" (the
+ * Smart Router), after Microsoft's Fluent Emoji "Robot" (MIT licence, public/avatars/assistants/
+ * LICENSE-fluent-emoji.txt). The images have no eyes or mouth (scripts/avatars/fluent-assistants.py):
+ * the app draws them live (assistant-avatar.tsx) so the robot blinks, thinks, talks and smiles.
  */
 export type AssistantId = ProviderId | "auto";
 
@@ -12,17 +13,23 @@ export type AssistantPersona = {
   image: string;
   /** Pastel token behind the character (globals.css). */
   tint: string;
-  /** Colour of the eyes' glow. */
-  glow: string;
-  face: { x: number; y: number; w: number; h: number };
 };
 
 export const ASSISTANTS: Record<AssistantId, AssistantPersona> = {
-  openai: { id: "openai", image: "/avatars/assistants/openai.webp", tint: "var(--pastel-mint)", glow: "#dcfff0", face: { x: 0.278, y: 0.297, w: 0.411, h: 0.251 } },
-  anthropic: { id: "anthropic", image: "/avatars/assistants/anthropic.webp", tint: "var(--pastel-peach)", glow: "#fff0e6", face: { x: 0.272, y: 0.299, w: 0.423, h: 0.247 } },
-  google: { id: "google", image: "/avatars/assistants/google.webp", tint: "var(--pastel-sky)", glow: "#e6efff", face: { x: 0.277, y: 0.291, w: 0.413, h: 0.264 } },
-  auto: { id: "auto", image: "/avatars/assistants/auto.webp", tint: "var(--pastel-lavender)", glow: "#efecff", face: { x: 0.278, y: 0.297, w: 0.411, h: 0.251 } },
+  openai: { id: "openai", image: "/avatars/assistants/openai.webp", tint: "var(--pastel-mint)" },
+  anthropic: { id: "anthropic", image: "/avatars/assistants/anthropic.webp", tint: "var(--pastel-peach)" },
+  google: { id: "google", image: "/avatars/assistants/google.webp", tint: "var(--pastel-sky)" },
+  auto: { id: "auto", image: "/avatars/assistants/auto.webp", tint: "var(--pastel-lavender)" },
 };
+
+/** Where the face is drawn, in the 256 px image's own units. */
+export const ROBOT_FACE = {
+  eyes: [
+    { x: 75, y: 95, w: 20, h: 37 },
+    { x: 162, y: 95, w: 20, h: 37 },
+  ],
+  mouth: { x: 100, y: 187, w: 56, h: 17 },
+} as const;
 
 /** idle: at rest · thinking: preparing an answer · speaking: writing it · happy: just finished. */
 export type AssistantState = "idle" | "thinking" | "speaking" | "happy";

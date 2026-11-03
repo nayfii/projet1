@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { assistantFor, blinkDelay, type AssistantState } from "../assistants";
+import { assistantFor, blinkDelay, ROBOT_FACE, type AssistantState } from "../assistants";
 import type { ProviderId } from "@/modules/providers/types";
 
 /**
- * An AI assistant's 3D character with a live face on its visor: it blinks at rest, looks up while
+ * An AI assistant's 3D robot with a live face on its visor: it blinks at rest, glances around while
  * it thinks, talks while it writes and smiles when it is done. Decorative: the assistant's name is
  * always written next to it. Motion only plays when `animated` (the active assistant), so a long
  * thread stays calm, and never for people who ask for reduced motion (globals.css).
@@ -38,27 +38,28 @@ export function AssistantAvatar({
       data-state={state}
       data-animated={animated || undefined}
       className={cn("assistant-avatar relative inline-flex shrink-0", className)}
-      style={{ width: size, height: size, "--tint": persona.tint, "--glow": persona.glow, "--blink-delay": `${blinkDelay(seed + persona.id)}s` } as React.CSSProperties}
+      style={{ width: size, height: size, "--tint": persona.tint, "--blink-delay": `${blinkDelay(seed + persona.id)}s` } as React.CSSProperties}
     >
       {active ? <span className="assistant-halo absolute -inset-[18%] rounded-full" /> : null}
-      <span className="relative size-full overflow-hidden rounded-full bg-[radial-gradient(circle_at_50%_32%,color-mix(in_oklch,var(--tint)_42%,transparent),color-mix(in_oklch,var(--tint)_12%,transparent)_72%)] ring-1 ring-white/[0.06]">
-        <span className="assistant-figure absolute inset-0">
+      <span className="relative size-full rounded-full bg-[radial-gradient(circle_at_50%_40%,color-mix(in_oklch,var(--tint)_38%,transparent),color-mix(in_oklch,var(--tint)_10%,transparent)_72%)] ring-1 ring-white/[0.06]">
+        <span className="assistant-figure absolute inset-[6%]">
           {/* eslint-disable-next-line @next/next/no-img-element -- small static asset, no optimisation needed */}
           <img src={persona.image} alt="" draggable={false} className="size-full select-none" />
-          <svg
-            viewBox="0 0 100 61"
-            className="assistant-face absolute overflow-visible"
-            style={{ left: `${persona.face.x * 100}%`, top: `${persona.face.y * 100}%`, width: `${persona.face.w * 100}%`, height: `${persona.face.h * 100}%` }}
-          >
+          <svg viewBox="0 0 256 256" className="assistant-face absolute inset-0 size-full overflow-visible">
             <g className="assistant-eyes">
-              <rect className="assistant-eye" x="27" y="17" width="11" height="24" rx="5.5" />
-              <rect className="assistant-eye" x="62" y="17" width="11" height="24" rx="5.5" />
+              {ROBOT_FACE.eyes.map((e) => (
+                <g key={e.x} className="assistant-eye">
+                  <rect x={e.x} y={e.y} width={e.w} height={e.h} rx={e.w / 2} />
+                  <rect className="assistant-shine" x={e.x + 4} y={e.y + 4} width={e.w * 0.32} height={e.h * 0.3} rx={3} />
+                </g>
+              ))}
             </g>
             <g className="assistant-smile">
-              <path d="M26 33 Q32.5 22 39 33" />
-              <path d="M61 33 Q67.5 22 74 33" />
+              {ROBOT_FACE.eyes.map((e) => (
+                <path key={e.x} d={`M${e.x - 2} ${e.y + e.h * 0.62} Q${e.x + e.w / 2} ${e.y + 4} ${e.x + e.w + 2} ${e.y + e.h * 0.62}`} />
+              ))}
             </g>
-            <rect className="assistant-mouth" x="43" y="45" width="14" height="4" rx="2" />
+            <rect className="assistant-mouth" x={ROBOT_FACE.mouth.x} y={ROBOT_FACE.mouth.y} width={ROBOT_FACE.mouth.w} height={ROBOT_FACE.mouth.h} rx={ROBOT_FACE.mouth.h / 2} />
           </svg>
         </span>
       </span>

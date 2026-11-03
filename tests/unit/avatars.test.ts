@@ -1,18 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { ASSISTANTS, assistantFor, blinkDelay } from "@/modules/avatars/assistants";
+import { existsSync } from "node:fs";
+import { ASSISTANTS, assistantFor, blinkDelay, ROBOT_FACE } from "@/modules/avatars/assistants";
 import { avatarUrlFor, sniffPhotoType } from "@/modules/avatars/files";
 import { AVATAR_BACKGROUND, AVATAR_PROMPT } from "@/modules/avatars/prompt";
 
 /** Step 11: assistant characters, the standardized avatar prompt, and photo checks. */
 describe("assistant characters", () => {
-  it("exist for every provider and Auto, with a face box inside the image", () => {
+  it("exist for every provider and Auto, with a face drawn inside the 256 px robot", () => {
     for (const id of ["openai", "anthropic", "google", "auto"] as const) {
-      const p = ASSISTANTS[id];
-      expect(p.image).toMatch(/^\/avatars\/assistants\/[a-z]+\.webp$/);
-      expect(p.face.x).toBeGreaterThan(0);
-      expect(p.face.x + p.face.w).toBeLessThan(1);
-      expect(p.face.y + p.face.h).toBeLessThan(1);
+      expect(ASSISTANTS[id].image).toMatch(/^\/avatars\/assistants\/[a-z]+\.webp$/);
+      expect(existsSync(`public${ASSISTANTS[id].image}`)).toBe(true);
     }
+    for (const part of [...ROBOT_FACE.eyes, ROBOT_FACE.mouth]) {
+      expect(part.x).toBeGreaterThan(0);
+      expect(part.x + part.w).toBeLessThan(256);
+      expect(part.y + part.h).toBeLessThan(256);
+    }
+    // The robot is open art: its licence ships with the images.
+    expect(existsSync("public/avatars/assistants/LICENSE-fluent-emoji.txt")).toBe(true);
     expect(assistantFor(null).id).toBe("auto");
     expect(assistantFor("anthropic").id).toBe("anthropic");
   });
@@ -28,7 +33,8 @@ describe("the avatar prompt", () => {
   it("is one standardized recipe: likeness, style, framing, light, background", () => {
     expect(AVATAR_PROMPT).toContain("recognizable");
     expect(AVATAR_PROMPT).toContain("Do not change their apparent age, gender or ethnicity");
-    expect(AVATAR_PROMPT).toContain("head and the top of the shoulders");
+    expect(AVATAR_PROMPT).toContain("3D emoji-style head");
+    expect(AVATAR_PROMPT).toContain("the head only");
     expect(AVATAR_PROMPT).toContain("rim light");
     expect(AVATAR_PROMPT).toContain(AVATAR_BACKGROUND);
     expect(AVATAR_PROMPT).toContain("no text, no watermark");

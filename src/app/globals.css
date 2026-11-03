@@ -428,30 +428,37 @@
   }
 }
 @layer components {
+  /* The robot's eyes glow blue like the Fluent robot's; the mouth is its dark slot. */
   .assistant-face {
-    filter: drop-shadow(0 0 1.5px var(--glow));
+    --eye: #3fb4ff;
+    filter: drop-shadow(0 0 3px color-mix(in oklch, var(--eye) 70%, transparent));
   }
+  .assistant-face g,
   .assistant-face rect,
   .assistant-face path {
     transform-box: fill-box;
     transform-origin: center;
   }
   .assistant-eye {
-    fill: var(--glow);
+    fill: var(--eye);
     transition: transform 300ms var(--ease-out-soft), opacity 200ms;
+  }
+  .assistant-shine {
+    fill: #fff;
+    opacity: 0.75;
   }
   .assistant-smile path {
     fill: none;
-    stroke: var(--glow);
-    stroke-width: 5;
+    stroke: var(--eye);
+    stroke-width: 9;
     stroke-linecap: round;
     opacity: 0;
     transition: opacity 200ms;
   }
   .assistant-mouth {
-    fill: var(--glow);
-    opacity: 0;
-    transition: opacity 200ms;
+    fill: #3a2a57;
+    filter: none;
+    transition: transform 200ms;
   }
   .assistant-avatar[data-animated] .assistant-eye {
     animation: assistant-blink 5.5s ease-in-out infinite;
