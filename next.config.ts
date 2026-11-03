@@ -49,7 +49,13 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: { "/api/render/vendor/[name]": ["./.vendor/**"] },
   // The Tailwind loader's output was served from Turbopack's file-system cache after globals.css changed
   // (stale design tokens in dev and in production builds, seen at Step 11). Correctness first: no FS cache.
-  experimental: { turbopackFileSystemCacheForBuild: false, turbopackFileSystemCacheForDev: false },
+  experimental: {
+    turbopackFileSystemCacheForBuild: false,
+    turbopackFileSystemCacheForDev: false,
+    // Going back to a page seen less than 30 s ago is instant (the browser keeps it); any change made in
+    // the app (server actions) refreshes it, and conversations update in real time.
+    staleTimes: { dynamic: 30 },
+  },
   turbopack: {
     rules: {
       "*.css": {

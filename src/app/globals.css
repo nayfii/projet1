@@ -50,6 +50,11 @@
   --pastel-mint: oklch(0.87 0.08 165);
   --pastel-sky: oklch(0.85 0.07 235);
   --pastel-pearl: oklch(0.92 0.015 285);
+  /* Pastels as text or icon colour: as is on dark, deeper on light (readable on white). */
+  --pastel-lavender-ink: var(--pastel-lavender);
+  --pastel-peach-ink: var(--pastel-peach);
+  --pastel-mint-ink: var(--pastel-mint);
+  --pastel-sky-ink: var(--pastel-sky);
 
   /* Chart series (validated for colour-blind separation on these surfaces, 3 series at most). */
   --chart-1: #3987e5;
@@ -90,6 +95,10 @@
   --chart-1: #2a78d6;
   --chart-2: #eb6834;
   --chart-3: #1baf7a;
+  --pastel-lavender-ink: oklch(0.5 0.14 290);
+  --pastel-peach-ink: oklch(0.58 0.15 50);
+  --pastel-mint-ink: oklch(0.52 0.11 165);
+  --pastel-sky-ink: oklch(0.52 0.13 240);
 }
 @media (prefers-color-scheme: light) {
   :root[data-theme="system"] {
@@ -122,6 +131,10 @@
     --chart-1: #2a78d6;
     --chart-2: #eb6834;
     --chart-3: #1baf7a;
+    --pastel-lavender-ink: oklch(0.5 0.14 290);
+    --pastel-peach-ink: oklch(0.58 0.15 50);
+    --pastel-mint-ink: oklch(0.52 0.11 165);
+    --pastel-sky-ink: oklch(0.52 0.13 240);
   }
 }
 

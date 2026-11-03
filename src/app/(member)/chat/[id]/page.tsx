@@ -19,12 +19,20 @@ export async function generateMetadata({ params }: PageProps<"/chat/[id]">): Pro
 export default async function ChatPage({ params }: PageProps<"/chat/[id]">) {
   const ctx = await requireMember();
   const { id } = await params;
+  const valid = /^[0-9a-f-]{36}$/i.test(id);
+  // The screen's own data loads at the same time as the conversation (nothing in it depends on it).
+  const pageData = getChatPageData(ctx);
+  const people = valid ? getConversationPeople(id) : Promise.resolve([]);
   // RLS returns nothing for a conversation the user may not see: a 404 that does not confirm it exists.
-  const conversation = /^[0-9a-f-]{36}$/i.test(id) ? await getConversation(id) : null;
-  if (!conversation || conversation.company_id !== ctx.active.companyId) notFound();
+  const conversation = valid ? await getConversation(id) : null;
+  if (!conversation || conversation.company_id !== ctx.active.companyId) {
+    // Settle the requests started above before leaving.
+    await Promise.allSettled([pageData, people]);
+    notFound();
+  }
   const [data, participants, colleagues, handover, agent] = await Promise.all([
-    getChatPageData(ctx),
-    getConversationPeople(conversation.id),
+    pageData,
+    people,
     getEligibleColleagues(ctx, conversation.client_id),
     getMyHandover({ conversationId: conversation.id }),
     conversation.agent_id ? getAgent(ctx, conversation.agent_id) : Promise.resolve(null),

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -51,7 +52,8 @@ export async function listClientsLite(companyId: string) {
 
 export type ClientLite = Awaited<ReturnType<typeof listClientsLite>>[number];
 
-export async function getClientById(clientId: string) {
+/** Loaded once per request (the page and its title both need it). */
+export const getClientById = cache(async function getClientById(clientId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("clients")
@@ -59,4 +61,4 @@ export async function getClientById(clientId: string) {
     .eq("id", clientId)
     .maybeSingle();
   return data;
-}
+});

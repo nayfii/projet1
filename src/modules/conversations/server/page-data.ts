@@ -16,7 +16,7 @@ import { hasScope } from "@/lib/auth/context";
 export async function getChatPageData(ctx: MemberContext) {
   const companyId = ctx.active.companyId;
   const supabase = await createClient();
-  const [models, clients, quota, spaces, tMemory, hide, { data: membership }] = await Promise.all([
+  const [models, clients, quota, spaces, tMemory, hide, { data: membership }, { data: features }] = await Promise.all([
     getCompanyModels(companyId),
     listClients(companyId),
     getMyQuota(companyId),
@@ -24,8 +24,8 @@ export async function getChatPageData(ctx: MemberContext) {
     getTranslations("memory"),
     getHideSettings(supabase, companyId),
     supabase.from("company_members").select("team_id").eq("company_id", companyId).eq("user_id", ctx.user.id).maybeSingle(),
+    supabase.from("company_ai_settings").select("dictation_enabled").eq("company_id", companyId).maybeSingle(),
   ]);
-  const { data: features } = await supabase.from("company_ai_settings").select("dictation_enabled").eq("company_id", companyId).maybeSingle();
   const clientName = new Map(clients.map((c) => [c.id, c.name]));
   const picker: PickerModel[] = models.allowed.map((m) => ({
     id: m.id,

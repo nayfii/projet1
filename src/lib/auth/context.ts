@@ -25,10 +25,12 @@ export type AppContext = {
 /** Everything the server needs to know about the signed-in user, loaded once per request. */
 export const getAppContext = cache(async (): Promise<AppContext | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  // The signed token is verified (locally when the project uses asymmetric signing keys: no round trip
+  // per page). Access itself is enforced by the queries below and by RLS.
+  const { data: auth } = await supabase.auth.getClaims();
+  const claims = auth?.claims;
+  if (!claims?.sub) return null;
+  const user = { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" };
 
   const [profileRes, membershipsRes, platformRes] = await Promise.all([
     supabase.from("profiles").select("full_name, avatar_url, locale, active_company_id").eq("id", user.id).maybeSingle(),

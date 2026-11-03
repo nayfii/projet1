@@ -83,8 +83,8 @@ export function AppsManager({ switches, apps }: { switches: { video: boolean; ap
         <Card className="divide-y p-0">
           {(
             [
-              { key: "video", on: switches.video, label: t("video"), hint: t("videoHint") },
-              { key: "appReview", on: switches.appReview, label: t("review"), hint: t("reviewHint") },
+              { key: "video", on: switches.video, label: t("video"), hint: switches.video ? t("videoHintOn") : t("videoHint") },
+              { key: "appReview", on: switches.appReview, label: t("review"), hint: switches.appReview ? t("reviewHintOn") : t("reviewHint") },
             ] as const
           ).map((row) => (
             <label key={row.key} className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3.5">

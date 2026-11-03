@@ -147,3 +147,38 @@ describe("favourites and the most used apps", () => {
     expect((await member.client.rpc("company_popular_apps", { p_company: otherCompany })).error?.message).toBe("forbidden");
   });
 });
+
+describe("automatic titles", () => {
+  it("are written for people who can see the conversation, until someone renames it by hand", async () => {
+    const { data: conv } = await owner.client.from("conversations").insert({ company_id: companyId }).select("id").single();
+    expect((await owner.client.rpc("set_auto_title", { p_conversation: conv!.id, p_title: "  Relance du devis  " })).data).toBe(true);
+    expect((await owner.client.from("conversations").select("title").eq("id", conv!.id).single()).data?.title).toBe("Relance du devis");
+    // Someone who cannot see it cannot title it (nor learn that it exists).
+    expect((await outsider.client.rpc("set_auto_title", { p_conversation: conv!.id, p_title: "Autre" })).error?.message).toBe("not_found");
+    // Renamed by hand: automatic titles stop.
+    await owner.client.from("conversations").update({ title: "Mon titre", title_auto: false }).eq("id", conv!.id);
+    expect((await owner.client.rpc("set_auto_title", { p_conversation: conv!.id, p_title: "Nouveau sujet" })).data).toBe(false);
+    expect((await owner.client.from("conversations").select("title").eq("id", conv!.id).single()).data?.title).toBe("Mon titre");
+  });
+});
+
+describe("web search", () => {
+  it("is switched by the company's Owner or a models Admin, and priced by our team only", async () => {
+    expect((await member.client.rpc("admin_set_ai_features", { p_company: companyId, p_web_search: false })).error?.message).toBe("forbidden");
+    expect((await owner.client.rpc("admin_set_ai_features", { p_company: companyId, p_web_search: false })).error).toBeNull();
+    expect((await member.client.from("company_ai_settings").select("web_search_enabled, dictation_enabled").eq("company_id", companyId).single()).data).toEqual({
+      web_search_enabled: false,
+      dictation_enabled: true,
+    });
+    await owner.client.rpc("admin_set_ai_features", { p_company: companyId, p_web_search: true });
+
+    expect((await owner.client.rpc("platform_set_web_search_rate", { p_credits: 1, p_cost_usd: 0 })).error?.message).toBe("forbidden");
+    expect((await platform.client.rpc("platform_set_web_search_rate", { p_credits: -1, p_cost_usd: 0 })).error?.message).toBe("validation");
+    expect((await platform.client.rpc("platform_set_web_search_rate", { p_credits: 12, p_cost_usd: 0.012 })).error).toBeNull();
+    const [rate] = await sql<{ web_search_credits: string; web_search_cost_usd: string }>("select web_search_credits, web_search_cost_usd from public.platform_settings");
+    expect([Number(rate.web_search_credits), Number(rate.web_search_cost_usd)]).toEqual([12, 0.012]);
+    // Customers never read our rates (platform settings are our team's).
+    expect((await owner.client.from("platform_settings").select("web_search_cost_usd")).data).toEqual([]);
+    await sql("update public.platform_settings set web_search_credits = 10, web_search_cost_usd = 0.01 where id");
+  });
+});

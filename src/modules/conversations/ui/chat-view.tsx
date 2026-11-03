@@ -926,9 +926,10 @@ export function ChatView(props: Props) {
         {isOwner ? (
           <DropdownMenu onOpenChange={(open) => !open && setClientQuery("")}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className={cn("max-w-52 gap-1.5 text-muted-foreground", clientName && "text-foreground")}>
+              <Button variant="ghost" size="sm" className={cn("max-w-32 gap-1.5 text-muted-foreground sm:max-w-52", clientName && "text-foreground")}>
                 <BriefcaseIcon />
-                <span className="truncate">{clientName ?? t("linkClient")}</span>
+                {/* On a phone, an unlinked conversation shows the icon only (the title needs the room). */}
+                <span className={cn("truncate", !clientName && "sr-only sm:not-sr-only")}>{clientName ?? t("linkClient")}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">

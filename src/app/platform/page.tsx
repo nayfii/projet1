@@ -43,15 +43,15 @@ function externalTools(): { key: string; name: string; href: string; color: stri
   const repo = releaseConfig().repository;
   return [
     { key: "vercel", name: "Vercel", href: "https://vercel.com/dashboard", color: "bg-foreground text-background" },
-    { key: "supabase", name: "Supabase", href: projectRef ? `https://supabase.com/dashboard/project/${projectRef}` : "https://supabase.com/dashboard", color: "bg-emerald-500/15 text-emerald-400" },
+    { key: "supabase", name: "Supabase", href: projectRef ? `https://supabase.com/dashboard/project/${projectRef}` : "https://supabase.com/dashboard", color: "bg-emerald-500/15 text-emerald-500" },
     { key: "github", name: "GitHub", href: `https://github.com/${repo}`, color: "bg-foreground/10 text-foreground" },
-    { key: "openai", name: "OpenAI", href: "https://platform.openai.com/usage", color: "bg-[var(--pastel-mint)]/20 text-[var(--pastel-mint)]" },
-    { key: "anthropic", name: "Anthropic", href: "https://platform.claude.com", color: "bg-[var(--pastel-peach)]/20 text-[var(--pastel-peach)]" },
-    { key: "aistudio", name: "AI Studio", href: "https://aistudio.google.com", color: "bg-[var(--pastel-sky)]/20 text-[var(--pastel-sky)]" },
-    { key: "googlecloud", name: "Google Cloud", href: "https://console.cloud.google.com/billing", color: "bg-sky-500/15 text-sky-400" },
-    { key: "hostinger", name: "Hostinger", href: "https://hpanel.hostinger.com", color: "bg-violet-500/15 text-violet-400" },
-    { key: "workspace", name: "Google Workspace", href: "https://admin.google.com", color: "bg-amber-500/15 text-amber-400" },
-    { key: "gmail", name: "Gmail", href: "https://mail.google.com", color: "bg-red-500/15 text-red-400" },
+    { key: "openai", name: "OpenAI", href: "https://platform.openai.com/usage", color: "bg-[var(--pastel-mint)]/20 text-[var(--pastel-mint-ink)]" },
+    { key: "anthropic", name: "Anthropic", href: "https://platform.claude.com", color: "bg-[var(--pastel-peach)]/20 text-[var(--pastel-peach-ink)]" },
+    { key: "aistudio", name: "AI Studio", href: "https://aistudio.google.com", color: "bg-[var(--pastel-sky)]/20 text-[var(--pastel-sky-ink)]" },
+    { key: "googlecloud", name: "Google Cloud", href: "https://console.cloud.google.com/billing", color: "bg-sky-500/15 text-sky-500" },
+    { key: "hostinger", name: "Hostinger", href: "https://hpanel.hostinger.com", color: "bg-violet-500/15 text-violet-500" },
+    { key: "workspace", name: "Google Workspace", href: "https://admin.google.com", color: "bg-amber-500/15 text-amber-500" },
+    { key: "gmail", name: "Gmail", href: "https://mail.google.com", color: "bg-red-500/15 text-red-500" },
   ];
 }
 

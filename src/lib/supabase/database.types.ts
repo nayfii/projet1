@@ -1414,9 +1414,6 @@ isOneToOne: false
 "platform_set_dictation_rate":
 { Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
                            },
-"platform_set_web_search_rate":
-{ Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
-                           },
 "platform_set_exchange_rate":
 { Args: { "p_usd_to_eur": number }; Returns: undefined
                            },
@@ -1425,6 +1422,9 @@ isOneToOne: false
                            },
 "platform_set_render_rate":
 { Args: { "p_credits_per_second": number,"p_kind": string }; Returns: undefined
+                           },
+"platform_set_web_search_rate":
+{ Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
                            },
 "platform_update_company":
 { Args: { "p_company": string,"p_plan"?: string,"p_status"?: Database["public"]['Enums']["company_status"] }; Returns: undefined

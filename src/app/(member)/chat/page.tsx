@@ -14,8 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function NewChatPage({ searchParams }: PageProps<"/chat">) {
   const ctx = await requireMember();
   const { client } = await searchParams;
-  const data = await getChatPageData(ctx);
+  // Without a client in the address (the usual case), everything loads at once.
+  const [data, noClientColleagues] = await Promise.all([getChatPageData(ctx), typeof client === "string" ? Promise.resolve(null) : getEligibleColleagues(ctx, null)]);
   const initialClientId = typeof client === "string" && data.clients.some((c) => c.id === client) ? client : null;
-  const colleagues = await getEligibleColleagues(ctx, initialClientId);
+  const colleagues = noClientColleagues ?? (await getEligibleColleagues(ctx, initialClientId));
   return <ChatView key="new" conversation={null} initialClientId={initialClientId} participants={[]} colleagues={colleagues} handover={null} agent={null} {...data} />;
 }

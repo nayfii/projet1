@@ -50,7 +50,7 @@ export function AppPickerMenu({ apps, loading, active, onPick }: { apps: PickerA
           >
             <DepartmentIcon department={a.department} className="size-7 rounded-lg" />
             <span className="min-w-0 flex-1 truncate">{a.name}</span>
-            {a.favorite ? <StarIcon className="size-3.5 fill-current text-amber-400" aria-hidden /> : null}
+            {a.favorite ? <StarIcon className="size-3.5 fill-current text-amber-500" aria-hidden /> : null}
           </button>
         ))
       )}

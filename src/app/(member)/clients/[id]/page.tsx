@@ -29,22 +29,27 @@ export async function generateMetadata({ params }: PageProps<"/clients/[id]">): 
 export default async function ClientPage({ params }: PageProps<"/clients/[id]">) {
   const ctx = await requireMember();
   const { id } = await params;
-  const t = await getTranslations("clients");
-  // RLS returns nothing if the user has no access: they get a 404, not an error that confirms the client exists.
-  const client = await getClientById(id);
+  // Everything the page needs loads at once; RLS limits each list to what this person may see.
+  const [t, client, allClients, conversations, format, handover, spaces] = await Promise.all([
+    getTranslations("clients"),
+    // RLS returns nothing if the user has no access: they get a 404, not an error that confirms the client exists.
+    getClientById(id),
+    listClients(ctx.active.companyId, { includeArchived: true }),
+    // RLS: only the conversations this user takes part in.
+    listConversations(ctx.active.companyId, { clientId: id, limit: 50, meId: ctx.user.id }),
+    getFormatter(),
+    getMyHandover({ clientId: id }),
+    listMemorySpaces(ctx),
+  ]);
   if (!client || client.company_id !== ctx.active.companyId) notFound();
-  const withAssignees = (await listClients(ctx.active.companyId, { includeArchived: true })).find((c) => c.id === id);
-  // RLS: only the conversations this user takes part in.
-  const conversations = await listConversations(ctx.active.companyId, { clientId: id, limit: 50, meId: ctx.user.id });
-  const format = await getFormatter();
+  const withAssignees = allClients.find((c) => c.id === id);
   // Smart Handover: an assigned employee can hand a restricted client over; the recipient finds the file here.
   const canTransfer = client.visibility === "restricted" && Boolean(withAssignees?.assignees.some((a) => a.userId === ctx.user.id));
   // Access to a restricted client: client Admins give it to anyone, a Manager to their own team (CLAUDE.md §11).
   const accessAll = hasScope(ctx.active, "clients");
   const accessTeam = !accessAll && ctx.active.role === "manager";
   const canManageAccess = client.visibility === "restricted" && !client.archived_at && (accessAll || accessTeam);
-  const [handover, colleagues, members] = await Promise.all([
-    getMyHandover({ clientId: id }),
+  const [colleagues, members] = await Promise.all([
     canTransfer ? getEligibleColleagues(ctx, null) : Promise.resolve([]),
     canManageAccess ? listMembers(ctx.active.companyId) : Promise.resolve([]),
   ]);
@@ -54,7 +59,7 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
     .map((m) => ({ userId: m.userId, name: m.fullName ?? m.email }));
 
   // The client's memory, if this person can read it (same rights as everywhere else).
-  const space = (await listMemorySpaces(ctx)).find((s) => s.clientId === id);
+  const space = spaces.find((s) => s.clientId === id);
   const sections = [
     { icon: BrainIcon, title: t("memorySection"), body: t("memorySectionBody"), value: space ? t("entriesCount", { count: space.entryCount }) : null },
     { icon: FileTextIcon, title: t("documentsSection"), body: t("documentsSectionBody"), value: space ? t("documentsCount", { count: space.documentCount }) : null },

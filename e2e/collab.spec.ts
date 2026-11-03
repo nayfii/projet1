@@ -160,6 +160,21 @@ test("real time: the conversation appears for Nathalie, from the shared message 
   await shot(nathaliePage, "63-group-nathalie");
 });
 
+test("\"Coucou Olivier, …\" mentions him: highlighted for him, with a notice; colleagues have their own colour", async () => {
+  await groupComposer(nathaliePage).fill("Coucou Olivier, tu peux regarder les chiffres de mars ?");
+  await nathaliePage.getByRole("button", { name: "Envoyer" }).click();
+  await expect(userMessages(nathaliePage).last()).toContainText("Coucou @Olivier, tu peux regarder");
+  // Olivier: the notice, the "mentions you" badge, the colleague's own bubble colour; the AI did not answer.
+  await expect(olivierPage.getByText("Nathalie Durand vous a mentionné(e)")).toBeVisible({ timeout: 10_000 });
+  const message = userMessages(olivierPage).last();
+  await expect(message).toContainText("vous mentionne");
+  await expect(message.getByTestId("colleague-bubble")).toHaveCSS("background-color", /.+/);
+  await expect(answers(olivierPage)).toHaveCount(2);
+  await shot(olivierPage, "63b-mentioned");
+  // In a group, the AI's answers sit in a bubble on the left too.
+  await expect(answers(olivierPage).first().getByTestId("ai-bubble")).toBeVisible();
+});
+
 test("@Claude answers with only what both can access: Client A's memory is left out", async () => {
   await groupComposer(olivierPage).click();
   await groupComposer(olivierPage).pressSequentially("@");

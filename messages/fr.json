@@ -770,7 +770,7 @@
   },
   "usage": {
     "title": "Consommation",
-    "description": "Ce que votre entreprise a utilisé : demandes à l'IA, crédits, coût estimé, par personne, par fonction et par modèle. Chiffres réels renvoyés par les fournisseurs d'IA.",
+    "description": "Ce que votre entreprise a utilisé : demandes à l'IA et crédits, par personne, par fonction et par modèle. Chiffres réels renvoyés par les fournisseurs d'IA.",
     "period": "Période",
     "emptyTitle": "Aucune utilisation sur cette période",
     "emptyBody": "Les chiffres apparaîtront dès les premières conversations avec l'IA.",
@@ -2153,6 +2153,8 @@
     "deleted": "Appli supprimée",
     "deleteTitle": "Supprimer « {name} » ?",
     "deleteBody": "Elle disparaît chez tous les clients. Les conversations déjà lancées restent.",
-    "confirmDelete": "Supprimer"
+    "confirmDelete": "Supprimer",
+    "videoHintOn": "Ouvert : les clients peuvent créer des vidéos. Il faut que le serveur de rendu tourne.",
+    "reviewHintOn": "Ouvert : visible chez tous les clients. Il ne note ni ne classe aucun candidat."
   }
 }

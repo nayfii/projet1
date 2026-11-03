@@ -86,7 +86,7 @@ export function AppsBrowser({ apps, departments, initialTab }: { apps: BrowserAp
             aria-label={favorites.has(a.id) ? t("unstar", { name: a.name }) : t("star", { name: a.name })}
             className={cn(
               "absolute right-3 top-3 rounded-full p-1.5 transition-opacity hover:bg-accent",
-              favorites.has(a.id) ? "text-amber-400" : "text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+              favorites.has(a.id) ? "text-amber-500" : "text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
             )}
           >
             <StarIcon className={cn("size-4", favorites.has(a.id) && "fill-current")} />

@@ -286,7 +286,7 @@ test("11. Olivier turns a conversation into a tool; the Owner publishes it compa
 test("12. Olivier runs the Proposal Writer, then Motion Design: an MP4 is rendered", async () => {
   test.setTimeout(300_000);
   await olivierPage.goto("/apps");
-  await olivierPage.getByRole("link", { name: /Proposition commerciale/ }).click();
+  await olivierPage.getByRole("link", { name: /Proposition commerciale/ }).first().click();
   await olivierPage.getByRole("combobox", { name: "Client" }).click();
   await olivierPage.getByRole("option", { name: "Client A" }).click();
   await olivierPage.getByLabel("Besoins du client *").fill("Refonte du site avec commande en ligne, mise en ligne avant décembre.");
@@ -296,7 +296,7 @@ test("12. Olivier runs the Proposal Writer, then Motion Design: an MP4 is render
   await expect(answers(olivierPage).last()).toContainText("Tool instructions received: Proposal Writer");
 
   await olivierPage.goto("/apps");
-  await olivierPage.getByRole("link", { name: /Motion design/ }).click();
+  await olivierPage.getByRole("link", { name: /Motion design/ }).first().click();
   await olivierPage.getByLabel("Brief (message, textes, public) *").fill("Annonce de la nouvelle offre de maintenance, pour nos clients.");
   const logo = test.info().outputPath("logo.png");
   execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=0x2a78d6:size=256x256", "-frames:v", "1", logo]);

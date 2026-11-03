@@ -76,8 +76,10 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         return;
       }
       if (request.system.startsWith("Task: title a conversation.")) {
+        // Like a real model on the same subject: an existing title is kept; otherwise the first words.
+        const current = /^Current title: (.+)$/m.exec(text)?.[1] ?? "(none)";
         const latest = text.trim().split("\n").at(-1)?.replace(/^\d+\.\s*/, "") ?? "";
-        yield* simulated(`[TEST] ${latest.split(/\s+/).slice(0, 5).join(" ")}`);
+        yield* simulated(current !== "(none)" ? current : `[TEST] ${latest.split(/\s+/).slice(0, 10).join(" ")}`);
         return;
       }
       if (request.system.startsWith("Task: generalise a client note.")) {

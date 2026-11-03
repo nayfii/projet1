@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { listClients } from "@/modules/clients/server/queries";
 
 /** The setup checklist (CLAUDE.md §11): what onboarding no longer asks, done when the company has it. */
-async function setupChecklist(ctx: MemberContext, clientCount: number) {
+async function setupCounts(ctx: MemberContext) {
   const supabase = await createClient();
   const companyId = ctx.active.companyId;
   const [members, invitations, documents] = await Promise.all([
@@ -19,21 +19,23 @@ async function setupChecklist(ctx: MemberContext, clientCount: number) {
     supabase.from("invitations").select("id", { count: "exact", head: true }).eq("company_id", companyId).is("accepted_at", null).is("revoked_at", null),
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("company_id", companyId),
   ]);
-  return [
-    { key: "invite", icon: UsersIcon, done: (members.count ?? 0) > 1 || (invitations.count ?? 0) > 0 },
-    { key: "client", icon: BriefcaseIcon, done: clientCount > 0 },
-    { key: "document", icon: FileTextIcon, done: (documents.count ?? 0) > 0 },
-  ] as const;
+  return { team: (members.count ?? 0) > 1 || (invitations.count ?? 0) > 0, documents: (documents.count ?? 0) > 0 };
 }
 
 export default async function HomePage() {
   const ctx = await requireMember();
   const t = await getTranslations("home");
-  const clients = await listClients(ctx.active.companyId);
-  const firstName = ctx.profile.fullName?.split(" ")[0];
   const canSetUp = hasScope(ctx.active, "company");
+  const [clients, counts] = await Promise.all([listClients(ctx.active.companyId), canSetUp ? setupCounts(ctx) : Promise.resolve(null)]);
+  const firstName = ctx.profile.fullName?.split(" ")[0];
   const setupPending = canSetUp && !ctx.active.onboardingCompletedAt;
-  const checklist = canSetUp ? await setupChecklist(ctx, clients.length) : [];
+  const checklist = counts
+    ? ([
+        { key: "invite", icon: UsersIcon, done: counts.team },
+        { key: "client", icon: BriefcaseIcon, done: clients.length > 0 },
+        { key: "document", icon: FileTextIcon, done: counts.documents },
+      ] as const)
+    : [];
   const showChecklist = checklist.some((item) => !item.done);
 
   const tiles = [

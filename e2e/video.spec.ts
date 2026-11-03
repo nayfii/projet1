@@ -78,7 +78,7 @@ test("the Marketing department offers both video agents", async () => {
 test("Motion Design: a brief and a logo, a preview, then a real MP4", async () => {
   test.setTimeout(240_000);
   await page.goto("/apps");
-  await page.getByRole("link", { name: /Motion design/ }).click();
+  await page.getByRole("link", { name: /Motion design/ }).first().click();
   await expect(page.getByText("La vidéo est fabriquée sur nos serveurs")).toBeVisible();
   await page.getByLabel("Brief (message, textes, public) *").fill("Annonce du nouvel atelier de Lyon, ouverture le 3 novembre, pour nos clients.");
   const logo = test.info().outputPath("logo.png");
@@ -122,7 +122,7 @@ test("Motion Design: a brief and a logo, a preview, then a real MP4", async () =
 test("Video Editor: two clips, an edit plan, then MP4s in the chosen formats", async () => {
   test.setTimeout(240_000);
   await page.goto("/apps");
-  await page.getByRole("link", { name: /Montage vidéo/ }).click();
+  await page.getByRole("link", { name: /Montage vidéo/ }).first().click();
   const a = clip(test.info().outputPath("plage.mp4"), 4, true);
   const b = clip(test.info().outputPath("atelier.mp4"), 3, false);
   await page.getByLabel("Clips vidéo (MP4, MOV, WebM) *").setInputFiles([a, b]);

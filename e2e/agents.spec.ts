@@ -29,7 +29,7 @@ async function waitForAnswer() {
 
 async function openAgent(name: string) {
   await page.goto("/apps");
-  await page.getByRole("link", { name: new RegExp(name) }).click();
+  await page.getByRole("link", { name: new RegExp(name) }).first().click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
 }
 

@@ -770,7 +770,7 @@
   },
   "usage": {
     "title": "Usage",
-    "description": "What your company used: AI requests, credits, estimated cost, by person, feature and model. Real figures returned by the AI providers.",
+    "description": "What your company used: AI requests and credits, by person, feature and model. Real figures returned by the AI providers.",
     "period": "Period",
     "emptyTitle": "No usage in this period",
     "emptyBody": "Figures will appear with the first AI conversations.",
@@ -2153,6 +2153,8 @@
     "deleted": "App deleted",
     "deleteTitle": "Delete “{name}”?",
     "deleteBody": "It disappears for every customer. Conversations already started stay.",
-    "confirmDelete": "Delete"
+    "confirmDelete": "Delete",
+    "videoHintOn": "On: customers can make videos. The render worker must be running.",
+    "reviewHintOn": "On: visible to every customer. It never scores or ranks candidates."
   }
 }

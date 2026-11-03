@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { RoutingInfo, SuggestedColleague, WebSource } from "../stream-events";
 import type { AttachmentKind, TimelineMessage } from "../types";
@@ -50,7 +51,8 @@ export async function listConversations(
 
 export type ConversationListItem = Awaited<ReturnType<typeof listConversations>>[number];
 
-export async function getConversation(conversationId: string) {
+/** Loaded once per request (the page and its title both need it). */
+export const getConversation = cache(async function getConversation(conversationId: string) {
   const supabase = await createClient();
   const { data: conversation } = await supabase
     .from("conversations")
@@ -64,7 +66,7 @@ export async function getConversation(conversationId: string) {
   // Hide modes of the last message sent: the mode control starts from them.
   const lastHideModes = [...rows].reverse().find((r) => r.author_type === "user")?.hide_modes ?? [];
   return { ...conversation, messages, lastHideModes: lastHideModes.filter(isHideMode) };
-}
+});
 
 export type ConversationDetail = NonNullable<Awaited<ReturnType<typeof getConversation>>>;
 
