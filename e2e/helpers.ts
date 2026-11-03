@@ -11,6 +11,8 @@ export async function shot(page: Page, name: string) {
 /** Signs in with a magic link read from the local test mailbox. */
 export async function signIn(page: Page, email: string) {
   const before = new Date(Date.now() - 1000);
+  // E2E_THEME=light: the same screens in the light theme (screenshots for the visual check).
+  if (process.env.E2E_THEME) await page.context().addCookies([{ name: "theme", value: process.env.E2E_THEME, url: process.env.E2E_BASE_URL ?? "http://localhost:3000" }]);
   await page.goto("/login");
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByRole("button", { name: "Recevoir mon lien" }).click();

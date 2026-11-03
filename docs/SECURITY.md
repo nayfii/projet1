@@ -8,7 +8,7 @@ Status: **Step 8** (2026-10-21). Updated at every step. This document describes 
 
 | Area | What is done | Where / how it is checked |
 |---|---|---|
-| Authentication | Email magic link (tested), Google sign-in (implemented, untested) | Supabase Auth; `src/proxy.ts` only refreshes sessions |
+| Authentication | Email magic link (tested), Google sign-in (implemented, untested). Each page checks the session token's signature (`getClaims`: locally with the project's signing keys, or with the Auth server otherwise); a deactivated person is refused by their membership and RLS checks, even while their token is still valid (up to 1 hour) | Supabase Auth; `src/proxy.ts` refreshes sessions; `src/lib/auth/context.ts` |
 | Authorisation, layer 1 | Every page, server action and API route checks the user's role and scope on the server | `src/lib/auth/guards.ts`, `memberOrNull()` in every action and route |
 | Authorisation, layer 2 | Row Level Security on every table; a test fails if one table lacks it | `supabase/migrations/*`, `tests/integration/isolation.test.ts` |
 | Private conversations | Conversations, messages, participants and attachments are visible only to participants who still have access to the linked client | `private.can_access_conversation()`; `tests/integration/chat.test.ts` |

@@ -268,6 +268,17 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | **PDF from the chat**: the AI writes the full document and says it can be downloaded; a "Télécharger le PDF" button appears under the answer when the question asked for a PDF (Word and Excel stay in the download menu) | **done** |
 | **Who Can Help** also uses the company memory entries a colleague wrote (only those the person may read, in a private conversation; titles masked by Hide like memory passages) | **done** |
 
+### Speed, light theme and UI audit (2026-11-03)
+
+| Item | Status |
+|---|---|
+| **Instant feedback on every click**: a loading shape appears at once (app, administration, our console) instead of a frozen screen while the next page is prepared | **done** |
+| **Fewer round trips per page**: the session is checked locally when Supabase uses signing keys (no call to the Auth server on every page, twice); chat, client and home pages load their data in parallel; the conversation and the client are read once per page | **done** |
+| **Pages seen less than 30 s ago come back instantly** (the browser keeps them; any change made in the app refreshes them) | **done** |
+| Measured locally (database on the same machine, so already fast): 0.1 to 0.6 s per page before and after. The gains are online, where each trip to the database or Auth costs more; **not measured online yet** | — |
+| **Light theme**: pastel icons and letters were almost invisible on white (Applis, our console's shortcuts): they now use a deeper version of each colour; every main screen checked in both themes, on a computer and a phone | **done** |
+| **Audit fixes**: the company usage page no longer mentions estimated costs and hides empty rows; title-writing appears as its own line in usage; the launch switches' explanation follows their state; on a phone the chat header keeps room for the title | **done** |
+
 ## Our console: versions, preview, Debug with Claude Code (2026-11-02)
 
 Founder's request: see a boss's and an employee's view of the version that runs, launch new versions from the

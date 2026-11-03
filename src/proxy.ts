@@ -38,6 +38,19 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));
 
+  // A conversation or a client the person may not open: a real 404, decided before the page starts
+  // streaming (pages show a loading shape at once, after which the status can no longer change).
+  // Same RLS check as the page itself; link prefetches only fetch the loading shape and are skipped.
+  const guarded = /^\/(chat|clients)\/([0-9a-f-]{36})$/i.exec(pathname);
+  if (user && guarded && !request.headers.get("next-router-prefetch")) {
+    const { data: visible } = await supabase
+      .from(guarded[1] === "chat" ? "conversations" : "clients")
+      .select("id")
+      .eq("id", guarded[2])
+      .maybeSingle();
+    if (!visible) return NextResponse.rewrite(new URL("/_not-found", request.url), { status: 404 });
+  }
+
   if (!user && !isPublic) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "not_authenticated" }, { status: 401 });

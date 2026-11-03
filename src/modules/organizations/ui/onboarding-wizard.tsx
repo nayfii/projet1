@@ -23,7 +23,9 @@ import type { OnboardingStep } from "../onboarding-steps";
 export type { OnboardingStep } from "../onboarding-steps";
 
 /** The onboarding itself: the name, the company and the avatar, then straight to the first conversation. */
-const PROGRESS: OnboardingStep[] = ["start", "avatar", "company"];
+const PROGRESS = ["start", "avatar", "company"] as const satisfies readonly OnboardingStep[];
+type ProgressStep = (typeof PROGRESS)[number];
+const inProgress = (step: OnboardingStep): step is ProgressStep => (PROGRESS as readonly string[]).includes(step);
 
 type Props = {
   step: OnboardingStep;
@@ -57,7 +59,7 @@ export function OnboardingWizard(props: Props) {
 
   return (
     <div className="w-full max-w-lg">
-      {PROGRESS.includes(props.step) ? <Progress current={props.step} /> : null}
+      {inProgress(props.step) ? <Progress current={props.step} /> : null}
       <motion.div
         key={props.step}
         initial={{ opacity: 0, y: 8 }}
@@ -223,7 +225,7 @@ function StartStep({ fullName, email, invitations = [], signupOpen = false }: Pr
   );
 }
 
-function Progress({ current }: { current: OnboardingStep }) {
+function Progress({ current }: { current: ProgressStep }) {
   const t = useTranslations("onboarding.steps");
   const index = PROGRESS.indexOf(current);
   return (
