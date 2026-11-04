@@ -53,7 +53,8 @@ test("the owner creates an avatar during onboarding", async ({ page }) => {
   expect(avatarUrl).toMatch(/^\/api\/avatars\/[0-9a-f-]{36}\?v=[0-9a-f-]{36}$/);
   const res = await page.request.get(avatarUrl);
   expect(res.status()).toBe(200);
-  expect(res.headers()["content-type"]).toBe("image/webp");
+  // A transparent PNG, set on glass by the app.
+  expect(res.headers()["content-type"]).toBe("image/png");
 });
 
 test("someone from another company cannot load that avatar", async ({ browser }) => {

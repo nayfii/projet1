@@ -2208,19 +2208,34 @@
   },
   "appearance": {
     "title": "Apparence",
-    "description": "L'interface et le fond derrière le verre. Ces choix sont gardés sur cet appareil.",
+    "description": "L'interface et, avec Atmosphère, le fond derrière le verre. Ces choix sont gardés sur cet appareil.",
     "interface": "Interface",
-    "interfaceHint": "« Système » suit le réglage de votre appareil, jour et nuit.",
+    "interfaceHint": "Clair et Sombre sont unis, avec le verre. Système suit votre appareil. Atmosphère pose le verre sur un fond vivant, dans les couleurs de votre choix.",
     "themeLight": "Clair",
     "themeDark": "Sombre",
     "themeSystem": "Système",
-    "background": "Fond",
-    "aurora": "Midnight Aurora",
-    "auroraHint": "Plis de lumière violette et bleu nuit",
-    "ember": "Solar Ember",
-    "emberHint": "Un coucher de soleil ambré, vu à travers le verre",
     "motion": "Fond animé",
-    "motionHint": "Le fond bouge très lentement. Il reste immobile si votre appareil demande moins d'animations.",
-    "pageTitle": "Apparence"
+    "motionHint": "Le fond bouge lentement. Il reste immobile si votre appareil demande moins d'animations.",
+    "pageTitle": "Apparence",
+    "themeAtmosphere": "Atmosphère",
+    "colours": "Couleurs",
+    "palette": {
+      "aurora": "Midnight Aurora",
+      "ember": "Solar Ember",
+      "lagoon": "Lagon",
+      "orchid": "Orchidée",
+      "pearl": "Nacre",
+      "peach": "Pêche"
+    },
+    "paletteHint": {
+      "aurora": "Soie violette et bleu nuit",
+      "ember": "Coucher de soleil ambré",
+      "lagoon": "Eaux sombres, reflets turquoise",
+      "orchid": "Plis de rose et de prune",
+      "pearl": "Satin clair, lavande",
+      "peach": "Lumière douce, pêche et lilas"
+    },
+    "lowPower": "Cet appareil peine avec les effets animés : le fond est immobile et le verre ne se courbe plus, pour garder l'application fluide.",
+    "lowPowerRestore": "Réactiver les effets"
   }
 }

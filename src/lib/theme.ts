@@ -1,19 +1,22 @@
+import { AMBIENT_IDS, DEFAULT_AMBIENT as DEFAULT_PALETTE, isAmbientId, paletteOf, type AmbientId } from "./ambient/palettes";
+
 /**
  * Appearance, chosen per device (cookies read by the root layout, so the first paint is already right):
- * - the interface: dark (the product's default), light, or following the device;
- * - the ambient background behind the glass: Midnight Aurora (default) or Solar Ember;
+ * - the interface: Sombre (plain black, the product's default), Clair (plain white), Système (follows
+ *   the device), or Atmosphère (glass over a living background, in the colours chosen below);
+ * - the Atmosphère colours (palettes in lib/ambient/palettes.ts);
  * - the background's motion: on, or still (also still whenever the device asks for less motion);
  * - the sidebar: expanded, or a narrow rail of icons.
  */
-export const THEMES = ["dark", "light", "system"] as const;
+export const THEMES = ["light", "dark", "system", "atmosphere"] as const;
 export type Theme = (typeof THEMES)[number];
 export const THEME_COOKIE = "theme";
 export const DEFAULT_THEME: Theme = "dark";
 
-export const AMBIENTS = ["aurora", "ember"] as const;
-export type Ambient = (typeof AMBIENTS)[number];
+export const AMBIENTS = AMBIENT_IDS;
+export type Ambient = AmbientId;
 export const AMBIENT_COOKIE = "ambient";
-export const DEFAULT_AMBIENT: Ambient = "aurora";
+export const DEFAULT_AMBIENT: Ambient = DEFAULT_PALETTE;
 
 export const MOTIONS = ["on", "off"] as const;
 export type Motion = (typeof MOTIONS)[number];
@@ -27,25 +30,30 @@ export function isTheme(value: unknown): value is Theme {
   return typeof value === "string" && (THEMES as readonly string[]).includes(value);
 }
 
-export function isAmbient(value: unknown): value is Ambient {
-  return typeof value === "string" && (AMBIENTS as readonly string[]).includes(value);
-}
+export const isAmbient = isAmbientId;
 
 export function isMotion(value: unknown): value is Motion {
   return typeof value === "string" && (MOTIONS as readonly string[]).includes(value);
 }
 
-/** Browser bar colours, matching the base of each background in each theme. */
-export const THEME_COLORS: Record<Ambient, { dark: string; light: string }> = {
-  aurora: { dark: "#080a12", light: "#eef0f6" },
-  ember: { dark: "#150a10", light: "#f8efe9" },
-};
+/** The plain interfaces' backgrounds (Clair, Sombre); the browser bar matches. */
+export const PLAIN_BACKGROUND = { dark: "#09090b", light: "#f7f7f9" } as const;
+
+/** The browser bar colour for a choice. */
+export function themeColor(theme: Theme, ambient: Ambient, scheme: "dark" | "light"): string {
+  if (theme === "atmosphere") return paletteOf(ambient).colors.base;
+  return PLAIN_BACKGROUND[scheme];
+}
 
 /** One year, like the language. */
 export const APPEARANCE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
-/** The scheme shown for a choice ("system" follows the device; dark is assumed until the page runs). */
-export function resolveScheme(theme: Theme, prefersLight = false): "dark" | "light" {
+/**
+ * The scheme shown for a choice: Atmosphère takes its palette's (light or dark glass); "system"
+ * follows the device (dark is assumed until the page runs, then SCHEME_SCRIPT corrects it).
+ */
+export function resolveScheme(theme: Theme, ambient: Ambient, prefersLight = false): "dark" | "light" {
+  if (theme === "atmosphere") return paletteOf(ambient).scheme;
   if (theme === "system") return prefersLight ? "light" : "dark";
   return theme;
 }

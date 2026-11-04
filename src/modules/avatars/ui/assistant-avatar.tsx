@@ -41,8 +41,9 @@ export function AssistantAvatar({
       style={{ width: size, height: size, "--tint": persona.tint, "--blink-delay": `${blinkDelay(seed + persona.id)}s` } as React.CSSProperties}
     >
       {active ? <span className="assistant-halo absolute -inset-[18%] rounded-full" /> : null}
-      <span className="relative size-full rounded-full bg-[radial-gradient(circle_at_50%_40%,color-mix(in_oklch,var(--tint)_38%,transparent),color-mix(in_oklch,var(--tint)_10%,transparent)_72%)] ring-1 ring-white/[0.06]">
-        <span className="assistant-figure absolute inset-[6%]">
+      {/* The robot (a transparent PNG) on a bead of glass, black or white with the interface. */}
+      <span className="avatar-glass size-full rounded-full">
+        <span className="assistant-figure absolute inset-[8%] z-[1]">
           {/* eslint-disable-next-line @next/next/no-img-element -- small static asset, no optimisation needed */}
           <img src={persona.image} alt="" draggable={false} className="size-full select-none" />
           <svg viewBox="0 0 256 256" className="assistant-face absolute inset-0 size-full overflow-visible">

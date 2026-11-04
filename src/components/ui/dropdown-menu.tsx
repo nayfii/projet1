@@ -4,7 +4,6 @@ import * as React from "react";
 import { DropdownMenu as MenuPrimitive } from "radix-ui";
 import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LiquidGlass } from "./liquid-glass";
 
 const DropdownMenu = MenuPrimitive.Root;
 const DropdownMenuTrigger = MenuPrimitive.Trigger;
@@ -19,19 +18,18 @@ function DropdownMenuContent({
 }: React.ComponentProps<typeof MenuPrimitive.Content>) {
   return (
     <MenuPrimitive.Portal>
-      {/* A pane of Liquid Glass: its rim bends what is behind the menu. */}
-      <MenuPrimitive.Content sideOffset={sideOffset} asChild {...props}>
-        <LiquidGlass
-          material="solid"
-          reach={16}
-          className={cn(
-            "z-50 min-w-48 overflow-hidden rounded-[14px] border p-1 text-popover-foreground",
-            "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
-            className,
-          )}
-        >
-          {children}
-        </LiquidGlass>
+      {/* Frosted glass, ready at once: a menu opens instantly, even the first time (Liquid Glass would
+          compute its lens on first open). */}
+      <MenuPrimitive.Content
+        sideOffset={sideOffset}
+        className={cn(
+          "glass-solid z-50 min-w-48 overflow-hidden rounded-[14px] border p-1 text-popover-foreground",
+          "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
+          className,
+        )}
+        {...props}
+      >
+        {children}
       </MenuPrimitive.Content>
     </MenuPrimitive.Portal>
   );

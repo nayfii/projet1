@@ -15,10 +15,10 @@ function Avatar({
 }) {
   return (
     <AvatarPrimitive.Root
-      className={cn("relative inline-flex size-8 shrink-0 overflow-hidden rounded-full bg-muted", className)}
+      className={cn("avatar-glass inline-flex size-8 shrink-0 overflow-hidden rounded-full", className)}
     >
-      {src ? <AvatarPrimitive.Image src={src} alt="" className="size-full object-cover" /> : null}
-      <AvatarPrimitive.Fallback className="flex size-full items-center justify-center text-[11px] font-semibold text-muted-foreground">
+      {src ? <AvatarPrimitive.Image src={src} alt="" className="relative z-[1] size-full object-cover" /> : null}
+      <AvatarPrimitive.Fallback className="relative z-[1] flex size-full items-center justify-center text-[11px] font-semibold text-muted-foreground">
         {initials(name)}
       </AvatarPrimitive.Fallback>
     </AvatarPrimitive.Root>

@@ -134,28 +134,62 @@ export function AppShell(props: ShellProps) {
   const [open, setOpen] = React.useState(false);
   const { sidebar, setSidebar } = useAppearance();
   const collapsed = sidebar === "collapsed";
+  const asideRef = React.useRef<HTMLElement>(null);
+  const columnRef = React.useRef<HTMLDivElement>(null);
+
+  /**
+   * Collapse or expand without making the page lay itself out on every frame: the page takes its new
+   * place once, then slides there (a transform, done by the graphics chip) while the panel's own
+   * width animates on its own layer.
+   */
+  const toggle = () => {
+    const column = columnRef.current;
+    const aside = asideRef.current;
+    const before = column?.getBoundingClientRect().left ?? 0;
+    aside?.setAttribute("data-animating", "");
+    setSidebar(collapsed ? "expanded" : "collapsed");
+    const after = column?.getBoundingClientRect().left ?? 0;
+    const settle = () => aside?.removeAttribute("data-animating");
+    if (!column || before === after || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.setTimeout(settle, 320);
+      return;
+    }
+    column.style.transition = "none";
+    column.style.transform = `translate3d(${before - after}px, 0, 0)`;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        column.style.transition = "transform var(--dur-layout) var(--ease-standard)";
+        column.style.transform = "";
+      }),
+    );
+    window.setTimeout(() => {
+      column.style.transition = "";
+      settle();
+    }, 340);
+  };
 
   return (
     <div className="flex min-h-dvh">
-      {/* Desktop: a floating glass panel; collapsed, a narrow rail of icons (width in appearance.css). */}
-      <aside data-shell-sidebar className="shell-sidebar sticky top-0 hidden h-dvh shrink-0 p-2.5 pr-0 md:block">
-        <div className="relative h-full">
+      {/* Desktop: a floating glass panel; collapsed, a narrow rail of icons (widths in appearance.css). */}
+      <aside ref={asideRef} data-shell-sidebar className="shell-sidebar sticky top-0 hidden h-dvh shrink-0 md:block">
+        <div className="shell-panel-frame">
           <LiquidGlass material="panel" reach={56} className="flex h-full flex-col overflow-hidden rounded-[22px]">
             <SidebarBody {...props} rail={collapsed} />
           </LiquidGlass>
+          {/* Centred on the line under the page header (56 px from the top). */}
           <button
             type="button"
-            onClick={() => setSidebar(collapsed ? "expanded" : "collapsed")}
+            onClick={toggle}
             aria-label={collapsed ? props.labels.expandSidebar : props.labels.collapseSidebar}
             aria-expanded={!collapsed}
-            className="absolute -right-3 top-[22px] z-10 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_var(--glass-shadow-color),0_0_0_1px_var(--glass-ring)] transition-transform duration-[var(--dur-micro)] hover:scale-110 active:scale-95"
+            className="absolute -right-3 top-[34px] z-10 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_var(--glass-shadow-color),0_0_0_1px_var(--glass-ring)] transition-transform duration-[var(--dur-micro)] hover:scale-110 active:scale-95"
           >
             <ChevronLeftIcon className={cn("size-3.5 transition-transform duration-[var(--dur-layout)]", collapsed && "rotate-180")} />
           </button>
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div ref={columnRef} className="flex min-w-0 flex-1 flex-col">
         <LiquidGlass material="panel" reach={14} className="sticky top-0 z-30 flex h-14 items-center gap-3 rounded-none border-b px-4 md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -203,10 +237,11 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
           aria-hidden
           material="lens"
           reach={8}
-          className="pointer-events-none absolute left-0 top-0 z-0 !m-0 rounded-[11px] transition-[transform,width,height,opacity] duration-[var(--dur-layout)] ease-[var(--ease-standard)]"
+          data-lifted={lens?.lifted ? "" : undefined}
+          className="shell-lens pointer-events-none absolute left-0 top-0 z-0 !m-0 rounded-[11px]"
           style={
             lens
-              ? { transform: `translate(${lens.x}px, ${lens.y}px)`, width: lens.w, height: lens.h }
+              ? { transform: `translate(${lens.x}px, ${lens.y}px) scale(${lens.lifted ? 1.045 : 1})`, width: lens.w, height: lens.h }
               : { opacity: 0, width: 36, height: 36 }
           }
         />
@@ -285,38 +320,97 @@ function NavLink({ item, pathname, soonLabel, rail }: { item: NavItem; pathname:
 }
 
 /**
- * Where the selection lens sits: over the visible link marked as the current page (navigation, a
- * client, a recent conversation), measured inside the scrolling navigation. Follows route changes,
- * the rail, lists that load later, and size changes.
+ * Where the selection lens sits: over the visible row marked as the current page (navigation, a
+ * client, a conversation), measured inside the scrolling navigation. It is also Liquid Glass you can
+ * hold: press a row and the lens lifts onto it; keep pressing and slide across rows, and it follows;
+ * let go and it settles there while the page opens. Follows route changes, the rail, lists that load
+ * later, and size changes.
  */
 function useSelectionLens(navRef: React.RefObject<HTMLElement | null>, key: string) {
-  const [box, setBox] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [box, setBox] = React.useState<{ x: number; y: number; w: number; h: number; lifted: boolean } | null>(null);
   React.useLayoutEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
     let frame = 0;
+    let pressed = false;
+    // The row the lens was let go on, kept until the page it opens marks it current (or 1.5 s).
+    let pinned: HTMLElement | null = null;
+    let pinTimer = 0;
+
+    const place = (el: HTMLElement | null, lifted: boolean) => {
+      if (!el) return setBox(null);
+      const a = nav.getBoundingClientRect();
+      const b = el.getBoundingClientRect();
+      const next = { x: b.left - a.left + nav.scrollLeft, y: b.top - a.top + nav.scrollTop, w: b.width, h: b.height, lifted };
+      setBox((prev) =>
+        prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h && prev.lifted === next.lifted ? prev : next,
+      );
+    };
+    const current = () => [...nav.querySelectorAll<HTMLElement>('[aria-current="page"]')].find((el) => el.offsetParent !== null) ?? null;
     const measure = () => {
+      if (pressed) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const current = [...nav.querySelectorAll<HTMLElement>('[aria-current="page"]')].find((el) => el.offsetParent !== null);
-        if (!current) return setBox(null);
-        const a = nav.getBoundingClientRect();
-        const b = current.getBoundingClientRect();
-        const next = { x: b.left - a.left + nav.scrollLeft, y: b.top - a.top + nav.scrollTop, w: b.width, h: b.height };
-        setBox((prev) => (prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h ? prev : next));
+        const now = current();
+        if (pinned && now !== pinned && pinned.isConnected) return place(pinned, false);
+        pinned = null;
+        place(now, false);
       });
     };
+    const rowAt = (target: EventTarget | null) => {
+      const row = (target as Element | null)?.closest?.<HTMLElement>(".glass-interactive");
+      return row && nav.contains(row) && row.offsetParent !== null ? row : null;
+    };
+
+    const onDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      const row = rowAt(e.target);
+      if (!row) return;
+      pressed = true;
+      place(row, true);
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!pressed) return;
+      const row = rowAt(document.elementFromPoint(e.clientX, e.clientY));
+      if (row) place(row, true);
+    };
+    const onUp = (e: PointerEvent) => {
+      if (!pressed) return;
+      pressed = false;
+      const row = rowAt(document.elementFromPoint(e.clientX, e.clientY));
+      if (row && row.matches("a[href]")) {
+        pinned = row;
+        window.clearTimeout(pinTimer);
+        pinTimer = window.setTimeout(() => {
+          pinned = null;
+          measure();
+        }, 1500);
+        place(row, false);
+      } else {
+        measure();
+      }
+    };
+
     measure();
     const resize = new ResizeObserver(measure);
     resize.observe(nav);
     const mutations = new MutationObserver(measure);
     mutations.observe(nav, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-current"] });
     nav.addEventListener("transitionend", measure);
+    nav.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     return () => {
       cancelAnimationFrame(frame);
+      window.clearTimeout(pinTimer);
       resize.disconnect();
       mutations.disconnect();
       nav.removeEventListener("transitionend", measure);
+      nav.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [navRef, key]);
   return box;

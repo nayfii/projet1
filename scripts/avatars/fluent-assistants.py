@@ -61,7 +61,7 @@ def main(source: str, out_dir: str) -> None:
         px = base.copy()
         if hue is not None:
             recolour(px, hue)
-        Image.fromarray(px).save(Path(out_dir) / f"{name}.webp", "WEBP", lossless=True, method=6)
+        Image.fromarray(px).save(Path(out_dir) / f"{name}.png", "PNG", optimize=True)
         print("wrote", name)
 
 

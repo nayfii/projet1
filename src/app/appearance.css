@@ -1,22 +1,24 @@
 /*
- * Appearance (Liquid Glass, v18): design tokens for both schemes and both ambient backgrounds,
- * the glass materials, and the living background. Imported by globals.css.
+ * Appearance (Liquid Glass, v18): design tokens for both schemes, the glass materials and the living
+ * background of the Atmosphère interface. Imported by globals.css.
  *
  * <html> carries the person's choices (cookies, read by the root layout):
- *   data-theme   dark | light | system      what the person chose
- *   data-scheme  dark | light               what is shown (for "system", set before first paint)
- *   data-ambient aurora | ember             Midnight Aurora (default) or Solar Ember
- *   data-motion  on | off                   the background moves, or stays still
- *   data-sidebar expanded | collapsed       the desktop sidebar, or its narrow rail
+ *   data-theme   light | dark | system | atmosphere   what the person chose
+ *   data-scheme  dark | light            what is shown (for "system", set before first paint;
+ *                                        for "atmosphere", the palette's own)
+ *   data-ambient aurora | ember | …      the Atmosphère colours (lib/ambient/palettes.ts)
+ *   data-motion  on | off                the background moves, or stays still
+ *   data-sidebar expanded | collapsed    the desktop sidebar, or its narrow rail
+ *   data-perf    low (optional)          a device that cannot keep up: still background, unbent glass
  */
 
-/* ── Tokens: dark scheme, Midnight Aurora (defaults) ───────────────────────────────────────────── */
+/* ── Tokens: dark scheme (Sombre, the default: a plain black interface) ───────────────────────── */
 :root {
   color-scheme: dark;
   --radius: 0.75rem;
   --tint-h: 284;
 
-  --background: #080a12;
+  --background: #09090b;
   --foreground: oklch(0.97 0.006 var(--tint-h));
 
   /* Glass fills, from the lightest to the most opaque (content-heavy surfaces need the latter). */
@@ -100,7 +102,7 @@
 /* ── Light scheme ─────────────────────────────────────────────────────────────────────────────── */
 :root[data-scheme="light"] {
   color-scheme: light;
-  --background: #eef0f6;
+  --background: #f7f7f9;
   --foreground: oklch(0.2 0.02 var(--tint-h));
 
   --glass-subtle: oklch(1 0 0 / 0.36);
@@ -150,97 +152,8 @@
   --pastel-sky-ink: oklch(0.5 0.13 240);
 }
 
-/* ── Solar Ember ──────────────────────────────────────────────────────────────────────────────── */
-/* Solar Ember: warm tint and accent. */
-:root[data-ambient="ember"] {
-  --tint-h: 34;
-  --background: #150a10;
-  --brand: oklch(0.79 0.12 52);
-  --brand-foreground: oklch(0.2 0.05 40);
-  --brand-soft: oklch(0.79 0.12 52 / 0.16);
-  --ring: oklch(0.79 0.12 52);
-}
-:root[data-ambient="ember"][data-scheme="light"] {
-  --background: #f8efe9;
-  --brand: oklch(0.55 0.16 40);
-  --brand-foreground: oklch(0.99 0.004 40);
-  --brand-soft: oklch(0.55 0.16 40 / 0.1);
-  --ring: oklch(0.55 0.16 40);
-}
-
-/* ── Ambient palettes ─────────────────────────────────────────────────────────────────────────────
- * Per background and scheme. The same palettes also apply inside [data-ambient-scope], so the
- * Appearance settings can preview a background that is not the current one. */
-:root,
-[data-ambient-scope="aurora"] {
-  /* Midnight Aurora, dark: silk folds and their lit edges. */
-  --amb-base: #080a12;
-  --amb-deep: #10182c;
-  --amb-indigo: #27245a;
-  --amb-violet: #6554a8;
-  --amb-blue: #3569a8;
-  --amb-plum: #6b2c62;
-  --amb-rim: #c9b9f2;
-  --amb-shade: #04050a;
-  --amb-glow-opacity: 0.7;
-  --amb-rim-opacity: 0.46;
-  --amb-grain-opacity: 0.05;
-  --amb-scrim: oklch(0.08 0.02 284 / 0.28);
-
-}
-:root[data-scheme="light"],
-:root[data-scheme="light"] [data-ambient-scope="aurora"] {
-  /* Midnight Aurora, light: satin folds in pearl, lavender and periwinkle. */
-  --amb-base: #eef0f6;
-  --amb-deep: #e3e6f1;
-  --amb-indigo: #d4d2f0;
-  --amb-violet: #bdb1ea;
-  --amb-blue: #b6cbee;
-  --amb-plum: #e2c3e4;
-  --amb-rim: #ffffff;
-  --amb-shade: #c9cce0;
-  --amb-glow-opacity: 0.75;
-  --amb-rim-opacity: 0.85;
-  --amb-shade-opacity: 0.6;
-  --amb-grain-opacity: 0.035;
-  --amb-scrim: oklch(0.98 0.005 284 / 0.22);
-}
-:root[data-ambient="ember"],
-[data-ambient-scope="ember"] {
-  /* Solar Ember, dark: a band of amber light over a dark wave, violet below. */
-  --amb-base: #120910;
-  --amb-deep: #27121d;
-  --amb-burgundy: #3a1420;
-  --amb-amber: #e6a36d;
-  --amb-gold: #e7b660;
-  --amb-coral: #d66b52;
-  --amb-orange: #a44934;
-  --amb-red: #7a2a26;
-  --amb-plum: #392437;
-  --amb-violet: #3d2163;
-  --amb-hill: #1a0b12;
-  --amb-glow-opacity: 0.9;
-  --amb-grain-opacity: 0.055;
-  --amb-scrim: oklch(0.1 0.03 30 / 0.24);
-}
-:root[data-ambient="ember"][data-scheme="light"],
-:root[data-scheme="light"] [data-ambient-scope="ember"] {
-  /* Solar Ember, light: a soft pastel sunset. */
-  --amb-base: #f8efe9;
-  --amb-deep: #f3e3da;
-  --amb-burgundy: #efd9d6;
-  --amb-amber: #f6cf9f;
-  --amb-gold: #f7dca6;
-  --amb-coral: #f1ae94;
-  --amb-orange: #eba08a;
-  --amb-red: #e3a6a1;
-  --amb-plum: #e8d2dc;
-  --amb-violet: #dccdf0;
-  --amb-hill: #f6e8e2;
-  --amb-glow-opacity: 0.85;
-  --amb-grain-opacity: 0.035;
-  --amb-scrim: oklch(0.985 0.006 40 / 0.2);
-}
+/* Atmosphère palettes (accent, glass tint, background colours) are generated from
+ * lib/ambient/palettes.ts by lib/ambient/css.ts and written in the root layout. */
 
 /* Older browsers without backdrop blur, or people who ask for less transparency: firmer glass. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -333,130 +246,77 @@
   }
 }
 
-/* ── The living background ────────────────────────────────────────────────────────────────────────
- * One fixed layer behind everything: a static base, two layers that drift very slowly (moved by
- * components/shell/ambient-motion.tsx), a grain against banding and a light scrim that keeps text
- * readable. Still when the person or the device asks for less motion. */
+/* ── Avatars on glass ─────────────────────────────────────────────────────────────────────────────
+ * People's and assistants' avatars are cut-outs (transparent PNG) set on a small glass bead: black in
+ * the dark interface, white in the light one, with a lit rim and a soft reflection over the top. */
+:root {
+  --avatar-base: #050506;
+  --avatar-shine: oklch(1 0 0 / 0.16);
+  --avatar-depth: oklch(1 0 0 / 0.07);
+}
+:root[data-scheme="light"] {
+  --avatar-base: #ffffff;
+  --avatar-shine: oklch(1 0 0 / 0.95);
+  --avatar-depth: oklch(0.3 0.03 var(--tint-h) / 0.07);
+}
+@layer components {
+  .avatar-glass {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(120% 90% at 30% 0%, var(--avatar-shine), transparent 55%),
+      var(--avatar-base);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 0 0 1px var(--glass-border),
+      inset 0 -5px 10px -6px var(--avatar-depth),
+      0 2px 8px -3px var(--glass-shadow-color);
+  }
+  /* The reflection sits over the character, like the curved front of a bead of glass. */
+  .avatar-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(90% 55% at 50% -8%, oklch(1 0 0 / 0.28), transparent 62%),
+      radial-gradient(120% 120% at 50% 120%, transparent 62%, oklch(1 0 0 / 0.1) 76%, transparent 80%);
+  }
+}
+
+/* ── The living background (Atmosphère only) ──────────────────────────────────────────────────────
+ * A full-screen canvas drawn by the graphics chip (components/shell/ambient-canvas.tsx); until it
+ * draws, or without WebGL, a soft gradient of the palette's colours stands in. Clair and Sombre have
+ * no background at all. */
 .ambient {
   position: fixed;
   inset: 0;
   z-index: -1;
-  overflow: hidden;
+  display: none;
   pointer-events: none;
   contain: strict;
   background:
-    radial-gradient(120% 80% at 50% 115%, var(--amb-deep), transparent 62%),
+    radial-gradient(70% 60% at 25% 75%, color-mix(in srgb, var(--amb-c2) 45%, transparent), transparent 70%),
+    radial-gradient(60% 55% at 80% 30%, color-mix(in srgb, var(--amb-c3) 35%, transparent), transparent 70%),
     linear-gradient(180deg, var(--amb-base), var(--amb-deep));
 }
-.ambient-set {
-  position: absolute;
-  inset: 0;
-  display: none;
-}
-:root:not([data-ambient="ember"]) .ambient:not([data-ambient-scope]) .ambient-set[data-set="aurora"],
-:root[data-ambient="ember"] .ambient:not([data-ambient-scope]) .ambient-set[data-set="ember"],
-.ambient[data-ambient-scope] .ambient-set {
+:root[data-theme="atmosphere"] .ambient {
   display: block;
 }
-/* A small, still copy of a background (Appearance settings). */
-.ambient.ambient-preview {
+.ambient-canvas {
   position: absolute;
-  z-index: auto;
-}
-
-.ambient-layer {
-  position: absolute;
-  inset: -8%;
-  width: 116%;
-  height: 116%;
-}
-.ambient-layer > svg {
+  inset: 0;
   width: 100%;
   height: 100%;
-  display: block;
+  opacity: 0;
+  transition: opacity 600ms var(--ease-standard);
 }
-.ambient-grain {
-  position: absolute;
-  inset: 0;
-  opacity: var(--amb-grain-opacity);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
+.ambient-canvas[data-ready] {
+  opacity: 1;
 }
-.ambient-scrim {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(90% 70% at 60% 45%, var(--amb-scrim), transparent 75%),
-    linear-gradient(180deg, transparent 60%, var(--amb-scrim));
-}
-
-/* SVG paint, themed through the tokens above. */
-.amb-fill-base {
-  fill: var(--amb-base);
-}
-.amb-shade {
-  stroke: var(--amb-shade);
-  opacity: var(--amb-shade-opacity, 0.9);
-}
-.amb-glow-violet {
-  stroke: var(--amb-violet);
-  opacity: var(--amb-glow-opacity);
-}
-.amb-glow-plum {
-  stroke: var(--amb-plum);
-  opacity: var(--amb-glow-opacity);
-}
-.amb-glow-blue {
-  stroke: var(--amb-blue);
-  opacity: var(--amb-glow-opacity);
-}
-.amb-glow-indigo {
-  stroke: var(--amb-indigo);
-  opacity: var(--amb-glow-opacity);
-}
-.amb-rim {
-  stroke: var(--amb-rim);
-  opacity: var(--amb-rim-opacity);
-}
-.amb-rim-soft {
-  stroke: var(--amb-rim);
-  opacity: calc(var(--amb-rim-opacity) * 0.42);
-}
-.amb-fill-amber {
-  fill: var(--amb-amber);
-}
-.amb-fill-coral {
-  fill: var(--amb-coral);
-}
-.amb-fill-orange {
-  fill: var(--amb-orange);
-}
-.amb-fill-red {
-  fill: var(--amb-red);
-}
-.amb-fill-hill {
-  fill: var(--amb-hill);
-}
-.amb-fill-violet {
-  fill: var(--amb-violet);
-}
-.amb-fill-plum {
-  fill: var(--amb-plum);
-}
-.amb-fill-gold {
-  fill: var(--amb-gold);
-}
-.amb-ember-band {
-  opacity: var(--amb-glow-opacity);
-}
-
-/* The two moving layers are translated a few times a second by components/shell/ambient-motion.tsx
- * (already painted, never repainted); the browser keeps them on their own layer. */
-.ambient:not([data-ambient-scope]) .ambient-layer[data-sway] {
-  will-change: transform;
-}
-/* A device that cannot keep up (measured once per visit, components/appearance/performance-guard):
- * the background stays still and glass keeps its frost and lit rim without bending the backdrop. */
+/* A low-power device keeps glass frosted, without bending (the background then draws one still frame). */
 :root[data-perf="low"] .lg-glass {
   --lg-filter: saturate(1.5) !important;
 }
@@ -469,11 +329,25 @@
 /* ── Sidebar (components/shell/app-shell.tsx) ─────────────────────────────────────────────────────
  * A floating glass panel; collapsed, a narrow rail of icons with tooltips. */
 .shell-sidebar {
-  width: 17rem;
-  transition: width var(--dur-layout) var(--ease-standard);
+  --sidebar-w: 17rem;
+  position: relative;
+  width: var(--sidebar-w);
 }
 :root[data-sidebar="collapsed"] .shell-sidebar {
-  width: 5.25rem;
+  --sidebar-w: 5.25rem;
+}
+/* The panel animates its own width on top of the page; the page itself moves once (app-shell.tsx). */
+.shell-panel-frame {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: calc(var(--sidebar-w) - 10px);
+  transition: width var(--dur-layout) var(--ease-standard);
+}
+/* While it animates, the panel keeps its frost but does not bend: its lens is refitted at rest. */
+.shell-sidebar[data-animating] .lg-glass {
+  --lg-filter: saturate(1.5) !important;
 }
 /* Once the lens is in place it marks the current page; before that, the row's own lit pill does. */
 .shell-nav[data-lens-ready] .glass-interactive[aria-current="page"] {
@@ -482,7 +356,7 @@
   box-shadow: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .shell-sidebar {
+  .shell-panel-frame {
     transition: none;
   }
 }
@@ -532,6 +406,28 @@
   --lg-glass: var(--glass-lens);
   --lg-blur: 0px;
   box-shadow: 0 6px 18px -10px var(--glass-shadow-color);
+}
+/* The lens glides to the current row; held, it lifts (a little larger, clearer, brighter rim) and
+ * follows the pointer quickly from row to row. */
+.shell-lens {
+  transition:
+    transform var(--dur-layout) var(--ease-standard),
+    width var(--dur-layout) var(--ease-standard),
+    height var(--dur-layout) var(--ease-standard),
+    opacity var(--dur-panel) var(--ease-standard),
+    box-shadow var(--dur-panel) var(--ease-standard);
+}
+.lg-glass.shell-lens[data-lifted] {
+  --lg-glass: color-mix(in oklch, var(--glass-lens) 60%, transparent);
+  transition-duration: 160ms;
+  box-shadow:
+    0 0 0 1px var(--glass-border-strong),
+    0 10px 26px -10px var(--glass-shadow-color);
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell-lens {
+    transition: none;
+  }
 }
 /* Rows sit above the lens. */
 .shell-nav .glass-interactive {

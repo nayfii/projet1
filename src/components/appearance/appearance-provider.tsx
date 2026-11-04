@@ -39,12 +39,13 @@ export function AppearanceProvider({ initial, children }: { initial: Appearance;
       ...state,
       setTheme(theme) {
         root().dataset.theme = theme;
-        root().dataset.scheme = resolveScheme(theme, matchMedia("(prefers-color-scheme: light)").matches);
+        root().dataset.scheme = resolveScheme(theme, state.ambient, matchMedia("(prefers-color-scheme: light)").matches);
         setState((s) => ({ ...s, theme }));
         startTransition(() => setAppearance({ theme }));
       },
       setAmbient(ambient) {
         root().dataset.ambient = ambient;
+        root().dataset.scheme = resolveScheme(state.theme, ambient, matchMedia("(prefers-color-scheme: light)").matches);
         setState((s) => ({ ...s, ambient }));
         startTransition(() => setAppearance({ ambient }));
       },

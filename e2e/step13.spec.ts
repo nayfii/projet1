@@ -133,7 +133,7 @@ test("Hide: one switch, and its three modes in a small menu", async () => {
 test("the assistants are the glossy robots, with a live face", async () => {
   await page.goto("/chat");
   const robot = page.locator('[data-assistant="anthropic"]').first();
-  await expect(robot.locator("img")).toHaveAttribute("src", "/avatars/assistants/anthropic.webp");
+  await expect(robot.locator("img")).toHaveAttribute("src", "/avatars/assistants/anthropic.png");
   await expect(robot.locator(".assistant-eye")).toHaveCount(2);
 });
 

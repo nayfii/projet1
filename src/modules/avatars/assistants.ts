@@ -16,10 +16,10 @@ export type AssistantPersona = {
 };
 
 export const ASSISTANTS: Record<AssistantId, AssistantPersona> = {
-  openai: { id: "openai", image: "/avatars/assistants/openai.webp", tint: "var(--pastel-mint)" },
-  anthropic: { id: "anthropic", image: "/avatars/assistants/anthropic.webp", tint: "var(--pastel-peach)" },
-  google: { id: "google", image: "/avatars/assistants/google.webp", tint: "var(--pastel-sky)" },
-  auto: { id: "auto", image: "/avatars/assistants/auto.webp", tint: "var(--pastel-lavender)" },
+  openai: { id: "openai", image: "/avatars/assistants/openai.png", tint: "var(--pastel-mint)" },
+  anthropic: { id: "anthropic", image: "/avatars/assistants/anthropic.png", tint: "var(--pastel-peach)" },
+  google: { id: "google", image: "/avatars/assistants/google.png", tint: "var(--pastel-sky)" },
+  auto: { id: "auto", image: "/avatars/assistants/auto.png", tint: "var(--pastel-lavender)" },
 };
 
 /** Where the face is drawn, in the 256 px image's own units. */

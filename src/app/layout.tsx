@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { AmbientBackground } from "@/components/shell/ambient-background";
 import { AppearanceProvider } from "@/components/appearance/appearance-provider";
+import { paletteStyles } from "@/lib/ambient/css";
 import {
   AMBIENT_COOKIE,
   DEFAULT_AMBIENT,
@@ -16,12 +17,12 @@ import {
   MOTION_COOKIE,
   SCHEME_SCRIPT,
   SIDEBAR_COOKIE,
-  THEME_COLORS,
   THEME_COOKIE,
   isAmbient,
   isMotion,
   isTheme,
   resolveScheme,
+  themeColor,
   type SidebarState,
 } from "@/lib/theme";
 import "./globals.css";
@@ -51,12 +52,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export async function generateViewport(): Promise<Viewport> {
   const { theme, ambient } = await appearance();
-  const colors = THEME_COLORS[ambient];
-  if (theme !== "system") return { themeColor: colors[theme], colorScheme: theme };
+  if (theme !== "system") {
+    const scheme = resolveScheme(theme, ambient);
+    return { themeColor: themeColor(theme, ambient, scheme), colorScheme: scheme };
+  }
   return {
     themeColor: [
-      { media: "(prefers-color-scheme: light)", color: colors.light },
-      { media: "(prefers-color-scheme: dark)", color: colors.dark },
+      { media: "(prefers-color-scheme: light)", color: themeColor(theme, ambient, "light") },
+      { media: "(prefers-color-scheme: dark)", color: themeColor(theme, ambient, "dark") },
     ],
     colorScheme: "dark light",
   };
@@ -71,7 +74,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang={locale}
       data-theme={theme}
-      data-scheme={resolveScheme(theme)}
+      data-scheme={resolveScheme(theme, ambient)}
       data-ambient={ambient}
       data-motion={motion}
       data-sidebar={sidebar}
@@ -80,6 +83,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: SCHEME_SCRIPT }} />
+        <style dangerouslySetInnerHTML={{ __html: paletteStyles() }} />
       </head>
       <body className="min-h-full font-sans">
         <AmbientBackground />
