@@ -51,7 +51,11 @@ export function resolveScheme(theme: Theme, prefersLight = false): "dark" | "lig
 }
 
 /**
- * Runs in <head> before the first paint: with "system", shows the device's scheme at once and
- * follows it when it changes (e.g. at sunset), without a flash of the other scheme.
+ * Runs in <head> before the first paint:
+ * - with "system", shows the device's scheme at once and follows it when it changes (e.g. at sunset);
+ * - a device that draws without a graphics chip (software rendering, common in virtual machines and
+ *   remote desktops) is marked low-power at once, so it never pays for bending glass and motion
+ *   (see components/appearance/performance-guard.ts, which also checks the frame rate). The verdict is
+ *   kept for the tab.
  */
-export const SCHEME_SCRIPT = `(function(){try{var d=document.documentElement,m=matchMedia("(prefers-color-scheme: light)");var a=function(){if(d.dataset.theme==="system")d.dataset.scheme=m.matches?"light":"dark"};a();m.addEventListener("change",a)}catch(e){}})();`;
+export const SCHEME_SCRIPT = `(function(){var d=document.documentElement;try{var m=matchMedia("(prefers-color-scheme: light)");var a=function(){if(d.dataset.theme==="system")d.dataset.scheme=m.matches?"light":"dark"};a();m.addEventListener("change",a)}catch(e){}try{var k="cendr-perf",v=sessionStorage.getItem(k);if(v==="low"){d.dataset.perf="low"}else if(!v){var c=document.createElement("canvas"),g=c.getContext("webgl"),r="";if(g){var x=g.getExtension("WEBGL_debug_renderer_info");r=String(g.getParameter(x?x.UNMASKED_RENDERER_WEBGL:g.RENDERER));var l=g.getExtension("WEBGL_lose_context");if(l)l.loseContext()}if(!g||/swiftshader|llvmpipe|softpipe|software|basic render/i.test(r)){d.dataset.perf="low";sessionStorage.setItem(k,"low")}}}catch(e){}})();`;

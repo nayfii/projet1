@@ -6,13 +6,16 @@ const KEY = "cendr-perf";
 
 /**
  * Liquid Glass bends the backdrop and the background moves: costly on a device without a capable
- * graphics chip. Once per visit, a moment after the page settles, the frame rate is sampled; below
+ * graphics chip. Software rendering is caught before the first paint (SCHEME_SCRIPT in lib/theme.ts);
+ * otherwise, once per visit, a moment after the page settles, the frame rate is sampled; below
  * 35 frames a second the device is marked low-power (<html data-perf="low">), which stills the
  * background and keeps glass frosted without bending (appearance.css). The verdict lasts for the tab.
  */
 export function usePerformanceGuard() {
   React.useEffect(() => {
     const root = document.documentElement;
+    // Already marked before the first paint (no graphics chip): nothing to measure.
+    if (root.dataset.perf === "low") return;
     try {
       const known = sessionStorage.getItem(KEY);
       if (known === "low") root.dataset.perf = "low";
