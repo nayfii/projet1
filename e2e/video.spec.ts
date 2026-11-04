@@ -135,7 +135,7 @@ test("Video Editor: two clips, an edit plan, then MP4s in the chosen formats", a
 
   const answer = await waitForAnswer();
   // The clips went with the first message; the AI only received their names and lengths.
-  await expect(page.getByRole("link", { name: "plage.mp4" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "plage.mp4", exact: true })).toBeVisible();
   const plan = answer.getByRole("region", { name: "Plan de montage" });
   await expect(plan).toBeVisible();
   await expect(plan).toContainText("[TEST] Montage");
