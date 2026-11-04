@@ -181,7 +181,6 @@
   --amb-blue: #3569a8;
   --amb-plum: #6b2c62;
   --amb-rim: #c9b9f2;
-  --amb-fold: #0b0e1c;
   --amb-shade: #04050a;
   --amb-glow-opacity: 0.7;
   --amb-rim-opacity: 0.46;
@@ -199,7 +198,6 @@
   --amb-blue: #b6cbee;
   --amb-plum: #e2c3e4;
   --amb-rim: #ffffff;
-  --amb-fold: #e8eaf4;
   --amb-shade: #c9cce0;
   --amb-glow-opacity: 0.75;
   --amb-rim-opacity: 0.85;
@@ -336,9 +334,9 @@
 }
 
 /* ── The living background ────────────────────────────────────────────────────────────────────────
- * One fixed layer behind everything: a static base, two layers that sway very slowly (transform
- * only, so the browser moves already-painted images), a grain against banding and a light scrim
- * that keeps text readable. Still when the person or the device asks for less motion. */
+ * One fixed layer behind everything: a static base, two layers that drift very slowly (moved by
+ * components/shell/ambient-motion.tsx), a grain against banding and a light scrim that keeps text
+ * readable. Still when the person or the device asks for less motion. */
 .ambient {
   position: fixed;
   inset: 0;
@@ -365,10 +363,7 @@
   position: absolute;
   z-index: auto;
 }
-.ambient-preview .ambient-layer {
-  animation: none !important;
-  will-change: auto !important;
-}
+
 .ambient-layer {
   position: absolute;
   inset: -8%;

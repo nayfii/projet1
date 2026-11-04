@@ -282,6 +282,18 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Our team sets its own password from the console's account menu (Mot de passe) | **done** |
 | Online, without our own mail server, Supabase sends its default "reset password" e-mail: the link must be opened in the browser that asked for it (like the sign-in links today) | known limit |
 
+### Liquid Glass experiment v18 (2026-11-04) — branch `experiment/liquid-glass-v18`, not merged
+
+| Item | Status |
+|---|---|
+| Two living backgrounds, Midnight Aurora (default) and Solar Ember, each in light and dark, inspired by the founder's references; very slow drift, a still version, "Fond animé" switch | **done** |
+| Settings → Apparence: Clair / Sombre / Système and the background chosen independently, live previews, kept per device (no database change); in our console: account menu → Apparence | **done** |
+| Liquid Glass with glisse: sidebar, cards, chat composer, dialogs, menus, sign-in and onboarding panes bend the background at their edges; glass switches; a glass lens slides to the current page | **done** in Chromium browsers (Chrome, Edge, Brave, Arc); **Safari and Firefox show frosted glass with the lit rim, without the bend** (a browser limit) |
+| Sidebar collapsible to a rail of icons with tooltips (Clients and Search included) | **done** |
+| Every screen goes through the shared components (app, administration, our console, sign-in, onboarding) | **done**; checked by screenshots in the four combinations on the main screens, not every screen by hand |
+| Performance | Measured only here, **without a graphics chip** (software rendering): with bending and motion the page falls to 2–7 frames a second, so the automatic low-power check stills the background and stops the bend (back to 60). **Not measured on a real computer yet**: to be checked by the founder on the preview |
+| Undo | The experiment lives on its own branch; the customers' version is untouched until it is merged | — |
+
 ### Speed, light theme and UI audit (2026-11-03)
 
 | Item | Status |

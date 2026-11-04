@@ -67,3 +67,22 @@ default and stay one click away. "Ma photo telle quelle" is marked *Bientôt*.
 - Test mode (`AI_FAKE_PROVIDER=true`): no AI is called; a fixed demo character is returned and labelled as such.
 - **Not verified yet against the real image model** (the OpenAI account has no credit): the first real avatars must be
   checked by eye, and the prompt adjusted if needed (then bump `AVATAR_STYLE_VERSION`).
+
+## 4. Liquid Glass experiment (v18, 2026-11-04) — branch `experiment/liquid-glass-v18`
+
+The founder's brief: Apple's Liquid Glass, organic living backgrounds, a premium floating sidebar (references: "Glassy
+Sidebar V5", violet silk folds, an amber sunset). **An experiment on its own branch**: the version customers use is
+unchanged until the founder accepts it.
+
+| Element | Rule | Where |
+|---|---|---|
+| Appearance | Two independent choices per device: the interface (Clair, Sombre, Système) and the background (Midnight Aurora, Solar Ember), plus "Fond animé". Settings → Apparence (profile; our console: Apparence in the account menu). Cookies read by the root layout, so the first paint is right; "Système" is resolved before the first paint by a tiny script | `lib/theme.ts`, `components/appearance/*`, `app/layout.tsx` |
+| Backgrounds | Midnight Aurora: four silk folds (shadow, coloured glow, lit edge) in night blue, indigo, violet and plum on near-black; Solar Ember: a band of light from gold to red over a dark wave, violet glow below. Light versions: pearl satin and a pastel sunset. Inline SVG painted once, a grain against banding, a scrim for readable text | `components/shell/ambient-background.tsx`, `app/appearance.css` |
+| Motion | Two layers drift well under a pixel a second, translated three times a second (never repainted); still with "Fond animé" off, reduced motion, a hidden tab, or a low-power device | `components/shell/ambient-motion.tsx` |
+| Glass materials | `glass-subtle` (rows, chips), `glass-standard` (lists, bubbles), `glass-elevated` / `glass-solid` (floating, blurred), `glass-interactive` (hover, selected); content-heavy surfaces (tables, long forms, menus) use the firmer fills | `app/appearance.css` |
+| Liquid Glass (glisse) | Panes that bend the backdrop at their rim, with a painted lit edge and light colour dispersion: sidebar, cards, chat composer, dialogs, menus, sign-in and onboarding panes, the mobile bar; the bend is given in pixels (`reach`) so small and tall panes match. Chromium bends the live backdrop; Safari and Firefox keep the frost and the lit rim | `components/ui/liquid-glass.tsx` |
+| Sidebar | A floating glass panel; the current page is marked by a small glass lens that slides to it; collapsible to a rail of icons with tooltips (cookie per device); Clients and Search keep an icon in the rail | `components/shell/app-shell.tsx` |
+| Controls | Switches are glisse's Liquid Glass switch (in our accent); the interface choice uses glisse's segmented control | `components/ui/switch.tsx`, `appearance-settings.tsx` |
+| Accent | Follows the background: lavender-violet with Aurora, warm coral with Ember (deeper in light mode for contrast) | `--brand` |
+| Motion tokens | 150 ms controls, 220 ms panels, 300 ms layout; no bounce | `--dur-*` |
+| Performance | No blur stacking (cards have little frost; only floating panes blur); a once-per-visit frame-rate check marks a struggling device "low power": still background, glass without bending | `components/appearance/performance-guard.ts` |
