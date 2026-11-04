@@ -20,7 +20,9 @@
     "themeDark": "Dark",
     "themeLight": "Light",
     "themeSystem": "Match device",
-    "version": "Version {version}"
+    "version": "Version {version}",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
   },
   "roles": {
     "owner": "Owner",
@@ -2203,5 +2205,22 @@
     "waiting": "Waiting for a first sign-in",
     "waitingSince": "invited on {date}",
     "cancel": "Cancel {email}'s invitation"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "The interface and the background behind the glass. These choices are kept on this device.",
+    "interface": "Interface",
+    "interfaceHint": "\"System\" follows your device's setting, day and night.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "background": "Background",
+    "aurora": "Midnight Aurora",
+    "auroraHint": "Folds of violet and midnight-blue light",
+    "ember": "Solar Ember",
+    "emberHint": "An amber sunset, seen through glass",
+    "motion": "Moving background",
+    "motionHint": "The background moves very slowly. It stays still when your device asks for less motion.",
+    "pageTitle": "Appearance"
   }
 }

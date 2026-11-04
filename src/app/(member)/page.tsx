@@ -97,7 +97,7 @@ export default async function HomePage() {
                 ) : (
                   <Link
                     href={`/onboarding?step=${key}`}
-                    className={cn("group flex h-full items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm transition-colors hover:border-foreground/25")}
+                    className={cn("group flex h-full items-center gap-3 glass-standard rounded-xl border px-4 py-3 text-sm transition-colors hover:border-foreground/25")}
                   >
                     <span className="flex size-7 items-center justify-center rounded-full bg-brand-soft text-brand">
                       <Icon className="size-4" />

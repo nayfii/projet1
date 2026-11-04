@@ -50,7 +50,7 @@ export default async function AdminQuotasPage() {
           }))}
       />
       {videoCredits ? (
-        <section className="mt-8 space-y-1.5 rounded-xl border bg-card p-5" aria-labelledby="video-credits">
+        <section className="mt-8 space-y-1.5 glass-standard rounded-xl border p-5" aria-labelledby="video-credits">
           <h2 id="video-credits" className="text-[15px] font-medium">
             {t("videoTitle")}
           </h2>

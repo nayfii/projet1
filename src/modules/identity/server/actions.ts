@@ -10,7 +10,15 @@ import { safeNextPath } from "@/lib/safe-redirect";
 import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
 import { resolveLocale } from "@/i18n/request";
 import type { ActionResult } from "@/lib/errors";
-import { isTheme, THEME_COOKIE } from "@/lib/theme";
+import {
+  AMBIENT_COOKIE,
+  APPEARANCE_COOKIE_MAX_AGE,
+  MOTION_COOKIE,
+  THEME_COOKIE,
+  isAmbient,
+  isMotion,
+  isTheme,
+} from "@/lib/theme";
 
 const emailSchema = z.email().max(254);
 
@@ -65,10 +73,16 @@ export async function setLocale(locale: string) {
   revalidatePath("/", "layout");
 }
 
-/** Appearance is a per-device choice: a cookie, read by the root layout. */
-export async function setTheme(theme: string) {
-  if (!isTheme(theme)) return;
-  (await cookies()).set(THEME_COOKIE, theme, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+/**
+ * Appearance is a per-device choice (interface, ambient background, motion): cookies read by the
+ * root layout. The page already shows the change; this keeps it for the next visits.
+ */
+export async function setAppearance(input: { theme?: string; ambient?: string; motion?: string }) {
+  const jar = await cookies();
+  const options = { path: "/", maxAge: APPEARANCE_COOKIE_MAX_AGE, sameSite: "lax" as const };
+  if (isTheme(input.theme)) jar.set(THEME_COOKIE, input.theme, options);
+  if (isAmbient(input.ambient)) jar.set(AMBIENT_COOKIE, input.ambient, options);
+  if (isMotion(input.motion)) jar.set(MOTION_COOKIE, input.motion, options);
   revalidatePath("/", "layout");
 }
 

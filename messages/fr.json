@@ -20,7 +20,9 @@
     "themeDark": "Sombre",
     "themeLight": "Clair",
     "themeSystem": "Comme l'appareil",
-    "version": "Version {version}"
+    "version": "Version {version}",
+    "collapseSidebar": "Réduire le menu",
+    "expandSidebar": "Agrandir le menu"
   },
   "roles": {
     "owner": "Propriétaire",
@@ -2203,5 +2205,22 @@
     "waiting": "En attente de première connexion",
     "waitingSince": "invitée le {date}",
     "cancel": "Annuler l'invitation de {email}"
+  },
+  "appearance": {
+    "title": "Apparence",
+    "description": "L'interface et le fond derrière le verre. Ces choix sont gardés sur cet appareil.",
+    "interface": "Interface",
+    "interfaceHint": "« Système » suit le réglage de votre appareil, jour et nuit.",
+    "themeLight": "Clair",
+    "themeDark": "Sombre",
+    "themeSystem": "Système",
+    "background": "Fond",
+    "aurora": "Midnight Aurora",
+    "auroraHint": "Plis de lumière violette et bleu nuit",
+    "ember": "Solar Ember",
+    "emberHint": "Un coucher de soleil ambré, vu à travers le verre",
+    "motion": "Fond animé",
+    "motionHint": "Le fond bouge très lentement. Il reste immobile si votre appareil demande moins d'animations.",
+    "pageTitle": "Apparence"
   }
 }

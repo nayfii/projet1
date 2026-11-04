@@ -15,9 +15,9 @@ function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center rounded-xl border border-dashed px-6 py-14 text-center", className)}>
+    <div className={cn("glass-subtle flex flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-14 text-center", className)}>
       {icon ? (
-        <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-5">
+        <div className="glass-standard mb-4 flex size-11 items-center justify-center rounded-full border text-muted-foreground [&_svg]:size-5">
           {icon}
         </div>
       ) : null}

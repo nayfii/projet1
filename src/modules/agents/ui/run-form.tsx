@@ -110,7 +110,7 @@ export function RunForm({
       {agent.notice ? <AgentNotice notice={agent.notice} /> : null}
       {!agent.usable ? <p className="rounded-lg bg-warning-soft px-3 py-2 text-[13px]">{t("notUsable")}</p> : null}
       <form
-        className="space-y-4 rounded-xl border bg-card p-5"
+        className="space-y-4 glass-standard rounded-xl border p-5"
         onSubmit={(e) => {
           e.preventDefault();
           if (missing.length === 0) run();

@@ -41,7 +41,7 @@ export function HandoverCard({ handover, className }: { handover: Handover; clas
     });
 
   return (
-    <section aria-label={t("handoverTitle")} className={cn("rounded-xl border bg-card shadow-xs", className)}>
+    <section aria-label={t("handoverTitle")} className={cn("glass-standard rounded-xl border", className)}>
       <header className="flex items-center gap-3 px-4 py-3">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
           <FileStackIcon className="size-4" />

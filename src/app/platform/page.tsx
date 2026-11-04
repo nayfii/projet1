@@ -152,7 +152,7 @@ export default async function PlatformHomePage() {
         </h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-5">
           {actions.map(({ href, icon: Icon, label }) => (
-            <Link key={href} href={href} className="group flex aspect-[4/3] flex-col justify-between rounded-2xl border bg-card p-4 transition-colors hover:border-foreground/25 hover:bg-accent/40">
+            <Link key={href} href={href} className="group flex aspect-[4/3] flex-col justify-between glass-standard rounded-2xl border p-4 transition-colors hover:border-foreground/25 hover:bg-accent/40">
               <Icon className="size-5 text-brand" />
               <span className="text-sm font-medium">{label}</span>
             </Link>
@@ -165,7 +165,7 @@ export default async function PlatformHomePage() {
               href={tool.href}
               target="_blank"
               rel="noreferrer"
-              className="group relative flex aspect-[4/3] flex-col justify-between rounded-2xl border bg-card p-4 transition-colors hover:border-foreground/25 hover:bg-accent/40"
+              className="group relative flex aspect-[4/3] flex-col justify-between glass-standard rounded-2xl border p-4 transition-colors hover:border-foreground/25 hover:bg-accent/40"
             >
               <span className={cn("flex size-8 items-center justify-center rounded-lg text-[13px] font-semibold", tool.color)}>{tool.name.charAt(0)}</span>
               <span>

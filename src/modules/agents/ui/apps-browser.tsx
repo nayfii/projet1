@@ -63,7 +63,7 @@ export function AppsBrowser({ apps, departments, initialTab }: { apps: BrowserAp
 
   const card = (a: BrowserApp) => {
     const body = (
-      <div className={cn("flex h-full items-start gap-3 rounded-2xl border bg-card p-4 transition-colors", a.soon ? "opacity-60" : "hover:border-foreground/20 hover:bg-accent/40")}>
+      <div className={cn("flex h-full items-start gap-3 glass-standard rounded-2xl border p-4 transition-colors", a.soon ? "opacity-60" : "hover:border-foreground/20 hover:bg-accent/40")}>
         <DepartmentIcon department={a.department} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{a.name}</p>

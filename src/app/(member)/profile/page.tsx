@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PersonalMemory } from "@/modules/memory/ui/personal-memory";
 import { PasswordCard } from "@/modules/identity/ui/password-forms";
 import { needsCurrentPassword } from "@/modules/identity/server/password-actions";
+import { AppearanceSettings } from "@/components/appearance/appearance-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("profile");
@@ -31,7 +32,7 @@ export default async function ProfilePage() {
   return (
     <PageContainer className="max-w-2xl">
       <PageHeader title={t("title")} description={t("description")} />
-      <section aria-labelledby="avatar-title" className="mb-10 rounded-2xl border bg-card px-6 py-8">
+      <section aria-labelledby="avatar-title" className="glass-standard mb-10 rounded-2xl border px-6 py-8">
         <h2 id="avatar-title" className="text-center text-[15px] font-semibold tracking-tight">
           {tAvatar("title")}
         </h2>
@@ -49,6 +50,9 @@ export default async function ProfilePage() {
       />
       <div className="mt-6">
         <PasswordCard hasPassword={Boolean(ctx.profile.passwordSetAt)} needsCurrent={needsCurrent === true} />
+      </div>
+      <div className="mt-6">
+        <AppearanceSettings />
       </div>
     </PageContainer>
   );

@@ -1,8 +1,10 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { LiquidGlass } from "./liquid-glass";
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="card" className={cn("rounded-xl border bg-card text-card-foreground shadow-xs", className)} {...props} />;
+  // Liquid Glass: the rim bends the background a little; tables get a firmer pane (appearance.css).
+  return <LiquidGlass material="card" reach={32} data-slot="card" className={cn("rounded-2xl border text-card-foreground", className)} {...props} />;
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {

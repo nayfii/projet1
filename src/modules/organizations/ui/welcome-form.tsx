@@ -59,7 +59,7 @@ export function WelcomeForm({
         <h1 className="text-2xl font-semibold tracking-tight">{t("welcomeTitle", { company: companyName })}</h1>
         <p className="text-sm text-muted-foreground">{t("welcomeSubtitle")}</p>
       </div>
-      <section aria-label={tAvatar("welcomeAvatar")} className="rounded-2xl border bg-card px-5 py-7">
+      <section aria-label={tAvatar("welcomeAvatar")} className="glass-standard rounded-2xl border px-5 py-7">
         <AvatarStudio name={avatar.name} currentUrl={avatar.currentUrl} credits={avatar.credits} testMode={avatar.testMode} size={128} />
       </section>
       <form action={action} className="space-y-5">

@@ -7,6 +7,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { ArrowDownLeftIcon, GitBranchIcon, MessageSquareIcon, SearchIcon, UsersIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/form";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { searchConversationsAction, type SearchHit } from "../server/actions";
 import { useChatList } from "./chat-list";
@@ -32,42 +33,50 @@ export function ChatSidebarSection() {
 
   return (
     <div className="space-y-0.5">
-      <button
-        type="button"
-        onClick={() => setSearching(true)}
-        className="flex h-[30px] w-full items-center gap-2.5 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/70 hover:text-foreground"
-      >
-        <SearchIcon className="size-4 shrink-0" />
-        <span className="flex-1 text-left">{t("search")}</span>
-        <kbd className="rounded border px-1 font-sans text-[10px] text-muted-foreground/80">{t("searchShortcut")}</kbd>
-      </button>
+      {/* In the narrow rail: search stays one click (or Ctrl K) away; recent conversations wait for the full sidebar. */}
+      <Tooltip content={t("search")} side="right">
+        <button type="button" onClick={() => setSearching(true)} aria-label={t("search")} className="glass-interactive mx-auto hidden size-10 items-center justify-center rounded-[11px] text-muted-foreground hover:text-foreground rail:flex">
+          <SearchIcon className="size-[17px]" />
+        </button>
+      </Tooltip>
+      <div className="space-y-0.5 rail:hidden">
+        <button
+          type="button"
+          onClick={() => setSearching(true)}
+          className="glass-interactive flex h-8 w-full items-center gap-2.5 rounded-[11px] px-2.5 text-[13.5px] text-muted-foreground hover:text-foreground"
+        >
+          <SearchIcon className="size-4 shrink-0" />
+          <span className="flex-1 text-left">{t("search")}</span>
+          <kbd className="rounded-md border border-[var(--glass-border)] bg-[var(--glass-subtle)] px-1.5 font-sans text-[10px] text-muted-foreground/80">{t("searchShortcut")}</kbd>
+        </button>
 
-      <p className="px-2 pb-0.5 pt-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">{t("recent")}</p>
-      {items.length === 0 ? (
-        <p className="px-2 py-1 text-[13px] text-muted-foreground/80">{t("noConversationsYet")}</p>
-      ) : (
-        items.map((c) => {
-          const href = `/chat/${c.id}`;
-          const active = pathname === href;
-          return (
-            <Link
-              key={c.id}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex min-h-[30px] flex-col justify-center rounded-md px-2 py-1 text-sm transition-colors",
-                active ? "bg-sidebar-accent font-medium text-foreground" : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
-              )}
-            >
-              <span className="flex min-w-0 items-center gap-1.5">
-                <span className="truncate">{c.title ?? t("untitled")}</span>
-                <KindMark kind={c.kind} />
-              </span>
-              {c.clientName ? <span className="truncate text-[11px] font-normal text-muted-foreground/80">{c.clientName}</span> : null}
-            </Link>
-          );
-        })
-      )}
+        <p className="px-2.5 pb-1 pt-4 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/75">{t("recent")}</p>
+        {items.length === 0 ? (
+          <p className="px-2.5 py-1 text-[13px] text-muted-foreground/80">{t("noConversationsYet")}</p>
+        ) : (
+          items.map((c) => {
+            const href = `/chat/${c.id}`;
+            const active = pathname === href;
+            return (
+              <Link
+                key={c.id}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "glass-interactive flex min-h-8 flex-col justify-center rounded-[11px] px-2.5 py-1 text-[13.5px]",
+                  active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate">{c.title ?? t("untitled")}</span>
+                  <KindMark kind={c.kind} />
+                </span>
+                {c.clientName ? <span className="truncate text-[11px] font-normal text-muted-foreground/80">{c.clientName}</span> : null}
+              </Link>
+            );
+          })
+        )}
+      </div>
 
       <Dialog open={searching} onOpenChange={setSearching}>
         <DialogContent className="max-w-xl gap-0 p-0" closeLabel={tCommon("close")}>

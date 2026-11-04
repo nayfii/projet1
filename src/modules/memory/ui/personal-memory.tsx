@@ -24,7 +24,7 @@ export function PersonalMemory({ notes }: { notes: { id: string; content: string
   const examples = [t("example1"), t("example2"), t("example3")];
 
   return (
-    <section aria-labelledby="personal-memory" className="mb-10 rounded-2xl border bg-card px-6 py-6">
+    <section aria-labelledby="personal-memory" className="mb-10 glass-standard rounded-2xl border px-6 py-6">
       <h2 id="personal-memory" className="text-[15px] font-semibold tracking-tight">
         {t("title")}
       </h2>

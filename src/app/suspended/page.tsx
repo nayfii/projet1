@@ -10,8 +10,8 @@ export default async function SuspendedPage() {
   const t = await getTranslations("suspended");
   return (
     <AuthLayout>
-      <div className="w-full max-w-sm space-y-6 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <div className="glass-elevated w-full max-w-sm space-y-6 rounded-[28px] border px-8 py-10 text-center">
+        <div className="glass-standard mx-auto flex size-12 items-center justify-center rounded-full border text-muted-foreground">
           <PauseCircleIcon className="size-5" />
         </div>
         <div className="space-y-2">

@@ -264,7 +264,7 @@ function UserMessage({
         <div className="flex max-w-[85%] items-start gap-1">
           <ConfrontButton onConfront={onConfront} className={hover} />
           <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
-          <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-4 py-2.5 text-[15px] leading-relaxed">
+          <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-[var(--glass-selected)] px-4 py-2.5 text-[15px] leading-relaxed shadow-[inset_0_1px_0_0_var(--glass-highlight),0_0_0_1px_var(--glass-ring)]">
             <ProtectedText text={message.content} spans={message.hideSpans} renderPlain={withMentions} />
           </div>
         </div>
@@ -413,7 +413,7 @@ function AssistantMessage({
         </p>
       ) : message.content ? (
         bubble ? (
-          <div data-testid="ai-bubble" className="w-fit max-w-[92%] rounded-2xl rounded-tl-md border bg-card px-4 py-3">
+          <div data-testid="ai-bubble" className="glass-standard w-fit max-w-[92%] rounded-2xl rounded-tl-md border px-4 py-3">
             <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
           </div>
         ) : (

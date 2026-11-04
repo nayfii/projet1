@@ -14,7 +14,7 @@ export function AvatarRateForm({ credits, costUsd, model }: { credits: number; c
   const tErrors = useTranslations("errors");
   const [saving, startSaving] = React.useTransition();
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-5" aria-labelledby="avatar-rate">
+    <section className="space-y-3 glass-standard rounded-xl border p-5" aria-labelledby="avatar-rate">
       <div>
         <h2 id="avatar-rate" className="text-[15px] font-medium">
           {t("avatarRateTitle")}
