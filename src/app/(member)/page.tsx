@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRightIcon, BriefcaseIcon, BrainIcon, CheckIcon, FileTextIcon, LayoutGridIcon, MessageSquareIcon, UsersIcon } from "lucide-react";
+import { ArrowRightIcon, BriefcaseIcon, BrainIcon, CheckIcon, FileTextIcon, KeyRoundIcon, LayoutGridIcon, MessageSquareIcon, UsersIcon } from "lucide-react";
 import { requireMember, type MemberContext } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +25,7 @@ async function setupCounts(ctx: MemberContext) {
 export default async function HomePage() {
   const ctx = await requireMember();
   const t = await getTranslations("home");
+  const tPassword = await getTranslations("password");
   const canSetUp = hasScope(ctx.active, "company");
   const [clients, counts] = await Promise.all([listClients(ctx.active.companyId), canSetUp ? setupCounts(ctx) : Promise.resolve(null)]);
   const firstName = ctx.profile.fullName?.split(" ")[0];
@@ -62,6 +63,18 @@ export default async function HomePage() {
               {t("finishSetupCta")}
               <ArrowRightIcon />
             </Link>
+          </Button>
+        </div>
+      ) : null}
+
+      {!ctx.profile.passwordSetAt ? (
+        <div className="mb-6 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between" data-testid="password-reminder">
+          <p className="flex items-center gap-2 text-sm">
+            <KeyRoundIcon className="size-4 shrink-0 text-brand" />
+            {tPassword("reminder")}
+          </p>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/profile#password">{tPassword("reminderCta")}</Link>
           </Button>
         </div>
       ) : null}

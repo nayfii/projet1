@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Field, FormMessage, SubmitButton } from "@/components/ui/form";
 import { updateMyProfile } from "@/modules/identity/server/actions";
 import { updateMyCardAction } from "../server/actions";
+import { setPasswordAction } from "@/modules/identity/server/password-actions";
+import { PasswordInput } from "@/components/ui/password-input";
 import type { ActionResult } from "@/lib/errors";
 import { AvatarStudio } from "@/modules/avatars/ui/avatar-studio";
 
@@ -33,6 +35,8 @@ export function WelcomeForm({
   const tProfile = useTranslations("profile");
   const tAvatar = useTranslations("avatar");
   const tErrors = useTranslations("errors");
+  const tPassword = useTranslations("password");
+  const tAuth = useTranslations("auth");
   const router = useRouter();
 
   const [state, action] = useActionState(async (_: ActionResult | null, formData: FormData): Promise<ActionResult> => {
@@ -40,6 +44,11 @@ export function WelcomeForm({
     if (!profile.ok) return profile;
     const card = await updateMyCardAction(null, formData);
     if (!card.ok) return card;
+    // An optional password, for the next sign-ins (the person just proved their mailbox).
+    if (String(formData.get("password") ?? "")) {
+      const password = await setPasswordAction(null, formData);
+      if (!password.ok) return password;
+    }
     router.push(next);
     return { ok: true };
   }, null);
@@ -62,6 +71,9 @@ export function WelcomeForm({
         </Field>
         <Field label={tProfile("expertise")} htmlFor="expertise" hint={tProfile("expertiseHint")}>
           <Input id="expertise" name="expertise" defaultValue={expertise} placeholder={tProfile("expertisePlaceholder")} />
+        </Field>
+        <Field label={tPassword("welcomeLabel")} htmlFor="welcome-password" hint={`${tPassword("welcomeHint")} ${tPassword("rule")}`}>
+          <PasswordInput id="welcome-password" name="password" autoComplete="new-password" minLength={10} showLabel={tAuth("showPassword")} hideLabel={tAuth("hidePassword")} />
         </Field>
         {state && !state.ok ? <FormMessage>{tErrors(state.error)}</FormMessage> : null}
         <SubmitButton className="w-full" size="lg">

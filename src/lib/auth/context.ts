@@ -15,7 +15,14 @@ export type Membership = {
 
 export type AppContext = {
   user: { id: string; email: string };
-  profile: { fullName: string | null; avatarUrl: string | null; locale: "fr" | "en" | null; activeCompanyId: string | null };
+  profile: {
+    fullName: string | null;
+    avatarUrl: string | null;
+    locale: "fr" | "en" | null;
+    activeCompanyId: string | null;
+    /** When the person chose a password in Cendr (null: they sign in with e-mail links). */
+    passwordSetAt: string | null;
+  };
   memberships: Membership[];
   /** The company the user is working in right now (active member of an active company). */
   active: Membership | null;
@@ -33,7 +40,7 @@ export const getAppContext = cache(async (): Promise<AppContext | null> => {
   const user = { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" };
 
   const [profileRes, membershipsRes, platformRes] = await Promise.all([
-    supabase.from("profiles").select("full_name, avatar_url, locale, active_company_id").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("full_name, avatar_url, locale, active_company_id, password_set_at").eq("id", user.id).maybeSingle(),
     supabase.rpc("my_memberships"),
     supabase.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
   ]);
@@ -59,6 +66,7 @@ export const getAppContext = cache(async (): Promise<AppContext | null> => {
       avatarUrl: profileRes.data?.avatar_url ?? null,
       locale: (profileRes.data?.locale as "fr" | "en" | null) ?? null,
       activeCompanyId: activeId ?? null,
+      passwordSetAt: profileRes.data?.password_set_at ?? null,
     },
     memberships,
     active,

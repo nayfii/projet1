@@ -182,3 +182,21 @@ describe("web search", () => {
     await sql("update public.platform_settings set web_search_credits = 10, web_search_cost_usd = 0.01 where id");
   });
 });
+
+describe("passwords chosen in Cendr", () => {
+  it("are recorded only through mark_password_set, logged without the password", async () => {
+    // Nobody writes the date directly (it decides whether a password counts).
+    await owner.client.from("profiles").update({ password_set_at: new Date().toISOString() } as never).eq("id", owner.id);
+    const [before] = await sql<{ password_set_at: string | null }>("select password_set_at from public.profiles where id = $1", [owner.id]);
+    expect(before.password_set_at).toBeNull();
+
+    expect((await owner.client.rpc("mark_password_set")).error).toBeNull();
+    const [after] = await sql<{ password_set_at: string | null }>("select password_set_at from public.profiles where id = $1", [owner.id]);
+    expect(after.password_set_at).not.toBeNull();
+    const logged = await sql<{ action: string; metadata: object }>(
+      "select action, metadata from public.audit_log where company_id = $1 and action = 'auth.password_set' and actor_id = $2",
+      [companyId, owner.id],
+    );
+    expect(logged).toEqual([{ action: "auth.password_set", metadata: {} }]);
+  });
+});

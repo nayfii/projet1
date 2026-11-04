@@ -123,6 +123,12 @@ Notez ce qui va et ce qui ne va pas, avec la page et ce que vous avez cliqué : 
 
 ---
 
+### Connexion par mot de passe
+
+Rien à faire de plus : les règles (10 caractères minimum, lettres et chiffres) partent en ligne avec la prochaine mise à
+jour de la base. **Vérifiez seulement que « Confirm email » reste activé** dans Supabase (*Authentication → Sign In / Providers →
+Email*) : c'est ce qui empêche quelqu'un de se connecter avec une adresse qui n'est pas la sienne.
+
 ## Partie 4 — Brancher les vraies IA (ChatGPT, Claude, Gemini)
 
 Chaque fournisseur facture à l'usage : il faut **un compte, du crédit et une clé** chez chacun. Les clés se collent

@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FormMessage, SubmitButton } from "@/components/ui/form";
 import { sendMagicLink, signInWithGoogle } from "../server/actions";
+import { signInWithPasswordAction } from "../server/password-actions";
+import Link from "next/link";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 type LoginFormProps = {
   next: string;
@@ -25,8 +29,9 @@ export function LoginForm(props: LoginFormProps) {
 function LoginFlow({ next, googleEnabled, linkError, showLocalMailHint, onReset }: LoginFormProps & { onReset: () => void }) {
   const t = useTranslations("auth");
   const tErrors = useTranslations("errors");
-  const [state, action] = useActionState(sendMagicLink, null);
-  const sentTo = state?.ok ? state.data?.email : null;
+  const [linkState, linkAction] = useActionState(sendMagicLink, null);
+  const [passwordState, passwordAction] = useActionState(signInWithPasswordAction, null);
+  const sentTo = linkState?.ok ? linkState.data?.email : null;
 
   return (
     <motion.div
@@ -58,13 +63,10 @@ function LoginFlow({ next, googleEnabled, linkError, showLocalMailHint, onReset 
 
           {linkError ? <FormMessage>{t(linkError)}</FormMessage> : null}
 
-          <form action={action} className="space-y-4">
+          {/* One form, two ways in: the password, or a sign-in link (first sign-in, no password yet). */}
+          <form action={passwordAction} className="space-y-4">
             <input type="hidden" name="next" value={next} />
-            <Field
-              label={t("emailLabel")}
-              htmlFor="email"
-              error={state && !state.ok ? tErrors(state.error) : undefined}
-            >
+            <Field label={t("emailLabel")} htmlFor="email" error={linkState && !linkState.ok ? tErrors(linkState.error) : undefined}>
               <Input
                 id="email"
                 name="email"
@@ -77,7 +79,28 @@ function LoginFlow({ next, googleEnabled, linkError, showLocalMailHint, onReset 
                 className="h-10"
               />
             </Field>
-            <SubmitButton className="h-10 w-full">{t("continueWithEmail")}</SubmitButton>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">{t("passwordLabel")}</Label>
+                <Link href="/forgot-password" className="text-[13px] text-muted-foreground hover:text-foreground">
+                  {t("forgotPassword")}
+                </Link>
+              </div>
+              <PasswordInput id="password" name="password" autoComplete="current-password" className="h-10" showLabel={t("showPassword")} hideLabel={t("hidePassword")} />
+              {passwordState && !passwordState.ok ? <p className="text-[13px] text-destructive">{tErrors(passwordState.error)}</p> : null}
+            </div>
+            <SubmitButton className="h-10 w-full">{t("signIn")}</SubmitButton>
+
+            <div className="flex items-center gap-3 pt-2 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              {t("orLink")}
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <Button type="submit" variant="outline" formAction={linkAction} formNoValidate className="h-10 w-full">
+              <MailIcon />
+              {t("continueWithEmail")}
+            </Button>
+            <p className="text-xs leading-relaxed text-muted-foreground">{t("linkHint")}</p>
           </form>
 
           {googleEnabled ? (
@@ -97,7 +120,6 @@ function LoginFlow({ next, googleEnabled, linkError, showLocalMailHint, onReset 
             </>
           ) : null}
 
-          <p className="text-xs leading-relaxed text-muted-foreground">{t("noPassword")}</p>
         </div>
       )}
     </motion.div>

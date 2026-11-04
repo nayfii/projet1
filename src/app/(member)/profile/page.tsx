@@ -9,6 +9,8 @@ import { avatarRate } from "@/modules/avatars/server/store";
 import { fakeProviderEnabled } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { PersonalMemory } from "@/modules/memory/ui/personal-memory";
+import { PasswordCard } from "@/modules/identity/ui/password-forms";
+import { needsCurrentPassword } from "@/modules/identity/server/password-actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("profile");
@@ -20,10 +22,11 @@ export default async function ProfilePage() {
   const t = await getTranslations("profile");
   const tAvatar = await getTranslations("avatar");
   const supabase = await createClient();
-  const [card, rate, { data: notes }] = await Promise.all([
+  const [card, rate, { data: notes }, needsCurrent] = await Promise.all([
     getMyMemberCard(ctx.active.companyId, ctx.user.id),
     avatarRate(),
     supabase.from("personal_memory").select("id, content").eq("company_id", ctx.active.companyId).eq("user_id", ctx.user.id).order("created_at"),
+    needsCurrentPassword(),
   ]);
   return (
     <PageContainer className="max-w-2xl">
@@ -44,6 +47,9 @@ export default async function ProfilePage() {
         expertise={(card?.expertise ?? []).join(", ")}
         optOut={card?.who_can_help_opt_out ?? false}
       />
+      <div className="mt-6">
+        <PasswordCard hasPassword={Boolean(ctx.profile.passwordSetAt)} needsCurrent={needsCurrent === true} />
+      </div>
     </PageContainer>
   );
 }

@@ -41,6 +41,11 @@ export const ERROR_CODES = [
   "dictation_disabled",
   "test_mode",
   "invite_only",
+  "invalid_credentials",
+  "weak_password",
+  "password_mismatch",
+  "wrong_password",
+  "same_password",
   "unknown",
 ] as const;
 

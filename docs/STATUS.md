@@ -268,6 +268,17 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | **PDF from the chat**: the AI writes the full document and says it can be downloaded; a "Télécharger le PDF" button appears under the answer when the question asked for a PDF (Word and Excel stay in the download menu) | **done** |
 | **Who Can Help** also uses the company memory entries a colleague wrote (only those the person may read, in a private conversation; titles masked by Hide like memory passages) | **done** |
 
+### Sign-in with a password (2026-11-04)
+
+| Item | Status |
+|---|---|
+| Sign-in page: e-mail and password, "Mot de passe oublié ?", and the e-mail link kept below ("Recevoir mon lien") for the first sign-in or without a password yet | **done** |
+| "Forgot password": a link by e-mail (same answer whether the account exists or not), then "Nouveau mot de passe" and straight into the app; the old password stops working | **done** |
+| Create or change the password: Profile → Mot de passe (the current one asked when there is one, except right after an e-mail link); optional on invited colleagues' welcome screen; a discreet reminder on the home page until it is created | **done** |
+| A link sign-in no longer erases a password chosen in Cendr (it still clears any password set elsewhere, the earlier protection) | **done** |
+| Rules: at least 10 characters with letters and digits, also on the Auth server (`supabase/config.toml`, pushed online with the next database update) | **done** |
+| Online, without our own mail server, Supabase sends its default "reset password" e-mail: the link must be opened in the browser that asked for it (like the sign-in links today) | known limit |
+
 ### Speed, light theme and UI audit (2026-11-03)
 
 | Item | Status |

@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // "/api/version": the running version, read by the launch and check workflows (no data).
-const PUBLIC_PREFIXES = ["/login", "/auth/", "/invite/", "/api/version"];
+const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/auth/", "/invite/", "/api/version"];
 
 /**
  * Runs before every page: refreshes the Supabase session cookie and sends signed-out

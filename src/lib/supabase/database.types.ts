@@ -1059,14 +1059,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "active_company_id": string | null,"avatar_path": string | null,"avatar_pending_path": string | null,"avatar_url": string | null,"created_at": string,"email": string,"full_name": string | null,"id": string,"locale": string | null,"updated_at": string
+                    "active_company_id": string | null,"avatar_path": string | null,"avatar_pending_path": string | null,"avatar_url": string | null,"created_at": string,"email": string,"full_name": string | null,"id": string,"locale": string | null,"password_set_at": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active_company_id"?: string | null,"avatar_path"?: string | null,"avatar_pending_path"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email": string,"full_name"?: string | null,"id": string,"locale"?: string | null,"updated_at"?: string
+                    "active_company_id"?: string | null,"avatar_path"?: string | null,"avatar_pending_path"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email": string,"full_name"?: string | null,"id": string,"locale"?: string | null,"password_set_at"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "active_company_id"?: string | null,"avatar_path"?: string | null,"avatar_pending_path"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email"?: string,"full_name"?: string | null,"id"?: string,"locale"?: string | null,"updated_at"?: string
+                    "active_company_id"?: string | null,"avatar_path"?: string | null,"avatar_pending_path"?: string | null,"avatar_url"?: string | null,"created_at"?: string,"email"?: string,"full_name"?: string | null,"id"?: string,"locale"?: string | null,"password_set_at"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1324,6 +1324,9 @@ isOneToOne: false
                            },
 "leave_conversation":
 { Args: { "p_conversation": string }; Returns: undefined
+                           },
+"mark_password_set":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "match_memory":
 { Args: { "p_embedding"?: string,"p_embedding_model"?: string,"p_keywords": string,"p_limit"?: number,"p_min_similarity"?: number,"p_space_ids": (string)[] }; Returns: {
