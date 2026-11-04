@@ -2,9 +2,16 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { LiquidGlass } from "./liquid-glass";
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
-  // Liquid Glass: the rim bends the background a little; tables get a firmer pane (appearance.css).
-  return <LiquidGlass material="card" reach={32} data-slot="card" className={cn("rounded-2xl border text-card-foreground", className)} {...props} />;
+/**
+ * A pane of glass. `liquid` makes it Liquid Glass (its rim bends the background): only for panes of
+ * bounded size, such as tiles and key figures, because the bend is computed for every pixel of the
+ * pane. Content cards (tables, lists, forms) stay frosted glass, without that cost.
+ */
+function Card({ className, liquid = false, ...props }: React.ComponentProps<"div"> & { liquid?: boolean }) {
+  if (liquid) {
+    return <LiquidGlass material="card" reach={32} data-slot="card" className={cn("rounded-2xl border text-card-foreground", className)} {...props} />;
+  }
+  return <div data-slot="card" className={cn("glass-standard rounded-2xl border text-card-foreground has-[table]:bg-[var(--glass-solid)]", className)} {...props} />;
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 /** A key figure on a dashboard, with an optional meter (warning colour from 80 %). */
 export function Stat({ label, value, hint, meter, tone }: { label: string; value: string; hint?: string; meter?: number; tone?: "danger" }) {
   return (
-    <Card className="p-5">
+    <Card liquid className="p-5">
       <p className="text-[13px] text-muted-foreground">{label}</p>
       <p className={cn("mt-2 text-2xl font-semibold tracking-tight tabular-nums", tone === "danger" && "text-destructive")}>{value}</p>
       {meter !== undefined ? (
