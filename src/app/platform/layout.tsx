@@ -15,6 +15,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         { href: "/platform", label: t("home"), icon: "home", exact: true },
         { href: "/platform/companies", label: t("companies"), icon: "companies" },
         { href: "/platform/plans", label: t("plans"), icon: "plans" },
+        { href: "/platform/team", label: t("team"), icon: "members" },
       ],
     },
     {

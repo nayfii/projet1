@@ -535,7 +535,8 @@
     "preview": "Preview",
     "debug": "Debug",
     "home": "Home",
-    "apps": "Apps"
+    "apps": "Apps",
+    "team": "Team"
   },
   "platform": {
     "companiesTitle": "Companies",
@@ -2183,5 +2184,24 @@
     "welcomeHint": "For your next sign-ins. You can also do it later in your profile.",
     "reminder": "Create your password to sign in without waiting for an e-mail.",
     "reminderCta": "Create my password"
+  },
+  "platformTeam": {
+    "title": "Team",
+    "description": "The people of our team who have this console. They never see customer content.",
+    "emailLabel": "E-mail address",
+    "emailPlaceholder": "first@cendr.eu",
+    "add": "Give access",
+    "howItWorks": "The person signs in at {url} with this address (a link by e-mail the first time): they land in the console.",
+    "added": "{email} now has the console.",
+    "invited": "Invitation saved: {email} gets access at their first sign-in.",
+    "members": "{count, plural, one {# person} other {# people}}",
+    "you": "you",
+    "since": "since {date}",
+    "inCompany": "also in a company",
+    "inCompanyHint": "This account is also a member of a customer company and sees what its members see there. Prefer a separate account for the console.",
+    "remove": "Remove {name}'s access",
+    "waiting": "Waiting for a first sign-in",
+    "waitingSince": "invited on {date}",
+    "cancel": "Cancel {email}'s invitation"
   }
 }

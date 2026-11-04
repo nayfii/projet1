@@ -989,6 +989,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"platform_admin_invites": {
+                  Row: {
+                    "created_at": string,"email": string,"invited_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"email": string,"invited_by"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"email"?: string,"invited_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "platform_admin_invites_invited_by_fkey"
+      columns: ["invited_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"platform_admins": {
                   Row: {
                     "created_at": string,"user_id": string
@@ -1358,6 +1378,9 @@ isOneToOne: false
               "video_limit": number,"video_reserved": number,"video_used": number
             }[]
                            },
+"platform_add_admin":
+{ Args: { "p_email": string }; Returns: string
+                           },
 "platform_company_credits":
 { Args: Record<PropertyKey, never>; Returns: {
               "company_id": string,"credit_limit": number,"credits_used": number,"estimated_cost_usd": number,"granted": number,"requests": number
@@ -1402,6 +1425,9 @@ isOneToOne: false
 "platform_provider_health":
 { Args: { "p_hours"?: number }; Returns: Json
                            },
+"platform_remove_admin":
+{ Args: { "p_email"?: string,"p_user"?: string }; Returns: undefined
+                           },
 "platform_save_app":
 { Args: { "p_department": string,"p_description": string,"p_enabled": boolean,"p_fields": Json,"p_id": string,"p_instructions": string,"p_memory_scope": string,"p_name": string,"p_output_format": string,"p_tools": (string)[] }; Returns: string
                            },
@@ -1428,6 +1454,11 @@ isOneToOne: false
                            },
 "platform_set_web_search_rate":
 { Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
+                           },
+"platform_team":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "added_at": string,"email": string,"full_name": string,"in_company": boolean,"user_id": string
+            }[]
                            },
 "platform_update_company":
 { Args: { "p_company": string,"p_plan"?: string,"p_status"?: Database["public"]['Enums']["company_status"] }; Returns: undefined

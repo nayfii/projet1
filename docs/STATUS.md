@@ -277,7 +277,9 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Create or change the password: Profile → Mot de passe (the current one asked when there is one, except right after an e-mail link); optional on invited colleagues' welcome screen; a discreet reminder on the home page until it is created | **done** |
 | A link sign-in no longer erases a password chosen in Cendr (it still clears any password set elsewhere, the earlier protection) | **done** |
 | Rules: at least 10 characters with letters and digits, also on the Auth server (`supabase/config.toml`, pushed online with the next database update) | **done** |
-| Tests: unit 262, integration 208, end to end 115 (6 new in `password.spec.ts`: first sign-in by link then a password, wrong password and unknown address with the same message, a link sign-in keeps the password, changing asks for the current one, "forgot password" to the end, same answer for an unknown address) | **done** |
+| Tests: unit 262, integration 209, end to end 117 (8 new in `password.spec.ts`: our team sets its password from the console, gives the console to a new address and takes it back; first sign-in by link then a password, wrong password and unknown address with the same message, a link sign-in keeps the password, changing asks for the current one, "forgot password" to the end, same answer for an unknown address) | **done** |
+| **Our team, from our console** (Plateforme → Équipe): give the console to an address ("Donner l'accès"; at once if the person already has an account, otherwise at their first sign-in with that address), see who has it, take it back, cancel an invitation; no more hosting setting for each new member. A warning shows when a member of our team also belongs to a company | **done** |
+| Our team sets its own password from the console's account menu (Mot de passe) | **done** |
 | Online, without our own mail server, Supabase sends its default "reset password" e-mail: the link must be opened in the browser that asked for it (like the sign-in links today) | known limit |
 
 ### Speed, light theme and UI audit (2026-11-03)

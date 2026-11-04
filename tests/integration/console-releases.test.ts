@@ -71,3 +71,31 @@ describe("check results and Claude Code requests", () => {
     expect((await owner.client.storage.from("platform-checks").upload(`${path}.x`, new Uint8Array([1]), { contentType: "image/jpeg" })).error).not.toBeNull();
   });
 });
+
+describe("our team, managed from the console (Plateforme → Équipe)", () => {
+  it("only our team adds or removes people; never oneself, never the last one; logged", async () => {
+    const colleague = await createUser("rel-colleague", "Collègue Cendr");
+    expect((await owner.client.rpc("platform_add_admin", { p_email: colleague.email })).error?.message).toBe("forbidden");
+    expect((await owner.client.rpc("platform_team")).error?.message).toBe("forbidden");
+
+    // An account that exists gets the console at once; an unknown address waits for its first sign-in.
+    expect((await platform.client.rpc("platform_add_admin", { p_email: colleague.email })).data).toBe("added");
+    expect((await colleague.client.rpc("platform_team")).error).toBeNull();
+    const pending = `futur-${Date.now()}@test.local`;
+    expect((await platform.client.rpc("platform_add_admin", { p_email: pending })).data).toBe("invited");
+    expect((await platform.client.from("platform_admin_invites").select("email").eq("email", pending)).data).toEqual([{ email: pending }]);
+    expect((await owner.client.from("platform_admin_invites").select("email")).data).toEqual([]);
+
+    expect((await platform.client.rpc("platform_remove_admin", { p_user: platform.id })).error?.message).toBe("forbidden");
+    expect((await owner.client.rpc("platform_remove_admin", { p_user: colleague.id })).error?.message).toBe("forbidden");
+    expect((await platform.client.rpc("platform_remove_admin", { p_user: colleague.id })).error).toBeNull();
+    expect((await colleague.client.rpc("platform_team")).error?.message).toBe("forbidden");
+    expect((await platform.client.rpc("platform_remove_admin", { p_email: pending })).error).toBeNull();
+
+    const logged = await sql<{ action: string }>(
+      "select action from public.audit_log where scope = 'platform' and action like 'platform_admin.%' and (target_id = $1 or target_id = $2) order by created_at",
+      [colleague.id, pending],
+    );
+    expect(logged.map((l) => l.action)).toEqual(["platform_admin.granted", "platform_admin.invited", "platform_admin.removed", "platform_admin.invite_cancelled"]);
+  });
+});

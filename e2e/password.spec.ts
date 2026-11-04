@@ -143,3 +143,27 @@ test("our team sets its own password from the console's account menu", async ({ 
   await expect(admin.locator("#password")).toBeVisible();
   await admin.context().close();
 });
+
+test("our team gives the console to a new address from Équipe: it lands in the console at its first sign-in", async ({ browser }) => {
+  const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
+  await signIn(admin, "platform@demo.local");
+  await admin.goto("/platform/team");
+  const newcomer = `equipe-${run}@demo.local`;
+  await admin.getByLabel("Adresse e-mail").fill(newcomer);
+  await admin.getByRole("button", { name: "Donner l'accès" }).click();
+  await expect(admin.getByText(`Invitation enregistrée : ${newcomer} aura accès à sa première connexion.`)).toBeVisible();
+  await expect(admin.getByTestId("team-invite").filter({ hasText: newcomer })).toBeVisible();
+  await shot(admin, "pw-05-team");
+
+  const them = await (await browser.newContext({ locale: "fr-FR" })).newPage();
+  await signIn(them, newcomer);
+  await expect(them).toHaveURL(/\/platform$/);
+  await admin.reload();
+  await expect(admin.getByTestId("team-member").filter({ hasText: newcomer })).toBeVisible();
+  await expect(admin.getByTestId("team-invite")).toHaveCount(0);
+  // And it can be taken back.
+  await admin.getByRole("button", { name: `Retirer l'accès de ${newcomer}` }).click();
+  await expect(admin.getByTestId("team-member").filter({ hasText: newcomer })).toHaveCount(0);
+  await them.context().close();
+  await admin.context().close();
+});

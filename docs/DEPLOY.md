@@ -80,7 +80,7 @@ Copiez le résultat dans votre gestionnaire de mots de passe : c'est votre `HIDE
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | la publishable key |
 | `SUPABASE_SECRET_KEY` | la secret key |
 | `HIDE_ENCRYPTION_KEY` | la clé générée dans le Terminal |
-| `PLATFORM_ADMIN_EMAILS` | votre adresse e-mail (vous aurez la console « Plateforme ») |
+| `PLATFORM_ADMIN_EMAILS` | votre adresse e-mail (vous aurez la console « Plateforme »). Une seule fois : ensuite, ajoutez les membres de notre équipe depuis **Plateforme → Équipe** |
 | `NEXT_PUBLIC_DEFAULT_LOCALE` | `fr` |
 | `OPENAI_API_KEY` | votre clé OpenAI *(si vous en avez une avec du crédit)* |
 | `ANTHROPIC_API_KEY` | votre clé Anthropic *(si vous en avez une)* |
@@ -118,6 +118,7 @@ Sans Resend, Supabase envoie lui-même **2 e-mails par heure au maximum, et seul
    nom, places, crédits par mois, crédits vidéo, prix par place, et **activez « Offre attribuée aux nouvelles inscriptions »**.
 3. Revenez à l'adresse du site : l'assistant de démarrage vous fait créer votre entreprise.
 4. Testez : conversation, mémoire, Hide, agents, administration (**/admin**), et la console de notre équipe (**/platform**).
+5. Pour donner la console à un collègue de notre équipe : **/platform/team** → son adresse → **Donner l'accès**. Il l'aura à sa première connexion avec cette adresse (rien à changer sur Vercel).
 
 Notez ce qui va et ce qui ne va pas, avec la page et ce que vous avez cliqué : Claude corrigera.
 

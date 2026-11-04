@@ -11,7 +11,8 @@ import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
  * - clears a password that was not set in Cendr (`profiles.password_set_at` empty): a password set
  *   by someone who created the account before its owner (without access to the mailbox) stops
  *   working once the owner signs in; a password the person chose in Cendr stays;
- * - grants platform admin rights to the emails listed in PLATFORM_ADMIN_EMAILS (verified emails only);
+ * - grants platform admin rights to the emails invited from our console (Plateforme → Équipe) or listed in
+ *   PLATFORM_ADMIN_EMAILS (verified emails only);
  * - records the sign-in in the company activity log;
  * - applies the user's saved language.
  */
@@ -30,6 +31,18 @@ export async function afterSignIn(supabase: UserClient, user: User) {
         target_type: "user",
         target_id: user.id,
       });
+    }
+  }
+
+  // An invitation to our team, added from our console (Plateforme → Équipe): granted at the first
+  // sign-in with that verified address.
+  if (email && user.email_confirmed_at) {
+    const admin = createAdminClient();
+    const { data: invite } = await admin.from("platform_admin_invites").select("email").eq("email", email).maybeSingle();
+    if (invite) {
+      await admin.from("platform_admins").upsert({ user_id: user.id }, { onConflict: "user_id", ignoreDuplicates: true });
+      await admin.from("platform_admin_invites").delete().eq("email", email);
+      await admin.from("audit_log").insert({ scope: "platform", actor_id: user.id, action: "platform_admin.joined", target_type: "user", target_id: user.id });
     }
   }
 

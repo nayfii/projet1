@@ -76,3 +76,25 @@ export async function setWebSearchRateAction(input: { credits: number; costUsd: 
   revalidatePath("/platform/models");
   return { ok: true };
 }
+
+/** Plateforme → Équipe: gives the console to an address (at once if it has an account, else at its first sign-in). */
+export async function addPlatformAdminAction(input: { email: string }): Promise<ActionResult<{ outcome: "added" | "invited" }>> {
+  if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
+  const email = z.email().max(254).safeParse(String(input.email ?? "").trim().toLowerCase());
+  if (!email.success) return { ok: false, error: "invalid_email" };
+  const { data, error } = await (await createClient()).rpc("platform_add_admin", { p_email: email.data });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/platform/team");
+  return { ok: true, data: { outcome: data === "added" ? "added" : "invited" } };
+}
+
+/** Plateforme → Équipe: removes a member of our team (never oneself, never the last one) or cancels an invitation. */
+export async function removePlatformAdminAction(input: { userId?: string; email?: string }): Promise<ActionResult> {
+  if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ userId: z.uuid().optional(), email: z.email().optional() }).safeParse(input);
+  if (!parsed.success || (!parsed.data.userId && !parsed.data.email)) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("platform_remove_admin", { p_user: parsed.data.userId, p_email: parsed.data.email });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/platform/team");
+  return { ok: true };
+}

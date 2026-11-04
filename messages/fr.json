@@ -535,7 +535,8 @@
     "preview": "Aperçu",
     "debug": "Debug",
     "home": "Accueil",
-    "apps": "Applis"
+    "apps": "Applis",
+    "team": "Équipe"
   },
   "platform": {
     "companiesTitle": "Entreprises",
@@ -2183,5 +2184,24 @@
     "welcomeHint": "Pour vos prochaines connexions. Vous pourrez aussi le faire plus tard dans votre profil.",
     "reminder": "Créez votre mot de passe pour vous connecter sans attendre d'e-mail.",
     "reminderCta": "Créer mon mot de passe"
+  },
+  "platformTeam": {
+    "title": "Équipe",
+    "description": "Les personnes de notre équipe qui ont accès à cette console. Elles ne voient jamais le contenu des clients.",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "prenom@cendr.eu",
+    "add": "Donner l'accès",
+    "howItWorks": "La personne se connecte sur {url} avec cette adresse (lien reçu par e-mail la première fois) : elle arrive dans la console.",
+    "added": "{email} a maintenant accès à la console.",
+    "invited": "Invitation enregistrée : {email} aura accès à sa première connexion.",
+    "members": "{count, plural, one {# personne} other {# personnes}}",
+    "you": "vous",
+    "since": "depuis le {date}",
+    "inCompany": "aussi dans une entreprise",
+    "inCompanyHint": "Ce compte est aussi membre d'une entreprise cliente et y voit ce que ses membres voient. Utilisez de préférence un compte séparé pour la console.",
+    "remove": "Retirer l'accès de {name}",
+    "waiting": "En attente de première connexion",
+    "waitingSince": "invitée le {date}",
+    "cancel": "Annuler l'invitation de {email}"
   }
 }
