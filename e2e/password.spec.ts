@@ -132,3 +132,14 @@ test("an unknown address gets the same answer to \"forgot password\"", async () 
   await page.getByRole("button", { name: "Recevoir le lien" }).click();
   await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible();
 });
+
+test("our team sets its own password from the console's account menu", async ({ browser }) => {
+  const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
+  await signIn(admin, "platform@demo.local");
+  await admin.goto("/platform");
+  await admin.getByRole("button", { name: /platform@demo\.local/ }).click();
+  await admin.getByRole("menuitem", { name: "Mot de passe" }).click();
+  await expect(admin).toHaveURL(/\/platform\/password$/);
+  await expect(admin.locator("#password")).toBeVisible();
+  await admin.context().close();
+});

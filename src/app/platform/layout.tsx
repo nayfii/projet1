@@ -7,6 +7,7 @@ import { getShellLabels } from "@/components/shell/labels";
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requirePlatformAdmin();
   const t = await getTranslations("platformNav");
+  const tPassword = await getTranslations("password");
 
   const sections: NavSection[] = [
     {
@@ -41,7 +42,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       sections={sections}
       context={{ title: t("title"), subtitle: t("subtitle") }}
       user={{ name: ctx.profile.fullName, email: ctx.user.email, avatarUrl: ctx.profile.avatarUrl }}
-      menuLinks={[]}
+      menuLinks={[{ href: "/platform/password", label: tPassword("title"), icon: "shield" }]}
       locale={(await getLocale()) as "fr" | "en"}
       labels={await getShellLabels()}
     >
