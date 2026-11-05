@@ -162,8 +162,10 @@ export function AppShell(props: ShellProps) {
         column.style.transform = "";
       }),
     );
+    // In any case, at rest after the slide (even if a busy device skipped frames).
     window.setTimeout(() => {
       column.style.transition = "";
+      column.style.transform = "";
       settle();
     }, 340);
   };
@@ -362,11 +364,13 @@ function useSelectionLens(navRef: React.RefObject<HTMLElement | null>, key: stri
       return row && nav.contains(row) && row.offsetParent !== null ? row : null;
     };
 
+    let downRow: HTMLElement | null = null;
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
       const row = rowAt(e.target);
       if (!row) return;
       pressed = true;
+      downRow = row;
       place(row, true);
     };
     const onMove = (e: PointerEvent) => {
@@ -377,7 +381,11 @@ function useSelectionLens(navRef: React.RefObject<HTMLElement | null>, key: stri
     const onUp = (e: PointerEvent) => {
       if (!pressed) return;
       pressed = false;
-      const row = rowAt(document.elementFromPoint(e.clientX, e.clientY));
+      const row = e.type === "pointercancel" ? null : rowAt(document.elementFromPoint(e.clientX, e.clientY));
+      // Let go on another row than the one pressed: open that one (the browser only clicks when
+      // press and release land on the same element).
+      if (row && downRow && row !== downRow) row.click();
+      downRow = null;
       if (row && row.matches("a[href]")) {
         pinned = row;
         window.clearTimeout(pinTimer);
@@ -398,6 +406,9 @@ function useSelectionLens(navRef: React.RefObject<HTMLElement | null>, key: stri
     mutations.observe(nav, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-current"] });
     nav.addEventListener("transitionend", measure);
     nav.addEventListener("pointerdown", onDown);
+    // Rows are not dragged out as links: pressing and sliding moves the lens instead.
+    const noDrag = (e: DragEvent) => e.preventDefault();
+    nav.addEventListener("dragstart", noDrag);
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
@@ -408,6 +419,7 @@ function useSelectionLens(navRef: React.RefObject<HTMLElement | null>, key: stri
       mutations.disconnect();
       nav.removeEventListener("transitionend", measure);
       nav.removeEventListener("pointerdown", onDown);
+      nav.removeEventListener("dragstart", noDrag);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);

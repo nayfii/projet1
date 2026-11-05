@@ -362,16 +362,35 @@
 }
 
 /* ── Liquid Glass (glisse) materials ──────────────────────────────────────────────────────────────
- * components/ui/liquid-glass.tsx. Little frost, so the bend of the rim shows: the backdrop is pulled
- * at the edges (Chromium), lit by glisse's painted rim, and lightly split into colours. */
-.lg-glass.lq.fixed {
-  position: fixed;
+ * components/ui/liquid-glass.tsx. A pane (.lq-host) is frosted glass from the first paint; once the
+ * page is quiet, glisse's lens (.lq-layer) is added behind its content: little frost, so the bend of
+ * the rim shows (Chromium), lit by glisse's painted rim and lightly split into colours. */
+@layer components {
+  .lq-host {
+    position: relative;
+  }
+  /* The lens layer takes over the fill and the frost; the pane keeps its outer shadow (the layer's
+     would be clipped by panes that hide their overflow). */
+  .lq-host[data-liquid] {
+    background-color: transparent;
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass-lens-fallback {
+    background-color: var(--glass-lens);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 0 0 1px var(--glass-border);
+  }
 }
-.lg-glass.lq.absolute {
+.lg-glass.lq-layer {
   position: absolute;
-}
-.lg-glass.lq.sticky {
-  position: sticky;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: none;
 }
 .lg-glass.lq {
   --lg-glass-dispersion: 0.7;
@@ -381,32 +400,32 @@
 .lg-glass.lq-panel {
   --lg-glass: var(--glass-elevated);
   --lg-blur: 5px;
-  box-shadow:
-    0 0 0 1px var(--glass-ring),
-    0 2px 6px -2px var(--glass-shadow-color),
-    0 30px 70px -30px var(--glass-shadow-color);
 }
 .lg-glass.lq-card {
   --lg-glass: var(--glass-standard);
   --lg-blur: 2.5px;
-  box-shadow:
-    0 0 0 1px var(--glass-ring),
-    0 14px 34px -22px var(--glass-shadow-color);
 }
 .lg-glass.lq-solid {
   --lg-glass: var(--glass-solid);
   --lg-blur: 14px;
-  box-shadow:
-    0 0 0 1px var(--glass-ring),
-    0 2px 6px -2px var(--glass-shadow-color),
-    0 28px 64px -28px var(--glass-shadow-color);
 }
 /* The sidebar's moving lens: almost clear, so it reads as a drop of glass over the selection. */
 .lg-glass.lq-lens {
   --lg-glass: var(--glass-lens);
   --lg-blur: 0px;
+}
+.shell-lens {
   box-shadow: 0 6px 18px -10px var(--glass-shadow-color);
 }
+.shell-lens[data-lifted] .lg-glass.lq-lens {
+  --lg-glass: color-mix(in oklch, var(--glass-lens) 60%, transparent);
+}
+.shell-lens[data-lifted] {
+  box-shadow:
+    0 0 0 1px var(--glass-border-strong),
+    0 10px 26px -10px var(--glass-shadow-color);
+}
+
 /* The lens glides to the current row; held, it lifts (a little larger, clearer, brighter rim) and
  * follows the pointer quickly from row to row. */
 .shell-lens {
@@ -414,28 +433,26 @@
     transform var(--dur-layout) var(--ease-standard),
     width var(--dur-layout) var(--ease-standard),
     height var(--dur-layout) var(--ease-standard),
-    opacity var(--dur-panel) var(--ease-standard),
-    box-shadow var(--dur-panel) var(--ease-standard);
+    opacity var(--dur-panel) var(--ease-standard);
 }
-.lg-glass.shell-lens[data-lifted] {
-  --lg-glass: color-mix(in oklch, var(--glass-lens) 60%, transparent);
+.shell-lens[data-lifted] {
   transition-duration: 160ms;
-  box-shadow:
-    0 0 0 1px var(--glass-border-strong),
-    0 10px 26px -10px var(--glass-shadow-color);
 }
 @media (prefers-reduced-motion: reduce) {
   .shell-lens {
     transition: none;
   }
 }
+/* Navigation rows are pressed and slid, not selected as text or dragged as links. */
+.shell-nav {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.shell-nav a {
+  -webkit-user-drag: none;
+}
 /* Rows sit above the lens. */
 .shell-nav .glass-interactive {
   position: relative;
   z-index: 1;
-}
-/* Tables and long forms want a firmer pane. */
-.lg-glass.lq-card:has(table) {
-  --lg-glass: var(--glass-solid);
-  --lg-blur: 10px;
 }
