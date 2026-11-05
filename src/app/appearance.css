@@ -329,8 +329,10 @@
 :root[data-scheme="light"] {
   --ambient-veil: oklch(0.99 0.004 var(--tint-h) / 0.42);
 }
-/* A low-power device keeps glass frosted, without bending (the background then draws one still frame). */
-:root[data-perf="low"] .lg-glass {
+/* A device without a graphics chip keeps glass frosted, without bending (the background then draws
+ * one still frame); one whose chip struggles only loses the bending (the background keeps moving). */
+:root[data-perf="low"] .lg-glass,
+:root[data-glass="flat"] .lg-glass {
   --lg-filter: saturate(1.5) !important;
 }
 @media print {

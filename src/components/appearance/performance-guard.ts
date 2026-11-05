@@ -2,23 +2,28 @@
 
 import * as React from "react";
 
-const KEY = "cendr-perf";
+/** Set before the first paint by SCHEME_SCRIPT when the device draws without a graphics chip. */
+export const PERF_KEY = "cendr-gpu";
+/** Set by the frame-rate check below when the glass's bending is too heavy for this device. */
+export const GLASS_KEY = "cendr-glass";
 
 /**
- * Liquid Glass bends the backdrop and the background moves: costly on a device without a capable
- * graphics chip. Software rendering is caught before the first paint (SCHEME_SCRIPT in lib/theme.ts);
- * otherwise, once per visit, a moment after the page settles, the frame rate is sampled; below
- * 35 frames a second the device is marked low-power (<html data-perf="low">), which stills the
- * background and keeps glass frosted without bending (appearance.css). The verdict lasts for the tab.
+ * Two levels, so a device keeps as much of the experience as it can carry:
+ * - no graphics chip (software rendering, caught before the first paint by SCHEME_SCRIPT in
+ *   lib/theme.ts): <html data-perf="low">, the background is still and glass does not bend;
+ * - a graphics chip that struggles: once per visit, a moment after the page settles, the frame rate
+ *   is sampled; below 30 frames a second, <html data-glass="flat"> turns off only the glass's bending
+ *   (the costliest part). The background keeps moving: our shader is light, and the Waylume scene
+ *   lowers its own resolution when frames run late.
+ * Settings → Appearance says when either applies and offers to turn the effects back on.
  */
 export function usePerformanceGuard() {
   React.useEffect(() => {
     const root = document.documentElement;
-    // Already marked before the first paint (no graphics chip): nothing to measure.
     if (root.dataset.perf === "low") return;
     try {
-      const known = sessionStorage.getItem(KEY);
-      if (known === "low") root.dataset.perf = "low";
+      const known = sessionStorage.getItem(GLASS_KEY);
+      if (known === "flat") root.dataset.glass = "flat";
       if (known) return;
     } catch {
       // Storage refused (private mode): measure anyway, without remembering.
@@ -35,18 +40,18 @@ export function usePerformanceGuard() {
       const tick = (now: number) => {
         if (cancelled) return;
         frames++;
-        if (now - t0 < 1500) return void requestAnimationFrame(tick);
-        const verdict = frames / ((now - t0) / 1000) < 35 ? "low" : "ok";
-        if (verdict === "low") root.dataset.perf = "low";
+        if (now - t0 < 2000) return void requestAnimationFrame(tick);
+        const verdict = frames / ((now - t0) / 1000) < 30 ? "flat" : "ok";
+        if (verdict === "flat") root.dataset.glass = "flat";
         try {
-          sessionStorage.setItem(KEY, verdict);
+          sessionStorage.setItem(GLASS_KEY, verdict);
         } catch {
           // Not remembered: measured again on the next visit.
         }
       };
       requestAnimationFrame(tick);
     };
-    timer = window.setTimeout(sample, 2500);
+    timer = window.setTimeout(sample, 3000);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);

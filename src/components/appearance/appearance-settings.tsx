@@ -13,6 +13,7 @@ import { renderAmbientStill } from "@/lib/ambient/renderer";
 import { isTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { useAppearance } from "./appearance-provider";
+import { GLASS_KEY, PERF_KEY } from "./performance-guard";
 import { WaylumePreview } from "@/components/ambient/waylume-layer";
 
 /**
@@ -80,9 +81,9 @@ export function AppearanceSettings() {
           </>
         ) : null}
 
-        {lowPower.active ? (
+        {lowPower.level ? (
           <div className="glass-subtle flex flex-col gap-3 rounded-xl border px-4 py-3 text-[13px] sm:flex-row sm:items-center sm:justify-between" role="status">
-            <p className="text-muted-foreground">{t("lowPower")}</p>
+            <p className="text-muted-foreground">{lowPower.level === "low" ? t("lowPower") : t("glassFlat")}</p>
             <Button type="button" size="sm" variant="outline" onClick={lowPower.restore}>
               {t("lowPowerRestore")}
             </Button>
@@ -152,26 +153,35 @@ function PaletteChoice({ palette, selected, onSelect }: { palette: (typeof PALET
   );
 }
 
-/** Whether this device was marked low-power (effects reduced), and a way to turn them back on. */
+function subscribeEffects(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-perf", "data-glass"] });
+  return () => observer.disconnect();
+}
+
+function effectsLevel(): "low" | "flat" | null {
+  const root = document.documentElement;
+  if (root.dataset.perf === "low") return "low";
+  return root.dataset.glass === "flat" ? "flat" : null;
+}
+
+/**
+ * Whether this device's effects were reduced ("low": no graphics chip, still background and unbent
+ * glass; "flat": only the glass's bending is off), and a way to turn them back on for this tab.
+ */
 function useLowPower() {
-  const [active, setActive] = React.useState(false);
-  React.useEffect(() => {
-    const root = document.documentElement;
-    const read = () => setActive(root.dataset.perf === "low");
-    read();
-    const observer = new MutationObserver(read);
-    observer.observe(root, { attributes: true, attributeFilter: ["data-perf"] });
-    return () => observer.disconnect();
-  }, []);
+  const level = React.useSyncExternalStore(subscribeEffects, effectsLevel, () => null);
   return {
-    active,
+    level,
     restore() {
       try {
-        sessionStorage.setItem("cendr-perf", "ok");
+        sessionStorage.setItem(PERF_KEY, "ok");
+        sessionStorage.setItem(GLASS_KEY, "ok");
       } catch {
         // Not remembered: the effects come back for this page only.
       }
       delete document.documentElement.dataset.perf;
+      delete document.documentElement.dataset.glass;
     },
   };
 }

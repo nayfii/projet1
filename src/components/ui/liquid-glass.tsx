@@ -80,7 +80,8 @@ function startWatching() {
   }
   const idle = (fn: () => void) => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(fn, { timeout: 3000 }) : window.setTimeout(fn, 200));
   const check = () => {
-    if (document.documentElement.dataset.perf === "low") return window.setTimeout(check, 4000);
+    const root = document.documentElement;
+    if (root.dataset.perf === "low" || root.dataset.glass === "flat") return window.setTimeout(check, 4000);
     if (performance.now() - lastInput < 900) return window.setTimeout(check, 500);
     quiet = true;
     for (const fn of waiting) fn();
@@ -101,14 +102,14 @@ function useQuietPage(): boolean {
     waiting.add(done);
     return () => void waiting.delete(done);
   }, []);
-  // A device marked low-power later (frame-rate check) drops the lens.
+  // A device whose glass is flattened later (frame-rate check) drops the lens.
   React.useEffect(() => {
     if (!ready) return;
     const root = document.documentElement;
     const observer = new MutationObserver(() => {
-      if (root.dataset.perf === "low") setReady(false);
+      if (root.dataset.perf === "low" || root.dataset.glass === "flat") setReady(false);
     });
-    observer.observe(root, { attributes: true, attributeFilter: ["data-perf"] });
+    observer.observe(root, { attributes: true, attributeFilter: ["data-perf", "data-glass"] });
     return () => observer.disconnect();
   }, [ready]);
   return ready;
