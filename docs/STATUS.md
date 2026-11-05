@@ -294,8 +294,17 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Glass lens in the sidebar: lifts when a row is pressed, follows press-and-drag across rows and conversations, opens the row it is released on | **done**, checked in a browser |
 | Avatars: transparent PNG on a glass bead, black in dark interfaces, white in light ones; new personal avatars generated as transparent PNG; existing ones keep their old background until regenerated | **done** |
 | Performance | Measured here only without a graphics chip (software rendering): such a device is recognised before the first paint (still background, unbent glass). **Not measured on a real computer yet** |
-| Tests | see "Tests (Liquid Glass fixes)" below | — |
+| Tests | type check, lint, build, unit 262, integration 209, end to end 117/117 (below) | **done** |
 | Undo | The experiment lives on its own branch; the customers' version is untouched until it is merged | — |
+
+### Tests (Liquid Glass fixes, 2026-11-05)
+
+| Suite | Result |
+|---|---|
+| Type check, lint, production build | pass |
+| Unit (`pnpm test`; the robots are checked as PNG with transparency) | 262 passed |
+| Integration (`pnpm test:integration`) | 209 passed |
+| End to end (`playwright test`, production build, simulated AI) | 117 passed in one run |
 
 ### Speed, light theme and UI audit (2026-11-03)
 
