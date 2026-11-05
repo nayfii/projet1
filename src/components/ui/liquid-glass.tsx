@@ -61,8 +61,9 @@ function Lens({ material, reach }: { material: LiquidMaterial; reach: number }) 
 }
 
 /**
- * True once the page is quiet: a moment after it opens, when the browser is idle and the person
- * has not pressed anything for a little while. Never on a low-power device. Shared by every pane.
+ * True once the page is quiet: a moment after it opens, when the browser is idle and the person has
+ * not moved, scrolled, pressed or typed for a little while. Never on a low-power device. Shared by
+ * every pane.
  */
 let quiet = false;
 const waiting = new Set<() => void>();
@@ -72,9 +73,11 @@ let started = false;
 function startWatching() {
   if (started || typeof window === "undefined") return;
   started = true;
+  // Any sign of activity postpones the lens: a moving pointer is usually about to click.
   const mark = () => (lastInput = performance.now());
-  window.addEventListener("pointerdown", mark, { capture: true, passive: true });
-  window.addEventListener("keydown", mark, { capture: true, passive: true });
+  for (const type of ["pointerdown", "pointermove", "keydown", "wheel", "scroll", "touchstart"]) {
+    window.addEventListener(type, mark, { capture: true, passive: true });
+  }
   const idle = (fn: () => void) => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(fn, { timeout: 3000 }) : window.setTimeout(fn, 200));
   const check = () => {
     if (document.documentElement.dataset.perf === "low") return window.setTimeout(check, 4000);
@@ -83,7 +86,7 @@ function startWatching() {
     for (const fn of waiting) fn();
     waiting.clear();
   };
-  window.setTimeout(() => idle(check), 1200);
+  window.setTimeout(() => idle(check), 1500);
 }
 
 function useQuietPage(): boolean {

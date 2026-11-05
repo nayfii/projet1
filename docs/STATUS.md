@@ -282,18 +282,19 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Our team sets its own password from the console's account menu (Mot de passe) | **done** |
 | Online, without our own mail server, Supabase sends its default "reset password" e-mail: the link must be opened in the browser that asked for it (like the sign-in links today) | known limit |
 
-### Liquid Glass experiment v18 (2026-11-04) — branch `experiment/liquid-glass-v18`, not merged
+### Liquid Glass experiment v18 (2026-11-04/05) — branch `experiment/liquid-glass-v18`, not merged
 
 | Item | Status |
 |---|---|
-| Two living backgrounds, Midnight Aurora (default) and Solar Ember, each in light and dark, inspired by the founder's references; very slow drift, a still version, "Fond animé" switch | **done** |
-| Settings → Apparence: Clair / Sombre / Système and the background chosen independently, live previews, kept per device (no database change); in our console: account menu → Apparence | **done** |
-| Liquid Glass with glisse: sidebar, chat composer, dialogs, menus, sign-in and onboarding panes, home tiles and key figures bend the background at their edges (long content cards stay frosted: the bend is computed per pixel and blocked our console's long tables for seconds, fixed); glass switches; a glass lens slides to the current page | **done** in Chromium browsers (Chrome, Edge, Brave, Arc); **Safari and Firefox show frosted glass with the lit rim, without the bend** (a browser limit) |
-| Sidebar collapsible to a rail of icons with tooltips (Clients and Search included) | **done** |
-| Every screen goes through the shared components (app, administration, our console, sign-in, onboarding) | **done**; checked by screenshots in the four combinations on the main screens, not every screen by hand |
-| Performance | Measured only here, **without a graphics chip** (software rendering): with bending and motion the page falls to 2–7 frames a second; such a device is now recognised before the first paint and gets a still background and unbent glass (back to 60). **Not measured on a real computer yet**: to be checked by the founder on the preview |
-| Tests | Type check, lint, unit 262, integration 209, production build: pass. End to end: first run 103 passed and 5 failed (our console's long tables blocked by the bend, and two tests that depended on them); after the fix the five files pass (39/39); full rerun on the final build: 111 passed, 1 failed (Source Proof: the click on a cited source did not open the passage panel), 5 not run behind it; that file then passed twice on its own (8/8). Intermittent, probably the conversation re-rendering when its automatic title arrives, as before this experiment: to watch | **done** (one intermittent test) |
-| Preview online | Vercel builds the branch; the founder saw "Internal Server Error": the hosting settings are probably set for Production only, to be ticked for Preview too (DEPLOY steps given in the conversation) | **waiting on the founder** |
+| Interfaces: **Clair** and **Sombre** are plain (white, black) with glass; **Système** follows the device; **Atmosphère** sets the glass over a living background in six palettes (Midnight Aurora, Solar Ember, Lagon, Orchidée, Nacre, Pêche); Settings → Apparence with a live preview of each palette | **done** (founder's review of 2026-11-04) |
+| Backgrounds redone: a WebGL shader, smooth at any size (the SVG version looked pixelated), visible calm motion at 30 fps, still on request / reduced motion / hidden tab / low-power device; a CSS gradient without WebGL; a veil keeps text readable | **done**; colours and motion checked on screenshots and two moments of each scene, **not yet seen on the founder's screen** |
+| Liquid Glass with glisse on the sidebar, chat composer, sign-in and onboarding panes, home tiles, key figures, the sidebar lens; menus and dialogs are frosted glass ready at once | **done**; bending in Chromium browsers only (Safari and Firefox: frost and lit rim) |
+| First click after sign-in: glisse's lens is computed only once the page is quiet (no movement, scroll or key), as a layer behind the content; measured on the production build: no blocking task during the first second | **done** |
+| Sidebar collapse: one layout, then a slide (no per-frame layout); collapse button centred on the header line | **done** |
+| Glass lens in the sidebar: lifts when a row is pressed, follows press-and-drag across rows and conversations, opens the row it is released on | **done**, checked in a browser |
+| Avatars: transparent PNG on a glass bead, black in dark interfaces, white in light ones; new personal avatars generated as transparent PNG; existing ones keep their old background until regenerated | **done** |
+| Performance | Measured here only without a graphics chip (software rendering): such a device is recognised before the first paint (still background, unbent glass). **Not measured on a real computer yet** |
+| Tests | see "Tests (Liquid Glass fixes)" below | — |
 | Undo | The experiment lives on its own branch; the customers' version is untouched until it is merged | — |
 
 ### Speed, light theme and UI audit (2026-11-03)
