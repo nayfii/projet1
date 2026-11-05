@@ -1,9 +1,10 @@
 /**
  * The "Atmosphère" interface: glass over a living background. Each palette is one background
- * (the shapes, "silk" folds or a "glow" band) with its colours and the scheme the glass takes on it.
+ * (the shapes, "silk" folds or a "glow" band drawn by our shader, or "waylume", a scene exported from
+ * the Waylume studio) with its colours and the scheme the glass takes on it.
  * Clair and Sombre have no background: a plain white or black interface.
  */
-export type AmbientScene = "silk" | "glow";
+export type AmbientScene = "silk" | "glow" | "waylume";
 
 export type AmbientPalette = {
   id: string;
@@ -37,6 +38,14 @@ export const PALETTES = [
     scene: "silk",
     scheme: "dark",
     colors: { base: "#0d050c", deep: "#1f0b1c", c1: "#5a1f5a", c2: "#b04a8e", c3: "#6a3ab0", c4: "#d0698f", rim: "#f6cde6" },
+  },
+  {
+    // Exported from the Waylume studio (components/ambient/WaylumeBackground.tsx, kept verbatim);
+    // these colours are its own, for the accent, the preview and the stand-in gradient.
+    id: "waylume",
+    scene: "waylume",
+    scheme: "dark",
+    colors: { base: "#07040f", deep: "#120a24", c1: "#9b6cff", c2: "#ff4797", c3: "#2d79f0", c4: "#9b6cff", rim: "#e8d9ff" },
   },
   {
     id: "pearl",

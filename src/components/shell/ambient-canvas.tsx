@@ -30,7 +30,8 @@ export function AmbientCanvas() {
     // The clock only runs while the background moves, so it resumes where it stopped.
     let clock = 8 + Math.random() * 40;
 
-    const active = () => root.dataset.theme === "atmosphere";
+    // Our shader draws the "silk" and "glow" scenes; the Waylume scene draws itself (WaylumeLayer).
+    const active = () => root.dataset.theme === "atmosphere" && paletteOf(root.dataset.ambient).scene !== "waylume";
     const moving = () => root.dataset.motion !== "off" && root.dataset.perf !== "low" && !reduced.matches && !document.hidden;
 
     const fit = () => {
@@ -71,7 +72,10 @@ export function AmbientCanvas() {
     const update = () => {
       cancelAnimationFrame(frame);
       frame = 0;
-      if (!active()) return;
+      if (!active()) {
+        delete canvas.dataset.ready;
+        return;
+      }
       paint();
       if (moving()) {
         last = performance.now();

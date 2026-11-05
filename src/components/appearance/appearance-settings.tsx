@@ -13,6 +13,7 @@ import { renderAmbientStill } from "@/lib/ambient/renderer";
 import { isTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { useAppearance } from "./appearance-provider";
+import { WaylumePreview } from "@/components/ambient/waylume-layer";
 
 /**
  * Settings → Appearance: Clair and Sombre (plain white or black, with glass), Système (follows the
@@ -99,7 +100,8 @@ function PaletteChoice({ palette, selected, onSelect }: { palette: (typeof PALET
   const t = useTranslations("appearance");
   const [src, setSrc] = React.useState<string | null>(() => stills.get(palette.id) ?? null);
   React.useEffect(() => {
-    if (stills.has(palette.id)) return;
+    // The Waylume scene draws its own still frame in the tile (below); ours are drawn once here.
+    if (palette.scene === "waylume" || stills.has(palette.id)) return;
     const id = window.setTimeout(() => {
       const url = renderAmbientStill(palette, 360, 220);
       stills.set(palette.id, url);
@@ -124,7 +126,7 @@ function PaletteChoice({ palette, selected, onSelect }: { palette: (typeof PALET
         style={{ background: `linear-gradient(160deg, ${palette.colors.c2}, ${palette.colors.base} 70%)` }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- a data URL drawn in the browser */}
-        {src ? <img src={src} alt="" className="absolute inset-0 size-full object-cover" /> : null}
+        {palette.scene === "waylume" ? <WaylumePreview /> : src ? <img src={src} alt="" className="absolute inset-0 size-full object-cover" /> : null}
         <LiquidGlass
           material="card"
           reach={12}

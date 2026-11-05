@@ -1,4 +1,5 @@
 import { AmbientCanvas } from "./ambient-canvas";
+import { WaylumeLayer } from "@/components/ambient/waylume-layer";
 
 /**
  * The living background of the Atmosphère interface (styles: app/appearance.css). Hidden with Clair
@@ -9,6 +10,7 @@ export function AmbientBackground() {
   return (
     <div aria-hidden className="ambient">
       <AmbientCanvas />
+      <WaylumeLayer />
     </div>
   );
 }

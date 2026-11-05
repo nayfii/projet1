@@ -2225,7 +2225,8 @@
       "lagoon": "Lagoon",
       "orchid": "Orchid",
       "pearl": "Pearl",
-      "peach": "Peach"
+      "peach": "Peach",
+      "waylume": "Waylume"
     },
     "paletteHint": {
       "aurora": "Violet and midnight-blue silk",
@@ -2233,7 +2234,8 @@
       "lagoon": "Dark water, turquoise light",
       "orchid": "Folds of rose and plum",
       "pearl": "Light satin, lavender",
-      "peach": "Soft light, peach and lilac"
+      "peach": "Soft light, peach and lilac",
+      "waylume": "Prismatic light, violet and pink"
     },
     "lowPower": "This device struggles with the moving effects: the background is still and the glass no longer bends, to keep the app smooth.",
     "lowPowerRestore": "Turn the effects back on"

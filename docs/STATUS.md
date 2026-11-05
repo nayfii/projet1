@@ -287,6 +287,7 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Item | Status |
 |---|---|
 | Interfaces: **Clair** and **Sombre** are plain (white, black) with glass; **Système** follows the device; **Atmosphère** sets the glass over a living background in six palettes (Midnight Aurora, Solar Ember, Lagon, Orchidée, Nacre, Pêche); Settings → Apparence with a live preview of each palette | **done** (founder's review of 2026-11-04) |
+| **Waylume** background added to Atmosphère (the founder's export from the Waylume studio, kept verbatim, loaded only when chosen); its licence for commercial use is **to be confirmed by the founder** | **done**, checked in the app and its Settings tile |
 | Backgrounds redone: a WebGL shader, smooth at any size (the SVG version looked pixelated), visible calm motion at 30 fps, still on request / reduced motion / hidden tab / low-power device; a CSS gradient without WebGL; a veil keeps text readable | **done**; colours and motion checked on screenshots and two moments of each scene, **not yet seen on the founder's screen** |
 | Liquid Glass with glisse on the sidebar, chat composer, sign-in and onboarding panes, home tiles, key figures, the sidebar lens; menus and dialogs are frosted glass ready at once | **done**; bending in Chromium browsers only (Safari and Firefox: frost and lit rim) |
 | First click after sign-in: glisse's lens is computed only once the page is quiet (no movement, scroll or key), as a layer behind the content; measured on the production build: no blocking task during the first second | **done** |

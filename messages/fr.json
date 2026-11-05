@@ -2225,7 +2225,8 @@
       "lagoon": "Lagon",
       "orchid": "Orchidée",
       "pearl": "Nacre",
-      "peach": "Pêche"
+      "peach": "Pêche",
+      "waylume": "Waylume"
     },
     "paletteHint": {
       "aurora": "Soie violette et bleu nuit",
@@ -2233,7 +2234,8 @@
       "lagoon": "Eaux sombres, reflets turquoise",
       "orchid": "Plis de rose et de prune",
       "pearl": "Satin clair, lavande",
-      "peach": "Lumière douce, pêche et lilas"
+      "peach": "Lumière douce, pêche et lilas",
+      "waylume": "Lumière prismatique, violet et rose"
     },
     "lowPower": "Cet appareil peine avec les effets animés : le fond est immobile et le verre ne se courbe plus, pour garder l'application fluide.",
     "lowPowerRestore": "Réactiver les effets"
