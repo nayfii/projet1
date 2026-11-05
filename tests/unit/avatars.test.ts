@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { ASSISTANTS, assistantFor, blinkDelay, ROBOT_FACE } from "@/modules/avatars/assistants";
 import { avatarUrlFor, sniffPhotoType } from "@/modules/avatars/files";
 import { AVATAR_BACKGROUND, AVATAR_PROMPT } from "@/modules/avatars/prompt";
@@ -8,8 +8,12 @@ import { AVATAR_BACKGROUND, AVATAR_PROMPT } from "@/modules/avatars/prompt";
 describe("assistant characters", () => {
   it("exist for every provider and Auto, with a face drawn inside the 256 px robot", () => {
     for (const id of ["openai", "anthropic", "google", "auto"] as const) {
-      expect(ASSISTANTS[id].image).toMatch(/^\/avatars\/assistants\/[a-z]+\.webp$/);
+      expect(ASSISTANTS[id].image).toMatch(/^\/avatars\/assistants\/[a-z]+\.png$/);
       expect(existsSync(`public${ASSISTANTS[id].image}`)).toBe(true);
+      // A PNG with an alpha channel (colour type 6): a cut-out set on the app's glass.
+      const png = readFileSync(`public${ASSISTANTS[id].image}`);
+      expect(png.subarray(1, 4).toString()).toBe("PNG");
+      expect(png[25]).toBe(6);
     }
     for (const part of [...ROBOT_FACE.eyes, ROBOT_FACE.mouth]) {
       expect(part.x).toBeGreaterThan(0);

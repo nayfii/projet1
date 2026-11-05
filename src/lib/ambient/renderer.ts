@@ -107,7 +107,7 @@ vec3 glowScene(vec2 uv, float t) {
   vec3 col;
   if (u_light < 0.5) {
     col = mix(u_deep, u_base, smoothstep(0.0, 0.9, uv.y));
-    col += bandCol * (band * 0.9 + core * 0.3);
+    col += bandCol * (band * 0.72 + core * 0.22);
     col = mix(col, u_base * 0.85 + u_deep * 0.25, hill * 0.9);
     col += u_rim * glow * 0.75;
     col *= mix(0.6, 1.0, smoothstep(1.3, 0.3, length((uv - 0.5) * vec2(1.2, 1.0))));

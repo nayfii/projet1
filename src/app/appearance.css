@@ -316,6 +316,19 @@
 .ambient-canvas[data-ready] {
   opacity: 1;
 }
+/* A soft veil over the middle, where text is read: the light stays at the edges and behind the glass. */
+.ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 80% at 58% 50%, var(--ambient-veil), transparent 78%);
+}
+:root {
+  --ambient-veil: oklch(0.12 0.02 var(--tint-h) / 0.38);
+}
+:root[data-scheme="light"] {
+  --ambient-veil: oklch(0.99 0.004 var(--tint-h) / 0.42);
+}
 /* A low-power device keeps glass frosted, without bending (the background then draws one still frame). */
 :root[data-perf="low"] .lg-glass {
   --lg-filter: saturate(1.5) !important;
