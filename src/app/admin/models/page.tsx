@@ -18,7 +18,7 @@ export default async function AdminModelsPage() {
   const supabase = await createClient();
   const [models, { data: features }] = await Promise.all([
     getCompanyModels(ctx.active.companyId),
-    supabase.from("company_ai_settings").select("auto_client_memory, dictation_enabled, web_search_enabled").eq("company_id", ctx.active.companyId).maybeSingle(),
+    supabase.from("company_ai_settings").select("auto_client_memory, dictation_enabled, web_search_enabled, image_generation_enabled").eq("company_id", ctx.active.companyId).maybeSingle(),
   ]);
   return (
     <PageContainer className="max-w-3xl">
@@ -39,6 +39,7 @@ export default async function AdminModelsPage() {
             autoClientMemory: features?.auto_client_memory ?? true,
             dictation: features?.dictation_enabled ?? true,
             webSearch: features?.web_search_enabled ?? true,
+            images: features?.image_generation_enabled ?? true,
           }}
         />
       </div>

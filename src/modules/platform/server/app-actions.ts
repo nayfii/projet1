@@ -77,6 +77,17 @@ export async function setWebSearchRateAction(input: { credits: number; costUsd: 
   return { ok: true };
 }
 
+/** Platform admin: credits charged for one image made in the chat, and its estimated provider cost. */
+export async function setImageRateAction(input: { credits: number; costUsd: number }): Promise<ActionResult> {
+  if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };
+  const parsed = z.object({ credits: z.number().min(0).max(100_000), costUsd: z.number().min(0).max(100) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("platform_set_image_rate", { p_credits: parsed.data.credits, p_cost_usd: parsed.data.costUsd });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/platform/models");
+  return { ok: true };
+}
+
 /** Plateforme → Équipe: gives the console to an address (at once if it has an account, else at its first sign-in). */
 export async function addPlatformAdminAction(input: { email: string }): Promise<ActionResult<{ outcome: "added" | "invited" }>> {
   if (!(await platformAdminOrNull())) return { ok: false, error: "forbidden" };

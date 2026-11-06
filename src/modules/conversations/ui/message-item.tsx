@@ -467,7 +467,9 @@ function AssistantMessage({
     ? (message.errorCode as ProviderErrorCode)
     : "unknown";
   const confrontation = message.confrontation;
-  const canRegenerate = !confrontation && isLastAnswer && !live && !busy && message.status !== "streaming";
+  // An image answer is made again by asking again (the "Image" button), not by a chat model.
+  const imageAnswer = message.model?.id === "chatgpt-image";
+  const canRegenerate = !confrontation && !imageAnswer && isLastAnswer && !live && !busy && message.status !== "streaming";
   const mood = useAssistantMood(Boolean(live), waiting, message.status);
 
   return (
@@ -497,7 +499,7 @@ function AssistantMessage({
       ) : waiting ? (
         <p className="flex h-7 items-center gap-2 text-[14px]" role="status">
           <span className="text-shimmer font-medium">
-            {message.searching ? t("searchingWeb") : brand ? t("thinkingNamed", { name: brand }) : t("thinking")}
+            {message.imaging ? t("imaging") : message.searching ? t("searchingWeb") : brand ? t("thinkingNamed", { name: brand }) : t("thinking")}
           </span>
         </p>
       ) : message.content ? (
@@ -508,6 +510,9 @@ function AssistantMessage({
         ) : (
           <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
         )
+      ) : null}
+      {message.attachments.some((a) => a.kind === "image" && a.generated) ? (
+        <GeneratedImages images={message.attachments.filter((a) => a.kind === "image" && a.generated)} />
       ) : null}
       {render && !live && message.status === "complete" && message.content ? (
         <RenderPanel key={message.id} messageId={message.id} kind={render.kind} content={message.content} attachments={render.attachments} />
@@ -579,7 +584,7 @@ function AssistantMessage({
             </Tooltip>
           ) : null}
           {message.status === "complete" ? <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} /> : null}
-          {!confrontation && message.status === "complete" ? <ConfrontButton onConfront={onConfront} /> : null}
+          {!confrontation && !imageAnswer && message.status === "complete" ? <ConfrontButton onConfront={onConfront} /> : null}
           {message.status === "complete" && message.content.trim() ? <ExportMenu messageId={message.id} table={hasTable(message.content)} /> : null}
           {canRegenerate ? (
             <>
@@ -707,4 +712,29 @@ function useAssistantMood(live: boolean, waiting: boolean, status: TimelineMessa
   }, [live, status]);
   if (live) return waiting ? "thinking" : "speaking";
   return justDone ? "happy" : "idle";
+}
+
+/** Images the assistant made (ChatGPT's image model), shown in the answer like ChatGPT does. */
+function GeneratedImages({ images }: { images: TimelineMessage["attachments"] }) {
+  const t = useTranslations("chat");
+  return (
+    <div className="flex flex-wrap gap-3" data-testid="generated-images">
+      {images.map((image) => (
+        <figure key={image.id} className="group/image relative w-full max-w-md overflow-hidden rounded-2xl border bg-muted/40">
+          <a href={`/api/attachments/${image.id}?inline=1`} target="_blank" rel="noopener" aria-label={t("openImage")}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- a private file behind a short signed link */}
+            <img src={`/api/attachments/${image.id}?inline=1`} alt="" loading="lazy" decoding="async" className="block aspect-square w-full object-cover" />
+          </a>
+          <a
+            href={`/api/attachments/${image.id}`}
+            download={image.filename}
+            className="absolute right-2 top-2 inline-flex h-8 items-center gap-1.5 rounded-full bg-black/55 px-3 text-xs font-medium text-white opacity-0 backdrop-blur transition-opacity hover:bg-black/70 focus-visible:opacity-100 group-hover/image:opacity-100"
+          >
+            <DownloadIcon className="size-3.5" />
+            {t("downloadImage")}
+          </a>
+        </figure>
+      ))}
+    </div>
+  );
 }

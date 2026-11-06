@@ -123,3 +123,16 @@ test("dictation sent with the arrow goes out at once; the recording bar shows th
   await expect(answers().last()).toContainText("Ceci est une dictée de démonstration");
   await expect(page.title()).resolves.not.toContain("Dictée en cours");
 });
+
+test("an image is created from a request, and the Image button forces one", async () => {
+  await page.goto("/chat");
+  await send("Crée une image d'un vélo rouge sur fond blanc");
+  const first = answers().last();
+  await expect(first.getByTestId("generated-images").locator("img")).toBeVisible();
+  await expect(first).toContainText("Image simulée");
+  await expect(first.locator("header")).toContainText("Images");
+  // The Image button forces an image for any text.
+  await page.getByRole("button", { name: "Image", exact: true }).click();
+  await send("un coucher de soleil sur Paris");
+  await expect(answers().last().getByTestId("generated-images").locator("img")).toBeVisible();
+});

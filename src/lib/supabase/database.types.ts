@@ -303,14 +303,14 @@ isOneToOne: false
                   ]
                 },"company_ai_settings": {
                   Row: {
-                    "auto_client_memory": boolean,"auto_enabled": boolean,"company_id": string,"default_model_id": string | null,"default_user_monthly_credits": number | null,"dictation_enabled": boolean,"updated_at": string,"updated_by": string | null,"web_search_enabled": boolean
+                    "auto_client_memory": boolean,"auto_enabled": boolean,"company_id": string,"default_model_id": string | null,"default_user_monthly_credits": number | null,"dictation_enabled": boolean,"image_generation_enabled": boolean,"updated_at": string,"updated_by": string | null,"web_search_enabled": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "auto_client_memory"?: boolean,"auto_enabled"?: boolean,"company_id": string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"dictation_enabled"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"web_search_enabled"?: boolean
+                    "auto_client_memory"?: boolean,"auto_enabled"?: boolean,"company_id": string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"dictation_enabled"?: boolean,"image_generation_enabled"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"web_search_enabled"?: boolean
                   }
                   Update: {
-                    "auto_client_memory"?: boolean,"auto_enabled"?: boolean,"company_id"?: string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"dictation_enabled"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"web_search_enabled"?: boolean
+                    "auto_client_memory"?: boolean,"auto_enabled"?: boolean,"company_id"?: string,"default_model_id"?: string | null,"default_user_monthly_credits"?: number | null,"dictation_enabled"?: boolean,"image_generation_enabled"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"web_search_enabled"?: boolean
                   }
                   Relationships: [
                     {
@@ -419,14 +419,14 @@ isOneToOne: false
                   ]
                 },"conversation_attachments": {
                   Row: {
-                    "bucket": string,"company_id": string,"conversation_id": string,"created_at": string,"extracted_text": string | null,"filename": string,"id": string,"kind": string,"masked_text": string | null,"media": Json | null,"message_id": string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated": boolean,"uploaded_by": string
+                    "bucket": string,"company_id": string,"conversation_id": string,"created_at": string,"extracted_text": string | null,"filename": string,"generated": boolean,"id": string,"kind": string,"masked_text": string | null,"media": Json | null,"message_id": string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated": boolean,"uploaded_by": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "bucket"?: string,"company_id"?: string,"conversation_id": string,"created_at"?: string,"extracted_text"?: string | null,"filename": string,"id"?: string,"kind": string,"masked_text"?: string | null,"media"?: Json | null,"message_id"?: string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated"?: boolean,"uploaded_by"?: string
+                    "bucket"?: string,"company_id"?: string,"conversation_id": string,"created_at"?: string,"extracted_text"?: string | null,"filename": string,"generated"?: boolean,"id"?: string,"kind": string,"masked_text"?: string | null,"media"?: Json | null,"message_id"?: string | null,"mime_type": string,"size_bytes": number,"storage_path": string,"text_truncated"?: boolean,"uploaded_by"?: string
                   }
                   Update: {
-                    "bucket"?: string,"company_id"?: string,"conversation_id"?: string,"created_at"?: string,"extracted_text"?: string | null,"filename"?: string,"id"?: string,"kind"?: string,"masked_text"?: string | null,"media"?: Json | null,"message_id"?: string | null,"mime_type"?: string,"size_bytes"?: number,"storage_path"?: string,"text_truncated"?: boolean,"uploaded_by"?: string
+                    "bucket"?: string,"company_id"?: string,"conversation_id"?: string,"created_at"?: string,"extracted_text"?: string | null,"filename"?: string,"generated"?: boolean,"id"?: string,"kind"?: string,"masked_text"?: string | null,"media"?: Json | null,"message_id"?: string | null,"mime_type"?: string,"size_bytes"?: number,"storage_path"?: string,"text_truncated"?: boolean,"uploaded_by"?: string
                   }
                   Relationships: [
                     {
@@ -1141,14 +1141,14 @@ isOneToOne: false
                   ]
                 },"platform_settings": {
                   Row: {
-                    "app_review_enabled": boolean,"avatar_cost_usd": number,"avatar_credits": number,"dictation_cost_usd_per_minute": number,"dictation_credits_per_minute": number,"id": boolean,"open_signup": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null,"video_apps_enabled": boolean,"web_search_cost_usd": number,"web_search_credits": number
+                    "app_review_enabled": boolean,"avatar_cost_usd": number,"avatar_credits": number,"dictation_cost_usd_per_minute": number,"dictation_credits_per_minute": number,"id": boolean,"image_cost_usd": number,"image_credits": number,"open_signup": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null,"video_apps_enabled": boolean,"web_search_cost_usd": number,"web_search_credits": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "app_review_enabled"?: boolean,"avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"open_signup"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null,"video_apps_enabled"?: boolean,"web_search_cost_usd"?: number,"web_search_credits"?: number
+                    "app_review_enabled"?: boolean,"avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"image_cost_usd"?: number,"image_credits"?: number,"open_signup"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null,"video_apps_enabled"?: boolean,"web_search_cost_usd"?: number,"web_search_credits"?: number
                   }
                   Update: {
-                    "app_review_enabled"?: boolean,"avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"open_signup"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null,"video_apps_enabled"?: boolean,"web_search_cost_usd"?: number,"web_search_credits"?: number
+                    "app_review_enabled"?: boolean,"avatar_cost_usd"?: number,"avatar_credits"?: number,"dictation_cost_usd_per_minute"?: number,"dictation_credits_per_minute"?: number,"id"?: boolean,"image_cost_usd"?: number,"image_credits"?: number,"open_signup"?: boolean,"updated_at"?: string,"updated_by"?: string | null,"usd_to_eur"?: number | null,"video_apps_enabled"?: boolean,"web_search_cost_usd"?: number,"web_search_credits"?: number
                   }
                   Relationships: [
                     {
@@ -1348,7 +1348,7 @@ isOneToOne: false
 { Args: { "p_agent": string,"p_company": string,"p_settings": Json }; Returns: undefined
                            },
 "admin_set_ai_features":
-{ Args: { "p_auto_client_memory"?: boolean,"p_company": string,"p_dictation_enabled"?: boolean,"p_web_search"?: boolean }; Returns: undefined
+{ Args: { "p_auto_client_memory"?: boolean,"p_company": string,"p_dictation_enabled"?: boolean,"p_image_generation"?: boolean,"p_web_search"?: boolean }; Returns: undefined
                            },
 "admin_set_default_user_quota":
 { Args: { "p_company": string,"p_credits": number }; Returns: undefined
@@ -1554,6 +1554,9 @@ isOneToOne: false
                            },
 "platform_set_exchange_rate":
 { Args: { "p_usd_to_eur": number }; Returns: undefined
+                           },
+"platform_set_image_rate":
+{ Args: { "p_cost_usd": number,"p_credits": number }; Returns: undefined
                            },
 "platform_set_open_signup":
 { Args: { "p_open": boolean }; Returns: undefined

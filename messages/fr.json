@@ -706,7 +706,8 @@
       "server_error": "Une erreur s'est produite. Votre message n'a pas été perdu : réessayez.",
       "hide_unavailable": "La protection des données n'est pas configurée sur le serveur : rien n'a été envoyé. Désactivez la protection pour ce message ou prévenez votre administrateur.",
       "confront_unavailable": "Confronter n'est pas disponible pour cette question (il faut au moins deux IA autorisées, et une question que tout le monde ici peut voir).",
-      "confront_too_expensive": "Il ne reste pas assez de crédits ce mois-ci pour lancer une confrontation."
+      "confront_too_expensive": "Il ne reste pas assez de crédits ce mois-ci pour lancer une confrontation.",
+      "images_disabled": "La création d'images est désactivée dans votre entreprise."
     },
     "removeAttachment": "Retirer {name}",
     "placeholder": "Écrivez votre message…",
@@ -786,7 +787,13 @@
       "copied": "Copié",
       "edited": "modifié"
     },
-    "rowActions": "Options de « {title} »"
+    "rowActions": "Options de « {title} »",
+    "imageMode": "Image",
+    "imageModeHint": "Créer ou modifier une image",
+    "imagePlaceholder": "Décrivez l'image à créer, ou ce qu'il faut changer…",
+    "imaging": "Création de l'image…",
+    "openImage": "Ouvrir l'image",
+    "downloadImage": "Télécharger"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -956,7 +963,13 @@
     "webSearchRateCredits": "Crédits par recherche",
     "webSearchRateCost": "Coût estimé ($ par recherche)",
     "webSearchRateSave": "Enregistrer",
-    "webSearchRateSaved": "Tarif de la recherche enregistré."
+    "webSearchRateSaved": "Tarif de la recherche enregistré.",
+    "imageRateTitle": "Images dans le chat",
+    "imageRateHint": "Crédits comptés pour une image créée ou modifiée dans le chat ({model}, OpenAI), et son coût estimé pour nous. Une image refusée ou en échec n'est pas comptée.",
+    "imageRateSaved": "Tarif des images enregistré.",
+    "imageRateCredits": "Crédits par image",
+    "imageRateCost": "Coût estimé (USD)",
+    "imageRateSave": "Enregistrer"
   },
   "memory": {
     "title": "Conscience",
@@ -1984,7 +1997,9 @@
     "dictationBody": "Un micro dans la conversation. La voix est transcrite par le modèle de transcription d'OpenAI ; la voix elle-même lui parvient non masquée. Le texte passe par Hide avant d'être envoyé.",
     "saved": "Réglage enregistré",
     "webSearchTitle": "Recherche sur internet",
-    "webSearchBody": "ChatGPT, Claude et Gemini peuvent chercher sur internet (actualités, prix, faits récents) et citent les pages utilisées. La recherche est faite par le fournisseur de l'IA, à partir de ce qu'il a reçu (après Hide). Chaque recherche coûte des crédits."
+    "webSearchBody": "ChatGPT, Claude et Gemini peuvent chercher sur internet (actualités, prix, faits récents) et citent les pages utilisées. La recherche est faite par le fournisseur de l'IA, à partir de ce qu'il a reçu (après Hide). Chaque recherche coûte des crédits.",
+    "imagesTitle": "Images",
+    "imagesBody": "Créer ou retoucher des images dans le chat avec le modèle d'images de ChatGPT. La description est envoyée à OpenAI (masquée par la protection), et les photos jointes telles quelles."
   },
   "dictation": {
     "start": "Dicter",

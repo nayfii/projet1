@@ -10,7 +10,8 @@ import { RenderRatesForm } from "@/modules/render/ui/render-rates-form";
 import { AvatarRateForm } from "@/modules/avatars/ui/avatar-rate-form";
 import { DictationRateForm } from "@/modules/dictation/ui/dictation-rate-form";
 import { WebSearchRateForm } from "@/modules/platform/ui/web-search-rate-form";
-import { avatarImageModel, dictationModel } from "@/lib/env";
+import { ImageRateForm } from "@/modules/platform/ui/image-rate-form";
+import { avatarImageModel, chatImageModel, dictationModel } from "@/lib/env";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("platformNav");
@@ -27,7 +28,7 @@ export default async function PlatformModelsPage() {
     supabase.from("render_rates").select("kind, credits_per_second"),
     supabase
       .from("platform_settings")
-      .select("avatar_credits, avatar_cost_usd, dictation_credits_per_minute, dictation_cost_usd_per_minute, web_search_credits, web_search_cost_usd")
+      .select("avatar_credits, avatar_cost_usd, dictation_credits_per_minute, dictation_cost_usd_per_minute, web_search_credits, web_search_cost_usd, image_credits, image_cost_usd")
       .maybeSingle(),
   ]);
   const rate = (kind: string) => Number(rates?.find((r) => r.kind === kind)?.credits_per_second ?? 0);
@@ -53,6 +54,9 @@ export default async function PlatformModelsPage() {
       </div>
       <div className="mt-6">
         <WebSearchRateForm credits={Number(settings?.web_search_credits ?? 0)} costUsd={Number(settings?.web_search_cost_usd ?? 0)} />
+      </div>
+      <div className="mt-6">
+        <ImageRateForm credits={Number(settings?.image_credits ?? 0)} costUsd={Number(settings?.image_cost_usd ?? 0)} model={chatImageModel()} />
       </div>
     </PageContainer>
   );

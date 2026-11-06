@@ -19,7 +19,8 @@ export type TimelineMessage = {
   routing: RoutingInfo | null;
   /** Oldest messages left out of the AI context because the conversation was too long. */
   omittedMessages: number;
-  attachments: { id: string; filename: string; kind: AttachmentKind; truncated: boolean }[];
+  /** `generated`: an image the assistant made (shown in the answer). */
+  attachments: { id: string; filename: string; kind: AttachmentKind; truncated: boolean; generated?: boolean }[];
   /** Source Proof: memory passages the answer cited (only those the viewer may still read). */
   sources: SourceProof[];
   /** Hide: exactly what the AI received (user message) or wrote (answer), when it differs from `content`. */
@@ -36,6 +37,8 @@ export type TimelineMessage = {
   webSources: WebSource[];
   /** While streaming here: the model is searching the web. */
   searching?: boolean;
+  /** While streaming here: an image is being made. */
+  imaging?: boolean;
   /** Confronter: this answer is the synthesis of a confrontation. */
   confrontation: Confrontation | null;
   /** Context Gateway: what memory the model received for this answer (ids only), null when none. */
