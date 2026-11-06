@@ -353,7 +353,7 @@ Design, threat model, permission matrix and measured performance: `docs/CONSCIOU
 | Unit (Vitest) | 269 pass (incl. `tests/unit/learning.test.ts`: rules for facts, grounding, supersession) |
 | Integration (real local database, real users and RLS) | 229 pass, incl. `tests/integration/consciousness.test.ts` (20 acceptance tests; the extraction model is **mocked**) |
 | Context Gateway timing (local database, simulated embeddings, 20 runs) | p50 89 ms, p95 111 ms (target p95 < 300 ms; the embeddings provider's network time is not included) |
-| End to end (browser, simulated provider) | `e2e/consciousness.spec.ts` (Claude → colleague's Gemini, with sources; budget replaced), `e2e/chat-ux.spec.ts` (5 steps), and the whole suite on the Liquid Glass branch (see below) |
+| End to end (browser, simulated provider) | `e2e/consciousness.spec.ts` (Claude → colleague's Gemini, with sources; budget replaced), `e2e/chat-ux.spec.ts` (5 steps). Whole suite on the Liquid Glass branch (main merged in): 126 tests; the first run had 3 failures (two ambiguous test locators, and one real bug: the sidebar's "…" menu was not clickable under the glass styles), fixed, and the affected files then passed in full |
 
 ## Our console: versions, preview, Debug with Claude Code (2026-11-02)
 
