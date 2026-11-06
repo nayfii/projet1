@@ -31,7 +31,12 @@ export async function listConversations(
     .order("created_at", { ascending: false })
     .limit(limit);
   if (clientId) query = query.eq("client_id", clientId);
-  const { data } = await query;
+  // This person's own pins and archives (each participant has their own sidebar).
+  const [{ data }, { data: mine }] = await Promise.all([
+    query,
+    meId ? supabase.from("conversation_participants").select("conversation_id, pinned_at, archived_at").eq("user_id", meId).eq("company_id", companyId) : Promise.resolve({ data: [] }),
+  ]);
+  const myRow = new Map((mine ?? []).map((m) => [m.conversation_id, m]));
   return (data ?? []).map((c) => {
     const people = c.participants?.[0]?.count ?? 1;
     const kind: ConversationKind = c.forked_from ? "copy" : people > 1 || (meId && c.owner_id !== meId) ? "shared" : c.from ? "received" : "private";
@@ -43,6 +48,8 @@ export async function listConversations(
       lastMessageAt: c.last_message_at ?? c.created_at,
       mine: !meId || c.owner_id === meId,
       kind,
+      pinnedAt: myRow.get(c.id)?.pinned_at ?? null,
+      archivedAt: myRow.get(c.id)?.archived_at ?? null,
       /** The colleague it was transferred to (copy) or received from. */
       otherName: kind === "copy" ? (c.to?.full_name ?? c.to?.email ?? null) : kind === "received" ? (c.from?.full_name ?? c.from?.email ?? null) : null,
     };

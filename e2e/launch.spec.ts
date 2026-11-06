@@ -184,7 +184,8 @@ test("6. Olivier continues with Claude: the whole conversation goes with him", a
   const answer = await send(olivierPage, "Fais-en un résumé en une phrase.");
   await expect(answer).toContainText("Simulated answer from claude-sonnet-5-5");
   await expect(answer).toContainText("Messages received: 3 (2 from people)");
-  await expect(olivierPage.getByRole("separator").filter({ hasText: "Suite avec" })).toContainText("Sonnet 5.5");
+  // The answer's own header names the model (no banner).
+  await expect(answer.locator("header")).toContainText("Sonnet");
 });
 
 test("7. Hide on Automatic: an IBAN and a client name reach the model as placeholders, Olivier sees the real values", async () => {

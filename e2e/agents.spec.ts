@@ -84,6 +84,8 @@ test("Proposal Writer: a form, a draft, and Word and PDF exports", async () => {
   await page.getByRole("combobox", { name: "Client" }).click();
   await page.getByRole("option", { name: "Client A" }).click();
   await page.getByLabel("Besoins du client *").fill("Refonte du site avec commande en ligne, mise en ligne avant décembre.");
+  // Optional fields are folded under "N options de plus".
+  await page.getByText(/options? de plus/).click();
   await page.getByLabel("Budget ou éléments de prix").fill("8 000 à 10 000 € HT");
   await shot(page, "81-proposal-form");
   await page.getByRole("button", { name: "Lancer" }).click();
@@ -141,6 +143,7 @@ test("Cash-flow Forecast: a chart with values on hover and its data as a table",
     mimeType: "text/csv",
     buffer: Buffer.from("Date;Libellé;Montant\n2026-09-01;LOYER;-2100\n2026-09-05;VIR CLIENT;9000\n2026-09-28;SALAIRES;-11500\n"),
   });
+  await page.getByText(/options? de plus/).click();
   await page.getByLabel("Solde actuel").fill("18 400 €");
   await page.getByRole("combobox", { name: "Horizon" }).click();
   await page.getByRole("option", { name: "6 mois" }).click();

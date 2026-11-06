@@ -119,6 +119,8 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         `- Last message as received: «${text.slice(0, 300)}»`,
         ...(tool ? [`- Tool instructions received: ${tool}`] : []),
         ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
+        // Ready-to-send content: "[[email]]" asks for an email, written in a copy block like a real model would.
+        ...(text.includes("[[email]]") ? ["", "```copy-email", "Objet : [TEST] Lancement", "", "Bonjour,", "", "[TEST] Voici l'annonce du lancement.", "```"] : []),
         ...(helper ? ["", `You can ask ${helper[1]} about it.`] : []),
         // Tools that ask for a table or a chart get sample ones, so exports and charts can be tested.
         ...(tool && /Markdown table/.test(request.system) ? ["", ...SAMPLE_TABLE] : []),

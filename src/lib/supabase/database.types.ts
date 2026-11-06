@@ -451,14 +451,14 @@ isOneToOne: false
                   ]
                 },"conversation_participants": {
                   Row: {
-                    "added_by": string | null,"company_id": string,"conversation_id": string,"joined_at": string,"role": string,"user_id": string,"visible_from_seq": number
+                    "added_by": string | null,"archived_at": string | null,"company_id": string,"conversation_id": string,"joined_at": string,"pinned_at": string | null,"role": string,"user_id": string,"visible_from_seq": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "added_by"?: string | null,"company_id": string,"conversation_id": string,"joined_at"?: string,"role"?: string,"user_id": string,"visible_from_seq"?: number
+                    "added_by"?: string | null,"archived_at"?: string | null,"company_id": string,"conversation_id": string,"joined_at"?: string,"pinned_at"?: string | null,"role"?: string,"user_id": string,"visible_from_seq"?: number
                   }
                   Update: {
-                    "added_by"?: string | null,"company_id"?: string,"conversation_id"?: string,"joined_at"?: string,"role"?: string,"user_id"?: string,"visible_from_seq"?: number
+                    "added_by"?: string | null,"archived_at"?: string | null,"company_id"?: string,"conversation_id"?: string,"joined_at"?: string,"pinned_at"?: string | null,"role"?: string,"user_id"?: string,"visible_from_seq"?: number
                   }
                   Relationships: [
                     {
@@ -1485,7 +1485,7 @@ isOneToOne: false
             }[]
                            },
 "pending_memory_jobs":
-{ Args: { "p_spaces": (string)[] }; Returns: number
+{ Args: { "p_except_conversation"?: string,"p_spaces": (string)[] }; Returns: number
                            },
 "platform_add_admin":
 { Args: { "p_email": string }; Returns: string
@@ -1601,6 +1601,9 @@ isOneToOne: false
 "revoke_invitation":
 { Args: { "p_invitation": string }; Returns: undefined
                            },
+"rewind_conversation":
+{ Args: { "p_message": string }; Returns: number
+                           },
 "save_tool":
 { Args: { "p_company": string,"p_id": string,"p_source_conversation"?: string,"p_tool": Json,"p_visibility": string }; Returns: string
                            },
@@ -1611,6 +1614,12 @@ isOneToOne: false
                            },
 "set_auto_title":
 { Args: { "p_conversation": string,"p_title": string }; Returns: boolean
+                           },
+"set_conversation_archived":
+{ Args: { "p_archived": boolean,"p_conversation": string }; Returns: undefined
+                           },
+"set_conversation_pinned":
+{ Args: { "p_conversation": string,"p_pinned": boolean }; Returns: undefined
                            },
 "set_memory_provider_policy":
 { Args: { "p_blocked": (Database["public"]['Enums']["ai_provider"])[],"p_space": string }; Returns: undefined

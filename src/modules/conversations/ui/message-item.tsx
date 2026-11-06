@@ -13,6 +13,7 @@ import {
   FilmIcon,
   GlobeIcon,
   ImageIcon,
+  PencilIcon,
   RefreshCwIcon,
   ScaleIcon,
   ShieldCheckIcon,
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@/components/ui/tooltip";
 import { modelDisplay } from "@/modules/providers/catalog";
-import { PROVIDER_ERROR_CODES, type ProviderErrorCode, type ProviderId } from "@/modules/providers/types";
+import { PROVIDER_ERROR_CODES, type ProviderErrorCode } from "@/modules/providers/types";
 import { cn } from "@/lib/utils";
 import type { AttachmentKind, TimelineMessage } from "../types";
 import type { RenderKind } from "@/modules/render/formats";
@@ -66,6 +67,9 @@ type ConfrontProps = { onConfront?: () => void; confrontProgress?: Confrontation
 /** Cendr Consciousness: the answer's learning changed state (polled under the answer). */
 type LearningProps = { onLearning?: (state: LearningState) => void };
 
+/** Edit one's own earlier prompt and run it again. */
+type EditProps = { onEdit?: (text: string) => void };
+
 /** Avatars of the people in the conversation, by user id (colleagues' messages show theirs). */
 export type PeopleLookup = Map<string, { name: string; avatarUrl: string | null }>;
 
@@ -84,6 +88,7 @@ export function MessageItem({
   onConfront,
   confrontProgress,
   onLearning,
+  onEdit,
   render,
   people,
   group = false,
@@ -111,7 +116,8 @@ export function MessageItem({
 } & MemoryProps &
   InviteProps &
   ConfrontProps &
-  LearningProps) {
+  LearningProps &
+  EditProps) {
   if (message.role === "user") {
     const mine = !message.author || message.author.id === meId;
     return (
@@ -123,6 +129,7 @@ export function MessageItem({
         memoryTargets={memoryTargets}
         conversationId={conversationId}
         onConfront={onConfront}
+        onEdit={onEdit}
       />
     );
   }
@@ -219,9 +226,14 @@ function UserMessage({
   memoryTargets,
   conversationId,
   onConfront,
-}: { message: TimelineMessage; mine: boolean; mentionsMe?: boolean; avatarUrl: string | null } & MemoryProps & ConfrontProps) {
+  onEdit,
+}: { message: TimelineMessage; mine: boolean; mentionsMe?: boolean; avatarUrl: string | null; onEdit?: (text: string) => void } & MemoryProps & ConfrontProps) {
   const hover = "mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100";
   const t = useTranslations("collaboration");
+  const tChat = useTranslations("chat");
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(message.content);
+  const [copied, setCopied] = React.useState(false);
   if (!mine) {
     // A colleague's message (group conversation, or a conversation taken over after a transfer).
     const name = message.author?.name ?? t("someone");
@@ -260,7 +272,7 @@ function UserMessage({
     );
   }
   return (
-    <div className="group/user flex animate-message-in flex-col items-end gap-2">
+    <div className="group/user flex animate-message-in flex-col items-end gap-2" data-testid="my-message">
       {message.attachments.length > 0 ? (
         <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
           {message.attachments.map((a) => (
@@ -268,10 +280,77 @@ function UserMessage({
           ))}
         </div>
       ) : null}
-      {message.content ? (
+      {message.content && editing && onEdit ? (
+        // Edit and run again: this message and what follows are replaced by the new version.
+        <form
+          className="w-full max-w-[85%] space-y-2 rounded-2xl border bg-card p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!draft.trim()) return;
+            setEditing(false);
+            onEdit(draft.trim());
+          }}
+        >
+          <textarea
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setEditing(false);
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+            rows={Math.min(8, Math.max(2, draft.split("\n").length))}
+            aria-label={tChat("editPrompt")}
+            className="w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none"
+          />
+          <div className="flex items-center justify-end gap-2">
+            <span className="mr-auto text-xs text-muted-foreground">{tChat("editHint")}</span>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+              {tChat("cancel")}
+            </Button>
+            <Button type="submit" size="sm">
+              {tChat("editSend")}
+            </Button>
+          </div>
+        </form>
+      ) : message.content ? (
         <div className="flex max-w-[85%] items-start gap-1">
           <ConfrontButton onConfront={onConfront} className={hover} />
           <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
+          <Tooltip content={copied ? tChat("copied") : tChat("copy")}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={tChat("copy")}
+              className={hover}
+              onClick={async () => {
+                await navigator.clipboard.writeText(message.content);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              {copied ? <CheckIcon /> : <CopyIcon />}
+            </Button>
+          </Tooltip>
+          {onEdit ? (
+            <Tooltip content={tChat("editPrompt")}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={tChat("editPrompt")}
+                className={hover}
+                onClick={() => {
+                  setDraft(message.content);
+                  setEditing(true);
+                }}
+              >
+                <PencilIcon />
+              </Button>
+            </Tooltip>
+          ) : null}
           <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-4 py-2.5 text-[15px] leading-relaxed">
             <ProtectedText text={message.content} spans={message.hideSpans} renderPlain={withMentions} />
           </div>
@@ -536,20 +615,6 @@ function AssistantMessage({
         </div>
       ) : null}
     </article>
-  );
-}
-
-/** Thin divider shown when the conversation continues with another model. */
-export function ModelSwitchDivider({ provider, label }: { provider: ProviderId; label: string }) {
-  const t = useTranslations("chat");
-  return (
-    <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground" role="separator">
-      <span className="h-px flex-1 bg-border" />
-      <span className="inline-flex items-center gap-1.5">
-        {t("continuedWith")} <AssistantAvatar provider={provider} size={18} /> <ModelName provider={provider} label={label} dot={false} />
-      </span>
-      <span className="h-px flex-1 bg-border" />
-    </div>
   );
 }
 

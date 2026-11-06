@@ -756,7 +756,37 @@
     "clientNoMatch": "No client found",
     "searchingWeb": "Searching the web…",
     "webSources": "Sources on the web",
-    "downloadPdf": "Download the PDF"
+    "downloadPdf": "Download the PDF",
+    "pinned": "Pinned",
+    "archived": "{count, plural, one {Archived (#)} other {Archived (#)}}",
+    "archivedToast": "Conversation archived.",
+    "undo": "Undo",
+    "cancel": "Cancel",
+    "generating": "Answer in progress",
+    "answerReady": "Answer ready",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "editPrompt": "Edit",
+    "editHint": "The rest of the conversation will be replaced.",
+    "editSend": "Send again",
+    "editUnavailable": "This message can no longer be edited: someone wrote after it, or an answer is being written.",
+    "jumpToLatest": "Jump to the latest message",
+    "shortcuts": "Shortcuts: Enter to send · Shift+Enter for a new line · Esc to stop the answer · Ctrl+K to search · Ctrl+Shift+O for a new conversation",
+    "copyBlock": {
+      "kind": {
+        "email": "Email",
+        "message": "Message",
+        "linkedin": "LinkedIn post",
+        "prompt": "Prompt",
+        "text": "Text"
+      },
+      "copy": "Copy",
+      "copied": "Copied",
+      "edited": "edited"
+    },
+    "rowActions": "Options for “{title}”"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -1705,7 +1735,8 @@
     "addVideos": "Add videos",
     "videosHint": "MP4, MOV or WebM; at most {max} videos, 200 MB each. They stay on our servers: the AI only gets their name, length and size.",
     "videoTooBig": "The video \"{name}\" is larger than 200 MB.",
-    "uploadingFiles": "Sending files… {done}/{total}"
+    "uploadingFiles": "Sending files… {done}/{total}",
+    "moreOptions": "{count, plural, one {# more option} other {# more options}}"
   },
   "exports": {
     "defaultTitle": "Document",
@@ -1975,7 +2006,9 @@
       "disabled": "Voice dictation is turned off in your company.",
       "forbidden": "Access denied.",
       "empty": "No speech detected."
-    }
+    },
+    "send": "Send now",
+    "recordingTitle": "Dictating"
   },
   "platformReleases": {
     "title": "Versions",
@@ -2138,7 +2171,9 @@
     "picker": "Apps",
     "pickerSearch": "Start an app…",
     "pickerEmpty": "No app",
-    "pickerAll": "All apps"
+    "pickerAll": "All apps",
+    "quickAccess": "Quick access",
+    "favorite": "Favourite"
   },
   "platformApps": {
     "title": "Apps",

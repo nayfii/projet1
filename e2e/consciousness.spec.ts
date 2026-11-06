@@ -129,7 +129,8 @@ test("Bruno opens a new Gemini conversation from Atlas: the facts are there, wit
 test("the Consciousness hub shows real counts and the recent learning", async () => {
   await page.goto("/memory");
   await expect(page.getByRole("heading", { name: "Conscience" })).toBeVisible();
-  await expect(page.getByTestId("consciousness-stats")).toContainText("Appris cette semaine");
-  await expect(page.getByTestId("consciousness-activity")).toContainText("Budget");
+  const main = page.getByRole("main");
+  await expect(main.getByTestId("consciousness-stats")).toContainText("Appris cette semaine");
+  await expect(main.getByTestId("consciousness-activity")).toContainText("Budget");
   await shot(page, "c5-hub");
 });

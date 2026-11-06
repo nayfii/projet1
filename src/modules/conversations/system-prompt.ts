@@ -46,6 +46,17 @@ export const FILES_RULES = [
   "- End with one short line telling them they can download it as PDF, Word or Excel below the answer, in their language.",
 ].join("\n");
 
+/**
+ * Ready-to-send content: the app shows these blocks as cards with a Copy button (and lets the person
+ * edit them before copying). Only for content meant to leave the conversation.
+ */
+export const COPY_BLOCK_RULES = [
+  "## Ready-to-send content",
+  "- When the person asks for something they will send or paste elsewhere (an email, a WhatsApp or SMS message, a LinkedIn post, a prompt for another tool, a product description, a short text to publish), put that content alone in a fenced block whose language is one of: `copy-email`, `copy-message`, `copy-linkedin`, `copy-prompt`, `copy-text`.",
+  "- For an email, the first line of the block is the subject, written as `Objet : …` in French or `Subject: …` in English, then an empty line, then the body.",
+  "- Keep any explanation outside the block, before or after it. Never use these blocks for explanations, lists of ideas, analyses or code; most answers have none.",
+].join("\n");
+
 /** Web search: the provider's own tool, for recent or changing facts. */
 export const WEB_SEARCH_RULES = [
   "- You can search the web. Do it for news, current events, prices, rates, laws or anything that may have changed recently or that you are unsure about; not for general knowledge or for the company's own information.",
@@ -87,6 +98,7 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
     ].join("\n"),
     "## Format\nUse Markdown when it helps (short headings, lists, tables). Be concise and practical.",
     FILES_RULES,
+    COPY_BLOCK_RULES,
   ];
   if (input.webSearch) sections.push(`## Web search\n${WEB_SEARCH_RULES}`);
   if (input.protectedValues) sections.push(`## Protected values\n${PROTECTED_VALUES_RULES}`);

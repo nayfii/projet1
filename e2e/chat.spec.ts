@@ -69,7 +69,9 @@ test("switching model mid-conversation keeps the context", async () => {
   await expect(second).toContainText("Simulated answer from gpt-6-luna");
   // The new model received the whole conversation built by the platform: 2 questions + 1 answer.
   await expect(second).toContainText("Messages received: 3 (2 from people)");
-  await expect(page.getByRole("separator").filter({ hasText: "Suite avec" })).toContainText("GPT-6 Luna");
+  // No banner: the answer itself says, discreetly, which model wrote it.
+  await expect(page.getByRole("separator").filter({ hasText: "Suite avec" })).toHaveCount(0);
+  await expect(second.locator("header")).toContainText("Luna");
   await shot(page, "22-chat-switch-model");
 
   // Still there after a reload: everything is saved.

@@ -229,3 +229,17 @@ export async function popularApps(ctx: MemberContext): Promise<Map<string, numbe
   const { data } = await supabase.rpc("company_popular_apps", { p_company: ctx.active.companyId });
   return new Map((data ?? []).map((r) => [r.agent_id, Number(r.uses)]));
 }
+
+/** The apps this person ran lately (their own conversations started from an app), most recent first. */
+export async function recentApps(ctx: MemberContext, limit = 6): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("conversations")
+    .select("agent_id, created_at")
+    .eq("company_id", ctx.active.companyId)
+    .eq("owner_id", ctx.user.id)
+    .not("agent_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  return [...new Set((data ?? []).map((c) => c.agent_id!))].slice(0, limit);
+}

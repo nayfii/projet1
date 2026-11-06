@@ -756,7 +756,37 @@
     "clientNoMatch": "Aucun client trouvé",
     "searchingWeb": "Recherche sur internet…",
     "webSources": "Sources sur internet",
-    "downloadPdf": "Télécharger le PDF"
+    "downloadPdf": "Télécharger le PDF",
+    "pinned": "Épinglées",
+    "archived": "{count, plural, one {Archivée (#)} other {Archivées (#)}}",
+    "archivedToast": "Conversation archivée.",
+    "undo": "Annuler",
+    "cancel": "Annuler",
+    "generating": "Réponse en cours",
+    "answerReady": "Réponse prête",
+    "pin": "Épingler",
+    "unpin": "Désépingler",
+    "archive": "Archiver",
+    "unarchive": "Désarchiver",
+    "editPrompt": "Modifier",
+    "editHint": "La suite de la conversation sera remplacée.",
+    "editSend": "Renvoyer",
+    "editUnavailable": "Ce message ne peut plus être modifié : quelqu'un a écrit après, ou une réponse est en cours.",
+    "jumpToLatest": "Aller au dernier message",
+    "shortcuts": "Raccourcis : Entrée pour envoyer · Maj+Entrée pour aller à la ligne · Échap pour arrêter la réponse · Ctrl+K pour chercher · Ctrl+Maj+O pour une nouvelle conversation",
+    "copyBlock": {
+      "kind": {
+        "email": "E-mail",
+        "message": "Message",
+        "linkedin": "Post LinkedIn",
+        "prompt": "Prompt",
+        "text": "Texte"
+      },
+      "copy": "Copier",
+      "copied": "Copié",
+      "edited": "modifié"
+    },
+    "rowActions": "Options de « {title} »"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -1705,7 +1735,8 @@
     "addVideos": "Ajouter des vidéos",
     "videosHint": "MP4, MOV ou WebM ; {max} vidéos au plus, 200 Mo chacune. Elles restent sur nos serveurs : l'IA ne reçoit que leur nom, leur durée et leur taille.",
     "videoTooBig": "La vidéo « {name} » dépasse 200 Mo.",
-    "uploadingFiles": "Envoi des fichiers… {done}/{total}"
+    "uploadingFiles": "Envoi des fichiers… {done}/{total}",
+    "moreOptions": "{count, plural, one {# option de plus} other {# options de plus}}"
   },
   "exports": {
     "defaultTitle": "Document",
@@ -1975,7 +2006,9 @@
       "disabled": "La dictée vocale est désactivée dans votre entreprise.",
       "forbidden": "Accès refusé.",
       "empty": "Aucune parole détectée."
-    }
+    },
+    "send": "Envoyer directement",
+    "recordingTitle": "Dictée en cours"
   },
   "platformReleases": {
     "title": "Versions",
@@ -2138,7 +2171,9 @@
     "picker": "Applis",
     "pickerSearch": "Lancer une appli…",
     "pickerEmpty": "Aucune appli",
-    "pickerAll": "Toutes les applis"
+    "pickerAll": "Toutes les applis",
+    "quickAccess": "Accès rapide",
+    "favorite": "Favori"
   },
   "platformApps": {
     "title": "Applis",

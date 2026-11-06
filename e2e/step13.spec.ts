@@ -75,8 +75,8 @@ test("Applis: shelves by department, our app, favourites", async () => {
   // The Application Review Assistant stays hidden until a lawyer has reviewed it.
   await expect(page.getByRole("link", { name: /Aide à la lecture de candidatures/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Ajouter Proposition commerciale à vos applis" }).click();
-  await page.getByRole("tab", { name: "Vos applis" }).click();
-  await expect(page.getByRole("link", { name: /Proposition commerciale/ })).toBeVisible();
+  // Favourites come first in "Accès rapide", at the top of the page.
+  await expect(page.getByRole("region", { name: "Accès rapide" }).getByRole("link", { name: /Proposition commerciale/ })).toBeVisible();
   await shot(page, "s13-04-apps");
 });
 
