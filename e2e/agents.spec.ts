@@ -88,7 +88,7 @@ test("Proposal Writer: a form, a draft, and Word and PDF exports", async () => {
   await page.getByText(/options? de plus/).click();
   await page.getByLabel("Budget ou éléments de prix").fill("8 000 à 10 000 € HT");
   await shot(page, "81-proposal-form");
-  await page.getByRole("button", { name: "Lancer" }).click();
+  await page.getByRole("button", { name: "Lancer", exact: true }).click();
   const answer = await waitForAnswer();
   await expect(answer).toContainText("Tool instructions received: Proposal Writer");
   await expect(answer).toContainText("Besoins du client");
@@ -117,7 +117,7 @@ test("Invoice Intake: files in the form, a table, Excel and CSV exports, the dra
   ]);
   await expect(page.getByText("facture-bureau.txt")).toBeVisible();
   await shot(page, "83-invoice-form");
-  await page.getByRole("button", { name: "Lancer" }).click();
+  await page.getByRole("button", { name: "Lancer", exact: true }).click();
   const answer = await waitForAnswer();
   await expect(answer).toContainText("Tool instructions received: Invoice Intake");
   await expect(answer.locator("table")).toBeVisible();
@@ -147,7 +147,7 @@ test("Cash-flow Forecast: a chart with values on hover and its data as a table",
   await page.getByLabel("Solde actuel").fill("18 400 €");
   await page.getByRole("combobox", { name: "Horizon" }).click();
   await page.getByRole("option", { name: "6 mois" }).click();
-  await page.getByRole("button", { name: "Lancer" }).click();
+  await page.getByRole("button", { name: "Lancer", exact: true }).click();
   const answer = await waitForAnswer();
   const chart = answer.getByRole("img", { name: /Graphique : \[TEST\] Balance/ });
   await expect(chart).toBeVisible();

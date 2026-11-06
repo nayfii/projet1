@@ -107,7 +107,7 @@ test("the tool runs as a form and continues as a conversation, with Hide", async
   await ownerPage.getByRole("option", { name: "Client A" }).click();
   await ownerPage.getByLabel("Notes de réunion *").fill("Budget validé, livraison en mars.");
   await shot(ownerPage, "78-run-form");
-  await ownerPage.getByRole("button", { name: "Lancer" }).click();
+  await ownerPage.getByRole("button", { name: "Lancer", exact: true }).click();
   await expect(ownerPage).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
   await expect(answers(ownerPage)).toHaveCount(1, { timeout: 20_000 });
   await expect(ownerPage.locator('article[aria-busy="true"]')).toHaveCount(0, { timeout: 20_000 });

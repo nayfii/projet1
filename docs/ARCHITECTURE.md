@@ -78,7 +78,7 @@ The company's and clients' knowledge lives **outside every LLM**, in our databas
 | `clients` | Clients, Open / Restricted visibility, assignments, client transfer |
 | `conversations` | Conversations, participants, messages, group chat, history sharing, mentions, conversation transfer |
 | `documents` | Upload, parsing (PDF, DOCX, TXT, MD, CSV, XLSX), chunking, embeddings, retrieval |
-| `memory` | Memory spaces (company / client), entries, permission categories, suggestions, promotion, Source Proof |
+| `memory` | Memory spaces (company / client), versioned facts, permission categories, suggestions, promotion, Source Proof; **Cendr Consciousness**: learning after each answer (`server/learning.ts` + rules in `learning.ts`), the Context Gateway that builds what any model receives (`server/gateway.ts`), client living brief and hub (`server/knowledge.ts`). See `docs/CONSCIOUSNESS.md` |
 | `providers` | Provider interface, OpenAI / Anthropic / Google adapters, model catalogue, Smart Router, embeddings provider |
 | `hide` | Sensitive data detection, pseudonymisation, mapping vault, restore, masking events |
 | `agents` | Shared agent/tool framework, built-in agents, "Turn into a tool", Applis (catalogue, favourites, picker in the chat), apps our team adds |

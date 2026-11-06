@@ -298,7 +298,8 @@ function ConversationRow({ item, active }: { item: ChatListItem; active: boolean
         </span>
         {item.clientName ? <span className="truncate text-[11px] font-normal text-muted-foreground/80">{item.clientName}</span> : null}
       </Link>
-      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 group-focus-within/row:opacity-0 group-hover/row:opacity-0">
+      {/* Above the row's link (which the glass styles can raise), so they stay clickable. */}
+      <span className="pointer-events-none absolute right-2 top-1/2 z-[2] -translate-y-1/2 group-focus-within/row:opacity-0 group-hover/row:opacity-0">
         {busy ? (
           <span className="flex size-4 items-center justify-center" role="status" aria-label={t("generating")} data-testid="row-generating">
             <span className="size-1.5 animate-ping rounded-full bg-brand" />
@@ -312,7 +313,7 @@ function ConversationRow({ item, active }: { item: ChatListItem; active: boolean
           <button
             type="button"
             aria-label={t("rowActions", { title: item.title ?? t("untitled") })}
-            className="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 data-[state=open]:opacity-100"
+            className="absolute right-1 top-1/2 z-[2] flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 data-[state=open]:opacity-100"
           >
             <MoreHorizontalIcon className="size-4" />
           </button>

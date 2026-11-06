@@ -116,7 +116,7 @@ test("owner restricts Client A to Olivier; Nathalie cannot see it", async ({ bro
   await olivierPage.goto("/clients");
   await expect(olivierPage.getByRole("main").getByText("Client A")).toBeVisible();
   await olivierPage.getByRole("main").getByText("Client A").click();
-  await expect(olivierPage.getByRole("heading", { name: "Client A" })).toBeVisible();
+  await expect(olivierPage.getByRole("heading", { name: "Client A", exact: true })).toBeVisible();
   const directUrl = olivierPage.url();
   await shot(olivierPage, "13-member-client-page");
 

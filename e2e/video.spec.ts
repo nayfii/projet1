@@ -89,7 +89,7 @@ test("Motion Design: a brief and a logo, a preview, then a real MP4", async () =
   await page.getByRole("combobox", { name: "Durée" }).click();
   await page.getByRole("option", { name: "6 secondes" }).click();
   await shot(page, "90-motion-form");
-  await page.getByRole("button", { name: "Lancer" }).click();
+  await page.getByRole("button", { name: "Lancer", exact: true }).click();
 
   const answer = await waitForAnswer();
   // The code is folded away; the preview plays it, isolated from the page.
@@ -131,7 +131,7 @@ test("Video Editor: two clips, an edit plan, then MP4s in the chosen formats", a
   await page.getByRole("combobox", { name: "Formats" }).click();
   await page.getByRole("option", { name: "Les trois (16:9, 9:16 et 1:1)" }).click();
   await shot(page, "94-editor-form");
-  await page.getByRole("button", { name: "Lancer" }).click();
+  await page.getByRole("button", { name: "Lancer", exact: true }).click();
 
   const answer = await waitForAnswer();
   // The clips went with the first message; the AI only received their names and lengths.
