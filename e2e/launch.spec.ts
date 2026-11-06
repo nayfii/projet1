@@ -291,7 +291,7 @@ test("12. Olivier runs the Proposal Writer, then Motion Design: an MP4 is render
   await olivierPage.getByRole("combobox", { name: "Client" }).click();
   await olivierPage.getByRole("option", { name: "Client A" }).click();
   await olivierPage.getByLabel("Besoins du client *").fill("Refonte du site avec commande en ligne, mise en ligne avant décembre.");
-  await olivierPage.getByRole("button", { name: "Lancer" }).click();
+  await olivierPage.getByRole("button", { name: "Lancer", exact: true }).click();
   await expect(olivierPage).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
   await waitForAnswers(olivierPage, 1);
   await expect(answers(olivierPage).last()).toContainText("Tool instructions received: Proposal Writer");
@@ -306,7 +306,7 @@ test("12. Olivier runs the Proposal Writer, then Motion Design: an MP4 is render
   await olivierPage.getByRole("option", { name: "9:16 · vertical" }).click();
   await olivierPage.getByRole("combobox", { name: "Durée" }).click();
   await olivierPage.getByRole("option", { name: "6 secondes" }).click();
-  await olivierPage.getByRole("button", { name: "Lancer" }).click();
+  await olivierPage.getByRole("button", { name: "Lancer", exact: true }).click();
   await expect(olivierPage).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
   await waitForAnswers(olivierPage, 1);
   const answer = answers(olivierPage).last();

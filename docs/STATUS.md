@@ -1,6 +1,6 @@
 # Status
 
-Last update: Step 13 (Applis, launch choices, shorter onboarding, Hide menu), 2026-11-03.
+Last update: Cendr Consciousness, chat at ChatGPT level, dictation and Applis (2026-11-06).
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -21,7 +21,7 @@ Legend: **done** · **partial** · **not started** · **known issue**
 | Copy / regenerate | **done**: copy (Markdown), regenerate, regenerate with another model; the replaced answer is hidden from the timeline and from the AI context |
 | File attachments | **done**: PDF, DOCX, XLSX, CSV, TXT, MD (text extracted on our server, 40,000 characters max per file, "partly read" shown) and PNG/JPEG/WEBP/GIF images (sent to the model as images). 10 MB and 5 files per message. Private storage bucket. No OCR: scanned PDFs have no text (the user is warned) |
 | Clear model labels | **done**: "Claude · Sonnet 5.5" on every answer, with a muted per-provider colour; tiers (Fast / Balanced / Most capable) in the picker |
-| Switch model mid-conversation ("Continue with Claude") | **done**: the platform rebuilds the same context for any model (single context builder, unit test); a "Continued with…" divider marks the switch |
+| Switch model mid-conversation ("Continue with Claude") | **done**: the platform rebuilds the same context for any model (single context builder, unit test); each answer's header names its model (the "Continued with…" banner was removed on 2026-11-06) |
 | Auto mode (Smart Router) with one-line reason | **done** (rule-based v1): classifies quick / writing / analysis / code / long content / image (French and English cues), picks among allowed and configured models by tier, strengths and cost; shows e.g. "Auto: writing, quality first" |
 | Company admin: allowed models and default model | **done** (`/admin/models`, "models" scope): allowed models, default model, Auto on/off; enforced by the server and in SQL |
 | AI Clarification (system prompt behaviour) | **done**: rules in `src/modules/conversations/system-prompt.ts`; observed with the real GPT-6 Luna (asked "Which client and which service…?" before drafting a proposal) |
@@ -317,6 +317,68 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | Measured locally (database on the same machine, so already fast): 0.1 to 0.6 s per page before and after. The gains are online, where each trip to the database or Auth costs more; **not measured online yet** | — |
 | **Light theme**: pastel icons and letters were almost invisible on white (Applis, our console's shortcuts): they now use a deeper version of each colour; every main screen checked in both themes, on a computer and a phone | **done** |
 | **Audit fixes**: the company usage page no longer mentions estimated costs and hides empty rows; title-writing appears as its own line in usage; the launch switches' explanation follows their state; on a phone the chat header keeps room for the title | **done** |
+
+## Cendr Consciousness — memory shared across models (2026-11-06)
+
+Design, threat model, permission matrix and measured performance: `docs/CONSCIOUSNESS.md`.
+
+| Feature | Status |
+|---|---|
+| Learning on our server after each answer (no longer from the browser) | **done**: one job per answer (`memory_jobs`, idempotent, 3 attempts, retried on the person's next turn or "Réessayer"), run with the asker's own session (RLS) |
+| Rules on what becomes a fact | **done**: the model proposes candidate facts; deterministic rules decide: personal facts stay private, the assistant's own claims and figures or names the person never wrote go to confirmation, the same fact again only confirms it, a new value replaces the older one (history kept) |
+| Versioned facts | **done**: kind (decision, commitment, fact, contact, preference, procedure, note), subject key, active / superseded with the link to the replacement, effective and expiry dates, structured values. "Corriger" writes a new version; "Oublier" removes what an answer taught and brings the previous version back |
+| Context Gateway (what any model receives) | **done**: authorised memories only (group: intersection), minus the memories the company keeps away from that provider; the client's key facts always given (max 8); search on current facts only (max 6); conflicts flagged; the person's own not-yet-learned words (to them only); waits up to 2.5 s for a learning still running elsewhere. No context cache: rights are re-checked on every request |
+| Cross-model continuity | **done and tested** (integration + browser, simulated provider): a fact told to Claude in an Atlas conversation reaches a colleague's new Gemini conversation, with its source and date |
+| Truthful indicators under answers | **done**: "N mémoires utilisées" (the trace saved with the answer: exactly what the model received; "Pourquoi ce contexte ?" lists them with source and date), "Apprentissage…", "N faits appris" / "N à confirmer" from the job's real state, with Oublier / Corriger / Confirmer. Nothing is shown when nothing happened |
+| Conversation learning switch | **done**: "Apprend / Privé" in the chat header (the conversation's owner); "don't learn from this message" in the database (`set_message_learning`), used by the rules |
+| Client living brief | **done**: "Ce que Cendr sait sur <client>" on the client page (decisions, commitments and dates, figures, contacts, preferences, recent changes with the old value), and "Continuer avec Claude / ChatGPT / Gemini" |
+| Consciousness hub (`/memory`, now "Conscience") | **done**: real counts, what waits for confirmation, access requests to decide, recent learning, own requests, governance links |
+| Temporary access and access requests | **done**: "Demander l'accès" from a link to a client (the page reveals nothing, even for an unknown id); decided by the Owner, client Admins or the requester's manager (if they can open the client), for 7/30 days or without end; expiry needs no job (checked at read time) |
+| Provider restrictions per memory | **done**: Admins with the permissions scope choose which models may receive a memory; the person is told when an answer was made without it |
+| Rights for the interface | **done**: `client_permissions()` (same predicates as the database policies) |
+| Team memory (a space per team) | **not started** (designed in `docs/CONSCIOUSNESS.md` §9) |
+| Sharing a single fact with someone outside a client | **not started** (temporary access to the whole client is built) |
+| Extraction quality with real models | **not validated**: all tests use a mocked or simulated model; needs a run with real keys |
+
+## Chat at ChatGPT level (2026-11-06)
+
+| Feature | Status |
+|---|---|
+| Sidebar: rename, pin, archive, delete from a discreet menu | **done**: pins and archives are per person; "Épinglées" section, "Archivées (n)" list |
+| Answer status in the sidebar | **done**: a live mark while an answer is being written (also after leaving the conversation: the server keeps writing; also from another device), a dot once it is ready |
+| Edit an earlier prompt and run it again | **done**: the message and what follows are set aside on the server (with what was learned from them); refused if a colleague wrote after it |
+| Copy own message, copy answer, copy code | **done** |
+| Ready-to-send blocks (email, message, LinkedIn post, prompt, text) | **done**: cards to edit and copy, one rule in the system prompt for every model; most answers have none |
+| No more "Continued with…" banners | **done**: each answer's header names its model |
+| Jump to the latest message; reading position kept; drafts kept per conversation | **done** (drafts in this browser's storage, reading position for the tab) |
+| Paste files and screenshots into the input | **done** |
+| Keyboard: Esc stops the answer, Ctrl/Cmd+Shift+O new conversation, Ctrl K search | **done** |
+| Resuming the live text of an answer started before a reload | **partial**: the answer is finished and saved by the server and appears when done (no word-by-word replay) |
+
+## Dictation and Applis (2026-11-06)
+
+| Feature | Status |
+|---|---|
+| Dictation bar | **done**: live voice level, time, Annuler, Stop (the text goes into the input to be read; never sent), "Envoyer directement" |
+| Dictation while switching tab, window or application | **done within the browser's limits**: the recording continues (the browser keeps the microphone; the tab title shows "● Dictée en cours"). It stops if the tab is closed or the person leaves the conversation in Cendr. Dictating into other applications needs a desktop app (not built). Mobile browsers may pause the microphone when the app goes to the background |
+| Applis: one page | **done**: "Accès rapide" (favourites, then recently used), search, departments, shelves; optional form fields folded under "N options de plus" |
+
+## Liquid Glass experiment (branch `experiment/liquid-glass-v18`)
+
+| Feature | Status |
+|---|---|
+| Second Waylume background "Waylume Nuit" (founder's export, verbatim) | **done**: Apparence → Atmosphère → Waylume Nuit; loaded only when chosen |
+| Lighter rendering on weaker computers | **done**: no graphics chip → still frame; a struggling chip → half resolution (a quarter of the pixels) and flat glass; "Fond animé" off → still |
+| Waylume licence for commercial use | **to confirm by the founder** |
+
+## Tests (2026-11-06: Consciousness, chat, dictation, Applis)
+| Suite | Result |
+|---|---|
+| Type check, lint | pass |
+| Unit (Vitest) | 269 pass (incl. `tests/unit/learning.test.ts`: rules for facts, grounding, supersession) |
+| Integration (real local database, real users and RLS) | 229 pass, incl. `tests/integration/consciousness.test.ts` (20 acceptance tests; the extraction model is **mocked**) |
+| Context Gateway timing (local database, simulated embeddings, 20 runs) | p50 89 ms, p95 111 ms (target p95 < 300 ms; the embeddings provider's network time is not included) |
+| End to end (browser, simulated provider) | `e2e/consciousness.spec.ts` (Claude → colleague's Gemini, with sources; budget replaced), `e2e/chat-ux.spec.ts` (5 steps), and the whole suite on the Liquid Glass branch (see below) |
 
 ## Our console: versions, preview, Debug with Claude Code (2026-11-02)
 
