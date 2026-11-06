@@ -170,3 +170,45 @@ export async function setConversationFeedMemoryAction(input: { conversationId: s
   if (!data?.length) return { ok: false, error: "owner_only" };
   return { ok: true };
 }
+
+/** Pin a conversation at the top of one's own sidebar (or unpin it). */
+export async function setConversationPinnedAction(input: { conversationId: string; pinned: boolean }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  const parsed = z.object({ conversationId: z.uuid(), pinned: z.boolean() }).safeParse(input);
+  if (!ctx || !parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("set_conversation_pinned", { p_conversation: parsed.data.conversationId, p_pinned: parsed.data.pinned });
+  return error ? { ok: false, error: toErrorCode(error) } : { ok: true };
+}
+
+/** Archive a conversation for oneself (out of the recent list, still searchable), or bring it back. */
+export async function setConversationArchivedAction(input: { conversationId: string; archived: boolean }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  const parsed = z.object({ conversationId: z.uuid(), archived: z.boolean() }).safeParse(input);
+  if (!ctx || !parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("set_conversation_archived", { p_conversation: parsed.data.conversationId, p_archived: parsed.data.archived });
+  return error ? { ok: false, error: toErrorCode(error) } : { ok: true };
+}
+
+/** Edit an earlier prompt: it and what follows are set aside; the edited text is then sent as usual. */
+export async function rewindConversationAction(input: { messageId: string }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  const parsed = z.object({ messageId: z.uuid() }).safeParse(input);
+  if (!ctx || !parsed.success) return { ok: false, error: "validation" };
+  const { error } = await (await createClient()).rpc("rewind_conversation", { p_message: parsed.data.messageId });
+  return error ? { ok: false, error: toErrorCode(error) } : { ok: true };
+}
+
+/** Conversations of this person where an answer is still being written (the server finishes it even after leaving). */
+export async function generatingConversationsAction(): Promise<string[]> {
+  const ctx = await memberOrNull();
+  if (!ctx) return [];
+  const since = new Date(Date.now() - 5 * 60_000).toISOString();
+  const { data } = await (await createClient())
+    .from("messages")
+    .select("conversation_id")
+    .eq("company_id", ctx.active.companyId)
+    .eq("status", "streaming")
+    .gte("created_at", since)
+    .limit(50);
+  return [...new Set((data ?? []).map((m) => m.conversation_id))];
+}

@@ -7,10 +7,12 @@ import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowRightLeftIcon,
+  ArrowDownIcon,
   ArrowUpIcon,
   AtSignIcon,
   LayoutGridIcon,
   BrainIcon,
+  BrainCircuitIcon,
   BriefcaseIcon,
   CheckIcon,
   GitBranchIcon,
@@ -49,13 +51,14 @@ import {
   deleteConversationAction,
   removePendingAttachmentAction,
   renameConversationAction,
+  rewindConversationAction,
   setConversationClientAction,
   setConversationFeedMemoryAction,
   setConversationModelAction,
 } from "../server/actions";
 import { titleFromMessage, useChatList } from "./chat-list";
 import { refreshTitleAction } from "../server/title-actions";
-import { AttachmentChip, MessageItem, ModelSwitchDivider, type PeopleLookup } from "./message-item";
+import { AttachmentChip, MessageItem, type PeopleLookup } from "./message-item";
 import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
 import { AutoSwitch, FilePreview, HideBar, HideOverlay, useHideComposer, type HidePayload } from "@/modules/hide/ui/hide-composer";
@@ -65,7 +68,6 @@ import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
 import { CastPicker, CastRail, CastStack, type Cast } from "@/modules/avatars/ui/conversation-cast";
 import { detectClientMention } from "@/modules/clients/detect";
-import { autoClientMemoryAction, undoAutoMemoryAction } from "@/modules/memory/server/actions";
 import { NewClientDialog } from "@/modules/clients/ui/new-client-dialog";
 import type { AssistantId } from "@/modules/avatars/assistants";
 import { leaveConversationAction, loadParticipantsAction, loadTimelineMessagesAction } from "@/modules/collaboration/server/actions";
@@ -203,6 +205,8 @@ export function ChatView(props: Props) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   // A conversation received with a handover file opens at the top, on the file.
   const stickToBottom = React.useRef(!props.handover);
+  // "Jump to the latest message" appears once the person scrolled up.
+  const [awayFromBottom, setAwayFromBottom] = React.useState(false);
   const fileInput = React.useRef<HTMLInputElement>(null);
   const textarea = React.useRef<HTMLTextAreaElement>(null);
   const creating = React.useRef<Promise<string | null> | null>(null);
@@ -237,6 +241,7 @@ export function ChatView(props: Props) {
   const [creatingClient, setCreatingClient] = React.useState<string | null>(null);
   const [feedMemory, setFeedMemory] = React.useState(props.conversation?.feedMemory ?? true);
   const tMemory = useTranslations("memory");
+  const tConscious = useTranslations("consciousness");
   const [clientMentionDismissed, setMentionDismissedClient] = React.useState<string | null>(null);
   const uploading = attachments.some((a) => a.uploading);
   // An answer started before this page was opened is still being written: wait for it. In a group,
@@ -256,6 +261,43 @@ export function ChatView(props: Props) {
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
   }, [input]);
+
+  // Coming back to a conversation: the reading position of this tab, if the person had scrolled up.
+  React.useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const saved = conversationId ? readSession(`${SCROLL_KEY}${conversationId}`) : null;
+    if (!el || saved === null) return;
+    stickToBottom.current = false;
+    el.scrollTop = Number(saved);
+    // Mount only: later scrolls are the person's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Drafts are kept per conversation in this browser, and come back when the person returns.
+  const draftKey = `${DRAFT_KEY}${conversationId ?? "new"}`;
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => writeLocal(draftKey, input.trim() ? input : null), 400);
+    return () => window.clearTimeout(timer);
+  }, [draftKey, input]);
+
+  // Keyboard: Esc stops the answer being written; Ctrl/Cmd+Shift+O starts a new conversation.
+  const shortcuts = React.useRef<{ stop: () => void; busy: boolean }>({ stop: () => {}, busy: false });
+  React.useEffect(() => {
+    shortcuts.current = { stop: stopAnswer, busy };
+  });
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && shortcuts.current.busy && !document.querySelector("[role=dialog],[role=menu]")) {
+        e.preventDefault();
+        shortcuts.current.stop();
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "o") {
+        e.preventDefault();
+        router.push("/chat");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [router]);
 
   // Leaving the page does not stop an answer: it keeps being written and saved on the server
   // (only the Stop button or closing the tab stops it). Track whether this view is still shown.
@@ -287,6 +329,13 @@ export function ChatView(props: Props) {
     if (run.attachments.length) setAttachments(run.attachments.map((a) => ({ ...a, key: a.id, uploading: false })));
   }
   const runSent = React.useRef(false);
+  // A draft left in this conversation comes back (unless a tool run fills the input).
+  const savedDraft = React.useSyncExternalStore(noSubscription, () => readLocal(`${DRAFT_KEY}${props.conversation?.id ?? "new"}`), () => null);
+  const [draftRestored, setDraftRestored] = React.useState(false);
+  if (!draftRestored && savedDraft && !pendingRun && input === "") {
+    setDraftRestored(true);
+    setInput(savedDraft);
+  }
   React.useEffect(() => {
     if (!runKey || runText === null || runSent.current || input !== runText) return;
     runSent.current = true;
@@ -466,6 +515,9 @@ export function ChatView(props: Props) {
     stopPending.current = false;
     let currentLive: string | null = null;
     let restoreReplaced = options.replaced ?? null;
+    // The sidebar shows that this conversation is being answered, even after leaving it.
+    const streamingId = typeof payload.conversationId === "string" ? payload.conversationId : null;
+    if (streamingId) chatList.setGenerating(streamingId, true);
 
     try {
       const response = await fetch("/api/chat", {
@@ -568,13 +620,15 @@ export function ChatView(props: Props) {
                       maskedContent: event.masked ?? null,
                       suggestedColleagues: event.suggestedColleagues ?? [],
                       webSources: event.webSources ?? [],
+                      memory: event.memory ?? null,
+                      learning: event.learningJobId
+                        ? { jobId: event.learningJobId, status: "queued", learned: 0, confirmed: 0, superseded: 0, proposed: 0, keptPrivate: 0, forgotten: false }
+                        : null,
                     }
                   : m,
               ),
             );
             if (event.quota) setQuota(event.quota);
-            const target = typeof payload.conversationId === "string" ? payload.conversationId : null;
-            if (target && id && clientId && feedMemory && !options.confrontation) void feedClientMemory(target, id);
           } else if (event.type === "error") {
             const id = currentLive;
             const replaced = restoreReplaced?.status === "complete" ? restoreReplaced : null;
@@ -597,6 +651,7 @@ export function ChatView(props: Props) {
         setRequestError("server_error");
       }
     } finally {
+      if (streamingId) chatList.setGenerating(streamingId, false);
       setBusy(false);
       liveRef.current = null;
       setLiveId(null);
@@ -608,10 +663,14 @@ export function ChatView(props: Props) {
   }
 
   /** `hidePayload`: given once the person answered the confirmation ("Protéger et envoyer" / "Envoyer tel quel"). */
-  async function send(hidePayload?: HidePayload) {
-    if (!canSend) return;
+  /**
+   * `override`: text sent instead of the input (an edited prompt, or dictation sent with the arrow);
+   * `withComposer`: the input's files go with it and the input is emptied (dictation).
+   */
+  async function send(hidePayload?: HidePayload, override?: string, withComposer = false) {
+    if (override === undefined ? !canSend : busy || pendingElsewhere || inputBlocked) return;
     // Without "Masquage auto", items still in red are confirmed before anything is sent.
-    if (!hidePayload) {
+    if (!hidePayload && override === undefined) {
       if (checking.current) return;
       checking.current = true;
       const ask = await hide.needsConfirmation().finally(() => (checking.current = false));
@@ -624,7 +683,7 @@ export function ChatView(props: Props) {
     const hideChoices = hidePayload ?? hide.payload();
     // Natural mentions (CLAUDE.md §11), typed or dictated: "Coucou Claude, …" calls Claude like "@Claude"
     // would; in a group, "Coucou Olivier, …" mentions Olivier.
-    const text = naturalMention(input.trim(), group ? otherTokens : []);
+    const text = naturalMention((override ?? input).trim(), group ? otherTokens : []);
     // Alone with the AI, naming an assistant hands the conversation to it ("Continue with Claude").
     const named = !group ? parseMention(text) : null;
     let choice = modelChoice;
@@ -636,12 +695,17 @@ export function ChatView(props: Props) {
         setModelChoice(target.id);
       }
     }
-    const ready = attachments.filter((a) => a.id);
+    const ready = override === undefined || withComposer ? attachments.filter((a) => a.id) : [];
     const id = await ensureConversation();
     if (!id) return;
 
-    setInput("");
-    setAttachments([]);
+    if (override === undefined || withComposer) {
+      setInput("");
+      setAttachments([]);
+      // The draft is sent: forget it (also the one of the "new conversation" screen).
+      writeLocal(`${DRAFT_KEY}new`, null);
+      writeLocal(`${DRAFT_KEY}${id}`, null);
+    }
     stopTyping();
     setMessages((list) => [
       ...list,
@@ -693,6 +757,15 @@ export function ChatView(props: Props) {
         chatList.upsert({ id, title: result.title });
       });
     }
+  }
+
+  /** Edit an earlier prompt: it and what follows are set aside on the server, then the new version is sent. */
+  async function editPrompt(message: TimelineMessage, text: string) {
+    if (!conversationId || busy) return;
+    const result = await rewindConversationAction({ messageId: message.id });
+    if (!result.ok) return void toast.error(result.error === "validation" ? t("editUnavailable") : tErrors(result.error));
+    setMessages((list) => list.filter((m) => m.seq < message.seq));
+    await send(undefined, text);
   }
 
   /** Stop button: the server stops writing (and saves what was written), then the local stream closes. */
@@ -753,21 +826,6 @@ export function ChatView(props: Props) {
   function changeModel(choice: string) {
     setModelChoice(choice);
     if (conversationId) void setConversationModelAction({ conversationId, modelChoice: choice });
-  }
-
-  /** Client memory fed automatically after an answer, with "Undo" (CLAUDE.md §11). */
-  async function feedClientMemory(conversation: string, messageId: string) {
-    const result = await autoClientMemoryAction({ conversationId: conversation, messageId });
-    if (!result) return;
-    const ids = result.entries.map((e) => e.id);
-    toast(tMemory("autoAdded", { count: ids.length, client: result.clientName }), {
-      description: result.entries.map((e) => e.title).join(" · "),
-      duration: 9000,
-      action: {
-        label: tMemory("autoUndo"),
-        onClick: () => void undoAutoMemoryAction({ entryIds: ids }).then((r) => (r.ok ? toast.success(tMemory("autoUndone")) : toast.error(tErrors(r.error)))),
-      },
-    });
   }
 
   async function toggleFeedMemory() {
@@ -980,6 +1038,24 @@ export function ChatView(props: Props) {
             <span className="truncate">{clientName}</span>
           </span>
         ) : null}
+        {clientId && clientName ? (
+          // Cendr Consciousness: whether this conversation teaches the client's memory (owner switches it).
+          <Tooltip content={feedMemory ? tConscious("learningOnHint", { client: clientName }) : tConscious("learningOffHint")}>
+            <button
+              type="button"
+              data-testid="learning-state"
+              disabled={!isOwner}
+              onClick={() => void toggleFeedMemory()}
+              className={cn(
+                "inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs transition-colors duration-150 enabled:hover:bg-muted",
+                feedMemory ? "text-brand" : "text-muted-foreground",
+              )}
+            >
+              {feedMemory ? <BrainIcon className="size-3.5" /> : <BrainCircuitIcon className="size-3.5 opacity-60" />}
+              <span className="hidden sm:inline">{feedMemory ? tConscious("learningOn") : tConscious("learningOff")}</span>
+            </button>
+          </Tooltip>
+        ) : null}
         {conversationId ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1034,6 +1110,9 @@ export function ChatView(props: Props) {
         onScroll={(e) => {
           const el = e.currentTarget;
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+          if (awayFromBottom === stickToBottom.current) setAwayFromBottom(!stickToBottom.current);
+          // Reading position kept for this tab: coming back to the conversation reopens it there.
+          if (conversationId) writeSession(`${SCROLL_KEY}${conversationId}`, stickToBottom.current ? null : String(Math.round(el.scrollTop)));
         }}
       >
         <div className="w-full xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,48rem)_minmax(0,1fr)]">
@@ -1053,11 +1132,8 @@ export function ChatView(props: Props) {
           ) : (
             <div className="space-y-8">
               {messages.map((m, index) => {
-                const previousAnswer = messages.slice(0, index).reverse().find((x) => x.role === "assistant" && x.model && !x.confrontation);
-                const switched = m.role === "assistant" && m.model && !m.confrontation && previousAnswer?.model && previousAnswer.model.id !== m.model.id;
                 return (
                   <React.Fragment key={m.id}>
-                    {switched ? <ModelSwitchDivider provider={m.model!.provider} label={m.model!.label} /> : null}
                     <MessageItem
                       message={m}
                       live={m.id === liveId}
@@ -1073,6 +1149,12 @@ export function ChatView(props: Props) {
                       onInvite={(userId) => void openAdd([userId])}
                       onConfront={confrontHandler(index)}
                       confrontProgress={confrontProgress[m.id]}
+                      onLearning={(state) => setMessages((list) => list.map((x) => (x.id === m.id ? { ...x, learning: state } : x)))}
+                      onEdit={
+                        m.role === "user" && !group && !readOnly && !props.agent && (!m.author || m.author.id === props.me.id) && !m.id.startsWith("pending")
+                          ? (text) => void editPrompt(m, text)
+                          : undefined
+                      }
                       render={renderKind ? { kind: renderKind, attachments: conversationFiles } : null}
                       people={people}
                       group={group}
@@ -1103,6 +1185,25 @@ export function ChatView(props: Props) {
             </p>
           ) : null}
           {group ? <TypingLine names={typingNames} /> : null}
+          {awayFromBottom && messages.length > 0 ? (
+            <div className="pointer-events-none relative h-0">
+              <button
+                type="button"
+                data-testid="jump-to-latest"
+                aria-label={t("jumpToLatest")}
+                title={t("jumpToLatest")}
+                onClick={() => {
+                  const el = scrollRef.current;
+                  stickToBottom.current = true;
+                  setAwayFromBottom(false);
+                  el?.scrollTo({ top: el.scrollHeight, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+                }}
+                className="pointer-events-auto absolute -top-14 left-1/2 flex size-9 -translate-x-1/2 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-md transition-colors hover:text-foreground animate-message-in"
+              >
+                <ArrowDownIcon className="size-4" />
+              </button>
+            </div>
+          ) : null}
           <HideBar state={hide} onProtectAndSend={() => void send(hide.payloadProtectingAll())} onSendAnyway={() => void send(hide.payload())} />
           <LiquidGlass
             material="panel"
@@ -1115,6 +1216,13 @@ export function ChatView(props: Props) {
             onDrop={(e) => {
               e.preventDefault();
               if (!blocked && canAttach) void addFiles(e.dataTransfer.files);
+            }}
+            onPaste={(e) => {
+              // Pasted files and screenshots are attached like dropped ones; pasted text stays text.
+              if (e.clipboardData.files.length > 0 && !blocked && canAttach) {
+                e.preventDefault();
+                void addFiles(e.clipboardData.files);
+              }
             }}
           >
             {mentionMatches.length > 0 ? <MentionMenu options={mentionMatches} active={activeMention} onPick={pickMention} /> : null}
@@ -1224,7 +1332,7 @@ export function ChatView(props: Props) {
                 )}
               />
             </div>
-            <div className="flex items-center gap-1 px-2 pb-2">
+            <div className="relative flex items-center gap-1 px-2 pb-2">
               {canAttach ? (
                 <Tooltip content={t("attach")}>
                   <Button
@@ -1238,7 +1346,14 @@ export function ChatView(props: Props) {
                   </Button>
                 </Tooltip>
               ) : null}
-              {props.dictation ? <DictationButton disabled={inputBlocked} onText={insertDictation} /> : null}
+              {props.dictation ? (
+                <DictationButton
+                  disabled={inputBlocked}
+                  onText={insertDictation}
+                  // The send arrow: what was typed, then the dictated text, sent at once.
+                  onSend={(text) => void send(undefined, `${input.trim()}${input.trim() ? " " : ""}${text}`, true)}
+                />
+              ) : null}
               <Tooltip content={tApps("picker")}>
                 <Button
                   variant="ghost"
@@ -1559,5 +1674,35 @@ function readSession(key: string): string | null {
     return sessionStorage.getItem(key);
   } catch {
     return null;
+  }
+}
+
+const SCROLL_KEY = "cendr-scroll:";
+const DRAFT_KEY = "cendr-draft:";
+
+/** Session storage write (null removes); storage can be refused (private mode). */
+function writeSession(key: string, value: string | null) {
+  try {
+    if (value === null) sessionStorage.removeItem(key);
+    else sessionStorage.setItem(key, value);
+  } catch {
+    // Not kept: nothing else changes.
+  }
+}
+
+function readLocal(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocal(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value.slice(0, 20_000));
+  } catch {
+    // Not kept: the draft only lives in the page.
   }
 }

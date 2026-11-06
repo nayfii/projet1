@@ -1,9 +1,9 @@
 import type { QuotaState } from "@/modules/usage/quota";
 import type { ProviderErrorCode, ProviderId } from "@/modules/providers/types";
 import type { RoutingBasis, TaskType } from "@/modules/providers/router";
-import type { SourceProof } from "@/modules/memory/types";
 import type { HideCounts, Span } from "@/modules/hide/categories";
 import type { Confrontation, ConfrontationStage } from "@/modules/confronter/types";
+import type { MemoryTrace, SourceProof } from "@/modules/memory/types";
 
 /**
  * Wire format of POST /api/chat: one JSON object per line (NDJSON).
@@ -50,6 +50,10 @@ export type ChatStreamEvent =
       suggestedColleagues: SuggestedColleague[];
       /** Web pages the answer relies on. */
       webSources: WebSource[];
+      /** What memory the model received (Context Gateway trace), null when memory was not used. */
+      memory: MemoryTrace | null;
+      /** The learning queued for this answer (its state is shown under it), null when nothing is learned. */
+      learningJobId: string | null;
     }
   /** Confronter: a model started or finished a stage. */
   | { type: "confront"; stage: ConfrontationStage; modelId: string; status: "running" | "complete" | "error" }

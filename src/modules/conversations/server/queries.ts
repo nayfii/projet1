@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { RoutingInfo, SuggestedColleague, WebSource } from "../stream-events";
 import type { AttachmentKind, TimelineMessage } from "../types";
 import { isHideMode, type HideCounts, type Span } from "@/modules/hide/categories";
-import type { SourceProof } from "@/modules/memory/types";
+import { isMemoryTrace, toLearningState, type LearningState, type SourceProof } from "@/modules/memory/types";
 import { isConfrontation } from "@/modules/confronter/types";
 
 const STALE_STREAM_MS = 5 * 60 * 1000;
@@ -31,7 +31,12 @@ export async function listConversations(
     .order("created_at", { ascending: false })
     .limit(limit);
   if (clientId) query = query.eq("client_id", clientId);
-  const { data } = await query;
+  // This person's own pins and archives (each participant has their own sidebar).
+  const [{ data }, { data: mine }] = await Promise.all([
+    query,
+    meId ? supabase.from("conversation_participants").select("conversation_id, pinned_at, archived_at").eq("user_id", meId).eq("company_id", companyId) : Promise.resolve({ data: [] }),
+  ]);
+  const myRow = new Map((mine ?? []).map((m) => [m.conversation_id, m]));
   return (data ?? []).map((c) => {
     const people = c.participants?.[0]?.count ?? 1;
     const kind: ConversationKind = c.forked_from ? "copy" : people > 1 || (meId && c.owner_id !== meId) ? "shared" : c.from ? "received" : "private";
@@ -43,6 +48,8 @@ export async function listConversations(
       lastMessageAt: c.last_message_at ?? c.created_at,
       mine: !meId || c.owner_id === meId,
       kind,
+      pinnedAt: myRow.get(c.id)?.pinned_at ?? null,
+      archivedAt: myRow.get(c.id)?.archived_at ?? null,
       /** The colleague it was transferred to (copy) or received from. */
       otherName: kind === "copy" ? (c.to?.full_name ?? c.to?.email ?? null) : kind === "received" ? (c.from?.full_name ?? c.from?.email ?? null) : null,
     };
@@ -114,6 +121,13 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
     sourcesByMessage.set(r.message_id, list);
   }
 
+  // What each answer taught the client's memory (participants see it, like the answer).
+  const { data: jobRows } = await supabase
+    .from("memory_jobs")
+    .select("id, message_id, status, learned, confirmed, superseded, proposed, kept_private, forgotten_at")
+    .eq("conversation_id", conversationId);
+  const learningByMessage = new Map<string, LearningState>((jobRows ?? []).map((j) => [j.message_id, toLearningState(j)]));
+
   const now = Date.now();
   const messages: TimelineMessage[] = rows.map((m) => ({
     id: m.id,
@@ -149,6 +163,8 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
       (w) => typeof w?.url === "string" && /^https?:\/\//i.test(w.url),
     ),
     confrontation: isConfrontation(m.confrontation) ? m.confrontation : null,
+    memory: isMemoryTrace((m.context_meta as { memory?: unknown } | null)?.memory) ? (m.context_meta as { memory: TimelineMessage["memory"] }).memory : null,
+    learning: learningByMessage.get(m.id) ?? null,
   }));
 
   return { rows, messages };

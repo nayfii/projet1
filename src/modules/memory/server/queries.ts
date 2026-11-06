@@ -28,15 +28,18 @@ export async function listEntries(spaceId: string) {
   const { data } = await supabase
     .from("memory_entries")
     .select(
-      "id, title, content, source_type, source_ref, created_at, updated_at, author:profiles!memory_entries_author_id_fkey(full_name, email), editor:profiles!memory_entries_updated_by_fkey(full_name, email)",
+      "id, title, content, kind, source_type, source_ref, created_at, updated_at, author:profiles!memory_entries_author_id_fkey(full_name, email), editor:profiles!memory_entries_updated_by_fkey(full_name, email)",
     )
     .eq("space_id", spaceId)
+    // Current facts; replaced versions are listed as history.
+    .eq("status", "active")
     .order("updated_at", { ascending: false });
   return (data ?? []).map((e) => ({
     id: e.id,
     title: e.title,
     content: e.content,
-    sourceType: e.source_type as "manual" | "chat" | "ai_suggestion" | "promotion" | "auto",
+    sourceType: e.source_type as "manual" | "chat" | "ai_suggestion" | "promotion" | "auto" | "correction",
+    kind: e.kind,
     conversationId: typeof (e.source_ref as { conversation_id?: unknown })?.conversation_id === "string" ? ((e.source_ref as { conversation_id: string }).conversation_id) : null,
     createdAt: e.created_at,
     updatedAt: e.updated_at,

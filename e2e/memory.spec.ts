@@ -147,6 +147,9 @@ test("an answer can be saved to memory, after rereading it", async () => {
 });
 
 test("the AI proposes memory entries, saved once approved; the client memory is also fed automatically", async () => {
+  // A fact said in the conversation linked to Client A is learned by our server after the answer.
+  await send(page, "Pour info, le budget annuel de Client A est de 15 000 €.");
+  await expect(page.getByTestId("memory-learned").last()).toHaveText(/1 fait appris/, { timeout: 20_000 });
   await page.getByRole("button", { name: "Actions sur la conversation" }).click();
   await page.getByRole("menuitem", { name: "Proposer des entrées de mémoire" }).click();
   const dialog = page.getByRole("dialog", { name: "Proposer des entrées de mémoire" });

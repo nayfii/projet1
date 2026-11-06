@@ -3,6 +3,7 @@ import type { RoutingInfo, SuggestedColleague, WebSource } from "./stream-events
 import type { SourceProof } from "@/modules/memory/types";
 import type { HideCounts, Span } from "@/modules/hide/categories";
 import type { Confrontation } from "@/modules/confronter/types";
+import type { LearningState, MemoryTrace } from "@/modules/memory/types";
 
 /** A message as shown in the conversation timeline (server and browser). */
 export type TimelineMessage = {
@@ -37,6 +38,10 @@ export type TimelineMessage = {
   searching?: boolean;
   /** Confronter: this answer is the synthesis of a confrontation. */
   confrontation: Confrontation | null;
+  /** Context Gateway: what memory the model received for this answer (ids only), null when none. */
+  memory?: MemoryTrace | null;
+  /** What this answer taught the client's memory (its learning job), null when nothing is learned. */
+  learning?: LearningState | null;
 };
 
 /** Images go to the model as images, documents as their text, videos (Video Editor) as a short description only. */

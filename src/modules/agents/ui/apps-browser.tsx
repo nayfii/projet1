@@ -24,13 +24,12 @@ export type BrowserApp = {
 };
 
 /**
- * "Applis" (CLAUDE.md §11): Discover (by department, most used in the company) and Your apps
- * (each person's favourites). Starring is instant; the database re-checks.
+ * "Applis" (CLAUDE.md §11), one simple page: quick access (favourites, then recently used), search
+ * and departments, and one shelf per department. Starring is instant; the database re-checks.
  */
-export function AppsBrowser({ apps, departments, initialTab }: { apps: BrowserApp[]; departments: { key: string; label: string }[]; initialTab: "discover" | "yours" }) {
+export function AppsBrowser({ apps, departments, recent }: { apps: BrowserApp[]; departments: { key: string; label: string }[]; recent: string[] }) {
   const t = useTranslations("apps");
   const tErrors = useTranslations("errors");
-  const [tab, setTab] = React.useState(initialTab);
   const [query, setQuery] = React.useState("");
   const [department, setDepartment] = React.useState<string | null>(null);
   const [favorites, setFavorites] = React.useState(() => new Set(apps.filter((a) => a.favorite).map((a) => a.id)));
@@ -57,7 +56,6 @@ export function AppsBrowser({ apps, departments, initialTab }: { apps: BrowserAp
 
   const q = query.trim().toLowerCase();
   const matches = (a: BrowserApp) => !q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
-  const yours = apps.filter((a) => favorites.has(a.id) && matches(a));
   const popular = apps.filter((a) => a.uses > 0 && !a.soon).sort((a, b) => b.uses - a.uses).slice(0, 4);
   const shown = apps.filter((a) => matches(a) && (!department || a.department === department));
 
@@ -96,36 +94,39 @@ export function AppsBrowser({ apps, departments, initialTab }: { apps: BrowserAp
     );
   };
 
+  // Quick access: favourites first, then what this person used lately (each once).
+  const quick = [
+    ...apps.filter((a) => favorites.has(a.id) && !a.soon),
+    ...recent.map((id) => apps.find((a) => a.id === id)).filter((a): a is BrowserApp => Boolean(a && !a.soon && a.usable && !favorites.has(a.id))),
+  ].slice(0, 8);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-full border p-1" role="tablist" aria-label={t("title")}>
-          {(["discover", "yours"] as const).map((key) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={tab === key}
-              onClick={() => setTab(key)}
-              className={cn("rounded-full px-4 py-1.5 text-sm transition-colors", tab === key ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")}
-            >
-              {t(key === "discover" ? "discover" : "yours")}
-            </button>
-          ))}
-        </div>
-        <div className="relative ml-auto w-full sm:w-72">
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} aria-label={t("search")} className="pl-9" />
-        </div>
+      {quick.length > 0 ? (
+        <section aria-label={t("quickAccess")} className="space-y-2">
+          <h2 className="text-[13px] font-medium text-muted-foreground">{t("quickAccess")}</h2>
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+            {quick.map((a) => (
+              <Link
+                key={a.id}
+                href={`/apps/${a.id}`}
+                className="flex shrink-0 items-center gap-2 rounded-xl border bg-card py-1.5 pl-1.5 pr-3 text-[13px] font-medium transition-colors hover:border-foreground/20 hover:bg-accent/40"
+              >
+                <DepartmentIcon department={a.department} className="size-7 rounded-lg" />
+                <span className="max-w-44 truncate">{a.name}</span>
+                {favorites.has(a.id) ? <StarIcon className="size-3.5 fill-current text-amber-500" aria-label={t("favorite")} /> : null}
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <div className="relative w-full sm:w-80">
+        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} aria-label={t("search")} className="pl-9" />
       </div>
 
-      {tab === "yours" ? (
-        yours.length === 0 ? (
-          <p className="rounded-2xl border border-dashed px-6 py-10 text-center text-sm text-muted-foreground">{t("yoursEmpty")}</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{yours.map(card)}</div>
-        )
-      ) : (
+      {
         <>
           {!q && !department && popular.length > 0 ? (
             <section className="space-y-3" aria-labelledby="popular">
@@ -165,7 +166,7 @@ export function AppsBrowser({ apps, departments, initialTab }: { apps: BrowserAp
               ))
           )}
         </>
-      )}
+      }
       <p className="text-[13px] text-muted-foreground">{t("createHint")}</p>
     </div>
   );

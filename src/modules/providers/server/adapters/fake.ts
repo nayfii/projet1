@@ -22,6 +22,11 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         yield { type: "error", error: { code: failure as ProviderErrorCode, retryable: failure === "rate_limited" } };
         return;
       }
+      // Learning (Cendr Consciousness): simple rules stand in for a real model's reading of the exchange.
+      if (request.system.startsWith("Task: learn client facts.")) {
+        yield* simulated(JSON.stringify(simulatedFacts(text)));
+        return;
+      }
       // Memory tasks expect JSON.
       if (request.system.startsWith("Task: extract memory entries.")) {
         yield* simulated(JSON.stringify([{ title: "[TEST] Point clé", content: `[TEST] ${text.slice(0, 160)}` }]));
@@ -114,6 +119,8 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         `- Last message as received: «${text.slice(0, 300)}»`,
         ...(tool ? [`- Tool instructions received: ${tool}`] : []),
         ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
+        // Ready-to-send content: "[[email]]" asks for an email, written in a copy block like a real model would.
+        ...(text.includes("[[email]]") ? ["", "```copy-email", "Objet : [TEST] Lancement", "", "Bonjour,", "", "[TEST] Voici l'annonce du lancement.", "```"] : []),
         ...(helper ? ["", `You can ask ${helper[1]} about it.`] : []),
         // Tools that ask for a table or a chart get sample ones, so exports and charts can be tested.
         ...(tool && /Markdown table/.test(request.system) ? ["", ...SAMPLE_TABLE] : []),
@@ -132,6 +139,57 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
       yield { type: "done", finishReason: "stop" };
     },
   };
+}
+
+const MONTHS: Record<string, string> = {
+  janvier: "01", fevrier: "02", mars: "03", avril: "04", mai: "05", juin: "06", juillet: "07", aout: "08", septembre: "09", octobre: "10", novembre: "11", decembre: "12",
+  january: "01", february: "02", march: "03", april: "04", may: "05", june: "06", july: "07", august: "08", september: "09", october: "10", november: "11", december: "12",
+};
+
+/**
+ * Test mode only: reads the person's message of the exchange ("User: …") with a few patterns, like a
+ * real model would extract facts. Budget, launch date, contact and decision; "[[claim]]" adds a claim
+ * only the assistant made; "[[private]]" a personal fact.
+ */
+function simulatedFacts(exchange: string) {
+  const user = (/^User: ([\s\S]*?)(?:\n\nAssistant: |$)/.exec(exchange)?.[1] ?? "").trim();
+  // Placeholders (Hide) carry digits ("[CLIENT_1]"): set aside so they are not read as amounts.
+  const folded = user
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\[(?:CLIENT|PROJECT|FILE|TERM)_\d+\]/g, "X");
+  const facts: Record<string, unknown>[] = [];
+  const budget = /budget[^0-9\n]{0,40}?(\d[\d\s.,]*\d|\d)\s*(k)?\s*(€|euros?|eur)/i.exec(folded);
+  if (budget) {
+    const amount = Number(budget[1].replace(/[\s.]/g, "").replace(",", ".")) * (budget[2] ? 1000 : 1);
+    facts.push({ kind: "fact", key: "budget", title: "[TEST] Budget", content: `[TEST] Le budget est de ${budget[1].trim()}${budget[2] ?? ""} €.`, stated_by: "user", about: "client", confidence: 0.95, attributes: { amount, currency: "EUR" } });
+  }
+  const launch = /(?:lancement|launch)[^0-9\n]{0,40}?(\d{1,2})\s+([a-z]+)\s+(\d{4})/i.exec(folded);
+  if (launch && MONTHS[launch[2].toLowerCase()]) {
+    const date = `${launch[3]}-${MONTHS[launch[2].toLowerCase()]}-${launch[1].padStart(2, "0")}`;
+    facts.push({ kind: "commitment", key: "launch_date", title: "[TEST] Date de lancement", content: `[TEST] Lancement prévu le ${launch[1]} ${launch[2]} ${launch[3]}.`, stated_by: "user", about: "client", confidence: 0.9, attributes: { date }, effective_date: date });
+  }
+  const contact = /[Cc]ontact\s*(?:principal)?\s*:?\s*([A-Z][a-zA-Z-]+\s+[A-Z][a-zA-Z-]+|\[PERSON_\d+\])\s*,\s*([^.\n]{2,60})/.exec(user.normalize("NFC"));
+  if (contact) {
+    facts.push({ kind: "contact", key: `contact:${contact[1]}`, title: `[TEST] Contact : ${contact[1]}`, content: `[TEST] ${contact[1]} est ${contact[2].trim()}.`, stated_by: "user", about: "client", confidence: 0.9, attributes: { person: contact[1], role: contact[2].trim() } });
+  }
+  const decision = /(?:nous avons decide|on a decide|decision\s*:|we decided)\s*(?:de\s+|to\s+)?([^.\n]{3,120})/i.exec(folded);
+  if (decision) {
+    const what = decision[1].trim();
+    facts.push({ kind: "decision", key: `decision:${what.split(/\s+/).slice(0, 3).join("_")}`, title: "[TEST] Décision", content: `[TEST] Décision : ${what}.`, stated_by: "user", about: "client", confidence: 0.9, attributes: {} });
+  }
+  const preference = /(?:ils|elles|le client|they)\s+(?:preferent|prefere|prefer|prefers)\s+([^.\n]{3,100})/i.exec(folded);
+  if (preference) {
+    const what = preference[1].trim();
+    facts.push({ kind: "preference", key: `preference:${what.split(/\s+/).slice(0, 3).join("_")}`, title: "[TEST] Préférence", content: `[TEST] Le client préfère ${what}.`, stated_by: "user", about: "client", confidence: 0.85, attributes: {} });
+  }
+  if (user.includes("[[claim]]")) {
+    facts.push({ kind: "fact", key: "market_share", title: "[TEST] Part de marché", content: "[TEST] Le client détient 40 % de son marché.", stated_by: "assistant", about: "client", confidence: 0.7, attributes: {} });
+  }
+  if (user.includes("[[private]]")) {
+    facts.push({ kind: "preference", key: "personal_leave", title: "[TEST] Congé", content: "[TEST] La personne est en congé la semaine prochaine.", stated_by: "user", about: "person", confidence: 0.9, attributes: {} });
+  }
+  return facts;
 }
 
 const SAMPLE_TABLE = [

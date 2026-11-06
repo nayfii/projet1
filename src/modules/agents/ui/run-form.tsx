@@ -105,6 +105,62 @@ export function RunForm({
       router.push(`/chat/${id}`);
     });
 
+  const renderField = (f: (typeof agent.inputFields)[number]) => {
+    const id = `run-${f.key}`;
+    const set = (value: string) => setValues((v) => ({ ...v, [f.key]: value }));
+    const label = f.required ? `${text.field(f)} *` : text.field(f);
+    return (
+      <Field key={f.key} label={label} htmlFor={id}>
+        {f.type === "files" || f.type === "videos" ? (
+          <FilesInput
+            id={id}
+            video={f.type === "videos"}
+            files={files[f.key] ?? []}
+            room={MAX_ATTACHMENTS_PER_MESSAGE - allFiles.length + (files[f.key]?.length ?? 0)}
+            onChange={(next) => {
+              setFiles((all) => ({ ...all, [f.key]: next }));
+              // The form records the file names, so a required field is filled and the AI knows them.
+              set(next.map((file) => file.name).join(", "));
+            }}
+          />
+        ) : f.type === "textarea" ? (
+          <Textarea id={id} rows={5} value={values[f.key] ?? ""} onChange={(e) => set(e.target.value)} />
+        ) : f.type === "client" ? (
+          <Select value={values[f.key] || NO_CLIENT} onValueChange={(v) => set(v === NO_CLIENT ? "" : v)}>
+            <SelectTrigger id={id} aria-label={text.field(f)}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_CLIENT}>{t("noClient")}</SelectItem>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : f.type === "select" ? (
+          <Select value={values[f.key] ?? ""} onValueChange={set}>
+            <SelectTrigger id={id} aria-label={text.field(f)}>
+              <SelectValue placeholder={t("choose")} />
+            </SelectTrigger>
+            <SelectContent>
+              {(f.options ?? []).map((o) => (
+                <SelectItem key={o} value={o}>
+                  {text.option(f, o)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input id={id} value={values[f.key] ?? ""} onChange={(e) => set(e.target.value)} />
+        )}
+      </Field>
+    );
+  };
+  const required = agent.inputFields.filter((f) => f.required);
+  const optional = agent.inputFields.filter((f) => !f.required);
+
   return (
     <div className="space-y-6">
       {agent.notice ? <AgentNotice notice={agent.notice} /> : null}
@@ -117,59 +173,14 @@ export function RunForm({
         }}
       >
         {agent.inputFields.length === 0 ? <p className="text-[13px] text-muted-foreground">{t("noFields")}</p> : null}
-        {agent.inputFields.map((f) => {
-          const id = `run-${f.key}`;
-          const set = (value: string) => setValues((v) => ({ ...v, [f.key]: value }));
-          const label = f.required ? `${text.field(f)} *` : text.field(f);
-          return (
-            <Field key={f.key} label={label} htmlFor={id}>
-              {f.type === "files" || f.type === "videos" ? (
-                <FilesInput
-                  id={id}
-                  video={f.type === "videos"}
-                  files={files[f.key] ?? []}
-                  room={MAX_ATTACHMENTS_PER_MESSAGE - allFiles.length + (files[f.key]?.length ?? 0)}
-                  onChange={(next) => {
-                    setFiles((all) => ({ ...all, [f.key]: next }));
-                    // The form records the file names, so a required field is filled and the AI knows them.
-                    set(next.map((file) => file.name).join(", "));
-                  }}
-                />
-              ) : f.type === "textarea" ? (
-                <Textarea id={id} rows={5} value={values[f.key] ?? ""} onChange={(e) => set(e.target.value)} />
-              ) : f.type === "client" ? (
-                <Select value={values[f.key] || NO_CLIENT} onValueChange={(v) => set(v === NO_CLIENT ? "" : v)}>
-                  <SelectTrigger id={id} aria-label={text.field(f)}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_CLIENT}>{t("noClient")}</SelectItem>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : f.type === "select" ? (
-                <Select value={values[f.key] ?? ""} onValueChange={set}>
-                  <SelectTrigger id={id} aria-label={text.field(f)}>
-                    <SelectValue placeholder={t("choose")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(f.options ?? []).map((o) => (
-                      <SelectItem key={o} value={o}>
-                        {text.option(f, o)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input id={id} value={values[f.key] ?? ""} onChange={(e) => set(e.target.value)} />
-              )}
-            </Field>
-          );
-        })}
+        {[...required, ...(optional.length && required.length ? [] : optional)].map(renderField)}
+        {optional.length && required.length ? (
+          // Optional fields stay folded: the form shows only what is needed to run.
+          <details className="group rounded-lg border px-3 py-2" open={optional.some((f) => values[f.key])}>
+            <summary className="cursor-pointer text-[13px] text-muted-foreground hover:text-foreground">{t("moreOptions", { count: optional.length })}</summary>
+            <div className="mt-3 space-y-4">{optional.map(renderField)}</div>
+          </details>
+        ) : null}
         <div className="flex items-center justify-between gap-3 pt-1">
           <p className="text-xs text-muted-foreground" aria-live="polite">{sending ? t("uploadingFiles", { done: sending.done + 1, total: sending.total }) : t("runHint")}</p>
           <Button type="submit" variant="brand" disabled={!agent.usable || missing.length > 0 || running}>

@@ -121,16 +121,54 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"client_assignments": {
+                },"client_access_requests": {
                   Row: {
-                    "assigned_at": string,"assigned_by": string | null,"client_id": string,"company_id": string,"user_id": string
+                    "client_id": string,"company_id": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"duration_days": number | null,"expires_at": string | null,"id": string,"reason": string | null,"requester_id": string,"status": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assigned_at"?: string,"assigned_by"?: string | null,"client_id": string,"company_id": string,"user_id": string
+                    "client_id": string,"company_id": string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"duration_days"?: number | null,"expires_at"?: string | null,"id"?: string,"reason"?: string | null,"requester_id"?: string,"status"?: string
                   }
                   Update: {
-                    "assigned_at"?: string,"assigned_by"?: string | null,"client_id"?: string,"company_id"?: string,"user_id"?: string
+                    "client_id"?: string,"company_id"?: string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"duration_days"?: number | null,"expires_at"?: string | null,"id"?: string,"reason"?: string | null,"requester_id"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "client_access_requests_client_id_company_id_fkey"
+      columns: ["client_id","company_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "client_access_requests_company_id_requester_id_fkey"
+      columns: ["company_id","requester_id"]
+isOneToOne: false
+      referencedRelation: "company_members"
+      referencedColumns: ["company_id","user_id"]
+    },{
+      foreignKeyName: "client_access_requests_decided_by_fkey"
+      columns: ["decided_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "client_access_requests_requester_id_fkey"
+      columns: ["requester_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"client_assignments": {
+                  Row: {
+                    "assigned_at": string,"assigned_by": string | null,"client_id": string,"company_id": string,"expires_at": string | null,"reason": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assigned_at"?: string,"assigned_by"?: string | null,"client_id": string,"company_id": string,"expires_at"?: string | null,"reason"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "assigned_at"?: string,"assigned_by"?: string | null,"client_id"?: string,"company_id"?: string,"expires_at"?: string | null,"reason"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -413,14 +451,14 @@ isOneToOne: false
                   ]
                 },"conversation_participants": {
                   Row: {
-                    "added_by": string | null,"company_id": string,"conversation_id": string,"joined_at": string,"role": string,"user_id": string,"visible_from_seq": number
+                    "added_by": string | null,"archived_at": string | null,"company_id": string,"conversation_id": string,"joined_at": string,"pinned_at": string | null,"role": string,"user_id": string,"visible_from_seq": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "added_by"?: string | null,"company_id": string,"conversation_id": string,"joined_at"?: string,"role"?: string,"user_id": string,"visible_from_seq"?: number
+                    "added_by"?: string | null,"archived_at"?: string | null,"company_id": string,"conversation_id": string,"joined_at"?: string,"pinned_at"?: string | null,"role"?: string,"user_id": string,"visible_from_seq"?: number
                   }
                   Update: {
-                    "added_by"?: string | null,"company_id"?: string,"conversation_id"?: string,"joined_at"?: string,"role"?: string,"user_id"?: string,"visible_from_seq"?: number
+                    "added_by"?: string | null,"archived_at"?: string | null,"company_id"?: string,"conversation_id"?: string,"joined_at"?: string,"pinned_at"?: string | null,"role"?: string,"user_id"?: string,"visible_from_seq"?: number
                   }
                   Relationships: [
                     {
@@ -701,14 +739,14 @@ isOneToOne: false
                   ]
                 },"memory_entries": {
                   Row: {
-                    "author_id": string | null,"company_id": string,"content": string,"created_at": string,"embedding": string | null,"embedding_model": string | null,"id": string,"source_ref": NonNullable<Json>,"source_type": string,"space_id": string,"title": string,"updated_at": string,"updated_by": string | null
+                    "attributes": NonNullable<Json>,"author_id": string | null,"company_id": string,"confidence": number | null,"confirmed_at": string | null,"content": string,"created_at": string,"effective_at": string | null,"embedding": string | null,"embedding_model": string | null,"expires_at": string | null,"id": string,"kind": string,"source_ref": NonNullable<Json>,"source_type": string,"space_id": string,"status": string,"subject_key": string | null,"superseded_at": string | null,"superseded_by": string | null,"title": string,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "author_id"?: string | null,"company_id"?: string,"content": string,"created_at"?: string,"embedding"?: string | null,"embedding_model"?: string | null,"id"?: string,"source_ref"?: NonNullable<Json>,"source_type"?: string,"space_id": string,"title": string,"updated_at"?: string,"updated_by"?: string | null
+                    "attributes"?: NonNullable<Json>,"author_id"?: string | null,"company_id"?: string,"confidence"?: number | null,"confirmed_at"?: string | null,"content": string,"created_at"?: string,"effective_at"?: string | null,"embedding"?: string | null,"embedding_model"?: string | null,"expires_at"?: string | null,"id"?: string,"kind"?: string,"source_ref"?: NonNullable<Json>,"source_type"?: string,"space_id": string,"status"?: string,"subject_key"?: string | null,"superseded_at"?: string | null,"superseded_by"?: string | null,"title": string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "author_id"?: string | null,"company_id"?: string,"content"?: string,"created_at"?: string,"embedding"?: string | null,"embedding_model"?: string | null,"id"?: string,"source_ref"?: NonNullable<Json>,"source_type"?: string,"space_id"?: string,"title"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "attributes"?: NonNullable<Json>,"author_id"?: string | null,"company_id"?: string,"confidence"?: number | null,"confirmed_at"?: string | null,"content"?: string,"created_at"?: string,"effective_at"?: string | null,"embedding"?: string | null,"embedding_model"?: string | null,"expires_at"?: string | null,"id"?: string,"kind"?: string,"source_ref"?: NonNullable<Json>,"source_type"?: string,"space_id"?: string,"status"?: string,"subject_key"?: string | null,"superseded_at"?: string | null,"superseded_by"?: string | null,"title"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -724,8 +762,52 @@ isOneToOne: false
       referencedRelation: "memory_spaces"
       referencedColumns: ["id","company_id"]
     },{
+      foreignKeyName: "memory_entries_superseded_by_fkey"
+      columns: ["superseded_by"]
+isOneToOne: false
+      referencedRelation: "memory_entries"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "memory_entries_updated_by_fkey"
       columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"memory_jobs": {
+                  Row: {
+                    "attempts": number,"company_id": string,"confirmed": number,"conversation_id": string,"created_at": string,"entry_ids": (string)[],"error_code": string | null,"finished_at": string | null,"forgotten_at": string | null,"id": string,"kept_private": number,"learned": number,"locked_at": string | null,"message_id": string,"proposed": number,"space_id": string,"status": string,"superseded": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"company_id": string,"confirmed"?: number,"conversation_id": string,"created_at"?: string,"entry_ids"?: (string)[],"error_code"?: string | null,"finished_at"?: string | null,"forgotten_at"?: string | null,"id"?: string,"kept_private"?: number,"learned"?: number,"locked_at"?: string | null,"message_id": string,"proposed"?: number,"space_id": string,"status"?: string,"superseded"?: number,"user_id": string
+                  }
+                  Update: {
+                    "attempts"?: number,"company_id"?: string,"confirmed"?: number,"conversation_id"?: string,"created_at"?: string,"entry_ids"?: (string)[],"error_code"?: string | null,"finished_at"?: string | null,"forgotten_at"?: string | null,"id"?: string,"kept_private"?: number,"learned"?: number,"locked_at"?: string | null,"message_id"?: string,"proposed"?: number,"space_id"?: string,"status"?: string,"superseded"?: number,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "memory_jobs_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "memory_jobs_message_id_conversation_id_fkey"
+      columns: ["message_id","conversation_id"]
+isOneToOne: false
+      referencedRelation: "messages"
+      referencedColumns: ["id","conversation_id"]
+    },{
+      foreignKeyName: "memory_jobs_space_id_company_id_fkey"
+      columns: ["space_id","company_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "memory_jobs_user_id_fkey"
+      columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -759,14 +841,14 @@ isOneToOne: false
                   ]
                 },"memory_spaces": {
                   Row: {
-                    "client_id": string | null,"company_id": string,"created_at": string,"id": string,"kind": Database["public"]['Enums']["memory_kind"]
+                    "blocked_providers": (Database["public"]['Enums']["ai_provider"])[],"client_id": string | null,"company_id": string,"created_at": string,"id": string,"kind": Database["public"]['Enums']["memory_kind"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["memory_kind"]
+                    "blocked_providers"?: (Database["public"]['Enums']["ai_provider"])[],"client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["memory_kind"]
                   }
                   Update: {
-                    "client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["memory_kind"]
+                    "blocked_providers"?: (Database["public"]['Enums']["ai_provider"])[],"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["memory_kind"]
                   }
                   Relationships: [
                     {
@@ -785,14 +867,14 @@ isOneToOne: false
                   ]
                 },"memory_suggestions": {
                   Row: {
-                    "company_id": string,"content": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"entry_id": string | null,"id": string,"kind": string,"proposed_by": string | null,"source_ref": NonNullable<Json>,"source_space_id": string | null,"space_id": string,"status": string,"title": string
+                    "attributes": NonNullable<Json>,"company_id": string,"content": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"entry_id": string | null,"fact_kind": string | null,"id": string,"kind": string,"proposed_by": string | null,"reason": string | null,"source_ref": NonNullable<Json>,"source_space_id": string | null,"space_id": string,"status": string,"subject_key": string | null,"title": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "company_id"?: string,"content": string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"entry_id"?: string | null,"id"?: string,"kind": string,"proposed_by"?: string | null,"source_ref"?: NonNullable<Json>,"source_space_id"?: string | null,"space_id": string,"status"?: string,"title": string
+                    "attributes"?: NonNullable<Json>,"company_id"?: string,"content": string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"entry_id"?: string | null,"fact_kind"?: string | null,"id"?: string,"kind": string,"proposed_by"?: string | null,"reason"?: string | null,"source_ref"?: NonNullable<Json>,"source_space_id"?: string | null,"space_id": string,"status"?: string,"subject_key"?: string | null,"title": string
                   }
                   Update: {
-                    "company_id"?: string,"content"?: string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"entry_id"?: string | null,"id"?: string,"kind"?: string,"proposed_by"?: string | null,"source_ref"?: NonNullable<Json>,"source_space_id"?: string | null,"space_id"?: string,"status"?: string,"title"?: string
+                    "attributes"?: NonNullable<Json>,"company_id"?: string,"content"?: string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"entry_id"?: string | null,"fact_kind"?: string | null,"id"?: string,"kind"?: string,"proposed_by"?: string | null,"reason"?: string | null,"source_ref"?: NonNullable<Json>,"source_space_id"?: string | null,"space_id"?: string,"status"?: string,"subject_key"?: string | null,"title"?: string
                   }
                   Relationships: [
                     {
@@ -873,14 +955,14 @@ isOneToOne: false
                   ]
                 },"messages": {
                   Row: {
-                    "api_model_id": string | null,"author_id": string | null,"author_type": string,"company_id": string,"confrontation": Json | null,"content": string,"context_meta": Json | null,"conversation_id": string,"created_at": string,"error_code": string | null,"hide_counts": Json | null,"hide_modes": (string)[],"hide_spans": Json | null,"id": string,"input_tokens": number | null,"masked_content": string | null,"model_content": string | null,"model_id": string | null,"model_label": string | null,"output_tokens": number | null,"provider": Database["public"]['Enums']["ai_provider"] | null,"routing": Json | null,"seq": number,"status": string,"stop_requested_at": string | null,"superseded_at": string | null
+                    "api_model_id": string | null,"author_id": string | null,"author_type": string,"company_id": string,"confrontation": Json | null,"content": string,"context_meta": Json | null,"conversation_id": string,"created_at": string,"error_code": string | null,"hide_counts": Json | null,"hide_modes": (string)[],"hide_spans": Json | null,"id": string,"input_tokens": number | null,"masked_content": string | null,"model_content": string | null,"model_id": string | null,"model_label": string | null,"no_memory": boolean,"output_tokens": number | null,"provider": Database["public"]['Enums']["ai_provider"] | null,"routing": Json | null,"seq": number,"status": string,"stop_requested_at": string | null,"superseded_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"confrontation"?: Json | null,"content"?: string,"context_meta"?: Json | null,"conversation_id": string,"created_at"?: string,"error_code"?: string | null,"hide_counts"?: Json | null,"hide_modes"?: (string)[],"hide_spans"?: Json | null,"id"?: string,"input_tokens"?: number | null,"masked_content"?: string | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
+                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"confrontation"?: Json | null,"content"?: string,"context_meta"?: Json | null,"conversation_id": string,"created_at"?: string,"error_code"?: string | null,"hide_counts"?: Json | null,"hide_modes"?: (string)[],"hide_spans"?: Json | null,"id"?: string,"input_tokens"?: number | null,"masked_content"?: string | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"no_memory"?: boolean,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
                   }
                   Update: {
-                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"confrontation"?: Json | null,"content"?: string,"context_meta"?: Json | null,"conversation_id"?: string,"created_at"?: string,"error_code"?: string | null,"hide_counts"?: Json | null,"hide_modes"?: (string)[],"hide_spans"?: Json | null,"id"?: string,"input_tokens"?: number | null,"masked_content"?: string | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
+                    "api_model_id"?: string | null,"author_id"?: string | null,"author_type"?: string,"company_id"?: string,"confrontation"?: Json | null,"content"?: string,"context_meta"?: Json | null,"conversation_id"?: string,"created_at"?: string,"error_code"?: string | null,"hide_counts"?: Json | null,"hide_modes"?: (string)[],"hide_spans"?: Json | null,"id"?: string,"input_tokens"?: number | null,"masked_content"?: string | null,"model_content"?: string | null,"model_id"?: string | null,"model_label"?: string | null,"no_memory"?: boolean,"output_tokens"?: number | null,"provider"?: Database["public"]['Enums']["ai_provider"] | null,"routing"?: Json | null,"seq"?: number,"status"?: string,"stop_requested_at"?: string | null,"superseded_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -1292,11 +1374,20 @@ isOneToOne: false
 "app_availability":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"cancel_client_access_request":
+{ Args: { "p_request": string }; Returns: undefined
+                           },
 "cancel_render_job":
 { Args: { "p_job": string }; Returns: undefined
                            },
+"claim_memory_job":
+{ Args: { "p_job": string }; Returns: boolean
+                           },
 "clear_user_password":
 { Args: { "p_user": string }; Returns: undefined
+                           },
+"client_permissions":
+{ Args: { "p_client": string }; Returns: Json
                            },
 "company_popular_apps":
 { Args: { "p_company": string }; Returns: {
@@ -1309,6 +1400,9 @@ isOneToOne: false
 "conversation_shared_spaces":
 { Args: { "p_conversation": string }; Returns: string[]
                            },
+"correct_memory_entry":
+{ Args: { "p_content": string,"p_entry": string,"p_title": string }; Returns: string
+                           },
 "create_company":
 { Args: { "p_default_locale"?: string,"p_description"?: string,"p_industry"?: string,"p_name": string,"p_size_range"?: string,"p_website"?: string }; Returns: string
                            },
@@ -1316,6 +1410,9 @@ isOneToOne: false
 { Args: { "p_admin_scopes"?: (string)[],"p_company": string,"p_email": string,"p_expertise"?: (string)[],"p_job_title"?: string,"p_role"?: Database["public"]['Enums']["company_role"] }; Returns: {
               "invitation_id": string,"token": string
             }[]
+                           },
+"decide_client_access":
+{ Args: { "p_approve": boolean,"p_days"?: number,"p_request": string }; Returns: undefined
                            },
 "decide_memory_suggestion":
 { Args: { "p_approve": boolean,"p_content"?: string,"p_suggestion": string,"p_title"?: string }; Returns: string
@@ -1329,8 +1426,17 @@ isOneToOne: false
 "delete_tool":
 { Args: { "p_agent": string }; Returns: undefined
                            },
+"enqueue_memory_job":
+{ Args: { "p_message": string }; Returns: string
+                           },
 "enqueue_render_job":
 { Args: { "p_duration": number,"p_formats": (string)[],"p_input": Json,"p_kind": string,"p_message": string }; Returns: string
+                           },
+"finish_memory_job":
+{ Args: { "p_confirmed"?: number,"p_entries"?: (string)[],"p_error"?: string,"p_job": string,"p_learned"?: number,"p_private"?: number,"p_proposed"?: number,"p_status": string,"p_superseded"?: number }; Returns: undefined
+                           },
+"forget_memory_job":
+{ Args: { "p_job": string }; Returns: number
                            },
 "hide_assign_placeholders":
 { Args: { "p_conversation": string,"p_items"?: Json }; Returns: {
@@ -1360,7 +1466,7 @@ isOneToOne: false
                            },
 "my_memory_spaces":
 { Args: { "p_company": string }; Returns: {
-              "can_write": boolean,"client_id": string,"document_count": number,"entry_count": number,"kind": Database["public"]['Enums']["memory_kind"],"space_id": string
+              "blocked_providers": (Database["public"]['Enums']["ai_provider"])[],"can_write": boolean,"client_id": string,"document_count": number,"entry_count": number,"kind": Database["public"]['Enums']["memory_kind"],"space_id": string
             }[]
                            },
 "my_pending_invitations":
@@ -1377,6 +1483,9 @@ isOneToOne: false
 { Args: { "p_company": string }; Returns: {
               "video_limit": number,"video_reserved": number,"video_used": number
             }[]
+                           },
+"pending_memory_jobs":
+{ Args: { "p_except_conversation"?: string,"p_spaces": (string)[] }; Returns: number
                            },
 "platform_add_admin":
 { Args: { "p_email": string }; Returns: string
@@ -1486,8 +1595,14 @@ isOneToOne: false
 "render_job_succeeded":
 { Args: { "p_job": string,"p_outputs": Json,"p_seconds": number,"p_worker": string }; Returns: undefined
                            },
+"request_client_access":
+{ Args: { "p_client": string,"p_days"?: number,"p_reason"?: string }; Returns: undefined
+                           },
 "revoke_invitation":
 { Args: { "p_invitation": string }; Returns: undefined
+                           },
+"rewind_conversation":
+{ Args: { "p_message": string }; Returns: number
                            },
 "save_tool":
 { Args: { "p_company": string,"p_id": string,"p_source_conversation"?: string,"p_tool": Json,"p_visibility": string }; Returns: string
@@ -1500,6 +1615,18 @@ isOneToOne: false
 "set_auto_title":
 { Args: { "p_conversation": string,"p_title": string }; Returns: boolean
                            },
+"set_conversation_archived":
+{ Args: { "p_archived": boolean,"p_conversation": string }; Returns: undefined
+                           },
+"set_conversation_pinned":
+{ Args: { "p_conversation": string,"p_pinned": boolean }; Returns: undefined
+                           },
+"set_memory_provider_policy":
+{ Args: { "p_blocked": (Database["public"]['Enums']["ai_provider"])[],"p_space": string }; Returns: undefined
+                           },
+"set_message_learning":
+{ Args: { "p_learn": boolean,"p_message": string }; Returns: undefined
+                           },
 "set_participant_role":
 { Args: { "p_conversation": string,"p_role": string,"p_user": string }; Returns: undefined
                            },
@@ -1511,6 +1638,9 @@ isOneToOne: false
                            },
 "signup_open":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"supersede_memory_entry":
+{ Args: { "p_new": string,"p_old": string }; Returns: undefined
                            },
 "transfer_client":
 { Args: { "p_ai_generated": boolean,"p_client": string,"p_sections": Json,"p_to": string }; Returns: string

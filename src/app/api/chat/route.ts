@@ -44,10 +44,12 @@ export async function POST(request: Request) {
             // Already closed by the client.
           }
         }
+        // Learning (Cendr Consciousness): after the answer is fully streamed and saved.
+        await prepared.afterwards?.();
       })();
     },
   });
-  // Saving the answer and the usage must finish even if the browser disconnects.
+  // Saving the answer, the usage and the learning must finish even if the browser disconnects.
   after(() => task);
 
   return new Response(stream, {

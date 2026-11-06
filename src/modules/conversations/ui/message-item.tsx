@@ -13,6 +13,7 @@ import {
   FilmIcon,
   GlobeIcon,
   ImageIcon,
+  PencilIcon,
   RefreshCwIcon,
   ScaleIcon,
   ShieldCheckIcon,
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@/components/ui/tooltip";
 import { modelDisplay } from "@/modules/providers/catalog";
-import { PROVIDER_ERROR_CODES, type ProviderErrorCode, type ProviderId } from "@/modules/providers/types";
+import { PROVIDER_ERROR_CODES, type ProviderErrorCode } from "@/modules/providers/types";
 import { cn } from "@/lib/utils";
 import type { AttachmentKind, TimelineMessage } from "../types";
 import type { RenderKind } from "@/modules/render/formats";
@@ -45,6 +46,8 @@ import { ModelName, ProviderDot } from "./provider-mark";
 import { AssistantAvatar } from "@/modules/avatars/ui/assistant-avatar";
 import type { AssistantState } from "@/modules/avatars/assistants";
 import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
+import { MemoryLine } from "@/modules/memory/ui/memory-line";
+import type { LearningState } from "@/modules/memory/types";
 import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
 import { MaskedView } from "@/modules/hide/ui/masked-view";
 import { ProtectedText } from "@/modules/hide/ui/hide-composer";
@@ -60,6 +63,12 @@ type InviteProps = { invitable?: SuggestedColleague[]; onInvite?: (userId: strin
 
 /** Confronter: opens the confirmation for this question (or the question this answer replies to). */
 type ConfrontProps = { onConfront?: () => void; confrontProgress?: ConfrontationProgress };
+
+/** Cendr Consciousness: the answer's learning changed state (polled under the answer). */
+type LearningProps = { onLearning?: (state: LearningState) => void };
+
+/** Edit one's own earlier prompt and run it again. */
+type EditProps = { onEdit?: (text: string) => void };
 
 /** Avatars of the people in the conversation, by user id (colleagues' messages show theirs). */
 export type PeopleLookup = Map<string, { name: string; avatarUrl: string | null }>;
@@ -78,6 +87,8 @@ export function MessageItem({
   onInvite,
   onConfront,
   confrontProgress,
+  onLearning,
+  onEdit,
   render,
   people,
   group = false,
@@ -104,7 +115,9 @@ export function MessageItem({
   meId: string;
 } & MemoryProps &
   InviteProps &
-  ConfrontProps) {
+  ConfrontProps &
+  LearningProps &
+  EditProps) {
   if (message.role === "user") {
     const mine = !message.author || message.author.id === meId;
     return (
@@ -116,6 +129,7 @@ export function MessageItem({
         memoryTargets={memoryTargets}
         conversationId={conversationId}
         onConfront={onConfront}
+        onEdit={onEdit}
       />
     );
   }
@@ -133,6 +147,7 @@ export function MessageItem({
       onInvite={onInvite}
       onConfront={onConfront}
       confrontProgress={confrontProgress}
+      onLearning={onLearning}
       render={render}
       bubble={group}
       pdfAsked={pdfAsked}
@@ -211,9 +226,14 @@ function UserMessage({
   memoryTargets,
   conversationId,
   onConfront,
-}: { message: TimelineMessage; mine: boolean; mentionsMe?: boolean; avatarUrl: string | null } & MemoryProps & ConfrontProps) {
+  onEdit,
+}: { message: TimelineMessage; mine: boolean; mentionsMe?: boolean; avatarUrl: string | null; onEdit?: (text: string) => void } & MemoryProps & ConfrontProps) {
   const hover = "mt-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/user:opacity-100";
   const t = useTranslations("collaboration");
+  const tChat = useTranslations("chat");
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(message.content);
+  const [copied, setCopied] = React.useState(false);
   if (!mine) {
     // A colleague's message (group conversation, or a conversation taken over after a transfer).
     const name = message.author?.name ?? t("someone");
@@ -252,7 +272,7 @@ function UserMessage({
     );
   }
   return (
-    <div className="group/user flex animate-message-in flex-col items-end gap-2">
+    <div className="group/user flex animate-message-in flex-col items-end gap-2" data-testid="my-message">
       {message.attachments.length > 0 ? (
         <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
           {message.attachments.map((a) => (
@@ -260,10 +280,77 @@ function UserMessage({
           ))}
         </div>
       ) : null}
-      {message.content ? (
+      {message.content && editing && onEdit ? (
+        // Edit and run again: this message and what follows are replaced by the new version.
+        <form
+          className="w-full max-w-[85%] space-y-2 rounded-2xl border bg-card p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!draft.trim()) return;
+            setEditing(false);
+            onEdit(draft.trim());
+          }}
+        >
+          <textarea
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setEditing(false);
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+            rows={Math.min(8, Math.max(2, draft.split("\n").length))}
+            aria-label={tChat("editPrompt")}
+            className="w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none"
+          />
+          <div className="flex items-center justify-end gap-2">
+            <span className="mr-auto text-xs text-muted-foreground">{tChat("editHint")}</span>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+              {tChat("cancel")}
+            </Button>
+            <Button type="submit" size="sm">
+              {tChat("editSend")}
+            </Button>
+          </div>
+        </form>
+      ) : message.content ? (
         <div className="flex max-w-[85%] items-start gap-1">
           <ConfrontButton onConfront={onConfront} className={hover} />
           <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
+          <Tooltip content={copied ? tChat("copied") : tChat("copy")}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={tChat("copy")}
+              className={hover}
+              onClick={async () => {
+                await navigator.clipboard.writeText(message.content);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              {copied ? <CheckIcon /> : <CopyIcon />}
+            </Button>
+          </Tooltip>
+          {onEdit ? (
+            <Tooltip content={tChat("editPrompt")}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={tChat("editPrompt")}
+                className={hover}
+                onClick={() => {
+                  setDraft(message.content);
+                  setEditing(true);
+                }}
+              >
+                <PencilIcon />
+              </Button>
+            </Tooltip>
+          ) : null}
           <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-[var(--glass-selected)] px-4 py-2.5 text-[15px] leading-relaxed shadow-[inset_0_1px_0_0_var(--glass-highlight),0_0_0_1px_var(--glass-ring)]">
             <ProtectedText text={message.content} spans={message.hideSpans} renderPlain={withMentions} />
           </div>
@@ -351,6 +438,7 @@ function AssistantMessage({
   onInvite,
   onConfront,
   confrontProgress,
+  onLearning,
   render,
   bubble = false,
   pdfAsked = false,
@@ -366,7 +454,8 @@ function AssistantMessage({
   onRegenerate: (modelChoice?: string) => void;
 } & MemoryProps &
   InviteProps &
-  ConfrontProps) {
+  ConfrontProps &
+  LearningProps) {
   const t = useTranslations("chat");
   const tCollab = useTranslations("collaboration");
   const [copied, setCopied] = React.useState(false);
@@ -437,6 +526,9 @@ function AssistantMessage({
       {!live ? <MaskedView kind="answer" maskedContent={message.maskedContent} counts={null} /> : null}
       <SourceList sources={message.sources} onOpen={setOpenSource} />
       {message.webSources.length > 0 ? <WebSourceList sources={message.webSources} /> : null}
+      {!live && message.status === "complete" ? (
+        <MemoryLine messageId={message.id} memory={message.memory} learning={message.learning} onLearning={(state) => onLearning?.(state)} />
+      ) : null}
       {pdfAsked && message.status === "complete" && message.content.trim() && !live ? (
         <Button asChild variant="outline" size="sm" className="gap-1.5">
           <a href={`/api/messages/${message.id}/export?format=pdf`} download>
@@ -523,20 +615,6 @@ function AssistantMessage({
         </div>
       ) : null}
     </article>
-  );
-}
-
-/** Thin divider shown when the conversation continues with another model. */
-export function ModelSwitchDivider({ provider, label }: { provider: ProviderId; label: string }) {
-  const t = useTranslations("chat");
-  return (
-    <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground" role="separator">
-      <span className="h-px flex-1 bg-border" />
-      <span className="inline-flex items-center gap-1.5">
-        {t("continuedWith")} <AssistantAvatar provider={provider} size={18} /> <ModelName provider={provider} label={label} dot={false} />
-      </span>
-      <span className="h-px flex-1 bg-border" />
-    </div>
   );
 }
 
