@@ -322,7 +322,7 @@
     "conversations": "Conversations",
     "workspace": "Travail",
     "clients": "Clients",
-    "memory": "Mémoire",
+    "memory": "Conscience",
     "library": "Applis",
     "profile": "Mon profil",
     "adminConsole": "Administration",
@@ -929,8 +929,8 @@
     "webSearchRateSaved": "Tarif de la recherche enregistré."
   },
   "memory": {
-    "title": "Mémoire",
-    "description": "Ce que l'entreprise sait, en dehors de toute IA : la mémoire de l'entreprise et celle de chaque client. L'IA s'en sert et cite ses sources.",
+    "title": "Conscience",
+    "description": "Ce que l'entreprise sait, partagé avec tous les modèles d'IA : la mémoire de l'entreprise et celle de chaque client. Elle apprend des conversations liées à un client, garde l'historique et cite ses sources.",
     "companyMemory": "Mémoire de l'entreprise",
     "companyMemoryBody": "Procédures, offres, ton, règles et modèles de l'entreprise.",
     "clientMemoryNamed": "Mémoire · {client}",
@@ -986,7 +986,8 @@
       "chat": "Depuis une conversation",
       "ai_suggestion": "Suggestion de l'IA approuvée",
       "promotion": "Enseignement général",
-      "auto": "Ajouté automatiquement depuis une conversation"
+      "auto": "Ajouté automatiquement depuis une conversation",
+      "correction": "Correction"
     },
     "deleteEntryTitle": "Supprimer cette entrée ?",
     "deleteEntryBody": "L'IA ne pourra plus s'en servir. Les réponses passées qui la citent garderont le passage cité.",
@@ -2239,6 +2240,95 @@
       "assistant_claim": "Dit par l’IA, pas par vous.",
       "uncertain": "Pas tout à fait sûr.",
       "conflict": "Contredit un autre fait."
-    }
+    },
+    "historyTitle": "{count, plural, one {Historique : # version remplacée} other {Historique : # versions remplacées}}",
+    "hub": {
+      "statFacts": "Faits en mémoire",
+      "statLearned": "Appris cette semaine",
+      "statClients": "Clients connus",
+      "statDocuments": "Documents",
+      "toConfirm": "À confirmer",
+      "nothingToConfirm": "Rien à confirmer.",
+      "promotion": "enseignement général proposé",
+      "accessRequests": "Demandes d'accès",
+      "activity": "Activité récente",
+      "noActivity": "Rien de nouveau. Les faits appris dans les conversations liées à un client apparaîtront ici.",
+      "myRequests": "Mes demandes d'accès",
+      "governance": "Gouvernance",
+      "governancePermissions": "Droits sur les mémoires",
+      "governanceLearning": "Apprentissage automatique et modèles",
+      "governanceActivity": "Journal d'activité",
+      "restrictedModels": "Modèles limités",
+      "origin": {
+        "auto": "appris",
+        "manual": "ajouté",
+        "chat": "enregistré",
+        "ai_suggestion": "confirmé",
+        "promotion": "promu",
+        "correction": "corrigé"
+      }
+    },
+    "brief": {
+      "title": "Ce que Cendr sait sur {client}",
+      "subtitle": "{count, plural, one {# fait} other {# faits}} à jour, donnés à chaque modèle d'IA{learned, plural, =0 {} one { · # appris cette semaine} other { · # appris cette semaine}}.",
+      "empty": "Rien pour l'instant.",
+      "howItLearns": "Parlez de ce client dans une conversation qui lui est liée : les décisions, budgets, dates et contacts que vous donnez sont retenus ici, pour vous et vos collègues, quel que soit le modèle.",
+      "openWith": "Continuer avec",
+      "with": {
+        "anthropic": "Nouvelle conversation avec Claude",
+        "openai": "Nouvelle conversation avec ChatGPT",
+        "google": "Nouvelle conversation avec Gemini"
+      },
+      "section": {
+        "decisions": "Décisions",
+        "commitments": "Engagements et dates",
+        "facts": "Chiffres et faits",
+        "contacts": "Contacts",
+        "preferences": "Préférences et façons de faire",
+        "notes": "Notes"
+      },
+      "learnedOn": "Appris le {date}",
+      "addedOn": "Ajouté le {date}",
+      "changes": "Changements récents",
+      "openMemory": "Ouvrir toute la mémoire du client"
+    },
+    "access": {
+      "title": "Ce client ne vous est pas accessible",
+      "body": "Il n'existe pas, ou il est réservé à certaines personnes. Vous pouvez demander l'accès : la bonne personne recevra votre demande.",
+      "sentBody": "Demande envoyée. Vous verrez la réponse dans Conscience.",
+      "reason": "Pourquoi ? (facultatif)",
+      "reasonPlaceholder": "Ex. : je remplace Bob pendant ses congés",
+      "duration": "Pour combien de temps ?",
+      "days": "{count, plural, one {# jour} other {# jours}}",
+      "noEnd": "Sans limite",
+      "request": "Demander l'accès",
+      "asks": "{person} demande l'accès à {client}",
+      "approveFor": "Accepter pour {count, plural, one {# jour} other {# jours}}",
+      "approveNoEnd": "Sans limite",
+      "refuse": "Refuser",
+      "granted": "Accès donné.",
+      "refused": "Demande refusée.",
+      "restrictedClient": "Client réservé",
+      "cancel": "Annuler",
+      "status": {
+        "pending": "En attente",
+        "approved": "Acceptée",
+        "denied": "Refusée",
+        "cancelled": "Annulée"
+      }
+    },
+    "providers": {
+      "title": "Modèles qui peuvent recevoir cette mémoire",
+      "body": "Un modèle désactivé ne reçoit jamais cette mémoire ; la personne est prévenue quand une réponse a été faite sans elle.",
+      "name": {
+        "anthropic": "Claude",
+        "openai": "ChatGPT",
+        "google": "Gemini"
+      }
+    },
+    "learningOn": "Apprend",
+    "learningOff": "Privé",
+    "learningOnHint": "Les faits utiles de cette conversation (décisions, budgets, dates, contacts) enrichissent la mémoire de {client}, pour vos collègues et tous les modèles. Vos informations personnelles restent privées. Cliquez pour ne rien retenir.",
+    "learningOffHint": "Cette conversation n'enrichit pas la mémoire du client. Cliquez pour la réactiver."
   }
 }

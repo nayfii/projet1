@@ -115,17 +115,17 @@ export async function runLearningJob(supabase: UserClient, ctx: MemberContext, j
     const counts = { ...empty };
     const entryIds: string[] = [];
     const proposals: { fact: CandidateFact; reason: "assistant_claim" | "uncertain" }[] = [];
-    for (const fact of parseCandidateFacts(result.text)) {
-      const decision = decideFact(fact, userText);
+    // Real values back in every field (and in the subject key) before the rules: a placeholder left
+    // means a value this person was not shown, never stored.
+    for (const fact of parseCandidateFacts(result.text, (text) => restorePlaceholders(text, values))) {
+      if (new RegExp(PLACEHOLDER_PATTERN.source).test(`${fact.title}\n${fact.content}\n${fact.key}`)) continue;
+      const decision = decideFact(fact, question.content);
       if (decision === "drop") continue;
       if (decision === "private") {
         counts.keptPrivate++;
         continue;
       }
-      // Real values back for the people who read the memory; a placeholder left means a value this
-      // person was not shown: never stored.
-      const restored = { ...fact, title: restorePlaceholders(fact.title, values).slice(0, 200), content: restorePlaceholders(fact.content, values) };
-      if (new RegExp(PLACEHOLDER_PATTERN.source).test(`${restored.title}\n${restored.content}`)) continue;
+      const restored = fact;
       if (decision === "confirm") {
         proposals.push({ fact: restored, reason: fact.statedBy === "user" ? "uncertain" : "assistant_claim" });
         continue;

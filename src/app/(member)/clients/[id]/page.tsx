@@ -19,6 +19,9 @@ import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
 import { ClientTransferButton } from "@/modules/collaboration/ui/client-transfer";
 import { ClientSummaryCard } from "@/modules/clients/ui/client-summary";
 import { KindMark } from "@/modules/conversations/ui/chat-sidebar";
+import { clientKnowledge } from "@/modules/memory/server/knowledge";
+import { ClientBrief } from "@/modules/memory/ui/client-brief";
+import { RequestAccess } from "@/modules/memory/ui/request-access";
 
 export async function generateMetadata({ params }: PageProps<"/clients/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -41,7 +44,15 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
     getMyHandover({ clientId: id }),
     listMemorySpaces(ctx),
   ]);
-  if (!client || client.company_id !== ctx.active.companyId) notFound();
+  // A client this person cannot open (or that does not exist: the page is the same) offers to ask for access.
+  if (!client || client.company_id !== ctx.active.companyId) {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+    return (
+      <PageContainer>
+        <RequestAccess clientId={id} />
+      </PageContainer>
+    );
+  }
   const withAssignees = allClients.find((c) => c.id === id);
   // Smart Handover: an assigned employee can hand a restricted client over; the recipient finds the file here.
   const canTransfer = client.visibility === "restricted" && Boolean(withAssignees?.assignees.some((a) => a.userId === ctx.user.id));
@@ -60,6 +71,7 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
 
   // The client's memory, if this person can read it (same rights as everywhere else).
   const space = spaces.find((s) => s.clientId === id);
+  const knowledge = space ? await clientKnowledge(space.spaceId) : null;
   const sections = [
     { icon: BrainIcon, title: t("memorySection"), body: t("memorySectionBody"), value: space ? t("entriesCount", { count: space.entryCount }) : null },
     { icon: FileTextIcon, title: t("documentsSection"), body: t("documentsSectionBody"), value: space ? t("documentsCount", { count: space.documentCount }) : null },
@@ -126,6 +138,7 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 space-y-8">
+          {space && knowledge ? <ClientBrief clientId={client.id} clientName={client.name} spaceId={space.spaceId} knowledge={knowledge} /> : null}
           <ClientSummaryCard clientId={client.id} />
           <section className="space-y-3">
             <h2 className="flex items-center gap-2 text-sm font-medium">

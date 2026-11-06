@@ -164,3 +164,59 @@ export async function usedMemoryAction(input: { messageId: string }): Promise<{ 
   }
   return { items, recent: trace.recent, waitedMs: trace.waitedMs, pending: trace.pending, blocked: trace.blocked.map((b) => ({ kind: b.kind, clientName: b.clientName })) };
 }
+
+/** "Request access" from a link to a client someone cannot open. Says nothing about the client. */
+export async function requestClientAccessAction(input: { clientId: string; reason?: string; days?: number | null }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  const parsed = z
+    .object({ clientId: z.uuid(), reason: z.string().trim().max(300).optional(), days: z.number().int().min(1).max(365).nullable().optional() })
+    .safeParse(input);
+  if (!ctx || !parsed.success) return { ok: false, error: "validation" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_client_access", {
+    p_client: parsed.data.clientId,
+    p_reason: parsed.data.reason || undefined,
+    p_days: parsed.data.days ?? undefined,
+  });
+  return error ? { ok: false, error: toErrorCode(error) } : { ok: true };
+}
+
+/** Approve (for a duration, or without end) or refuse a request: Owner, client Admins, the requester's manager. */
+export async function decideClientAccessAction(input: { requestId: string; approve: boolean; days?: number | null }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  const parsed = z.object({ requestId: z.uuid(), approve: z.boolean(), days: z.number().int().min(1).max(365).nullable().optional() }).safeParse(input);
+  if (!ctx || !parsed.success) return { ok: false, error: "validation" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("decide_client_access", {
+    p_request: parsed.data.requestId,
+    p_approve: parsed.data.approve,
+    p_days: parsed.data.days ?? undefined,
+  });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/memory");
+  revalidatePath("/clients");
+  return { ok: true };
+}
+
+export async function cancelClientAccessAction(input: { requestId: string }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  const parsed = z.object({ requestId: z.uuid() }).safeParse(input);
+  if (!ctx || !parsed.success) return { ok: false, error: "validation" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_client_access_request", { p_request: parsed.data.requestId });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath("/memory");
+  return { ok: true };
+}
+
+/** Which AI providers a memory must never be sent to (Admins with the permissions scope). */
+export async function setProviderPolicyAction(input: { spaceId: string; blocked: ("openai" | "anthropic" | "google")[] }): Promise<ActionResult> {
+  const ctx = await memberOrNull();
+  const parsed = z.object({ spaceId: z.uuid(), blocked: z.array(z.enum(["openai", "anthropic", "google"])).max(3) }).safeParse(input);
+  if (!ctx || !parsed.success) return { ok: false, error: "validation" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_memory_provider_policy", { p_space: parsed.data.spaceId, p_blocked: parsed.data.blocked });
+  if (error) return { ok: false, error: toErrorCode(error) };
+  revalidatePath(`/memory/${parsed.data.spaceId}`);
+  return { ok: true };
+}

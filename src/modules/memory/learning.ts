@@ -74,7 +74,7 @@ export function normalizeSubjectKey(raw: string): string | null {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-function cleanAttributes(raw: unknown): FactAttributes {
+function cleanAttributes(raw: unknown, restore: (s: string) => string): FactAttributes {
   if (!raw || typeof raw !== "object") return {};
   const r = raw as Record<string, unknown>;
   const out: FactAttributes = {};
@@ -84,7 +84,7 @@ function cleanAttributes(raw: unknown): FactAttributes {
     if (Number.isFinite(n)) out.amount = n;
   }
   for (const k of ["currency", "person", "role", "owner"] as const) {
-    if (typeof r[k] === "string" && r[k].trim()) out[k] = r[k].trim().slice(0, 120);
+    if (typeof r[k] === "string" && r[k].trim()) out[k] = restore(r[k]).trim().slice(0, 120);
   }
   for (const k of ["date", "due"] as const) {
     if (typeof r[k] === "string" && ISO_DATE.test(r[k])) out[k] = r[k];
@@ -92,8 +92,11 @@ function cleanAttributes(raw: unknown): FactAttributes {
   return out;
 }
 
-/** Reads the model's answer; anything malformed is dropped, never repaired into a fact. */
-export function parseCandidateFacts(text: string): CandidateFact[] {
+/**
+ * Reads the model's answer; anything malformed is dropped, never repaired into a fact. `restore`
+ * puts Hide's real values back in each text field (and in the key, before it is normalised).
+ */
+export function parseCandidateFacts(text: string, restore: (s: string) => string = (s) => s): CandidateFact[] {
   const items = parseModelJson(text);
   if (!Array.isArray(items)) return [];
   const out: CandidateFact[] = [];
@@ -101,9 +104,9 @@ export function parseCandidateFacts(text: string): CandidateFact[] {
     if (!item || typeof item !== "object") continue;
     const i = item as Record<string, unknown>;
     const kind = FACT_KINDS.includes(i.kind as FactKind) ? (i.kind as FactKind) : "fact";
-    const title = typeof i.title === "string" ? i.title.trim().slice(0, 200) : "";
-    const content = typeof i.content === "string" ? i.content.trim().slice(0, 2000) : "";
-    const key = normalizeSubjectKey(typeof i.key === "string" ? i.key : title);
+    const title = typeof i.title === "string" ? restore(i.title).trim().slice(0, 200) : "";
+    const content = typeof i.content === "string" ? restore(i.content).trim().slice(0, 2000) : "";
+    const key = normalizeSubjectKey(typeof i.key === "string" ? restore(i.key) : title);
     if (!title || !content || !key) continue;
     const confidence = typeof i.confidence === "number" && Number.isFinite(i.confidence) ? Math.min(Math.max(i.confidence, 0), 1) : 0.5;
     out.push({
@@ -114,7 +117,7 @@ export function parseCandidateFacts(text: string): CandidateFact[] {
       statedBy: i.stated_by === "user" ? "user" : "assistant",
       about: i.about === "client" ? "client" : i.about === "person" ? "person" : "other",
       confidence,
-      attributes: cleanAttributes(i.attributes),
+      attributes: cleanAttributes(i.attributes, restore),
       effectiveDate: typeof i.effective_date === "string" && ISO_DATE.test(i.effective_date) ? i.effective_date : null,
     });
   }

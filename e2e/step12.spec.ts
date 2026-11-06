@@ -43,7 +43,7 @@ test("anyone creates a client from the sidebar and lands in its space", async ()
   const dialog = page.getByRole("dialog", { name: "Nouveau client" });
   await dialog.getByLabel("Nom du client").fill(clientName);
   await dialog.getByRole("button", { name: "Créer le client" }).click();
-  await expect(page.getByRole("heading", { name: clientName })).toBeVisible();
+  await expect(page.getByRole("heading", { name: clientName, exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "En bref" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Mes conversations" })).toBeVisible();
   await expect(page.getByRole("link", { name: clientName })).toBeVisible();

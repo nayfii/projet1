@@ -11,6 +11,7 @@ import {
   AtSignIcon,
   LayoutGridIcon,
   BrainIcon,
+  BrainCircuitIcon,
   BriefcaseIcon,
   CheckIcon,
   GitBranchIcon,
@@ -235,6 +236,7 @@ export function ChatView(props: Props) {
   const [creatingClient, setCreatingClient] = React.useState<string | null>(null);
   const [feedMemory, setFeedMemory] = React.useState(props.conversation?.feedMemory ?? true);
   const tMemory = useTranslations("memory");
+  const tConscious = useTranslations("consciousness");
   const [clientMentionDismissed, setMentionDismissedClient] = React.useState<string | null>(null);
   const uploading = attachments.some((a) => a.uploading);
   // An answer started before this page was opened is still being written: wait for it. In a group,
@@ -964,6 +966,24 @@ export function ChatView(props: Props) {
             <BriefcaseIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate">{clientName}</span>
           </span>
+        ) : null}
+        {clientId && clientName ? (
+          // Cendr Consciousness: whether this conversation teaches the client's memory (owner switches it).
+          <Tooltip content={feedMemory ? tConscious("learningOnHint", { client: clientName }) : tConscious("learningOffHint")}>
+            <button
+              type="button"
+              data-testid="learning-state"
+              disabled={!isOwner}
+              onClick={() => void toggleFeedMemory()}
+              className={cn(
+                "inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs transition-colors duration-150 enabled:hover:bg-muted",
+                feedMemory ? "text-brand" : "text-muted-foreground",
+              )}
+            >
+              {feedMemory ? <BrainIcon className="size-3.5" /> : <BrainCircuitIcon className="size-3.5 opacity-60" />}
+              <span className="hidden sm:inline">{feedMemory ? tConscious("learningOn") : tConscious("learningOff")}</span>
+            </button>
+          </Tooltip>
         ) : null}
         {conversationId ? (
           <DropdownMenu>

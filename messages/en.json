@@ -322,7 +322,7 @@
     "conversations": "Conversations",
     "workspace": "Work",
     "clients": "Clients",
-    "memory": "Memory",
+    "memory": "Consciousness",
     "library": "Apps",
     "profile": "My profile",
     "adminConsole": "Admin",
@@ -929,8 +929,8 @@
     "webSearchRateSaved": "Search rate saved."
   },
   "memory": {
-    "title": "Memory",
-    "description": "What the company knows, outside any AI: the company memory and each client's memory. The AI uses them and cites its sources.",
+    "title": "Consciousness",
+    "description": "What the company knows, shared with every AI model: the company's memory and each client's. It learns from conversations linked to a client, keeps the history and cites its sources.",
     "companyMemory": "Company memory",
     "companyMemoryBody": "The company's procedures, offers, tone of voice, rules and templates.",
     "clientMemoryNamed": "Memory · {client}",
@@ -986,7 +986,8 @@
       "chat": "From a conversation",
       "ai_suggestion": "Approved AI suggestion",
       "promotion": "General learning",
-      "auto": "Added automatically from a conversation"
+      "auto": "Added automatically from a conversation",
+      "correction": "Correction"
     },
     "deleteEntryTitle": "Delete this entry?",
     "deleteEntryBody": "The AI will no longer use it. Past answers citing it keep the cited passage.",
@@ -2239,6 +2240,95 @@
       "assistant_claim": "Said by the AI, not by you.",
       "uncertain": "Not quite certain.",
       "conflict": "Contradicts another fact."
-    }
+    },
+    "historyTitle": "{count, plural, one {History: # replaced version} other {History: # replaced versions}}",
+    "hub": {
+      "statFacts": "Facts in memory",
+      "statLearned": "Learned this week",
+      "statClients": "Known clients",
+      "statDocuments": "Documents",
+      "toConfirm": "To confirm",
+      "nothingToConfirm": "Nothing to confirm.",
+      "promotion": "general learning proposed",
+      "accessRequests": "Access requests",
+      "activity": "Recent activity",
+      "noActivity": "Nothing new. Facts learned in conversations linked to a client will show here.",
+      "myRequests": "My access requests",
+      "governance": "Governance",
+      "governancePermissions": "Memory rights",
+      "governanceLearning": "Automatic learning and models",
+      "governanceActivity": "Activity log",
+      "restrictedModels": "Limited models",
+      "origin": {
+        "auto": "learned",
+        "manual": "added",
+        "chat": "saved",
+        "ai_suggestion": "confirmed",
+        "promotion": "promoted",
+        "correction": "corrected"
+      }
+    },
+    "brief": {
+      "title": "What Cendr knows about {client}",
+      "subtitle": "{count, plural, one {# current fact} other {# current facts}}, given to every AI model{learned, plural, =0 {} one { · # learned this week} other { · # learned this week}}.",
+      "empty": "Nothing yet.",
+      "howItLearns": "Talk about this client in a conversation linked to it: the decisions, budgets, dates and contacts you give are kept here, for you and your colleagues, whichever model you use.",
+      "openWith": "Continue with",
+      "with": {
+        "anthropic": "New conversation with Claude",
+        "openai": "New conversation with ChatGPT",
+        "google": "New conversation with Gemini"
+      },
+      "section": {
+        "decisions": "Decisions",
+        "commitments": "Commitments and dates",
+        "facts": "Figures and facts",
+        "contacts": "Contacts",
+        "preferences": "Preferences and ways of working",
+        "notes": "Notes"
+      },
+      "learnedOn": "Learned on {date}",
+      "addedOn": "Added on {date}",
+      "changes": "Recent changes",
+      "openMemory": "Open the client's whole memory"
+    },
+    "access": {
+      "title": "This client is not open to you",
+      "body": "It does not exist, or it is reserved to some people. You can ask for access: the right person will get your request.",
+      "sentBody": "Request sent. You will see the answer in Consciousness.",
+      "reason": "Why? (optional)",
+      "reasonPlaceholder": "E.g. I am covering for Bob while he is away",
+      "duration": "For how long?",
+      "days": "{count, plural, one {# day} other {# days}}",
+      "noEnd": "No end date",
+      "request": "Request access",
+      "asks": "{person} asks for access to {client}",
+      "approveFor": "Approve for {count, plural, one {# day} other {# days}}",
+      "approveNoEnd": "No end date",
+      "refuse": "Refuse",
+      "granted": "Access given.",
+      "refused": "Request refused.",
+      "restrictedClient": "Reserved client",
+      "cancel": "Cancel",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "denied": "Refused",
+        "cancelled": "Cancelled"
+      }
+    },
+    "providers": {
+      "title": "Models that may receive this memory",
+      "body": "A model switched off never receives this memory; people are told when an answer was made without it.",
+      "name": {
+        "anthropic": "Claude",
+        "openai": "ChatGPT",
+        "google": "Gemini"
+      }
+    },
+    "learningOn": "Learning",
+    "learningOff": "Private",
+    "learningOnHint": "Useful facts from this conversation (decisions, budgets, dates, contacts) enrich {client}'s memory, for your colleagues and every model. Your personal details stay private. Click to keep nothing.",
+    "learningOffHint": "This conversation does not enrich the client's memory. Click to turn it back on."
   }
 }

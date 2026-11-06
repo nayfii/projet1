@@ -151,7 +151,11 @@ const MONTHS: Record<string, string> = {
  */
 function simulatedFacts(exchange: string) {
   const user = (/^User: ([\s\S]*?)(?:\n\nAssistant: |$)/.exec(exchange)?.[1] ?? "").trim();
-  const folded = user.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  // Placeholders (Hide) carry digits ("[CLIENT_1]"): set aside so they are not read as amounts.
+  const folded = user
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\[(?:CLIENT|PROJECT|FILE|TERM)_\d+\]/g, "X");
   const facts: Record<string, unknown>[] = [];
   const budget = /budget[^0-9\n]{0,40}?(\d[\d\s.,]*\d|\d)\s*(k)?\s*(€|euros?|eur)/i.exec(folded);
   if (budget) {
@@ -163,7 +167,7 @@ function simulatedFacts(exchange: string) {
     const date = `${launch[3]}-${MONTHS[launch[2].toLowerCase()]}-${launch[1].padStart(2, "0")}`;
     facts.push({ kind: "commitment", key: "launch_date", title: "[TEST] Date de lancement", content: `[TEST] Lancement prévu le ${launch[1]} ${launch[2]} ${launch[3]}.`, stated_by: "user", about: "client", confidence: 0.9, attributes: { date }, effective_date: date });
   }
-  const contact = /contact\s*(?:principal)?\s*:?\s*([A-Z][a-zA-Z-]+\s+[A-Z][a-zA-Z-]+)\s*,\s*([^.\n]{2,60})/.exec(user.normalize("NFC"));
+  const contact = /[Cc]ontact\s*(?:principal)?\s*:?\s*([A-Z][a-zA-Z-]+\s+[A-Z][a-zA-Z-]+|\[PERSON_\d+\])\s*,\s*([^.\n]{2,60})/.exec(user.normalize("NFC"));
   if (contact) {
     facts.push({ kind: "contact", key: `contact:${contact[1]}`, title: `[TEST] Contact : ${contact[1]}`, content: `[TEST] ${contact[1]} est ${contact[2].trim()}.`, stated_by: "user", about: "client", confidence: 0.9, attributes: { person: contact[1], role: contact[2].trim() } });
   }
