@@ -9,6 +9,7 @@ import {
   ArrowRightLeftIcon,
   ArrowDownIcon,
   ArrowUpIcon,
+  ImageIcon,
   AtSignIcon,
   LayoutGridIcon,
   BrainIcon,
@@ -122,6 +123,8 @@ type Props = {
   canRestrictClients: boolean;
   /** Voice dictation is on for the company. */
   dictation: boolean;
+  /** Images (ChatGPT's image model) are on for the company. */
+  images?: boolean;
   quota: QuotaState | null;
   fakeMode: boolean;
   memoryTargets: { spaceId: string; clientId: string | null; label: string }[];
@@ -207,6 +210,10 @@ export function ChatView(props: Props) {
   const stickToBottom = React.useRef(!props.handover);
   // "Jump to the latest message" appears once the person scrolled up.
   const [awayFromBottom, setAwayFromBottom] = React.useState(false);
+  // "Image": the next message asks ChatGPT's image model for an image (also detected from the text).
+  const [imageMode, setImageMode] = React.useState(false);
+  // While dictating, the recording bar takes the whole toolbar line (nothing overlaps).
+  const [dictating, setDictating] = React.useState(false);
   const fileInput = React.useRef<HTMLInputElement>(null);
   const textarea = React.useRef<HTMLTextAreaElement>(null);
   const creating = React.useRef<Promise<string | null> | null>(null);
@@ -600,6 +607,9 @@ export function ChatView(props: Props) {
                 },
               ];
             });
+          } else if (event.type === "imaging") {
+            const id = currentLive;
+            setMessages((list) => list.map((m) => (m.id === id ? { ...m, imaging: true } : m)));
           } else if (event.type === "searching") {
             const id = currentLive;
             setMessages((list) => list.map((m) => (m.id === id ? { ...m, searching: true } : m)));
@@ -616,6 +626,11 @@ export function ChatView(props: Props) {
                       ...m,
                       status: "complete",
                       searching: false,
+                      imaging: false,
+                      // Images the answer made: shown in it, like ChatGPT.
+                      attachments: event.images?.length
+                        ? event.images.map((image) => ({ id: image.id, filename: image.filename, kind: "image" as const, truncated: false, generated: true }))
+                        : m.attachments,
                       sources: event.sources ?? [],
                       maskedContent: event.masked ?? null,
                       suggestedColleagues: event.suggestedColleagues ?? [],
@@ -702,6 +717,7 @@ export function ChatView(props: Props) {
     if (override === undefined || withComposer) {
       setInput("");
       setAttachments([]);
+      setImageMode(false);
       // The draft is sent: forget it (also the one of the "new conversation" screen).
       writeLocal(`${DRAFT_KEY}new`, null);
       writeLocal(`${DRAFT_KEY}${id}`, null);
@@ -739,7 +755,13 @@ export function ChatView(props: Props) {
     }
 
     await stream(
-      { conversationId: id, modelChoice: choice, message: { content: text, attachmentIds: ready.map((a) => a.id) }, hide: hideChoices },
+      {
+        conversationId: id,
+        modelChoice: choice,
+        message: { content: text, attachmentIds: ready.map((a) => a.id) },
+        hide: hideChoices,
+        ...(imageMode ? { image: true } : {}),
+      },
       {
         // Refused before anything was saved: give the user their text and files back.
         onRefused: () => {
@@ -1323,7 +1345,7 @@ export function ChatView(props: Props) {
                   hide.setSelection(selected.length >= 2 ? selected : null);
                 }}
                 rows={1}
-                placeholder={group ? tCollab("groupPlaceholder") : t("placeholder")}
+                placeholder={imageMode ? t("imagePlaceholder") : group ? tCollab("groupPlaceholder") : t("placeholder")}
                 aria-label={group ? tCollab("groupPlaceholder") : t("placeholder")}
                 className={cn(
                   TEXTAREA_LAYOUT,
@@ -1332,7 +1354,7 @@ export function ChatView(props: Props) {
                 )}
               />
             </div>
-            <div className="relative flex items-center gap-1 px-2 pb-2">
+            <div className={cn("flex items-center gap-1 px-2 pb-2", dictating && "[&>*:not([data-dictation])]:hidden")}>
               {canAttach ? (
                 <Tooltip content={t("attach")}>
                   <Button
@@ -1352,6 +1374,7 @@ export function ChatView(props: Props) {
                   onText={insertDictation}
                   // The send arrow: what was typed, then the dictated text, sent at once.
                   onSend={(text) => void send(undefined, `${input.trim()}${input.trim() ? " " : ""}${text}`, true)}
+                  onRecordingChange={setDictating}
                 />
               ) : null}
               <Tooltip content={tApps("picker")}>
@@ -1370,6 +1393,24 @@ export function ChatView(props: Props) {
                   <LayoutGridIcon />
                 </Button>
               </Tooltip>
+              {props.images && !props.agent ? (
+                <Tooltip content={t("imageModeHint")}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-pressed={imageMode}
+                    disabled={inputBlocked}
+                    onClick={() => {
+                      setImageMode((on) => !on);
+                      textarea.current?.focus();
+                    }}
+                    className={cn("h-8 gap-1.5 px-2", imageMode && "bg-brand-soft text-brand hover:bg-brand-soft")}
+                  >
+                    <ImageIcon />
+                    <span className={cn(!imageMode && "sr-only")}>{t("imageMode")}</span>
+                  </Button>
+                </Tooltip>
+              ) : null}
               {group ? (
                 <Tooltip content={tCollab("mentionButton")}>
                   <Button variant="ghost" size="icon-sm" aria-label={tCollab("mentionButton")} disabled={inputBlocked} onClick={startMention}>

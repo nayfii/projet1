@@ -32,12 +32,15 @@ export function DictationButton({
   disabled,
   onText,
   onSend,
+  onRecordingChange,
 }: {
   disabled?: boolean;
   /** Stop: the text goes into the message box, for review. */
   onText: (text: string) => void;
   /** Send arrow: the text is sent right away. */
   onSend?: (text: string) => void;
+  /** The input's toolbar gives the whole line to the recording bar while it records. */
+  onRecordingChange?: (recording: boolean) => void;
 }) {
   const t = useTranslations("dictation");
   const locale = useLocale();
@@ -161,6 +164,7 @@ export function DictationButton({
       const blob = new Blob(chunks.current, { type: rec.mimeType || "audio/webm" });
       const then = outcome.current;
       release();
+      onRecordingChange?.(false);
       if (then === "cancel") return setPhase("idle");
       if (seconds < 0.6 || blob.size === 0) {
         setPhase("idle");
@@ -172,6 +176,7 @@ export function DictationButton({
     setElapsed(0);
     rec.start(250);
     setPhase("recording");
+    onRecordingChange?.(true);
     meter(stream.current);
     // The tab says the microphone is on, for when the person is in another tab or window.
     title.current = document.title;
@@ -192,7 +197,8 @@ export function DictationButton({
   if (phase === "recording") {
     return (
       <div
-        className="absolute inset-x-2 bottom-2 z-10 flex h-8 items-center gap-1.5 rounded-full bg-card pl-1 pr-1 text-[13px] animate-message-in"
+        data-dictation=""
+        className="flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-full bg-muted/70 pl-1 pr-1 text-[13px] animate-message-in"
         role="status"
         aria-live="polite"
         aria-label={t("recording")}
@@ -231,6 +237,7 @@ export function DictationButton({
   return (
     <Tooltip content={phase === "transcribing" ? t("transcribing") : t("start")}>
       <Button
+        data-dictation=""
         variant="ghost"
         size="icon-sm"
         aria-label={phase === "transcribing" ? t("transcribing") : t("start")}

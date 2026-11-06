@@ -54,7 +54,11 @@ export type ChatStreamEvent =
       memory: MemoryTrace | null;
       /** The learning queued for this answer (its state is shown under it), null when nothing is learned. */
       learningJobId: string | null;
+      /** Images the answer made (ChatGPT's image model), shown in it. */
+      images?: { id: string; filename: string }[];
     }
+  /** An image is being made (shown while it waits). */
+  | { type: "imaging" }
   /** Confronter: a model started or finished a stage. */
   | { type: "confront"; stage: ConfrontationStage; modelId: string; status: "running" | "complete" | "error" }
   /** Confronter: the answers, critiques and synthesis, once done (also when some parts failed). */
@@ -76,6 +80,7 @@ export const CHAT_REQUEST_ERRORS = [
   "hide_unavailable",
   "confront_unavailable",
   "confront_too_expensive",
+  "images_disabled",
   "server_error",
 ] as const;
 export type ChatRequestError = (typeof CHAT_REQUEST_ERRORS)[number];

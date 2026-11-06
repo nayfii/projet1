@@ -11,7 +11,7 @@ import type { ProviderId } from "@/modules/providers/types";
 export type UsageEvent = {
   companyId: string;
   userId: string;
-  feature: "chat" | "memory" | "embedding" | "handover" | "confronter" | "agent" | "avatar" | "client_summary" | "dictation" | "title";
+  feature: "chat" | "memory" | "embedding" | "handover" | "confronter" | "agent" | "avatar" | "client_summary" | "dictation" | "title" | "image";
   conversationId: string | null;
   messageId: string | null;
   provider: ProviderId;
@@ -86,4 +86,10 @@ export async function dictationRate(): Promise<{ creditsPerMinute: number; costU
 export async function webSearchRate(): Promise<{ credits: number; costUsd: number }> {
   const { data } = await createAdminClient().from("platform_settings").select("web_search_credits, web_search_cost_usd").single();
   return { credits: Number(data?.web_search_credits ?? 0), costUsd: Number(data?.web_search_cost_usd ?? 0) };
+}
+
+/** Credits and estimated cost of one image made in the chat (set by our team in the console). */
+export async function imageRate(): Promise<{ credits: number; costUsd: number }> {
+  const { data } = await createAdminClient().from("platform_settings").select("image_credits, image_cost_usd").single();
+  return { credits: Number(data?.image_credits ?? 0), costUsd: Number(data?.image_cost_usd ?? 0) };
 }

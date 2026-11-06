@@ -128,3 +128,39 @@ export async function saveMessageSources(messageId: string, conversationId: stri
     );
   if (error) console.error("message_sources insert failed", { code: error.code });
 }
+
+/**
+ * Stores an image the image model made as the answer's file (private bucket, folder of the
+ * conversation, so only its participants can open it). The caller authorised the person on the
+ * conversation and made the image for them; the row is theirs (uploaded_by) and marked generated.
+ */
+export async function saveGeneratedImage(input: {
+  conversationId: string;
+  messageId: string;
+  userId: string;
+  bytes: Uint8Array;
+  mediaType: "image/png" | "image/jpeg" | "image/webp";
+}): Promise<{ id: string; filename: string } | null> {
+  const admin = createAdminClient();
+  const ext = input.mediaType === "image/jpeg" ? "jpg" : input.mediaType === "image/webp" ? "webp" : "png";
+  const storagePath = `${input.conversationId}/generated/${crypto.randomUUID()}.${ext}`;
+  const filename = `image-${new Date().toISOString().slice(0, 10)}.${ext}`;
+  const upload = await admin.storage.from("chat-attachments").upload(storagePath, input.bytes, { contentType: input.mediaType });
+  if (upload.error) return null;
+  const { data } = await admin
+    .from("conversation_attachments")
+    .insert({
+      conversation_id: input.conversationId,
+      message_id: input.messageId,
+      uploaded_by: input.userId,
+      filename,
+      mime_type: input.mediaType,
+      size_bytes: input.bytes.length,
+      storage_path: storagePath,
+      kind: "image",
+      generated: true,
+    })
+    .select("id")
+    .single();
+  return data ? { id: data.id, filename } : null;
+}

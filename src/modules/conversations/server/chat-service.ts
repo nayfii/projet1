@@ -15,7 +15,7 @@ import { logBlockedRequest, recordUsage, webSearchRate } from "@/modules/usage/s
 import { buildChatContext, contextBudget, IMAGE_LOOKBACK_MESSAGES, type HistoryAttachment, type HistoryMessage } from "../context";
 import { buildSystemPrompt } from "../system-prompt";
 import type { ChatRequestError, ChatStreamEvent, RoutingInfo } from "../stream-events";
-import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMessageSources, supersedeMessage } from "./assistant-writer";
+import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveGeneratedImage, saveMessageSources, supersedeMessage } from "./assistant-writer";
 import { buildMemoryContext, type MemoryTrace } from "@/modules/memory/server/gateway";
 import { enqueueLearning, runPendingLearning } from "@/modules/memory/server/learning";
 import { citedPositions, toSourceProofs } from "@/modules/memory/citations";
@@ -33,6 +33,10 @@ import { planConfrontation } from "@/modules/confronter/server/plan";
 import { runConfrontation } from "@/modules/confronter/server/run";
 import { resolveRunAgent } from "@/modules/agents/server/queries";
 import { outputFormatInstruction } from "@/modules/agents/definitions";
+import { imageIntent, type ImageIntent } from "@/modules/images/intent";
+import { generateChatImage } from "@/modules/images/server/generate";
+import { chatImageModel } from "@/lib/env";
+import { imageRate } from "@/modules/usage/server/record";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -49,6 +53,8 @@ export const chatRequestSchema = z
     regenerate: z.object({ messageId: z.uuid() }).optional(),
     // Confronter: the question (a person's message) the models answer, critique and synthesise.
     confront: z.object({ messageId: z.uuid() }).optional(),
+    // The "Image" button: this message asks for an image (otherwise detected from the text).
+    image: z.boolean().optional(),
     // Hide: modes for this message and, in Manual mode, the values blurred or left visible.
     hide: z
       .object({
@@ -77,6 +83,7 @@ type AttachmentRow = {
   text_truncated: boolean;
   masked_text: string | null;
   media: Json;
+  generated: boolean;
 };
 
 const fail = (error: ChatRequestError, status: number): Prepared => ({ ok: false, error, status });
@@ -125,7 +132,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   const { data: rows } = await supabase
     .from("messages")
     .select(
-      "id, seq, author_type, author_id, content, masked_content, hide_modes, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text, media)",
+      "id, seq, author_type, author_id, content, masked_content, hide_modes, status, superseded_at, attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text, media, generated)",
     )
     .eq("conversation_id", conversation.id)
     .order("seq");
@@ -153,7 +160,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     if (ids.length > 0) {
       const { data } = await supabase
         .from("conversation_attachments")
-        .select("id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text, media")
+        .select("id, filename, kind, mime_type, storage_path, extracted_text, text_truncated, masked_text, media, generated")
         .eq("conversation_id", conversation.id)
         .eq("uploaded_by", ctx.user.id)
         .is("message_id", null)
@@ -170,6 +177,27 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   // naming an assistant ("Coucou @Claude, …") hands that turn to it.
   const mention = input.message ? parseMention(newText) : null;
   const aiRequested = !group || Boolean(input.regenerate) || Boolean(input.confront) || mention !== null;
+
+  // Images: a request for an image (or the "Image" button) goes to ChatGPT's image model. A change
+  // ("ajoute un chapeau") applies to the photo attached, else to the conversation's last image.
+  let imageTurn: { intent: ImageIntent; sources: { bucket: string; path: string }[] } | null = null;
+  if (input.message && aiRequested && !agent) {
+    const attached = pending.filter((a) => a.kind === "image");
+    const lastImage = attached.length
+      ? null
+      : ([...visible].reverse().find((r) => r.author_type === "assistant" && ((r.attachments ?? []) as AttachmentRow[]).some((a) => a.kind === "image" && a.generated)) ?? null);
+    const lastImageFile = lastImage ? ((lastImage.attachments ?? []) as AttachmentRow[]).find((a) => a.kind === "image" && a.generated) : undefined;
+    const intent = imageIntent(newText, { hasImage: attached.length > 0 || Boolean(lastImageFile), forced: input.image });
+    if (intent) {
+      const { data: features } = await supabase.from("company_ai_settings").select("image_generation_enabled").eq("company_id", companyId).maybeSingle();
+      if (features?.image_generation_enabled === false) {
+        if (input.image) return fail("images_disabled", 403);
+      } else {
+        const sources = intent === "edit" ? (attached.length ? attached : lastImageFile ? [lastImageFile] : []) : attached;
+        imageTurn = { intent, sources: sources.slice(0, 4).map((a) => ({ bucket: "chat-attachments", path: a.storage_path })) };
+      }
+    }
+  }
 
   // Model: the mentioned provider, else the explicit choice, else the conversation's. Auto routes with simple rules.
   const models = await getCompanyModels(companyId);
@@ -201,6 +229,15 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     }
     if (!plan.enough) return fail("confront_too_expensive", 402);
     confrontation = plan;
+  } else if (imageTurn) {
+    // No chat model for an image: only the quota is checked before the image model is called.
+    const quota = await getMyQuota(companyId);
+    if (!quota) return fail("server_error", 500);
+    if (quota.state.state === "blocked") {
+      const reason = quota.state.scope === "user" ? "quota_user" : "quota_company";
+      await logBlockedRequest(companyId, ctx.user.id, reason);
+      return fail(reason === "quota_user" ? "quota_exceeded_user" : "quota_exceeded_company", 402);
+    }
   } else if (aiRequested) {
     const resolved = resolveModel(choice, models, {
       text: routedText,
@@ -374,6 +411,17 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         attachments: pending.map((a) => ({ ...a, masked_text: maskedAttachments.get(a.id) ?? null })),
       },
     ];
+  }
+
+  if (imageTurn) {
+    const posted = userMessage!;
+    // What the image model reads: the message as Hide masked it (placeholders, never real values).
+    const prompt = turn?.message ?? newText;
+    const job = imageTurn;
+    return {
+      ok: true,
+      run: () => runImageTurn({ supabase, ctx, conversationId: conversation.id, prompt, sources: job.sources, userMessage: posted, locale }),
+    };
   }
 
   if (!aiRequested || (!resolution && !confrontation)) {
@@ -750,6 +798,109 @@ async function* runTurn(p: {
   };
 }
 
+/**
+ * An image turn: ChatGPT's image model makes (or changes) one image, stored as the answer's file.
+ * Charged at our team's rate per image; a refused or failed image is not charged.
+ */
+async function* runImageTurn(p: {
+  supabase: UserClient;
+  ctx: MemberContext;
+  conversationId: string;
+  prompt: string;
+  sources: { bucket: string; path: string }[];
+  userMessage: NonNullable<Extract<ChatStreamEvent, { type: "meta" }>["userMessage"]>;
+  locale: "fr" | "en";
+}): AsyncGenerator<ChatStreamEvent> {
+  const started = Date.now();
+  const apiModelId = chatImageModel();
+  const model = { id: "chatgpt-image", provider: "openai", apiModelId, label: "Images" } as CatalogModel;
+  let assistant: { id: string; seq: number };
+  try {
+    assistant = await createAssistantMessage({ conversationId: p.conversationId, model, routing: null, contextMeta: { image: true } });
+  } catch {
+    yield { type: "error", code: "server_error", retryable: true };
+    return;
+  }
+  yield {
+    type: "meta",
+    conversationId: p.conversationId,
+    userMessage: p.userMessage,
+    assistantMessage: assistant,
+    model: { id: model.id, provider: "openai", label: model.label },
+    routing: null,
+    replaces: null,
+    omittedMessages: 0,
+    contextLimited: false,
+  };
+  yield { type: "imaging" };
+
+  const inputs = (
+    await Promise.all(
+      p.sources.map(async (source) => {
+        const { data } = await p.supabase.storage.from(source.bucket).download(source.path);
+        return data ? [new Uint8Array(await data.arrayBuffer())] : [];
+      }),
+    )
+  ).flat();
+  // Any failure ends the answer as failed (never left "in progress").
+  const result = await generateChatImage({ prompt: p.prompt, images: inputs }).catch(() => ({ ok: false as const, error: { code: "unknown" as const, retryable: true } }));
+  const usageBase = {
+    companyId: p.ctx.active.companyId,
+    userId: p.ctx.user.id,
+    feature: "image" as const,
+    conversationId: p.conversationId,
+    messageId: assistant.id,
+    provider: "openai" as const,
+    modelId: model.id,
+    apiModelId,
+    autoRouted: false,
+    inputTokens: 0,
+    outputTokens: 0,
+    cachedInputTokens: 0,
+    tokensEstimated: false,
+    latencyMs: 0,
+  };
+  if (!result.ok) {
+    await finishAssistantMessage(assistant.id, { content: "", status: "error", errorCode: result.error.code, inputTokens: null, outputTokens: null });
+    await recordUsage({ ...usageBase, credits: 0, estimatedCostUsd: 0, status: "error", errorCode: result.error.code, latencyMs: Date.now() - started });
+    yield { type: "error", code: result.error.code, retryable: result.error.retryable };
+    return;
+  }
+
+  const file = await saveGeneratedImage({
+    conversationId: p.conversationId,
+    messageId: assistant.id,
+    userId: p.ctx.user.id,
+    bytes: result.image.bytes,
+    mediaType: result.image.mediaType,
+  });
+  if (!file) {
+    await finishAssistantMessage(assistant.id, { content: "", status: "error", errorCode: "server_error", inputTokens: null, outputTokens: null });
+    yield { type: "error", code: "server_error", retryable: true };
+    return;
+  }
+  const caption = result.image.test
+    ? p.locale === "fr" ? "[TEST] Image simulée (mode test)." : "[TEST] Simulated image (test mode)."
+    : p.locale === "fr" ? "Voici l'image." : "Here is the image.";
+  await finishAssistantMessage(assistant.id, { content: caption, status: "complete", errorCode: null, inputTokens: null, outputTokens: null });
+  const rate = await imageRate();
+  await recordUsage({ ...usageBase, credits: rate.credits, estimatedCostUsd: rate.costUsd, status: "ok", errorCode: null, latencyMs: Date.now() - started });
+  yield { type: "delta", text: caption };
+  const quota = await getMyQuota(p.ctx.active.companyId);
+  yield {
+    type: "done",
+    credits: rate.credits,
+    quota: quota?.state ?? null,
+    sources: [],
+    masked: null,
+    suggestedColleagues: [],
+    webSources: [],
+    memory: null,
+    learningJobId: null,
+    images: [file],
+  };
+}
+
 function contextPlaceholders(context: ReturnType<typeof buildChatContext>): Set<string> {
   const texts = [context.system, ...context.messages.flatMap((m) => m.content.flatMap((part) => (part.type === "text" ? [part.text] : [])))];
   return new Set(texts.flatMap((text) => [...text.matchAll(PLACEHOLDER_PATTERN)].map((m) => m[0])));
@@ -783,6 +934,8 @@ async function toHistory(
       const attachments: HistoryAttachment[] = await Promise.all(
         ((r.attachments ?? []) as AttachmentRow[]).map(async (a) => {
           if (a.kind === "video") return { filename: a.filename, kind: "video" as const, media: (a.media as HistoryAttachment["media"]) ?? null };
+          // An image the assistant made: chat models get a note, not the picture (they cannot take images in their own turns).
+          if (r.author_type === "assistant") return { filename: a.filename, kind: "document" as const, text: "[An image was created and shown to the person here.]", truncated: false };
           if (a.kind !== "image") {
             // Hide: the masked text when Documents mode masked something in this file.
             return { filename: a.filename, kind: "document" as const, text: a.masked_text ?? (a.extracted_text && neutralizePlaceholders(a.extracted_text)), truncated: a.text_truncated };

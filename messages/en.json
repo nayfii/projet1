@@ -708,7 +708,8 @@
       "server_error": "Something went wrong. Your message was not lost: please try again.",
       "hide_unavailable": "Data protection is not configured on the server: nothing was sent. Turn protection off for this message or tell your administrator.",
       "confront_unavailable": "Confront is not available for this question (it needs at least two allowed AIs, and a question everyone here can see).",
-      "confront_too_expensive": "There are not enough credits left this month for a confrontation."
+      "confront_too_expensive": "There are not enough credits left this month for a confrontation.",
+      "images_disabled": "Image creation is switched off in your company."
     },
     "removeAttachment": "Remove {name}",
     "placeholder": "Write your message…",
@@ -788,7 +789,13 @@
       "copied": "Copied",
       "edited": "edited"
     },
-    "rowActions": "Options for “{title}”"
+    "rowActions": "Options for “{title}”",
+    "imageMode": "Image",
+    "imageModeHint": "Create or edit an image",
+    "imagePlaceholder": "Describe the image to create, or what to change…",
+    "imaging": "Creating the image…",
+    "openImage": "Open the image",
+    "downloadImage": "Download"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -958,7 +965,13 @@
     "webSearchRateCredits": "Credits per search",
     "webSearchRateCost": "Estimated cost ($ per search)",
     "webSearchRateSave": "Save",
-    "webSearchRateSaved": "Search rate saved."
+    "webSearchRateSaved": "Search rate saved.",
+    "imageRateTitle": "Images in the chat",
+    "imageRateHint": "Credits counted for one image created or edited in the chat ({model}, OpenAI), and its estimated cost for us. A refused or failed image is not counted.",
+    "imageRateSaved": "Image rate saved.",
+    "imageRateCredits": "Credits per image",
+    "imageRateCost": "Estimated cost (USD)",
+    "imageRateSave": "Save"
   },
   "memory": {
     "title": "Consciousness",
@@ -1986,7 +1999,9 @@
     "dictationBody": "A microphone in the conversation. Speech is transcribed by OpenAI's transcription model; the voice itself reaches it unmasked. The text goes through Hide before it is sent.",
     "saved": "Setting saved",
     "webSearchTitle": "Web search",
-    "webSearchBody": "ChatGPT, Claude and Gemini can search the web (news, prices, recent facts) and cite the pages they used. The search is run by the AI provider, from what it received (after Hide). Each search costs credits."
+    "webSearchBody": "ChatGPT, Claude and Gemini can search the web (news, prices, recent facts) and cite the pages they used. The search is run by the AI provider, from what it received (after Hide). Each search costs credits.",
+    "imagesTitle": "Images",
+    "imagesBody": "Create or edit images in the chat with ChatGPT's image model. The description goes to OpenAI (masked by protection), attached photos as they are."
   },
   "dictation": {
     "start": "Dictate",

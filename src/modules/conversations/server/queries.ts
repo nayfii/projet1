@@ -84,7 +84,7 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
   const { data: allRows } = await supabase
     .from("messages")
     .select(
-      "id, seq, author_type, content, masked_content, hide_counts, hide_modes, hide_spans, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, confrontation, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated)",
+      "id, seq, author_type, content, masked_content, hide_counts, hide_modes, hide_spans, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, confrontation, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated, generated)",
     )
     .eq("conversation_id", conversationId)
     .is("superseded_at", null)
@@ -150,6 +150,7 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
       filename: a.filename,
       kind: a.kind as AttachmentKind,
       truncated: a.text_truncated,
+      generated: a.generated,
     })),
     sources: sourcesByMessage.get(m.id) ?? [],
     maskedContent: m.masked_content,

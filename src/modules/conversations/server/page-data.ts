@@ -24,7 +24,7 @@ export async function getChatPageData(ctx: MemberContext) {
     getTranslations("memory"),
     getHideSettings(supabase, companyId),
     supabase.from("company_members").select("team_id").eq("company_id", companyId).eq("user_id", ctx.user.id).maybeSingle(),
-    supabase.from("company_ai_settings").select("dictation_enabled").eq("company_id", companyId).maybeSingle(),
+    supabase.from("company_ai_settings").select("dictation_enabled, image_generation_enabled").eq("company_id", companyId).maybeSingle(),
   ]);
   const clientName = new Map(clients.map((c) => [c.id, c.name]));
   const picker: PickerModel[] = models.allowed.map((m) => ({
@@ -58,6 +58,8 @@ export async function getChatPageData(ctx: MemberContext) {
     canRestrictClients: canRestrictClients(ctx.active),
     // Voice dictation (the company can switch it off).
     dictation: features?.dictation_enabled ?? true,
+    // Images in the chat (ChatGPT's image model; the company can switch it off).
+    images: features?.image_generation_enabled ?? true,
     // "Turn into a tool": what the tool editor needs.
     toolEditor: { models: picker, autoEnabled: models.autoEnabled, hasTeam: Boolean(membership?.team_id), canApprove: hasScope(ctx.active, "agents") },
   };

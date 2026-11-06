@@ -57,6 +57,11 @@ export function avatarImageModel(): string {
   return process.env.AVATAR_IMAGE_MODEL?.trim() || "gpt-image-1.5";
 }
 
+/** Images in the chat: ChatGPT's own image model at OpenAI (needs OPENAI_API_KEY). */
+export function chatImageModel(): string {
+  return process.env.CHAT_IMAGE_MODEL?.trim() || "chatgpt-image-latest";
+}
+
 /** Voice dictation: OpenAI's transcription model (CLAUDE.md §11). */
 export function dictationModel(): string {
   return process.env.DICTATION_MODEL?.trim() || "gpt-4o-transcribe";
