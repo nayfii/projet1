@@ -2262,7 +2262,8 @@
       "orchid": "Orchid",
       "pearl": "Pearl",
       "peach": "Peach",
-      "waylume": "Waylume"
+      "waylume": "Waylume",
+      "waylumeNight": "Waylume Night"
     },
     "paletteHint": {
       "aurora": "Violet and midnight-blue silk",
@@ -2271,7 +2272,8 @@
       "orchid": "Folds of rose and plum",
       "pearl": "Light satin, lavender",
       "peach": "Soft light, peach and lilac",
-      "waylume": "Prismatic light, violet and pink"
+      "waylume": "Prismatic light, violet and pink",
+      "waylumeNight": "The same light on deep black, slower"
     },
     "lowPower": "This device struggles with the moving effects: the background is still and the glass no longer bends, to keep the app smooth.",
     "lowPowerRestore": "Turn the effects back on",

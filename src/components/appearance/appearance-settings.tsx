@@ -127,7 +127,7 @@ function PaletteChoice({ palette, selected, onSelect }: { palette: (typeof PALET
         style={{ background: `linear-gradient(160deg, ${palette.colors.c2}, ${palette.colors.base} 70%)` }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- a data URL drawn in the browser */}
-        {palette.scene === "waylume" ? <WaylumePreview /> : src ? <img src={src} alt="" className="absolute inset-0 size-full object-cover" /> : null}
+        {palette.scene === "waylume" ? <WaylumePreview variant={palette.id} /> : src ? <img src={src} alt="" className="absolute inset-0 size-full object-cover" /> : null}
         <LiquidGlass
           material="card"
           reach={12}

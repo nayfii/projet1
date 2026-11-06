@@ -48,6 +48,14 @@ export const PALETTES = [
     colors: { base: "#07040f", deep: "#120a24", c1: "#9b6cff", c2: "#ff4797", c3: "#2d79f0", c4: "#9b6cff", rim: "#e8d9ff" },
   },
   {
+    // The founder's second Waylume export (components/ambient/WaylumeNightBackground.tsx, verbatim):
+    // the same light on pure black, slower, with the lens effect and without grain.
+    id: "waylumeNight",
+    scene: "waylume",
+    scheme: "dark",
+    colors: { base: "#000000", deep: "#0a0612", c1: "#9b6cff", c2: "#ff4797", c3: "#2d79f0", c4: "#9b6cff", rim: "#e8d9ff" },
+  },
+  {
     id: "pearl",
     scene: "silk",
     scheme: "light",

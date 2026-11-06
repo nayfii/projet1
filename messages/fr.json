@@ -2262,7 +2262,8 @@
       "orchid": "Orchidée",
       "pearl": "Nacre",
       "peach": "Pêche",
-      "waylume": "Waylume"
+      "waylume": "Waylume",
+      "waylumeNight": "Waylume Nuit"
     },
     "paletteHint": {
       "aurora": "Soie violette et bleu nuit",
@@ -2271,7 +2272,8 @@
       "orchid": "Plis de rose et de prune",
       "pearl": "Satin clair, lavande",
       "peach": "Lumière douce, pêche et lilas",
-      "waylume": "Lumière prismatique, violet et rose"
+      "waylume": "Lumière prismatique, violet et rose",
+      "waylumeNight": "La même lumière sur un noir profond, plus lente"
     },
     "lowPower": "Cet appareil peine avec les effets animés : le fond est immobile et le verre ne se courbe plus, pour garder l'application fluide.",
     "lowPowerRestore": "Réactiver les effets",
