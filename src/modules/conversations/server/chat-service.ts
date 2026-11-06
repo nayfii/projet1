@@ -16,7 +16,8 @@ import { buildChatContext, contextBudget, IMAGE_LOOKBACK_MESSAGES, type HistoryA
 import { buildSystemPrompt } from "../system-prompt";
 import type { ChatRequestError, ChatStreamEvent, RoutingInfo } from "../stream-events";
 import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMessageSources, supersedeMessage } from "./assistant-writer";
-import { retrievePassages } from "@/modules/memory/server/retrieval";
+import { buildMemoryContext, type MemoryTrace } from "@/modules/memory/server/gateway";
+import { enqueueLearning, runPendingLearning } from "@/modules/memory/server/learning";
 import { citedPositions, toSourceProofs } from "@/modules/memory/citations";
 import type { KnowledgePassage } from "@/modules/memory/types";
 import { HIDE_MODES, isHideMode, MAX_BLUR_CHARS, PLACEHOLDER_PATTERN, totalCount, type HideMode } from "@/modules/hide/categories";
@@ -63,7 +64,8 @@ export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
 
 type Prepared =
   | { ok: false; error: ChatRequestError; status: number }
-  | { ok: true; run: () => AsyncGenerator<ChatStreamEvent> };
+  /** `afterwards`: work that runs once the answer is streamed and saved (learning), never delaying it. */
+  | { ok: true; run: () => AsyncGenerator<ChatStreamEvent>; afterwards?: () => Promise<void> };
 
 type AttachmentRow = {
   id: string;
@@ -417,11 +419,25 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
     const companySpaces = (await myMemorySpaces(supabase, companyId)).filter((space) => space.kind === "company").map((space) => space.spaceId);
     restrictTo = new Set(companySpaces.filter((id) => !restrictTo || restrictTo.has(id)));
   }
-  // Memory passages, filtered by permissions before any model sees them. The search by meaning uses
-  // the masked question: the embeddings provider gets no more than the chat model.
+  // Context Gateway: memory filtered by permissions (and provider rules) before any model sees it.
+  // The search by meaning uses the masked question: the embeddings provider gets no more than the chat model.
   const embeddingQuery = input.message ? (turn?.message ?? newText) : (lastUser?.masked_content ?? routedText);
-  const knowledge =
-    agent?.memoryScope === "none" ? [] : await retrievePassages(supabase, ctx, { clientId: conversation.client_id, query: routedText, embeddingQuery, restrictTo });
+  const providers = confrontation
+    ? [...new Set([...confrontation.models.map((m) => m.provider), confrontation.judge.provider])]
+    : [resolution!.model.provider];
+  const memory =
+    agent?.memoryScope === "none"
+      ? null
+      : await buildMemoryContext(supabase, ctx, {
+          conversationId: conversation.id,
+          clientId: conversation.client_id,
+          query: routedText,
+          embeddingQuery,
+          restrictTo,
+          providers,
+          ownRecent: !group && agent?.memoryScope !== "company",
+        });
+  const knowledge = memory?.passages ?? [];
   // Documents and notes are written by people too: placeholder-shaped text in them is made inert.
   const inertKnowledge = knowledge.map((p) => ({ ...p, content: neutralizePlaceholders(p.content), title: neutralizePlaceholders(p.title) }));
   const promptKnowledge = masker
@@ -449,8 +465,22 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
           )
         ).map((p) => masker!.protect(p.content))
       : personalNotes;
+  // Hot memory: the person's own recent words about this client (not learned yet), masked like memory.
+  const recentNotes = (memory?.recent ?? []).map((text) => neutralizePlaceholders(text));
+  const promptRecent =
+    masker && recentNotes.length
+      ? (
+          await maskPassages(
+            masker,
+            recentNotes.map((content, i) => ({ ...PERSONAL_NOTE, position: i + 1, id: `recent-${i}`, content })),
+            hideModes,
+            autoCategories,
+          )
+        ).map((p) => masker!.protect(p.content))
+      : recentNotes;
   const system = buildSystemPrompt({
     personal: promptPersonal,
+    recent: promptRecent,
     company: { name: companyRes.data?.name ?? ctx.active.companyName, industry: companyRes.data?.industry, description: promptFacts.companyDescription },
     client: promptFacts.client,
     user: { name: promptFacts.userName },
@@ -489,17 +519,31 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
             return restorer.push(text) + restorer.flush();
           },
           contextLimited: group && (historyLimited || memoryLimited),
+          memory: memory?.trace ?? null,
         }),
     };
   }
 
   const { model, routing } = resolution!;
   const routingInfo: RoutingInfo | null = routing ? { mode: "auto", task: routing.task, basis: routing.basis } : null;
+  // Learning queued at the end of the answer, run once it is streamed (same session, same rights).
+  let learningJob: string | null = null;
 
   return {
     ok: true,
+    afterwards: async () => {
+      try {
+        await runPendingLearning(supabase, ctx, learningJob);
+      } catch {
+        // Learning never breaks a turn; the job is retried on a later turn.
+      }
+    },
     run: () =>
       runTurn({
+        memory: memory?.trace ?? null,
+        onLearningQueued: (jobId) => {
+          learningJob = jobId;
+        },
         supabase,
         ctx,
         conversationId: conversation.id,
@@ -519,6 +563,9 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
 }
 
 async function* runTurn(p: {
+  /** Context Gateway trace: exactly what memory the model received (ids only). */
+  memory: MemoryTrace | null;
+  onLearningQueued: (jobId: string) => void;
   supabase: UserClient;
   ctx: MemberContext;
   conversationId: string;
@@ -548,7 +595,7 @@ async function* runTurn(p: {
       conversationId: p.conversationId,
       model: p.model,
       routing: p.routing as Json | null,
-      contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, [], []),
+      contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, [], [], p.memory),
     });
   } catch {
     yield { type: "error", code: "server_error", retryable: true };
@@ -652,7 +699,7 @@ async function* runTurn(p: {
   await finishAssistantMessage(assistant.id, {
     content: shown,
     maskedContent: masked,
-    contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, suggested, webSources),
+    contextMeta: contextMeta(p.context.omittedMessages, p.contextLimited, suggested, webSources, p.memory),
     status,
     errorCode: providerError?.code ?? null,
     inputTokens: usage?.inputTokens ?? null,
@@ -686,8 +733,21 @@ async function* runTurn(p: {
     return;
   }
   if (aborted) return;
+  // Learning: queued now (the next model, in any conversation, waits for it), run after the stream.
+  const learningJob = status === "complete" ? await enqueueLearning(p.supabase, assistant.id) : null;
+  if (learningJob) p.onLearningQueued(learningJob);
   const quota = await getMyQuota(p.ctx.active.companyId);
-  yield { type: "done", credits: charge.credits, quota: quota?.state ?? null, sources, masked, suggestedColleagues: suggested, webSources };
+  yield {
+    type: "done",
+    credits: charge.credits,
+    quota: quota?.state ?? null,
+    sources,
+    masked,
+    suggestedColleagues: suggested,
+    webSources,
+    memory: p.memory,
+    learningJobId: learningJob,
+  };
 }
 
 function contextPlaceholders(context: ReturnType<typeof buildChatContext>): Set<string> {
@@ -695,8 +755,9 @@ function contextPlaceholders(context: ReturnType<typeof buildChatContext>): Set<
   return new Set(texts.flatMap((text) => [...text.matchAll(PLACEHOLDER_PATTERN)].map((m) => m[0])));
 }
 
-function contextMeta(omitted: number, limited: boolean, suggested: SuggestedColleague[], web: WebSource[]): Json | null {
+function contextMeta(omitted: number, limited: boolean, suggested: SuggestedColleague[], web: WebSource[], memory: MemoryTrace | null): Json | null {
   const meta: Record<string, Json> = {};
+  if (memory && (memory.used.length || memory.recent || memory.blocked.length || memory.pending)) meta.memory = memory as unknown as Json;
   if (omitted) meta.omitted_messages = omitted;
   if (limited) meta.context_limited = true;
   if (suggested.length) meta.suggested_colleagues = suggested;

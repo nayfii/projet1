@@ -50,7 +50,7 @@ test("anyone creates a client from the sidebar and lands in its space", async ()
   await shot(page, "s12-01-client-space");
 });
 
-test("naming the client in a chat suggests linking it; the answer feeds its memory, with Undo", async () => {
+test("naming the client in a chat suggests linking it; the answer feeds its memory, which can be forgotten", async () => {
   await page.goto("/chat");
   await composer().fill(`Prépare la réunion de jeudi avec ${clientName}, ils préfèrent des rapports courts.`);
   const suggestion = page.getByRole("button", { name: `Rattacher à ${clientName} ?` });
@@ -62,11 +62,16 @@ test("naming the client in a chat suggests linking it; the answer feeds its memo
   await page.getByRole("button", { name: "Envoyer" }).click();
   await expect(page.locator("article")).toHaveCount(1, { timeout: 20_000 });
   await expect(page.locator('article[aria-busy="true"]')).toHaveCount(0, { timeout: 20_000 });
-  const added = page.getByText(new RegExp(`ajoutées? à la mémoire de ${clientName}`));
-  await expect(added).toBeVisible({ timeout: 20_000 });
+  // Learned on our server after the answer; the line under the answer shows the real result.
+  const learned = page.getByTestId("memory-learned");
+  await expect(learned).toHaveText(/1 fait appris/, { timeout: 20_000 });
+  await learned.click();
+  await expect(page.getByTestId("memory-learned-panel")).toContainText(`Ajouté à la mémoire de ${clientName}`);
+  await expect(page.getByTestId("memory-learned-panel")).toContainText("rapports courts");
   await shot(page, "s12-03-auto-memory");
-  await page.getByRole("button", { name: "Annuler" }).click();
-  await expect(page.getByText("Retiré de la mémoire.")).toBeVisible();
+  await page.getByRole("button", { name: "Oublier ce qui a été appris" }).click();
+  await expect(page.getByText("Oublié. Les versions précédentes sont revenues.")).toBeVisible();
+  await expect(learned).toBeHidden();
 });
 
 test("voice dictation writes into the message box, to be read before sending", async () => {

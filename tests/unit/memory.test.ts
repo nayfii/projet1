@@ -140,9 +140,9 @@ describe("memory passages in the prompt", () => {
 
 describe("which memories a conversation draws from", () => {
   const spaces: MemorySpace[] = [
-    { spaceId: "company", kind: "company", clientId: null, canWrite: false, entryCount: 0, documentCount: 0 },
-    { spaceId: "a", kind: "client", clientId: "client-a", canWrite: true, entryCount: 0, documentCount: 0 },
-    { spaceId: "b", kind: "client", clientId: "client-b", canWrite: true, entryCount: 0, documentCount: 0 },
+    { spaceId: "company", kind: "company", clientId: null, canWrite: false, entryCount: 0, documentCount: 0, blockedProviders: [] },
+    { spaceId: "a", kind: "client", clientId: "client-a", canWrite: true, entryCount: 0, documentCount: 0, blockedProviders: [] },
+    { spaceId: "b", kind: "client", clientId: "client-b", canWrite: true, entryCount: 0, documentCount: 0, blockedProviders: [] },
   ];
   it("uses company memory + the linked client's memory only", () => {
     expect(conversationScope(spaces, "client-a").map((s) => s.spaceId)).toEqual(["company", "a"]);

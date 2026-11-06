@@ -2203,5 +2203,42 @@
     "waiting": "Waiting for a first sign-in",
     "waitingSince": "invited on {date}",
     "cancel": "Cancel {email}'s invitation"
+  },
+  "consciousness": {
+    "used": "{count, plural, one {# memory used} other {# memories used}}",
+    "blockedShort": "Memory not sent",
+    "learning": "Learning…",
+    "learningFailed": "Learning not possible right now.",
+    "retry": "Try again",
+    "learned": "{count, plural, one {# fact learned} other {# facts learned}}",
+    "toConfirm": "{count, plural, one {# to confirm} other {# to confirm}}",
+    "loading": "Loading…",
+    "whyIntro": "What the AI received from memory for this answer, whichever model was chosen.",
+    "reason": {
+      "brief": "Client key facts (always given)",
+      "search": "Found for your question"
+    },
+    "companyMemory": "Company memory",
+    "recentUsed": "{count, plural, one {Plus your recent message about this client, not learned yet.} other {Plus your # recent messages about this client, not learned yet.}}",
+    "pendingNotice": "A learning was still running: its facts may not have been included.",
+    "blocked": "{memory} was not sent to this model (company rule). Choose another model to use it.",
+    "learnedFor": "Added to {client}'s memory",
+    "confirmIntro": "To confirm before it enters memory",
+    "keptPrivate": "{count, plural, one {# personal detail kept private.} other {# personal details kept private.}}",
+    "forget": "Forget what was learned",
+    "forgotten": "Forgotten. The previous versions are back.",
+    "correct": "Correct",
+    "corrected": "Corrected. The old version stays in the history.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "dismiss": "Dismiss",
+    "confirmed": "Added to memory.",
+    "dismissed": "Dismissed.",
+    "proposalReason": {
+      "assistant_claim": "Said by the AI, not by you.",
+      "uncertain": "Not quite certain.",
+      "conflict": "Contradicts another fact."
+    }
   }
 }

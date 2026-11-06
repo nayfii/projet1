@@ -65,7 +65,6 @@ import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
 import { CastPicker, CastRail, CastStack, type Cast } from "@/modules/avatars/ui/conversation-cast";
 import { detectClientMention } from "@/modules/clients/detect";
-import { autoClientMemoryAction, undoAutoMemoryAction } from "@/modules/memory/server/actions";
 import { NewClientDialog } from "@/modules/clients/ui/new-client-dialog";
 import type { AssistantId } from "@/modules/avatars/assistants";
 import { leaveConversationAction, loadParticipantsAction, loadTimelineMessagesAction } from "@/modules/collaboration/server/actions";
@@ -567,13 +566,15 @@ export function ChatView(props: Props) {
                       maskedContent: event.masked ?? null,
                       suggestedColleagues: event.suggestedColleagues ?? [],
                       webSources: event.webSources ?? [],
+                      memory: event.memory ?? null,
+                      learning: event.learningJobId
+                        ? { jobId: event.learningJobId, status: "queued", learned: 0, confirmed: 0, superseded: 0, proposed: 0, keptPrivate: 0, forgotten: false }
+                        : null,
                     }
                   : m,
               ),
             );
             if (event.quota) setQuota(event.quota);
-            const target = typeof payload.conversationId === "string" ? payload.conversationId : null;
-            if (target && id && clientId && feedMemory && !options.confrontation) void feedClientMemory(target, id);
           } else if (event.type === "error") {
             const id = currentLive;
             const replaced = restoreReplaced?.status === "complete" ? restoreReplaced : null;
@@ -752,21 +753,6 @@ export function ChatView(props: Props) {
   function changeModel(choice: string) {
     setModelChoice(choice);
     if (conversationId) void setConversationModelAction({ conversationId, modelChoice: choice });
-  }
-
-  /** Client memory fed automatically after an answer, with "Undo" (CLAUDE.md §11). */
-  async function feedClientMemory(conversation: string, messageId: string) {
-    const result = await autoClientMemoryAction({ conversationId: conversation, messageId });
-    if (!result) return;
-    const ids = result.entries.map((e) => e.id);
-    toast(tMemory("autoAdded", { count: ids.length, client: result.clientName }), {
-      description: result.entries.map((e) => e.title).join(" · "),
-      duration: 9000,
-      action: {
-        label: tMemory("autoUndo"),
-        onClick: () => void undoAutoMemoryAction({ entryIds: ids }).then((r) => (r.ok ? toast.success(tMemory("autoUndone")) : toast.error(tErrors(r.error)))),
-      },
-    });
   }
 
   async function toggleFeedMemory() {
@@ -1072,6 +1058,7 @@ export function ChatView(props: Props) {
                       onInvite={(userId) => void openAdd([userId])}
                       onConfront={confrontHandler(index)}
                       confrontProgress={confrontProgress[m.id]}
+                      onLearning={(state) => setMessages((list) => list.map((x) => (x.id === m.id ? { ...x, learning: state } : x)))}
                       render={renderKind ? { kind: renderKind, attachments: conversationFiles } : null}
                       people={people}
                       group={group}

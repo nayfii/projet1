@@ -16,6 +16,8 @@ export type MemorySpace = {
   canWrite: boolean;
   entryCount: number;
   documentCount: number;
+  /** AI providers this memory must never be sent to (company rule). */
+  blockedProviders: string[];
 };
 
 /** Memories the signed-in user can read (and write), checked in SQL with their session. */
@@ -28,6 +30,7 @@ export async function myMemorySpaces(supabase: UserClient, companyId: string): P
     canWrite: s.can_write,
     entryCount: Number(s.entry_count),
     documentCount: Number(s.document_count),
+    blockedProviders: (s.blocked_providers ?? []) as string[],
   }));
 }
 
@@ -53,37 +56,54 @@ export async function retrievePassages(
    */
   options: { clientId: string | null; query: string; embeddingQuery?: string; restrictTo?: ReadonlySet<string> },
 ): Promise<KnowledgePassage[]> {
-  const query = options.query.trim();
-  if (!query) return [];
   const scope = conversationScope(await myMemorySpaces(supabase, ctx.active.companyId), options.clientId).filter(
     (s) => !options.restrictTo || options.restrictTo.has(s.spaceId),
   );
-  if (scope.length === 0) return [];
+  return searchSpaces(supabase, ctx, scope, { query: options.query, embedding: undefined, embeddingQuery: options.embeddingQuery });
+}
+
+/** Client names of the client memories in a scope (to label passages). */
+export async function clientNamesOf(supabase: UserClient, scope: MemorySpace[]): Promise<Map<string, string>> {
+  const clientIds = [...new Set(scope.filter((s) => s.clientId).map((s) => s.clientId!))];
+  if (clientIds.length === 0) return new Map();
+  const { data } = await supabase.from("clients").select("id, name").in("id", clientIds);
+  return new Map((data ?? []).map((c) => [c.id, c.name]));
+}
+
+/**
+ * Hybrid search (meaning + exact words) inside the given spaces, current facts only. `embedding`:
+ * a vector already computed for this question (undefined: computed here; null: words only).
+ */
+export async function searchSpaces(
+  supabase: UserClient,
+  ctx: MemberContext,
+  scope: MemorySpace[],
+  options: { query: string; embeddingQuery?: string; embedding?: string | null; excludeIds?: ReadonlySet<string>; limit?: number },
+): Promise<KnowledgePassage[]> {
+  const query = options.query.trim();
+  if (!query || scope.length === 0) return [];
   const ids = scope.map((s) => s.spaceId);
 
   // Nothing to search: no embedding call, no cost.
   const [entries, chunks] = await Promise.all([
-    supabase.from("memory_entries").select("id").in("space_id", ids).limit(1),
+    supabase.from("memory_entries").select("id").in("space_id", ids).eq("status", "active").limit(1),
     supabase.from("document_chunks").select("id").in("space_id", ids).limit(1),
   ]);
   if (!entries.data?.length && !chunks.data?.length) return [];
 
-  const embedding = await embedQuery(supabase, ctx, options.embeddingQuery?.trim() || query);
+  const embedding = options.embedding !== undefined ? options.embedding : await embedQuery(supabase, ctx, options.embeddingQuery?.trim() || query);
+  const limit = options.limit ?? MAX_PASSAGES;
   const { data } = await supabase.rpc("match_memory", {
     p_space_ids: ids,
     p_keywords: keywordQuery(query),
     p_embedding: embedding ?? undefined,
     p_embedding_model: embeddingModelName(),
-    p_limit: MAX_PASSAGES,
+    p_limit: limit + (options.excludeIds?.size ?? 0),
   });
-  const rows = (data ?? []).filter((r) => ids.includes(r.space_id));
+  const rows = (data ?? []).filter((r) => ids.includes(r.space_id) && !options.excludeIds?.has(r.id)).slice(0, limit);
   if (rows.length === 0) return [];
 
-  const clientIds = [...new Set(scope.filter((s) => s.clientId).map((s) => s.clientId!))];
-  const { data: clients } = clientIds.length
-    ? await supabase.from("clients").select("id, name").in("id", clientIds)
-    : { data: [] as { id: string; name: string }[] };
-  const clientNames = new Map((clients ?? []).map((c) => [c.id, c.name]));
+  const clientNames = await clientNamesOf(supabase, scope);
   const spaceById = new Map(scope.map((s) => [s.spaceId, s]));
 
   return rows.map((r, i) => {
@@ -102,6 +122,7 @@ export async function retrievePassages(
       charStart: r.char_start,
       charEnd: r.char_end,
       sourceDate: r.source_date,
+      reason: "search" as const,
     };
   });
 }

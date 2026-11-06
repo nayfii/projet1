@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { RoutingInfo, SuggestedColleague, WebSource } from "../stream-events";
 import type { AttachmentKind, TimelineMessage } from "../types";
 import { isHideMode, type HideCounts, type Span } from "@/modules/hide/categories";
-import type { SourceProof } from "@/modules/memory/types";
+import { isMemoryTrace, toLearningState, type LearningState, type SourceProof } from "@/modules/memory/types";
 import { isConfrontation } from "@/modules/confronter/types";
 
 const STALE_STREAM_MS = 5 * 60 * 1000;
@@ -114,6 +114,13 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
     sourcesByMessage.set(r.message_id, list);
   }
 
+  // What each answer taught the client's memory (participants see it, like the answer).
+  const { data: jobRows } = await supabase
+    .from("memory_jobs")
+    .select("id, message_id, status, learned, confirmed, superseded, proposed, kept_private, forgotten_at")
+    .eq("conversation_id", conversationId);
+  const learningByMessage = new Map<string, LearningState>((jobRows ?? []).map((j) => [j.message_id, toLearningState(j)]));
+
   const now = Date.now();
   const messages: TimelineMessage[] = rows.map((m) => ({
     id: m.id,
@@ -149,6 +156,8 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
       (w) => typeof w?.url === "string" && /^https?:\/\//i.test(w.url),
     ),
     confrontation: isConfrontation(m.confrontation) ? m.confrontation : null,
+    memory: isMemoryTrace((m.context_meta as { memory?: unknown } | null)?.memory) ? (m.context_meta as { memory: TimelineMessage["memory"] }).memory : null,
+    learning: learningByMessage.get(m.id) ?? null,
   }));
 
   return { rows, messages };

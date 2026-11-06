@@ -8,7 +8,7 @@ import { computeCharge } from "@/modules/usage/credits";
 import { getMyQuota } from "@/modules/usage/server/quota";
 import { recordUsage } from "@/modules/usage/server/record";
 import { citedPositions, toSourceProofs } from "@/modules/memory/citations";
-import type { KnowledgePassage } from "@/modules/memory/types";
+import type { KnowledgePassage, MemoryTrace } from "@/modules/memory/types";
 import type { BuiltContext } from "@/modules/conversations/context";
 import type { ChatStreamEvent } from "@/modules/conversations/stream-events";
 import { createAssistantMessage, finishAssistantMessage, isStopRequested, saveMessageSources } from "@/modules/conversations/server/assistant-writer";
@@ -34,9 +34,12 @@ export async function* runConfrontation(p: {
   /** Hide: real values back in place of placeholders, for what people see. */
   restore: (text: string) => string;
   contextLimited: boolean;
+  /** Context Gateway trace: what memory the models received. */
+  memory?: MemoryTrace | null;
 }): AsyncGenerator<ChatStreamEvent> {
   const meta: Record<string, Json> = { confronts: p.question.id };
   if (p.contextLimited) meta.context_limited = true;
+  if (p.memory && (p.memory.used.length || p.memory.blocked.length)) meta.memory = p.memory as unknown as Json;
   if (p.context.omittedMessages) meta.omitted_messages = p.context.omittedMessages;
 
   const confrontation: Confrontation = {
@@ -228,7 +231,7 @@ export async function* runConfrontation(p: {
   }
   yield { type: "delta", text: content };
   const quota = await getMyQuota(p.ctx.active.companyId);
-  yield { type: "done", credits: confrontation.credits, quota: quota?.state ?? null, sources, masked: synthesis && maskedRecommended !== content ? maskedRecommended : null, suggestedColleagues: [], webSources: [] };
+  yield { type: "done", credits: confrontation.credits, quota: quota?.state ?? null, sources, masked: synthesis && maskedRecommended !== content ? maskedRecommended : null, suggestedColleagues: [], webSources: [], memory: p.memory ?? null, learningJobId: null };
 }
 
 /** Yields each promise's result as soon as it settles (the calls never reject). */

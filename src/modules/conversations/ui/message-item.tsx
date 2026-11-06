@@ -45,6 +45,8 @@ import { ModelName, ProviderDot } from "./provider-mark";
 import { AssistantAvatar } from "@/modules/avatars/ui/assistant-avatar";
 import type { AssistantState } from "@/modules/avatars/assistants";
 import { SourceList, SourceSheet } from "@/modules/memory/ui/source-proof";
+import { MemoryLine } from "@/modules/memory/ui/memory-line";
+import type { LearningState } from "@/modules/memory/types";
 import { EntryDialog, type MemoryTarget } from "@/modules/memory/ui/entry-dialog";
 import { MaskedView } from "@/modules/hide/ui/masked-view";
 import { ProtectedText } from "@/modules/hide/ui/hide-composer";
@@ -60,6 +62,9 @@ type InviteProps = { invitable?: SuggestedColleague[]; onInvite?: (userId: strin
 
 /** Confronter: opens the confirmation for this question (or the question this answer replies to). */
 type ConfrontProps = { onConfront?: () => void; confrontProgress?: ConfrontationProgress };
+
+/** Cendr Consciousness: the answer's learning changed state (polled under the answer). */
+type LearningProps = { onLearning?: (state: LearningState) => void };
 
 /** Avatars of the people in the conversation, by user id (colleagues' messages show theirs). */
 export type PeopleLookup = Map<string, { name: string; avatarUrl: string | null }>;
@@ -78,6 +83,7 @@ export function MessageItem({
   onInvite,
   onConfront,
   confrontProgress,
+  onLearning,
   render,
   people,
   group = false,
@@ -104,7 +110,8 @@ export function MessageItem({
   meId: string;
 } & MemoryProps &
   InviteProps &
-  ConfrontProps) {
+  ConfrontProps &
+  LearningProps) {
   if (message.role === "user") {
     const mine = !message.author || message.author.id === meId;
     return (
@@ -133,6 +140,7 @@ export function MessageItem({
       onInvite={onInvite}
       onConfront={onConfront}
       confrontProgress={confrontProgress}
+      onLearning={onLearning}
       render={render}
       bubble={group}
       pdfAsked={pdfAsked}
@@ -351,6 +359,7 @@ function AssistantMessage({
   onInvite,
   onConfront,
   confrontProgress,
+  onLearning,
   render,
   bubble = false,
   pdfAsked = false,
@@ -366,7 +375,8 @@ function AssistantMessage({
   onRegenerate: (modelChoice?: string) => void;
 } & MemoryProps &
   InviteProps &
-  ConfrontProps) {
+  ConfrontProps &
+  LearningProps) {
   const t = useTranslations("chat");
   const tCollab = useTranslations("collaboration");
   const [copied, setCopied] = React.useState(false);
@@ -437,6 +447,9 @@ function AssistantMessage({
       {!live ? <MaskedView kind="answer" maskedContent={message.maskedContent} counts={null} /> : null}
       <SourceList sources={message.sources} onOpen={setOpenSource} />
       {message.webSources.length > 0 ? <WebSourceList sources={message.webSources} /> : null}
+      {!live && message.status === "complete" ? (
+        <MemoryLine messageId={message.id} memory={message.memory} learning={message.learning} onLearning={(state) => onLearning?.(state)} />
+      ) : null}
       {pdfAsked && message.status === "complete" && message.content.trim() && !live ? (
         <Button asChild variant="outline" size="sm" className="gap-1.5">
           <a href={`/api/messages/${message.id}/export?format=pdf`} download>

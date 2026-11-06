@@ -2203,5 +2203,42 @@
     "waiting": "En attente de première connexion",
     "waitingSince": "invitée le {date}",
     "cancel": "Annuler l'invitation de {email}"
+  },
+  "consciousness": {
+    "used": "{count, plural, one {# mémoire utilisée} other {# mémoires utilisées}}",
+    "blockedShort": "Mémoire non transmise",
+    "learning": "Apprentissage…",
+    "learningFailed": "Apprentissage impossible pour l’instant.",
+    "retry": "Réessayer",
+    "learned": "{count, plural, one {# fait appris} other {# faits appris}}",
+    "toConfirm": "{count, plural, one {# à confirmer} other {# à confirmer}}",
+    "loading": "Chargement…",
+    "whyIntro": "Ce que l’IA a reçu de la mémoire pour cette réponse, quel que soit le modèle choisi.",
+    "reason": {
+      "brief": "Faits clés du client (toujours transmis)",
+      "search": "Trouvé pour votre question"
+    },
+    "companyMemory": "Mémoire de l’entreprise",
+    "recentUsed": "{count, plural, one {Plus votre message récent sur ce client, pas encore appris.} other {Plus vos # messages récents sur ce client, pas encore appris.}}",
+    "pendingNotice": "Un apprentissage était encore en cours : ses faits n’ont peut-être pas été pris en compte.",
+    "blocked": "{memory} n’a pas été transmise à ce modèle (règle de l’entreprise). Choisissez un autre modèle pour l’utiliser.",
+    "learnedFor": "Ajouté à la mémoire de {client}",
+    "confirmIntro": "À confirmer avant d’entrer en mémoire",
+    "keptPrivate": "{count, plural, one {# information personnelle gardée privée.} other {# informations personnelles gardées privées.}}",
+    "forget": "Oublier ce qui a été appris",
+    "forgotten": "Oublié. Les versions précédentes sont revenues.",
+    "correct": "Corriger",
+    "corrected": "Corrigé. L’ancienne version reste dans l’historique.",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "dismiss": "Ignorer",
+    "confirmed": "Ajouté à la mémoire.",
+    "dismissed": "Ignoré.",
+    "proposalReason": {
+      "assistant_claim": "Dit par l’IA, pas par vous.",
+      "uncertain": "Pas tout à fait sûr.",
+      "conflict": "Contredit un autre fait."
+    }
   }
 }
