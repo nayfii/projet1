@@ -793,7 +793,9 @@
     "imagePlaceholder": "Décrivez l'image à créer, ou ce qu'il faut changer…",
     "imaging": "Création de l'image…",
     "openImage": "Ouvrir l'image",
-    "downloadImage": "Télécharger"
+    "downloadImage": "Télécharger",
+    "renameTitle": "Renommer la conversation",
+    "renameHint": "Double-cliquez pour renommer"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -1240,6 +1242,11 @@
     "addBody": "Vous discutez ensemble ici. L'IA ne répond que lorsqu'on la mentionne (@IA, @Claude, @ChatGPT, @Gemini).",
     "noColleagues": "Aucun collègue ne peut rejoindre cette conversation pour le moment.",
     "who": "Qui ?",
+    "whoPlaceholder": "Rechercher un collègue (nom ou e-mail)…",
+    "whoMorePlaceholder": "Ajouter quelqu'un d'autre…",
+    "whoEmpty": "Aucun collègue ne correspond à « {query} ».",
+    "whoNarrow": "{count, plural, one {# autre collègue correspond : précisez la recherche.} other {# autres collègues correspondent : précisez la recherche.}}",
+    "whoRemove": "Retirer {name}",
     "historyTitle": "Ce qu'ils verront",
     "historyNow": "À partir de maintenant",
     "historyNowHint": "Les messages précédents restent visibles par vous seul(e).",
@@ -1324,7 +1331,8 @@
     "copyBanner": "Conversation transférée à {name} le {date}. Ceci est votre copie : vous pouvez la continuer de votre côté. {name} ne voit pas votre copie, et vous ne voyez pas la suite de son côté.",
     "copyBannerUnknown": "Conversation transférée le {date}. Ceci est votre copie, privée : vous pouvez la continuer de votre côté.",
     "mentionsYou": "vous mentionne",
-    "mentionedYou": "{name} vous a mentionné(e)"
+    "mentionedYou": "{name} vous a mentionné(e)",
+    "albertHint": "Réunions : préparation, comptes rendus"
   },
   "confronter": {
     "title": "Confronter",
@@ -2188,7 +2196,26 @@
     "pickerEmpty": "Aucune appli",
     "pickerAll": "Toutes les applis",
     "quickAccess": "Accès rapide",
-    "favorite": "Favori"
+    "favorite": "Favori",
+    "shortcutsTitle": "Créer ici",
+    "shortcut": {
+      "document": "Un document (rapport, facture, devis…)",
+      "slides": "Une présentation",
+      "sheet": "Un tableau",
+      "image": "Une image"
+    },
+    "shortcutCommand": {
+      "document": "document",
+      "slides": "presentation",
+      "sheet": "tableau",
+      "image": "image"
+    },
+    "shortcutPrompt": {
+      "document": "Rédige un document : ",
+      "slides": "Crée une présentation sur ",
+      "sheet": "Crée un tableau : "
+    },
+    "chatHint": "Aussi depuis une conversation : tapez « / » pour une appli ou pour créer un document, une présentation, un tableau ; « @Albert » prépare un rendez-vous ou rédige un compte rendu."
   },
   "platformApps": {
     "title": "Applis",
@@ -2380,5 +2407,52 @@
     "learningOff": "Privé",
     "learningOnHint": "Les faits utiles de cette conversation (décisions, budgets, dates, contacts) enrichissent la mémoire de {client}, pour vos collègues et tous les modèles. Vos informations personnelles restent privées. Cliquez pour ne rien retenir.",
     "learningOffHint": "Cette conversation n'enrichit pas la mémoire du client. Cliquez pour la réactiver."
+  },
+  "artifacts": {
+    "writing": "Rédaction en cours…",
+    "meta": "{kind} · version {version}{edited, select, yes { · modifiée à la main} other {}}",
+    "kind": {
+      "document": "Document",
+      "sheet": "Tableau",
+      "slides": "Présentation",
+      "code": "Code"
+    },
+    "open": "Ouvrir",
+    "opened": "Ouvert",
+    "panel": "Espace de travail : {title}",
+    "versions": "Versions",
+    "versionOption": "v{version} · {by, select, user {modifiée à la main} other {IA}} · {date}",
+    "edit": "Modifier",
+    "editOld": "Modifier à partir de cette version",
+    "download": "Télécharger",
+    "format": {
+      "pdf": "PDF",
+      "docx": "Word (.docx)",
+      "md": "Texte Markdown (.md)",
+      "xlsx": "Excel (.xlsx)",
+      "csv": "CSV",
+      "code": "Fichier de code"
+    },
+    "close": "Fermer l'espace de travail",
+    "updating": "L'IA écrit une nouvelle version…",
+    "oldVersion": "Version {version} sur {total}",
+    "showLatest": "Voir la dernière",
+    "empty": "Ce document est vide.",
+    "editHint": "Modifiez le texte (# titre, - liste, | tableau |). « Enregistrer » crée une nouvelle version, visible dans la conversation : l'IA repartira de celle-ci.",
+    "editCodeHint": "Modifiez le code. « Enregistrer » crée une nouvelle version, visible dans la conversation.",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "previousSlide": "Diapositive précédente",
+    "nextSlide": "Diapositive suivante",
+    "slideOf": "{index} / {total}",
+    "slide": "Diapositive",
+    "cell": "Cellule ligne {row}, colonne {column}",
+    "removeRow": "Supprimer la ligne {row}",
+    "addRow": "Ajouter une ligne",
+    "copy": "Copier",
+    "copied": "Copié",
+    "editIntro": "J'ai modifié « {title} ».",
+    "saved": "Nouvelle version enregistrée.",
+    "resize": "Largeur de l'espace de travail"
   }
 }

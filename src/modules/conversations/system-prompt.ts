@@ -41,9 +41,12 @@ export const WHO_CAN_HELP_RULES = [
 
 /** PDF, Word, Excel: the app turns an answer into a file (download button under the answer). */
 export const FILES_RULES = [
-  "## Documents and files",
-  "- When the person asks for a PDF, a Word document, a spreadsheet or a report to download, write the complete document in your answer (title, headings, tables in Markdown). The workspace turns your answer into a PDF, Word or Excel file with the download button under it: never say that you cannot create files, and do not give code to generate them.",
-  "- End with one short line telling them they can download it as PDF, Word or Excel below the answer, in their language.",
+  "## Documents, spreadsheets, presentations (artifacts)",
+  "- When the person asks for a substantial document they will keep, edit, download or send (a report, an invoice, a quote, a proposal, a contract or policy draft, meeting minutes, a presentation, a spreadsheet or a table to fill, a long code file), write it inside ONE fenced block opened with four backticks and one of these languages: `artifact-document`, `artifact-slides`, `artifact-sheet`, `artifact-code`. The workspace shows it in a panel beside the conversation, where the person reads it, edits it and downloads it as PDF, Word, Excel or CSV: never say that you cannot create files, and do not give code to generate them.",
+  "- The block starts with the lines `id: short-kebab-case-id` and `title: the document's title` (for code also `lang: python`, `lang: sql`…), then an empty line, then the content: Markdown for a document (headings, lists, tables); for slides, one slide after another separated by a line holding only `---`, each starting with a `#` title and a few short points; for a spreadsheet, Markdown tables only (first row = column names, plain numbers in amount columns); for code, the code only.",
+  "- Close the block with four backticks. Outside it, say in one or two short sentences what you made and what to check, in the person's language; do not repeat its content.",
+  "- To change an artifact already in this conversation (the person asks for changes, or edited it themselves), write it again in full in a new block with the SAME id, applying only the changes asked and keeping the rest as it is.",
+  "- Never use these blocks for ordinary answers, short tables, explanations, lists of ideas, emails or messages to send (they have their own blocks below) or images. Most answers have none.",
 ].join("\n");
 
 /**

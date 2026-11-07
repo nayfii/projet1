@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { ArrowLeftIcon } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
+import { createClient } from "@/lib/supabase/server";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { getAgent } from "@/modules/agents/server/queries";
 import { getToolEditorContext, reachableClients } from "@/modules/agents/server/editor-context";
@@ -29,7 +30,12 @@ export default async function ToolPage({ params, searchParams }: PageProps<"/app
   // RLS: a tool one may not see is "not found", without confirming it exists.
   const agent = UUID.test(id) ? await getAgent(ctx, id) : null;
   if (!agent) notFound();
-  const [clients, editor] = await Promise.all([reachableClients(ctx), getToolEditorContext(ctx)]);
+  const supabase = await createClient();
+  const [clients, editor, { data: features }] = await Promise.all([
+    reachableClients(ctx),
+    getToolEditorContext(ctx),
+    supabase.from("company_ai_settings").select("dictation_enabled").eq("company_id", ctx.active.companyId).maybeSingle(),
+  ]);
   const canDelete = !agent.builtin && (agent.mine || (agent.visibility !== "private" && hasScope(ctx.active, "agents")));
 
   return (
@@ -43,7 +49,9 @@ export default async function ToolPage({ params, searchParams }: PageProps<"/app
         description={agentText(agent, t as unknown as DynamicT).description || undefined}
         actions={<AgentBadges agent={agent} />}
       />
-      <RunForm agent={agent} clients={clients} editor={editor} canDelete={canDelete} initialClient={typeof client === "string" ? client : undefined} />
+      <RunForm agent={agent} clients={clients} editor={editor} canDelete={canDelete} initialClient={typeof client === "string" ? client : undefined}
+        dictation={features?.dictation_enabled ?? true}
+      />
     </PageContainer>
   );
 }

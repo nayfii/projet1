@@ -1,22 +1,20 @@
-"use client";
-
-import * as React from "react";
+import { SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { assistantFor, blinkDelay, ROBOT_FACE, type AssistantState } from "../assistants";
+import { ProviderLogo } from "@/modules/providers/ui/provider-logo";
 import type { ProviderId } from "@/modules/providers/types";
+import type { AssistantState } from "../assistants";
 
 /**
- * An AI assistant's 3D robot with a live face on its visor: it blinks at rest, glances around while
- * it thinks, talks while it writes and smiles when it is done. Decorative: the assistant's name is
- * always written next to it. Motion only plays when `animated` (the active assistant), so a long
- * thread stays calm, and never for people who ask for reduced motion (globals.css).
+ * A model's mark: its provider's own logo (OpenAI, Claude, Gemini) on a neutral disc that follows the
+ * theme; "Auto" (our Smart Router) gets a plain sparkle. While the model prepares or writes its answer
+ * (`animated` and not idle) a thin ring breathes around it, still for reduced motion (globals.css).
+ * Decorative: the model's name is always written next to it.
  */
 export function AssistantAvatar({
   provider,
   size = 32,
   state = "idle",
   animated = false,
-  seed = "",
   halo,
   className,
 }: {
@@ -24,45 +22,27 @@ export function AssistantAvatar({
   size?: number;
   state?: AssistantState;
   animated?: boolean;
+  /** Kept for callers of the former robots: a seed made their blinking differ. */
   seed?: string;
-  /** A soft glow behind the character; by default while it works. */
+  /** Show the working ring; by default while it works. */
   halo?: boolean;
   className?: string;
 }) {
-  const persona = assistantFor(provider === "auto" ? null : provider);
-  const active = halo ?? (animated && state !== "idle");
+  const working = halo ?? (animated && (state === "thinking" || state === "speaking"));
+  const id = provider && provider !== "auto" ? provider : "auto";
   return (
     <span
       aria-hidden
-      data-assistant={persona.id}
+      data-assistant={id}
       data-state={state}
-      data-animated={animated || undefined}
-      className={cn("assistant-avatar relative inline-flex shrink-0", className)}
-      style={{ width: size, height: size, "--tint": persona.tint, "--blink-delay": `${blinkDelay(seed + persona.id)}s` } as React.CSSProperties}
+      className={cn(
+        "assistant-avatar relative inline-flex shrink-0 items-center justify-center rounded-full bg-[var(--avatar-surface)] text-foreground ring-1 ring-[var(--avatar-ring)]",
+        className,
+      )}
+      style={{ width: size, height: size }}
     >
-      {active ? <span className="assistant-halo absolute -inset-[18%] rounded-full" /> : null}
-      <span className="relative size-full rounded-full bg-[radial-gradient(circle_at_50%_40%,color-mix(in_oklch,var(--tint)_38%,transparent),color-mix(in_oklch,var(--tint)_10%,transparent)_72%)] ring-1 ring-white/[0.06]">
-        <span className="assistant-figure absolute inset-[6%]">
-          {/* eslint-disable-next-line @next/next/no-img-element -- small static asset, no optimisation needed */}
-          <img src={persona.image} alt="" draggable={false} className="size-full select-none" />
-          <svg viewBox="0 0 256 256" className="assistant-face absolute inset-0 size-full overflow-visible">
-            <g className="assistant-eyes">
-              {ROBOT_FACE.eyes.map((e) => (
-                <g key={e.x} className="assistant-eye">
-                  <rect x={e.x} y={e.y} width={e.w} height={e.h} rx={e.w / 2} />
-                  <rect className="assistant-shine" x={e.x + 4} y={e.y + 4} width={e.w * 0.32} height={e.h * 0.3} rx={3} />
-                </g>
-              ))}
-            </g>
-            <g className="assistant-smile">
-              {ROBOT_FACE.eyes.map((e) => (
-                <path key={e.x} d={`M${e.x - 2} ${e.y + e.h * 0.62} Q${e.x + e.w / 2} ${e.y + 4} ${e.x + e.w + 2} ${e.y + e.h * 0.62}`} />
-              ))}
-            </g>
-            <rect className="assistant-mouth" x={ROBOT_FACE.mouth.x} y={ROBOT_FACE.mouth.y} width={ROBOT_FACE.mouth.w} height={ROBOT_FACE.mouth.h} rx={ROBOT_FACE.mouth.h / 2} />
-          </svg>
-        </span>
-      </span>
+      {working ? <span className="assistant-ring absolute -inset-[3px] rounded-full" /> : null}
+      {id === "auto" ? <SparklesIcon className="size-[50%] opacity-85" strokeWidth={1.75} /> : <ProviderLogo provider={id} className="size-[56%]" />}
     </span>
   );
 }

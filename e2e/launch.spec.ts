@@ -216,7 +216,7 @@ test("8. a finance question: the AI suggests asking Nathalie", async () => {
 test("9. Olivier adds Nathalie with history from a chosen message; @Claude uses only what both can access", async () => {
   await olivierPage.getByRole("button", { name: "Inviter Nathalie Durand" }).click();
   const dialog = olivierPage.getByRole("dialog", { name: "Ajouter des collègues" });
-  await expect(dialog.getByRole("checkbox", { name: "Nathalie Durand" })).toBeChecked();
+  await expect(dialog.getByRole("button", { name: "Retirer Nathalie Durand" })).toBeVisible();
   await dialog.getByRole("radio", { name: /^Olivier Martin · .*J'ai besoin d'aide sur la trésorerie/ }).check();
   await expect(dialog.getByRole("alert")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Ajouter", exact: true }).click();

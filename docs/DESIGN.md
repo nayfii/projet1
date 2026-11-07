@@ -18,27 +18,24 @@ and a stylized 3D avatar (soft volumes, diffuse light, a friendly face that read
 | Pastel family | Lavender, peach, mint, sky, pearl: one per assistant, used as halos behind characters and in the logo's orb. Never for text | `--pastel-*` |
 | Buttons | Pills. Primary = white pill with near-black text (as in the reference); secondary = outline or ghost | `components/ui/button.tsx` |
 | Radii | Controls 10 px, cards 16 px, composer 20 px, buttons and avatars round | `--radius` scale |
-| Motion | 150–320 ms, ease-out-soft; messages rise 6 px as they appear; characters breathe only while they work; everything stops for people who ask for reduced motion | `globals.css` |
+| Motion | 150–320 ms, ease-out-soft; messages rise 6 px as they appear; a model's mark shows a thin breathing ring only while it works; everything stops for people who ask for reduced motion | `globals.css` |
 | Logo | The existing mark kept (a tile with a dot); the dot became a small pastel orb | `components/brand/logo.tsx` |
 | Light theme | Still available per device (account menu → Apparence): Sombre (default), Clair, Comme l'appareil | `lib/theme.ts` |
 
-## 2. AI assistants: a cast of characters
+## 2. AI models: their providers' logos
 
-- **One character per assistant** (since 2026-11-03, the founder's reference): the glossy 3D robot of Microsoft's
-  Fluent Emoji (MIT licence, shipped in `public/avatars/assistants/LICENSE-fluent-emoji.txt`), one colour each:
-  ChatGPT mint, Claude orange, Gemini blue, Auto the original pink and yellow. Same shape, so they read as one family;
-  the colour of the antennas and the top light tells them apart at 24 px.
-- **Clearly AI.** They are friendly robots, not human faces: in a group conversation nobody can mistake an assistant for
-  a colleague (people have human avatars). The model's name is always written next to its character.
-- **Alive, not a game.** The eyes and mouth are drawn live on the robot's visor: it blinks at rest, glances around while it
-  thinks, talks while it writes, smiles (^ ^) for a moment when it is done. In a long thread only the assistant at work moves.
-- **Where they appear**: next to each answer; in a quiet column beside the thread on wide screens (the one at work is
-  larger and says "réfléchit…" or "écrit…"), as a small stack in the header on smaller screens; as a picker on the empty
-  conversation (clicking a character chooses it); in the model picker and the "@" menu; around the table in Confronter
-  (each one thinks, critiques, then the judge writes the synthesis).
-- **Source**: `scripts/avatars/fluent-assistants.py` makes the four images from the Fluent robot (it removes the eyes
-  and mouth, which the app draws, and recolours the antennas). The face geometry is `ROBOT_FACE` in
-  `src/modules/avatars/assistants.ts`.
+- **Since 2026-11-07 (founder's request)** each model is shown by its provider's own logo (OpenAI, Claude, Gemini),
+  unaltered, on a small neutral disc that follows the theme (`--avatar-surface`); "Auto" (the Smart Router) gets a plain
+  sparkle. The model's name is always written next to it. This replaces the 3D robots of Step 11 (images and generator
+  removed).
+- **Source of the logos**: LobeHub Icons (`@lobehub/icons-static-svg` 1.102.0, MIT licence), paths copied into
+  `src/modules/providers/ui/provider-logo.tsx`. The logos remain their owners' trademarks; they are used only to name the
+  model that answered. OpenAI's mark takes the text colour (black or white), Claude's and Gemini's keep their colours.
+- **Motion**: none at rest; a thin ring breathes around the logo while the model prepares or writes its answer (still for
+  reduced motion). No permanent column beside the thread: the conversation uses the space (the "who is thinking" rail
+  was removed on 2026-11-07, its information already being under each answer).
+- **Where they appear**: next to each answer, in the model picker and the "@" menu, the empty conversation's picker,
+  Confronter, the client brief, memory provider rules, and next to model names (instead of a coloured dot).
 
 ## 3. Personal avatars
 

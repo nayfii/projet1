@@ -37,6 +37,7 @@ import { imageIntent, type ImageIntent } from "@/modules/images/intent";
 import { generateChatImage } from "@/modules/images/server/generate";
 import { chatImageModel } from "@/lib/env";
 import { imageRate } from "@/modules/usage/server/record";
+import { assistantMention } from "@/modules/agents/named-assistants";
 
 const MODEL_CHOICE = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
@@ -55,6 +56,9 @@ export const chatRequestSchema = z
     confront: z.object({ messageId: z.uuid() }).optional(),
     // The "Image" button: this message asks for an image (otherwise detected from the text).
     image: z.boolean().optional(),
+    // Posted without an AI answer (a person saving their own edit of an artifact): masked and kept
+    // like any message, so the next answer works on the edited version.
+    silent: z.boolean().optional(),
     // Hide: modes for this message and, in Manual mode, the values blurred or left visible.
     hide: z
       .object({
@@ -64,7 +68,8 @@ export const chatRequestSchema = z
       })
       .optional(),
   })
-  .refine((v) => [v.message, v.regenerate, v.confront].filter(Boolean).length === 1);
+  .refine((v) => [v.message, v.regenerate, v.confront].filter(Boolean).length === 1)
+  .refine((v) => !v.silent || Boolean(v.message));
 
 export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
 
@@ -118,8 +123,16 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   if (!conversation || conversation.company_id !== companyId) return fail("not_found", 404);
   // A conversation started from a tool or agent runs with its instructions, models and memory scope,
   // only while this person may still use it (CLAUDE.md §4.6, §4.7).
-  const agent = conversation.agent_id ? await resolveRunAgent(supabase, ctx, conversation.agent_id) : null;
+  let agent = conversation.agent_id ? await resolveRunAgent(supabase, ctx, conversation.agent_id) : null;
   if (conversation.agent_id && !agent) return fail("forbidden", 403);
+  // "@Albert …" in an ordinary conversation: this message is answered with the instructions of the app
+  // Albert brings (meeting prep or minutes), if this person may use it; nothing else changes.
+  const named = !agent && input.message ? assistantMention(input.message.content) : null;
+  if (named) {
+    const { data: builtin } = await supabase.from("agents").select("id").eq("builtin_key", named.builtinKey).is("company_id", null).maybeSingle();
+    agent = builtin ? await resolveRunAgent(supabase, ctx, builtin.id) : null;
+    if (!agent) return fail("forbidden", 403);
+  }
 
   // Group conversation: several participants (CLAUDE.md §4.4).
   const { data: participantRows } = await supabase
@@ -176,7 +189,7 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
   // an explicit request too. Otherwise the message is simply posted for the others. Alone with the AI,
   // naming an assistant ("Coucou @Claude, …") hands that turn to it.
   const mention = input.message ? parseMention(newText) : null;
-  const aiRequested = !group || Boolean(input.regenerate) || Boolean(input.confront) || mention !== null;
+  const aiRequested = !input.silent && (!group || Boolean(input.regenerate) || Boolean(input.confront) || mention !== null || named !== null);
 
   // Images: a request for an image (or the "Image" button) goes to ChatGPT's image model. A change
   // ("ajoute un chapeau") applies to the photo attached, else to the conversation's last image.

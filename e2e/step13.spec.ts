@@ -130,11 +130,11 @@ test("Hide: one switch, and its three modes in a small menu", async () => {
   await page.keyboard.press("Escape");
 });
 
-test("the assistants are the glossy robots, with a live face", async () => {
+test("the models are shown by their providers' logos, without a column beside the thread", async () => {
   await page.goto("/chat");
-  const robot = page.locator('[data-assistant="anthropic"]').first();
-  await expect(robot.locator("img")).toHaveAttribute("src", "/avatars/assistants/anthropic.webp");
-  await expect(robot.locator(".assistant-eye")).toHaveCount(2);
+  const claude = page.locator('[data-assistant="anthropic"]').first();
+  await expect(claude.locator("svg path").first()).toHaveAttribute("fill", "#D97757");
+  await expect(page.locator("img[src^='/avatars/assistants/']")).toHaveCount(0);
 });
 
 test("sign-up by invitation only: without an invitation, nobody creates a company", async ({ browser }) => {

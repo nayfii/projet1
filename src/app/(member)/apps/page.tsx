@@ -43,6 +43,7 @@ export default async function AppsPage({ searchParams }: PageProps<"/apps">) {
   return (
     <PageContainer className="max-w-5xl">
       <PageHeader title={t("title")} description={t("description")} />
+      <p className="-mt-4 mb-6 text-[13px] text-muted-foreground">{t("chatHint")}</p>
       <AppsBrowser apps={apps} departments={departments} recent={recent} />
     </PageContainer>
   );

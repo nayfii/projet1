@@ -5,8 +5,8 @@ import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { TriangleAlertIcon, UserMinusIcon, UserPlusIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { ColleaguePicker } from "./colleague-picker";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
@@ -293,30 +293,7 @@ export function AddPeopleDialog({
         {colleagues.length === 0 ? (
           <p className="rounded-lg border border-dashed px-4 py-6 text-center text-[13px] text-muted-foreground">{t("noColleagues")}</p>
         ) : (
-          <fieldset className="space-y-1">
-            <legend className="mb-1 text-sm font-medium">{t("who")}</legend>
-            {colleagues.map((c) => (
-              <label key={c.userId} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent/50">
-                <Checkbox
-                  checked={selected.has(c.userId)}
-                  onCheckedChange={(on) =>
-                    setSelected((s) => {
-                      const next = new Set(s);
-                      if (on === true) next.add(c.userId);
-                      else next.delete(c.userId);
-                      return next;
-                    })
-                  }
-                  aria-label={c.name}
-                />
-                <Avatar name={c.name} src={c.avatarUrl} className="size-7" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm">{c.name}</span>
-                  {c.expertise.length ? <span className="block truncate text-xs text-muted-foreground">{c.expertise.join(", ")}</span> : null}
-                </span>
-              </label>
-            ))}
-          </fieldset>
+          <ColleaguePicker colleagues={colleagues} selected={selected} onChange={setSelected} label={t("who")} />
         )}
 
         <fieldset className="space-y-2">

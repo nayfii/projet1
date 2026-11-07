@@ -11,6 +11,8 @@ import { parseChartSpec } from "../chart-spec";
 import { Chart } from "./chart";
 import { editPlanSchema } from "@/modules/render/edit-plan";
 import { EditPlanView } from "@/modules/render/ui/edit-plan-view";
+import { ArtifactCard } from "@/modules/artifacts/ui/artifact-card";
+import type { ArtifactKind } from "@/modules/artifacts/parse";
 
 /**
  * AI answers rendered as Markdown. Raw HTML in the text is never rendered (react-markdown's default),
@@ -73,6 +75,9 @@ const components: Components = {
       const spec = parseChartSpec(text);
       if (spec) return <Chart spec={spec} />;
     }
+    // An artifact (document, spreadsheet, slides, code): a card that opens it in the workspace.
+    const artifactKind = /language-artifact-(document|sheet|slides|code)\b/.exec(lang)?.[1];
+    if (artifactKind) return <ArtifactCard kind={artifactKind as ArtifactKind} raw={text.replace(/\n$/, "")} />;
     // Ready-to-send content (email, message, post, prompt…): a card to edit and copy.
     const copyKind = /language-copy-(email|message|linkedin|prompt|text)\b/.exec(lang)?.[1];
     if (copyKind) return <CopyBlock kind={copyKind as CopyKind} text={text.replace(/\n$/, "")} />;

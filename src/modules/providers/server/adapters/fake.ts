@@ -116,12 +116,19 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         `- Images received: ${images}`,
         `- Your last message had ${text.length} characters.`,
         // Shows exactly what the model received (with Hide, placeholders instead of sensitive values).
-        `- Last message as received: «${text.slice(0, 300)}»`,
+        // (Fences are flattened so an echoed block never opens a real one in the answer.)
+        `- Last message as received: «${text.slice(0, 300).replace(/`{3,}/g, "'''")}»`,
         ...(tool ? [`- Tool instructions received: ${tool}`] : []),
         ...(passages > 0 ? [`- Knowledge passages received: ${passages}`, "", "Based on the company memory [S1]."] : []),
         // Ready-to-send content: "[[email]]" asks for an email, written in a copy block like a real model would.
         ...(text.includes("[[email]]") ? ["", "```copy-email", "Objet : [TEST] Lancement", "", "Bonjour,", "", "[TEST] Voici l'annonce du lancement.", "```"] : []),
         ...(helper ? ["", `You can ask ${helper[1]} about it.`] : []),
+        // Artifacts: "[[invoice]]", "[[revise]]", "[[slides]]", "[[sheet]]" ask for a document, its new
+        // version (same id), a presentation or a spreadsheet, written in blocks like a real model would.
+        ...(text.includes("[[invoice]]") ? ["", ...sampleInvoice(false)] : []),
+        ...(text.includes("[[revise]]") ? ["", ...sampleInvoice(true)] : []),
+        ...(text.includes("[[slides]]") ? ["", ...SAMPLE_SLIDES] : []),
+        ...(text.includes("[[sheet]]") ? ["", ...SAMPLE_SHEET] : []),
         // Tools that ask for a table or a chart get sample ones, so exports and charts can be tested.
         ...(tool && /Markdown table/.test(request.system) ? ["", ...SAMPLE_TABLE] : []),
         ...(/```chart|language is `chart`/.test(request.system) ? ["", ...SAMPLE_CHART] : []),
@@ -254,3 +261,60 @@ async function* simulated(answer: string): AsyncIterable<ChatEvent> {
   yield { type: "usage", usage: { inputTokens: 100, outputTokens: estimateTokens(answer), cachedInputTokens: 0 } };
   yield { type: "done", finishReason: "stop" };
 }
+
+/** A test invoice as an artifact; the revision changes the quantity and the total, same id. */
+function sampleInvoice(revised: boolean): string[] {
+  const qty = revised ? 3 : 2;
+  return [
+    "[TEST] Voici la facture.",
+    "",
+    "````artifact-document",
+    "id: facture-test",
+    "title: [TEST] Facture — Boulangerie Martin",
+    "",
+    "# Facture n° 2026-042",
+    "",
+    "**Client :** Boulangerie Martin",
+    "",
+    "| Prestation | Quantité | Prix unitaire | Total |",
+    "|---|---:|---:|---:|",
+    `| Atelier de cadrage | ${qty} | 600 | ${qty * 600} |`,
+    "",
+    `**Total HT : ${qty * 600} €**`,
+    "````",
+  ];
+}
+
+const SAMPLE_SLIDES = [
+  "[TEST] Voici la présentation.",
+  "",
+  "````artifact-slides",
+  "id: presentation-test",
+  "title: [TEST] Lancement du produit",
+  "",
+  "# Lancement du produit",
+  "- Objectif : 200 clients en 3 mois",
+  "- Budget : 18 000 €",
+  "",
+  "---",
+  "",
+  "# Calendrier",
+  "- Mars : annonce",
+  "- Avril : salons",
+  "````",
+];
+
+const SAMPLE_SHEET = [
+  "[TEST] Voici le tableau.",
+  "",
+  "````artifact-sheet",
+  "id: budget-test",
+  "title: [TEST] Budget trimestriel",
+  "",
+  "| Poste | Janvier | Février | Mars |",
+  "|---|---:|---:|---:|",
+  "| Publicité | 1200 | 1500 | 900 |",
+  "| Salons | 0 | 2400 | 0 |",
+  "````",
+];
+

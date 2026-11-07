@@ -59,6 +59,7 @@ import {
   setConversationModelAction,
 } from "../server/actions";
 import { titleFromMessage, useChatList } from "./chat-list";
+import { EditableTitle } from "./editable-title";
 import { refreshTitleAction } from "../server/title-actions";
 import { AttachmentChip, MessageItem, type PeopleLookup } from "./message-item";
 import { ModelPicker, type PickerModel } from "./model-picker";
@@ -68,7 +69,7 @@ import { DictationButton } from "@/modules/dictation/ui/dictation-button";
 import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
 import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
-import { CastPicker, CastRail, CastStack, type Cast } from "@/modules/avatars/ui/conversation-cast";
+import { CastPicker } from "@/modules/avatars/ui/conversation-cast";
 import { detectClientMention } from "@/modules/clients/detect";
 import { NewClientDialog } from "@/modules/clients/ui/new-client-dialog";
 import type { AssistantId } from "@/modules/avatars/assistants";
@@ -79,7 +80,7 @@ import { TransferDialog } from "@/modules/collaboration/ui/transfer-dialog";
 import { HandoverCard } from "@/modules/collaboration/ui/handover-card";
 import { filterMentions, MentionMenu, mentionAt, PROVIDER_TOKENS, type MentionOption } from "@/modules/collaboration/ui/mention-menu";
 import { mentionsPerson, naturalMention, parseMention, personTokens, type PersonToken } from "@/modules/collaboration/mentions";
-import { AppPickerMenu, filterApps, usePickerApps } from "@/modules/agents/ui/app-picker";
+import { AppPickerMenu, filterApps, filterShortcuts, usePickerApps, type CreateShortcut } from "@/modules/agents/ui/app-picker";
 import { useConversationRealtime } from "@/modules/collaboration/ui/use-conversation-realtime";
 import { ConfrontDialog } from "@/modules/confronter/ui/confront-dialog";
 import type { ConfrontEstimate } from "@/modules/confronter/server/actions";
@@ -88,6 +89,10 @@ import { TurnIntoToolDialog, type ToolEditorContext } from "@/modules/agents/ui/
 import { RUN_STORAGE_PREFIX, type PendingRun } from "@/modules/agents/ui/run-form";
 import { AgentNotice } from "@/modules/agents/ui/agent-notice";
 import type { AgentNotice as AgentNoticeKind } from "@/modules/agents/builtins";
+import { artifactsIn, collectArtifacts, editMessage, hasOpenArtifact, type ArtifactVersion } from "@/modules/artifacts/parse";
+import { ArtifactsContext, type ArtifactsApi } from "@/modules/artifacts/ui/artifact-card";
+import { ArtifactPanel } from "@/modules/artifacts/ui/artifact-panel";
+import { ArtifactWorkspace, useStoredWidth } from "@/modules/artifacts/ui/artifact-workspace";
 
 type PendingAttachment = {
   key: string;
@@ -148,6 +153,7 @@ export function ChatView(props: Props) {
   const tCommon = useTranslations("common");
   const tHide = useTranslations("hide");
   const router = useRouter();
+  const tArtifacts = useTranslations("artifacts");
   const chatList = useChatList();
 
   const [conversationId, setConversationId] = React.useState(props.conversation?.id ?? null);
@@ -450,8 +456,10 @@ export function ChatView(props: Props) {
       const model = usable.find((m) => m.tier === "balanced") ?? usable[0];
       if (model) options.push({ ...PROVIDER_TOKENS[provider], provider, hint: modelDisplay(provider, model.label).name });
     }
+    // Named specialists (modules/agents/named-assistants.ts): not inside a conversation started from an app.
+    if (!props.agent) options.push({ token: "Albert", aliases: [], provider: null, hint: tCollab("albertHint"), specialist: true });
     return options;
-  }, [props.models, modelChoice, tCollab]);
+  }, [props.models, modelChoice, tCollab, props.agent]);
   // Colleagues of the conversation as mention tokens ("@Olivier"): the viewer's own is used to notice mentions.
   const tokens = React.useMemo(() => personTokens(participants.map((p) => ({ id: p.userId, name: p.name }))), [participants]);
   const myToken = tokens.get(props.me.id) ?? null;
@@ -462,7 +470,8 @@ export function ChatView(props: Props) {
   const allMentionOptions: MentionOption[] = group
     ? [...mentionOptions, ...otherTokens.map((o) => ({ token: o.token, aliases: [], provider: null, hint: o.person.name, person: { name: o.person.name, avatarUrl: o.person.avatarUrl } }))]
     : mentionOptions;
-  const mention = group ? mentionAt(input, caret) : null;
+  // "@…" opens the list in a group (to call the AI or a colleague) and alone (a model, or Albert).
+  const mention = mentionAt(input, caret);
   const mentionMatches =
     mention && mention.start !== mentionDismissed && !allMentionOptions.some((o) => [o.token, ...o.aliases].some((n) => n.toLowerCase() === mention.query.toLowerCase()))
       ? filterMentions(allMentionOptions, mention.query)
@@ -472,11 +481,32 @@ export function ChatView(props: Props) {
   const appQuery = slash ?? (appsOpen ? "" : null);
   const pickerApps = usePickerApps(appQuery !== null);
   const appMatches = appQuery === null ? [] : filterApps(pickerApps, appQuery);
-  const activeApp = Math.min(appIndex, Math.max(appMatches.length - 1, 0));
+  // "/" also offers to start a document, a presentation, a spreadsheet or an image here, in the chat.
+  const shortcutMatches = slash !== null && !props.agent ? filterShortcuts(slash, Boolean(props.images)) : [];
+  const pickerCount = shortcutMatches.length + appMatches.length;
+  const activeApp = Math.min(appIndex, Math.max(pickerCount - 1, 0));
 
   function closeApps() {
     setAppsOpen(false);
     if (slash !== null) setSlashDismissed(true);
+  }
+
+  /** A creation shortcut: the composer gets a starting sentence (or Image mode), the person completes it. */
+  function pickShortcut(shortcut: CreateShortcut) {
+    setAppsOpen(false);
+    if (shortcut === "image") {
+      setImageMode(true);
+      setInput("");
+      requestAnimationFrame(() => textarea.current?.focus());
+      return;
+    }
+    const start = tApps(`shortcutPrompt.${shortcut as Exclude<CreateShortcut, "image">}`);
+    setInput(start);
+    setCaret(start.length);
+    requestAnimationFrame(() => {
+      textarea.current?.focus();
+      textarea.current?.setSelectionRange(start.length, start.length);
+    });
   }
 
   function pickApp(app: { id: string }) {
@@ -511,6 +541,55 @@ export function ChatView(props: Props) {
     const at = textarea.current?.selectionStart ?? input.length;
     setMentionDismissed(null);
     insertAtCaret(at, at, at > 0 && !/\s/.test(input[at - 1]) ? " @" : "@");
+  }
+
+  /**
+   * A person's edit of an artifact: posted to the conversation as a new version (masked by Hide like
+   * any message, without an AI answer), so the next answer starts from it.
+   */
+  async function saveArtifactEdit(artifact: ArtifactVersion, body: string): Promise<boolean> {
+    if (!conversationId || busy) return false;
+    const text = editMessage(tArtifacts("editIntro", { title: artifact.title || tArtifacts(`kind.${artifact.kind}`) }), { ...artifact, body });
+    let ok = true;
+    setMessages((list) => [
+      ...list,
+      {
+        id: "pending-user",
+        seq: Number.MAX_SAFE_INTEGER,
+        role: "user",
+        content: text,
+        status: "complete",
+        errorCode: null,
+        createdAt: new Date().toISOString(),
+        author: { id: props.me.id, name: props.me.name },
+        model: null,
+        routing: null,
+        omittedMessages: 0,
+        attachments: [],
+        sources: [],
+        maskedContent: null,
+        hideCounts: null,
+        hideSpans: [],
+        contextLimited: false,
+        suggestedColleagues: [],
+        webSources: [],
+        confrontation: null,
+      },
+    ]);
+    await stream(
+      { conversationId, modelChoice, message: { content: text, attachmentIds: [] }, hide: hide.payload(), silent: true },
+      {
+        onRefused: () => {
+          ok = false;
+          setMessages((list) => list.filter((m) => m.id !== "pending-user"));
+        },
+      },
+    );
+    if (ok) {
+      setOpenArtifact({ key: artifact.key, version: null });
+      toast.success(tArtifacts("saved"));
+    }
+    return ok;
   }
 
   async function stream(payload: Record<string, unknown>, options: { replaced?: TimelineMessage; onRefused?: () => void; confrontation?: Confrontation } = {}) {
@@ -926,22 +1005,45 @@ export function ChatView(props: Props) {
   const mentionKey = clientMention ? (clientMention.kind === "link" ? clientMention.id : `new:${clientMention.name.toLowerCase()}`) : null;
   const showMention = clientMention !== null && mentionKey !== clientMentionDismissed;
 
-  // Avatars (Step 11): who is in the conversation, and which assistant is at work.
+  // The assistant picked for the next answer (shown on the empty conversation).
   const selectedAssistant: AssistantId =
     modelChoice === MODEL_CHOICE_AUTO ? "auto" : (props.models.find((m) => m.id === modelChoice)?.provider ?? "auto");
-  const liveMessage = liveId ? messages.find((m) => m.id === liveId) : undefined;
-  const cast: Cast = (() => {
-    const seen: AssistantId[] = [];
-    for (const m of messages) if (m.role === "assistant" && m.model && !m.confrontation && !seen.includes(m.model.provider)) seen.push(m.model.provider);
-    const working: AssistantId | null = busy ? (liveMessage?.model?.provider ?? selectedAssistant) : null;
-    if (working && !seen.includes(working)) seen.push(working);
-    if (seen.length === 0) seen.push(selectedAssistant);
-    return {
-      assistants: seen,
-      active: working ? { id: working, state: liveMessage?.content ? "speaking" : "thinking" } : null,
-      people: participants.map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, online: online.has(p.userId) })),
-    };
-  })();
+  // Artifacts (documents, spreadsheets, slides, code) and the workspace on the right.
+  const artifactVersions = React.useMemo(
+    () => collectArtifacts(messages.filter((m) => m.id !== "pending-user").map((m) => ({ id: m.id, role: m.role, content: m.content, createdAt: m.createdAt }))),
+    [messages],
+  );
+  const [openArtifact, setOpenArtifact] = React.useState<{ key: string; version: number | null } | null>(null);
+  const workspaceVersions = openArtifact ? artifactVersions.get(openArtifact.key) : undefined;
+  const workspace = openArtifact && workspaceVersions?.length ? { versions: workspaceVersions, version: openArtifact.version } : null;
+  const setWorkspace = (update: ((w: { version: number | null } | null) => { version: number | null } | null) | null) =>
+    setOpenArtifact((current) => {
+      if (update === null || !current) return null;
+      const next = update({ version: current.version });
+      return next ? { ...current, version: next.version } : null;
+    });
+  const liveContent = liveId ? (messages.find((m) => m.id === liveId)?.content ?? "") : "";
+  const workspaceUpdating = busy && hasOpenArtifact(liveContent);
+  const [workspaceWidth, setWorkspaceWidth] = useStoredWidth();
+  const artifactsApi = React.useMemo<ArtifactsApi>(
+    () => ({ versions: artifactVersions, openKey: openArtifact?.key ?? null, open: (key, version) => setOpenArtifact({ key, version: version ?? null }) }),
+    [artifactVersions, openArtifact?.key],
+  );
+  // When an answer is finished, the last artifact it wrote opens (its newest version).
+  const finishedLive = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (liveId) {
+      finishedLive.current = liveId;
+      return;
+    }
+    const done = finishedLive.current;
+    finishedLive.current = null;
+    if (!done) return;
+    const answer = messages.find((m) => m.id === done);
+    const last = answer ? artifactsIn(answer.content).at(-1) : undefined;
+    if (last) setOpenArtifact({ key: last.key, version: null });
+  }, [liveId, messages]);
+
   const people: PeopleLookup = React.useMemo(() => new Map(participants.map((p) => [p.userId, { name: p.name, avatarUrl: p.avatarUrl }])), [participants]);
   // The timeline below is drawn again only when what it shows changes (typing does not redraw it).
   const participantKey = participants.map((p) => p.userId).join(",");
@@ -979,9 +1081,20 @@ export function ChatView(props: Props) {
 
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col md:h-dvh">
+    <ArtifactsContext.Provider value={artifactsApi}>
+    <div className="flex h-[calc(100dvh-3.5rem)] md:h-dvh">
+    <div className="flex min-w-0 flex-1 flex-col">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sm:px-6">
-        <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{title ?? t("newConversation")}</h1>
+        <EditableTitle
+          conversationId={conversationId}
+          title={title}
+          placeholder={t("newConversation")}
+          canEdit={!readOnly}
+          onRenamed={(next) => {
+            setTitle(next);
+            if (conversationId && next) chatList.upsert({ id: conversationId, title: next });
+          }}
+        />
         {props.agent ? (
           <Link
             href={`/apps/${props.agent.id}`}
@@ -991,7 +1104,6 @@ export function ChatView(props: Props) {
             <span className="truncate">{props.agent.name}</span>
           </Link>
         ) : null}
-        {messages.length > 0 ? <CastStack cast={cast} className="xl:hidden" /> : null}
         <ParticipantsBar
           participants={participants}
           online={online}
@@ -1153,8 +1265,7 @@ export function ChatView(props: Props) {
           if (conversationId) writeSession(`${SCROLL_KEY}${conversationId}`, stickToBottom.current ? null : String(Math.round(el.scrollTop)));
         }}
       >
-        <div className="w-full xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,48rem)_minmax(0,1fr)]">
-        <div aria-hidden className="hidden xl:block" />
+        <div className="w-full">
         <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
           {props.conversation?.copyOf ? <CopyBanner copyOf={props.conversation.copyOf} /> : null}
           {props.handover ? <HandoverCard handover={props.handover} className="mb-8" /> : null}
@@ -1188,7 +1299,6 @@ export function ChatView(props: Props) {
             />
           )}
         </div>
-        <div className="hidden xl:block">{messages.length > 0 ? <CastRail cast={cast} className="sticky top-8 mt-8 ml-2" /> : null}</div>
         </div>
       </div>
 
@@ -1245,7 +1355,7 @@ export function ChatView(props: Props) {
             }}
           >
             {mentionMatches.length > 0 ? <MentionMenu options={mentionMatches} active={activeMention} onPick={pickMention} /> : null}
-            {appQuery !== null ? <AppPickerMenu apps={appMatches} loading={pickerApps === null} active={activeApp} onPick={pickApp} /> : null}
+            {appQuery !== null ? <AppPickerMenu apps={appMatches} shortcuts={shortcutMatches} loading={pickerApps === null} active={activeApp} onPick={pickApp} onShortcut={pickShortcut} /> : null}
             {attachments.length > 0 ? (
               <div className="flex flex-wrap gap-1.5 px-3 pt-3">
                 {attachments.map((a) => {
@@ -1288,7 +1398,7 @@ export function ChatView(props: Props) {
                 }}
                 onKeyDown={(e) => {
                   if (appQuery !== null && !e.nativeEvent.isComposing) {
-                    const count = appMatches.length;
+                    const count = pickerCount;
                     if (count > 0 && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
                       e.preventDefault();
                       setAppIndex((activeApp + (e.key === "ArrowDown" ? 1 : count - 1)) % count);
@@ -1296,7 +1406,8 @@ export function ChatView(props: Props) {
                     }
                     if (count > 0 && ((e.key === "Enter" && !e.shiftKey) || e.key === "Tab")) {
                       e.preventDefault();
-                      pickApp(appMatches[activeApp]);
+                      if (activeApp < shortcutMatches.length) pickShortcut(shortcutMatches[activeApp]);
+                      else pickApp(appMatches[activeApp - shortcutMatches.length]);
                       return;
                     }
                     if (e.key === "Escape") {
@@ -1570,6 +1681,26 @@ export function ChatView(props: Props) {
         </DialogContent>
       </Dialog>
     </div>
+    {workspace ? (
+      <ArtifactWorkspace
+        width={workspaceWidth}
+        onWidth={setWorkspaceWidth}
+        onClose={() => setWorkspace(null)}
+        panel={
+          <ArtifactPanel
+            versions={workspace.versions}
+            version={workspace.version}
+            onVersion={(version) => setWorkspace((w) => (w ? { ...w, version } : w))}
+            onClose={() => setWorkspace(null)}
+            onSave={saveArtifactEdit}
+            canEdit={Boolean(conversationId) && !readOnly && !busy}
+            updating={workspaceUpdating}
+          />
+        }
+      />
+    ) : null}
+    </div>
+    </ArtifactsContext.Provider>
   );
 }
 
