@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { decideFact, groundedInUserText, normalizeSubjectKey, parseCandidateFacts, planWrite, type CandidateFact } from "@/modules/memory/learning";
+import { decideFact, groundedInUserText, LEARN_FACTS_SYSTEM, normalizeSubjectKey, parseCandidateFacts, planWrite, type CandidateFact } from "@/modules/memory/learning";
 import { needsSearch } from "@/modules/memory/server/gateway";
+import { buildSystemPrompt } from "@/modules/conversations/system-prompt";
+import type { KnowledgePassage } from "@/modules/memory/types";
 
 const fact = (o: Partial<CandidateFact>): CandidateFact => ({
   kind: "fact",
@@ -32,6 +34,48 @@ describe("learning rules (Cendr Consciousness)", () => {
     const [withAttributes] = parseCandidateFacts('[{"key":"budget","title":"B","content":"C","confidence":2,"attributes":{"amount":"15 000,50","date":"bad","due":"2027-01-31"}}]');
     expect(withAttributes.confidence).toBe(1);
     expect(withAttributes.attributes).toEqual({ amount: 15000.5, due: "2027-01-31" });
+  });
+
+  it("only the person writing is private: a client's contact person is about the client (found with a real model)", () => {
+    expect(LEARN_FACTS_SYSTEM).toContain('"about": "client|writer|other"');
+    expect(LEARN_FACTS_SYSTEM).toContain('a contact person at the client is "client"');
+    const about = (value: string) => parseCandidateFacts(`[{"kind":"contact","key":"k","title":"T","content":"C","about":"${value}"}]`)[0].about;
+    expect(about("client")).toBe("client");
+    expect(about("writer")).toBe("person");
+    expect(about("person")).toBe("person"); // older wording: still kept private
+    expect(about("other")).toBe("other");
+  });
+
+  it("a key built from a Hide placeholder gets the real value back (found with a real model)", () => {
+    const names = new Map([["[PERSON_1]", "Jean Dupont"]]);
+    const restore = (t: string) => t.replace(/\[[A-Z]+_\d+\]/g, (p) => names.get(p) ?? p);
+    const parse = (key: string) => parseCandidateFacts(`[{"kind":"contact","key":"${key}","title":"Contact","content":"[PERSON_1], directeur marketing.","about":"client"}]`, restore)[0];
+    expect(parse("contact:person_1").key).toBe("contact:jean_dupont");
+    expect(parse("contact_PERSON_1").key).toBe("contact_jean_dupont");
+    expect(parse("contact:person_1").content).toBe("Jean Dupont, directeur marketing.");
+    // Unknown to this conversation: left as it is (never guessed).
+    expect(parse("contact:person_2").key).toBe("contact:person_2");
+  });
+
+  it("a new value may name the value it replaces without being taken as made up (found with a real model)", () => {
+    const update = fact({ content: "Le budget d'Atlas passe à 18 000 €, en remplacement des 15 000 € précédemment indiqués.", attributes: { amount: 18000 } });
+    const known = [{ id: "k", key: "budget", title: "Budget", content: "Le budget d'Atlas est de 15 000 €.", attributes: { amount: 15000 } }];
+    expect(decideFact(update, "Mise à jour : le budget d'Atlas passe à 18 000 €.", known)).toBe("learn");
+    expect(decideFact(update, "Mise à jour : le budget d'Atlas passe à 18 000 €.")).toBe("confirm");
+    // Another subject's figure is still not allowed in.
+    expect(decideFact(fact({ key: "launch_budget", content: "15 000 € pour le lancement." }), "budget 18 000 €", known)).toBe("confirm");
+  });
+
+  it("a key fact that replaced an older value says so to the model (not a mistake, a change)", () => {
+    const passage: KnowledgePassage = {
+      position: 1, sourceType: "memory_entry", id: "e", documentId: null, spaceId: "s", spaceKind: "client", clientName: "Atlas",
+      title: "Budget", content: "Le budget d'Atlas passe à 18 000 €.", page: null, charStart: null, charEnd: null,
+      sourceDate: "2026-11-07", reason: "brief", kind: "fact", replaced: { content: "Le budget d'Atlas est de 15 000 €.", on: "2026-11-07" },
+    };
+    const prompt = buildSystemPrompt({ company: { name: "Co" }, user: { name: "Bruno" }, locale: "fr", today: "2026-11-07", knowledge: [passage] });
+    expect(prompt).toContain("This replaced on 2026-11-07 an earlier value, no longer true");
+    expect(prompt).toContain("15 000 €");
+    expect(prompt).toContain("it was not a mistake");
   });
 
   it("a fact said by the person must be grounded in their message", () => {

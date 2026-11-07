@@ -133,7 +133,8 @@ export async function maskPassages(
     const content = documents ? items.push({ text: p.content, spans: autoSpans(masker.detect(p.content), autoCategories) }) - 1 : -1;
     const title = documents ? items.push({ text: p.title, spans: autoSpans(masker.detect(p.title), autoCategories) }) - 1 : -1;
     const client = maskClient && p.clientName ? items.push({ text: p.clientName, spans: whole(p.clientName, "client") }) - 1 : -1;
-    return { content, title, client };
+    const replaced = documents && p.replaced ? items.push({ text: p.replaced.content, spans: autoSpans(masker.detect(p.replaced.content), autoCategories) }) - 1 : -1;
+    return { content, title, client, replaced };
   });
   const results = await masker.mask(items);
   return passages.map((p, i) => ({
@@ -141,5 +142,6 @@ export async function maskPassages(
     content: slots[i].content >= 0 ? results[slots[i].content].masked : p.content,
     title: slots[i].title >= 0 ? results[slots[i].title].masked : p.title,
     clientName: slots[i].client >= 0 ? results[slots[i].client].masked : p.clientName,
+    ...(p.replaced ? { replaced: { ...p.replaced, content: slots[i].replaced >= 0 ? results[slots[i].replaced].masked : p.replaced.content } } : {}),
   }));
 }

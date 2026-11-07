@@ -487,13 +487,19 @@ export async function prepareChatTurn(ctx: MemberContext, input: ChatRequestInpu
         });
   const knowledge = memory?.passages ?? [];
   // Documents and notes are written by people too: placeholder-shaped text in them is made inert.
-  const inertKnowledge = knowledge.map((p) => ({ ...p, content: neutralizePlaceholders(p.content), title: neutralizePlaceholders(p.title) }));
+  const inertKnowledge = knowledge.map((p) => ({
+    ...p,
+    content: neutralizePlaceholders(p.content),
+    title: neutralizePlaceholders(p.title),
+    ...(p.replaced ? { replaced: { ...p.replaced, content: neutralizePlaceholders(p.replaced.content) } } : {}),
+  }));
   const promptKnowledge = masker
     ? (await maskPassages(masker, inertKnowledge, hideModes, autoCategories)).map((p) => ({
         ...p,
         content: masker!.protect(p.content),
         title: masker!.protect(p.title),
         clientName: p.clientName ? masker!.protect(p.clientName) : p.clientName,
+        ...(p.replaced ? { replaced: { ...p.replaced, content: masker!.protect(p.replaced.content) } } : {}),
       }))
     : inertKnowledge;
   // Personal memory: this person's own notes, only when they are alone with the AI; masked like memory.

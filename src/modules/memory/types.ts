@@ -19,6 +19,8 @@ export type KnowledgePassage = {
   kind?: string;
   /** Another current fact says something different about the same subject: the model must not pick one silently. */
   conflict?: boolean;
+  /** A key fact that recently replaced an earlier value: the model says the value changed, not that it was wrong. */
+  replaced?: { content: string; on: string };
 };
 
 /** Source Proof shown under an answer: the exact passage the answer cited, and where it comes from. */

@@ -338,7 +338,7 @@ Design, threat model, permission matrix and measured performance: `docs/CONSCIOU
 | Rights for the interface | **done**: `client_permissions()` (same predicates as the database policies) |
 | Team memory (a space per team) | **not started** (designed in `docs/CONSCIOUSNESS.md` §9) |
 | Sharing a single fact with someone outside a client | **not started** (temporary access to the whole client is built) |
-| Extraction quality with real models | **not validated**: all tests use a mocked or simulated model; needs a run with real keys |
+| Extraction quality with real models | **checked with ChatGPT (gpt-6-luna) on 2026-11-07**, `e2e/consciousness-real.spec.ts` (run with `E2E_REAL_AI=1`): facts learned, recalled by a colleague in a new conversation with sources, nothing made up (no SIRET), budget replaced. The run found and fixed 4 problems (see "Quick fixes, 2026-11-07"). **Claude and Gemini not run here** (no key in this environment) |
 
 ## Chat at ChatGPT level (2026-11-06)
 
@@ -362,6 +362,17 @@ Design, threat model, permission matrix and measured performance: `docs/CONSCIOU
 | Dictation bar | **done**: live voice level, time, Annuler, Stop (the text goes into the input to be read; never sent), "Envoyer directement" |
 | Dictation while switching tab, window or application | **done within the browser's limits**: the recording continues (the browser keeps the microphone; the tab title shows "● Dictée en cours"). It stops if the tab is closed or the person leaves the conversation in Cendr. Dictating into other applications needs a desktop app (not built). Mobile browsers may pause the microphone when the app goes to the background |
 | Applis: one page | **done**: "Accès rapide" (favourites, then recently used), search, departments, shelves; optional form fields folded under "N options de plus" |
+
+## Quick fixes (2026-11-07): images, glass, dictation, speed, real-model test
+
+| Feature | Status |
+|---|---|
+| Images in the chat (ChatGPT's image model, `chatgpt-image-latest`, configurable with `CHAT_IMAGE_MODEL`) | **done**: "Image" button in the input (or a request such as "crée une image de…", "change le fond de cette photo"): creates an image from a description, or changes an attached photo; shown in the answer, downloadable, kept like an attached file; credits per image set in our console (Modèles → Images, placeholder 60 credits / $0.06 estimate, to check on OpenAI's pricing page); a company can switch it off (Administration → Modèles). Regenerate and Confronter are not offered on an image answer. **Tested with the simulated provider only**: this environment's OpenAI account has no image credit |
+| Dictation display | **done**: while recording, the bar takes the whole toolbar line (no overlap with the buttons, aligned) |
+| Glass: "Transparent" (default) or "Teinté violet" | **done on the Liquid Glass branch**: Apparence → Verre; neutral glass with no colour cast by default |
+| Speed: long conversations | **done**: typing no longer redraws every message (memoised timeline and Markdown). Measured in a 40-exchange conversation (headless browser, software graphics): typing a sentence 0.64 s, 0 long task (was about 3 s with long tasks) |
+| Speed: animated backgrounds (Liquid Glass branch) | **done**: Waylume capped at 60 frames a second (120 Hz screens drew twice as often), and the page's frame rate is watched while it moves: below smooth, the scene gets lighter, then still, for the session; big glass panes no longer use the lens filter over a moving background; our own WebGL backgrounds at half resolution (Aurora: 8 → 56 frames a second in the same test). Waylume Nuit stays heavy on weak graphics chips: there it now ends up still rather than slowing the chat |
+| Consciousness with a real model (ChatGPT) | **done**: 4 problems found by the real model, fixed and covered by unit tests: (1) a client's contact person was kept private (the instruction "about the person" was ambiguous); (2) a contact's key was built from the Hide placeholder ("person_1"), which another conversation could have replaced; (3) an answer restating the memory to a colleague produced "à confirmer" duplicates; (4) a new budget written with the old value next to it ("18 000 € au lieu de 15 000 €") went to confirmation. Also: a key fact that replaced an older value now says so to the model, so it says "the budget changed" rather than calling its earlier answer a mistake (unit-tested; the real-model check of this last point was cut short when the environment's OpenAI account ran out of credit) |
 
 ## Liquid Glass experiment (branch `experiment/liquid-glass-v18`)
 
