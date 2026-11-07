@@ -17,6 +17,8 @@ import {
   MOTION_COOKIE,
   SCHEME_SCRIPT,
   SIDEBAR_COOKIE,
+  SIDEBAR_WIDTH_COOKIE,
+  sidebarWidth,
   GLASS_TONE_COOKIE,
   DEFAULT_GLASS_TONE,
   isGlassTone,
@@ -42,6 +44,7 @@ async function appearance() {
     ambient: isAmbient(ambient) ? ambient : DEFAULT_AMBIENT,
     motion: isMotion(motion) ? motion : DEFAULT_MOTION,
     sidebar: (jar.get(SIDEBAR_COOKIE)?.value === "collapsed" ? "collapsed" : "expanded") as SidebarState,
+    sidebarWidth: sidebarWidth(jar.get(SIDEBAR_WIDTH_COOKIE)?.value),
     glassTone: isGlassTone(jar.get(GLASS_TONE_COOKIE)?.value) ? (jar.get(GLASS_TONE_COOKIE)!.value as GlassTone) : DEFAULT_GLASS_TONE,
   };
 }
@@ -73,7 +76,7 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const initial = await appearance();
-  const { theme, ambient, motion, sidebar, glassTone } = initial;
+  const { theme, ambient, motion, sidebar, glassTone, sidebarWidth: width } = initial;
   return (
     // data-scheme is corrected before the first paint by SCHEME_SCRIPT when following the device.
     <html
@@ -84,6 +87,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       data-motion={motion}
       data-sidebar={sidebar}
       data-glass-tone={glassTone}
+      style={width ? ({ "--sidebar-expanded-w": `${width}px` } as React.CSSProperties) : undefined}
       className={`${GeistMono.variable} h-full`}
       suppressHydrationWarning
     >

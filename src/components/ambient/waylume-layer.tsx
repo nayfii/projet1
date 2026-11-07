@@ -29,39 +29,39 @@ function snapshot(): Snapshot {
   return root.dataset.glass === "flat" ? `${variant}:light` : `${variant}:on`;
 }
 
-/** How much of the scene a device can afford this session: 0 full, 1 lighter, 2 a still frame. */
-type Level = 0 | 1 | 2;
-const LEVEL_KEY = "cendr-waylume-level";
-/** Frames are capped at 60 a second: below 45 for two measures in a row, the page is no longer smooth. */
-const SMOOTH_FPS = 45;
-/** Below 20, a lighter drawing would not be enough: straight to the still frame. */
-const STUCK_FPS = 20;
+/** How much of the scene a device can afford this session: 0 full, 1 lighter. It is never frozen for speed. */
+type Level = 0 | 1;
+/** A new key: sessions where an earlier, stricter check had frozen the scene start fresh. */
+const LEVEL_KEY = "cendr-waylume-level-v2";
+/** Frames are capped at 60 a second; below 30 for three measures in a row (6 s), the drawing gets lighter. */
+const SLOW_FPS = 30;
+const SLOW_MEASURES = 3;
 
 function savedLevel(): Level {
   try {
-    const value = Number(sessionStorage.getItem(LEVEL_KEY));
-    return value === 1 || value === 2 ? value : 0;
+    return sessionStorage.getItem(LEVEL_KEY) === "1" ? 1 : 0;
   } catch {
     return 0;
   }
 }
 
 /**
- * While the scene moves, the page's frame rate is measured every 2 seconds. When it stays below
- * smooth, the scene steps down (lighter drawing, then a still frame) for the rest of the session, so
- * the chat never lags because of the background.
+ * While the scene moves at full quality, the page's frame rate is measured every 2 seconds. When it
+ * stays clearly too low, the scene is drawn lighter (fewer pixels) for the rest of the session. The
+ * motion itself always continues: only "Fond animé" off, reduced motion or a device without a
+ * graphics chip show a still frame.
  */
-function useSmoothness(active: boolean, level: Level, stepDown: (to: Level) => void) {
+function useSmoothness(active: boolean, onSlow: () => void) {
   React.useEffect(() => {
-    if (!active || level >= 2) return;
+    if (!active) return;
     let raf = 0;
     let start = 0;
     let last = 0;
     let frames = 0;
     let slow = 0;
     const tick = (now: number) => {
-      // A fresh measure after the tab was hidden or the computer slept (a slow page still counts).
-      if (start === 0 || now - last > 5000) {
+      // A fresh measure after the tab was hidden or the computer slept.
+      if (start === 0 || now - last > 1000) {
         start = now;
         frames = 0;
       }
@@ -69,60 +69,57 @@ function useSmoothness(active: boolean, level: Level, stepDown: (to: Level) => v
       frames += 1;
       if (now - start >= 2000) {
         const fps = (frames - 1) / ((now - start) / 1000);
-        slow = fps < SMOOTH_FPS ? slow + 1 : 0;
+        slow = fps < SLOW_FPS ? slow + 1 : 0;
         start = now;
         frames = 1;
-        if (fps < STUCK_FPS) return stepDown(2);
-        if (slow >= 2) return stepDown((level + 1) as Level);
+        if (slow >= SLOW_MEASURES) return onSlow();
       }
       raf = requestAnimationFrame(tick);
     };
     const restart = () => {
       start = 0;
+      slow = 0;
     };
     // Measured once the page has settled (first paint, fonts, the scene's own start).
-    const warm = window.setTimeout(() => (raf = requestAnimationFrame(tick)), 4000);
+    const warm = window.setTimeout(() => (raf = requestAnimationFrame(tick)), 5000);
     document.addEventListener("visibilitychange", restart);
     return () => {
       window.clearTimeout(warm);
       cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", restart);
     };
-  }, [active, level, stepDown]);
+  }, [active, onSlow]);
 }
 
 /**
  * The Waylume backgrounds of the Atmosphère interface, when one is chosen. Same rules as our own
- * backgrounds: still when motion is off or the device has no graphics chip; drawn at reduced
- * resolution and at most 60 frames a second otherwise, lighter (then still) if the page stops being
- * smooth. Waylume itself pauses offscreen and in hidden tabs and shows a still frame for reduced
- * motion. Nothing runs otherwise.
+ * backgrounds: still when motion is off, for reduced motion, or when the device has no graphics
+ * chip; otherwise it moves, drawn at reduced resolution and at most 60 frames a second, lighter if
+ * the page is clearly struggling. Waylume itself pauses offscreen and in hidden tabs. Nothing runs
+ * otherwise.
  */
 export function WaylumeLayer() {
   const state = React.useSyncExternalStore(subscribe, snapshot, () => "off" as Snapshot);
   const [level, setLevel] = React.useState<Level>(() => (typeof window === "undefined" ? 0 : savedLevel()));
-  const stepDown = React.useCallback((to: Level) => {
-    setLevel((current) => {
-      const next = Math.max(current, Math.min(2, to)) as Level;
-      try {
-        sessionStorage.setItem(LEVEL_KEY, String(next));
-      } catch {
-        // Not remembered: measured again on the next visit.
-      }
-      return next;
-    });
+  const lighter = React.useCallback(() => {
+    setLevel(1);
+    try {
+      sessionStorage.setItem(LEVEL_KEY, "1");
+    } catch {
+      // Not remembered: measured again on the next visit.
+    }
   }, []);
-  const animated = state !== "off" && !state.endsWith(":paused") && level < 2;
+  const animated = state !== "off" && !state.endsWith(":paused");
   // The scene draws on every frame the screen offers (120 a second on many laptops): capped at 60.
   React.useEffect(() => (animated ? capFrames() : undefined), [animated]);
-  useSmoothness(animated, level, stepDown);
+  useSmoothness(animated && level === 0 && !state.endsWith(":light"), lighter);
   if (state === "off") return null;
   const [variant, mode] = state.split(":") as [Variant, "on" | "paused" | "light"];
   const Scene = SCENES[variant];
-  if (mode === "paused" || level >= 2) return <Scene paused />;
+  if (mode === "paused") return <Scene paused />;
   // Drawn at half resolution and enlarged (a quarter of the pixels): the scene is soft light, the
   // difference does not show, the graphics chip does four times less work on every frame. A chip
-  // that still struggles gets a third.
+  // that struggles gets a third.
   const scale = mode === "light" || level === 1 ? 3 : 2;
   return (
     <div aria-hidden className="absolute left-0 top-0 origin-top-left" style={{ width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` }}>

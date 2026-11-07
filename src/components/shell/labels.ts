@@ -19,6 +19,7 @@ export async function getShellLabels(): Promise<ShellLabels> {
     themeSystem: t("themeSystem"),
     collapseSidebar: t("collapseSidebar"),
     expandSidebar: t("expandSidebar"),
+    resizeSidebar: t("resizeSidebar"),
     version: t("version", { version: APP_VERSION }),
   };
 }

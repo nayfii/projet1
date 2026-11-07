@@ -22,7 +22,8 @@
     "themeSystem": "Match device",
     "version": "Version {version}",
     "collapseSidebar": "Collapse sidebar",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "resizeSidebar": "Menu width: drag, or double-click to restore the default width"
   },
   "roles": {
     "owner": "Owner",

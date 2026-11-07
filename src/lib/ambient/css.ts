@@ -15,12 +15,15 @@ const ACCENTS: Record<string, { hue: number; accent: string; onAccent: string }>
 /**
  * CSS for the Atmosphère palettes, generated from the same definitions as the background shader so
  * the colours never drift apart: the background colours (the stand-in gradient before the canvas
- * draws), the glass tint and the accent.
+ * draws) for both glass tones; the glass tint and the coloured accent only with the tinted glass
+ * (founder, 2026-11-07: "Verre transparent" stays monochrome, white highlights, no colour leak).
  */
 export function paletteStyles(): string {
   return PALETTES.map((p) => {
     const a = ACCENTS[p.id];
     const c = p.colors;
-    return `:root[data-theme="atmosphere"][data-ambient="${p.id}"]{--background:${c.base};--amb-base:${c.base};--amb-deep:${c.deep};--amb-c2:${c.c2};--amb-c3:${c.c3};--tint-h:${a.hue};--brand:${a.accent};--ring:${a.accent};--brand-foreground:${a.onAccent};--brand-soft:color-mix(in oklch,${a.accent} ${p.scheme === "light" ? 10 : 15}%,transparent);--lg-on:${a.accent};--lg-fill:${a.accent}}`;
+    const base = `:root[data-theme="atmosphere"][data-ambient="${p.id}"]{--background:${c.base};--amb-base:${c.base};--amb-deep:${c.deep};--amb-c2:${c.c2};--amb-c3:${c.c3};--tint-h:${a.hue}}`;
+    const tinted = `:root[data-theme="atmosphere"][data-ambient="${p.id}"][data-glass-tone="tinted"]{--brand:${a.accent};--ring:${a.accent};--brand-foreground:${a.onAccent};--brand-soft:color-mix(in oklch,${a.accent} ${p.scheme === "light" ? 10 : 15}%,transparent);--lg-on:${a.accent};--lg-fill:${a.accent}}`;
+    return `${base}\n${tinted}`;
   }).join("\n");
 }

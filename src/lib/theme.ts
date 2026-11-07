@@ -24,6 +24,13 @@ export const MOTION_COOKIE = "motion";
 export const DEFAULT_MOTION: Motion = "on";
 
 export const SIDEBAR_COOKIE = "sidebar";
+/** The expanded sidebar's width (px), dragged by its edge; kept for the next visits. */
+export const SIDEBAR_WIDTH_COOKIE = "sidebar_width";
+export const SIDEBAR_WIDTH = { min: 224, max: 420, default: 272 } as const;
+export function sidebarWidth(value: string | undefined): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= SIDEBAR_WIDTH.min && n <= SIDEBAR_WIDTH.max ? Math.round(n) : null;
+}
 
 /** The glass: clear (neutral, the default) or tinted violet (the earlier look). */
 export const GLASS_TONES = ["clear", "tinted"] as const;

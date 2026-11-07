@@ -59,6 +59,7 @@ import { Logo } from "@/components/brand/logo";
 import { useAppearance } from "@/components/appearance/appearance-provider";
 import { setLocale } from "@/modules/identity/server/actions";
 import { cn } from "@/lib/utils";
+import { APPEARANCE_COOKIE_MAX_AGE, SIDEBAR_WIDTH, SIDEBAR_WIDTH_COOKIE } from "@/lib/theme";
 
 const ICONS = {
   home: HouseIcon,
@@ -111,6 +112,7 @@ export type ShellLabels = {
   themeSystem: string;
   collapseSidebar: string;
   expandSidebar: string;
+  resizeSidebar: string;
   /** "Version v1.2": the version running, shown at the bottom of the account menu. */
   version: string;
 };
@@ -178,6 +180,7 @@ export function AppShell(props: ShellProps) {
           <LiquidGlass material="panel" reach={56} className="flex h-full flex-col overflow-hidden rounded-[22px]">
             <SidebarBody {...props} rail={collapsed} />
           </LiquidGlass>
+          {collapsed ? null : <SidebarResizer label={props.labels.resizeSidebar} aside={asideRef} />}
           {/* Centred on the line under the page header (56 px from the top). */}
           <button
             type="button"
@@ -498,3 +501,66 @@ function UserMenu({
     </DropdownMenu>
   );
 }
+
+/**
+ * The expanded sidebar's right edge: drag it to make the menu wider or narrower (224–420 px), or use
+ * ← → when it has the focus; a double-click (or Home) restores the default width. The width is set
+ * on the page directly while dragging (no redraw of the app) and kept in a cookie, so the next visit
+ * opens at the same width before the first paint.
+ */
+function SidebarResizer({ label, aside }: { label: string; aside: React.RefObject<HTMLElement | null> }) {
+  const drag = React.useRef<{ x: number; width: number } | null>(null);
+  const current = () => aside.current?.getBoundingClientRect().width ?? SIDEBAR_WIDTH.default;
+  const apply = (width: number | null) => {
+    const root = document.documentElement;
+    if (width === null) {
+      root.style.removeProperty("--sidebar-expanded-w");
+      document.cookie = `${SIDEBAR_WIDTH_COOKIE}=; path=/; max-age=0; samesite=lax`;
+      return;
+    }
+    const w = Math.round(Math.min(SIDEBAR_WIDTH.max, Math.max(SIDEBAR_WIDTH.min, width)));
+    root.style.setProperty("--sidebar-expanded-w", `${w}px`);
+    return w;
+  };
+  const save = (w: number | undefined) => {
+    if (w) document.cookie = `${SIDEBAR_WIDTH_COOKIE}=${w}; path=/; max-age=${APPEARANCE_COOKIE_MAX_AGE}; samesite=lax`;
+  };
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      title={label}
+      tabIndex={0}
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        drag.current = { x: e.clientX, width: current() };
+        aside.current?.setAttribute("data-resizing", "");
+      }}
+      onPointerMove={(e) => {
+        if (drag.current) apply(drag.current.width + (e.clientX - drag.current.x));
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+        aside.current?.removeAttribute("data-resizing");
+        save(apply(current()));
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+        aside.current?.removeAttribute("data-resizing");
+      }}
+      onDoubleClick={() => apply(null)}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+          e.preventDefault();
+          save(apply(current() + (e.key === "ArrowRight" ? 16 : -16)));
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          apply(null);
+        }
+      }}
+      className="shell-resizer absolute inset-y-6 -right-1.5 z-[5] w-3 cursor-col-resize touch-none rounded-full outline-none"
+    />
+  );
+}
+

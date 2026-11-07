@@ -17,15 +17,17 @@
   color-scheme: dark;
   --radius: 0.75rem;
   --tint-h: 284;
+  /* Colour of the surfaces: none (neutral glass), except Atmosphère with the tinted glass (below). */
+  --tint-k: 0;
 
-  --background: #09090b;
-  --foreground: oklch(0.97 0.006 var(--tint-h));
+  --background: #0a0a0a;
+  --foreground: oklch(0.97 calc(0.006 * var(--tint-k)) var(--tint-h));
 
   /* Glass fills, from the lightest to the most opaque (content-heavy surfaces need the latter). */
-  --glass-subtle: oklch(0.27 0.03 var(--tint-h) / 0.26);
-  --glass-standard: oklch(0.22 0.028 var(--tint-h) / 0.52);
-  --glass-elevated: oklch(0.2 0.026 var(--tint-h) / 0.6);
-  --glass-solid: oklch(0.185 0.022 var(--tint-h) / 0.84);
+  --glass-subtle: oklch(0.27 calc(0.03 * var(--tint-k)) var(--tint-h) / 0.26);
+  --glass-standard: oklch(0.22 calc(0.028 * var(--tint-k)) var(--tint-h) / 0.52);
+  --glass-elevated: oklch(0.2 calc(0.026 * var(--tint-k)) var(--tint-h) / 0.6);
+  --glass-solid: oklch(0.185 calc(0.022 * var(--tint-k)) var(--tint-h) / 0.84);
   --glass-hover: oklch(1 0 0 / 0.055);
   --glass-selected: oklch(1 0 0 / 0.1);
   --glass-lens: oklch(1 0 0 / 0.07);
@@ -35,7 +37,7 @@
   --glass-highlight: oklch(1 0 0 / 0.13);
   --glass-lowlight: oklch(0 0 0 / 0.18);
   --glass-sheen: oklch(1 0 0 / 0.05);
-  --glass-shadow-color: oklch(0.04 0.02 var(--tint-h) / 0.6);
+  --glass-shadow-color: oklch(0.04 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.6);
   --glass-blur: 22px;
   --glass-saturate: 165%;
 
@@ -43,21 +45,22 @@
   --card-foreground: var(--foreground);
   --popover: var(--glass-solid);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.97 0.006 var(--tint-h));
-  --primary-foreground: oklch(0.17 0.02 var(--tint-h));
+  --primary: oklch(0.97 calc(0.006 * var(--tint-k)) var(--tint-h));
+  --primary-foreground: oklch(0.17 calc(0.02 * var(--tint-k)) var(--tint-h));
   --secondary: oklch(1 0 0 / 0.08);
   --secondary-foreground: var(--foreground);
   --muted: oklch(1 0 0 / 0.055);
-  --muted-foreground: oklch(0.76 0.016 var(--tint-h));
+  --muted-foreground: oklch(0.76 calc(0.016 * var(--tint-k)) var(--tint-h));
   --accent: oklch(1 0 0 / 0.085);
   --accent-foreground: var(--foreground);
   --border: oklch(1 0 0 / 0.095);
   --input: oklch(1 0 0 / 0.14);
 
-  --brand: oklch(0.8 0.1 290);
-  --brand-foreground: oklch(0.18 0.04 290);
-  --brand-soft: oklch(0.8 0.1 290 / 0.15);
-  --ring: oklch(0.8 0.1 290);
+  /* The accent is monochrome (white here) unless Atmosphère with the tinted glass gives its colour. */
+  --brand: oklch(0.97 0 0);
+  --brand-foreground: oklch(0.14 0 0);
+  --brand-soft: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.82 0 0);
 
   --destructive: oklch(0.71 0.16 22);
   --destructive-soft: oklch(0.71 0.16 22 / 0.15);
@@ -102,37 +105,40 @@
 /* ── Light scheme ─────────────────────────────────────────────────────────────────────────────── */
 :root[data-scheme="light"] {
   color-scheme: light;
-  --background: #f7f7f9;
-  --foreground: oklch(0.2 0.02 var(--tint-h));
+  --background: #f7f7f7;
+  --foreground: oklch(0.2 calc(0.02 * var(--tint-k)) var(--tint-h));
 
   --glass-subtle: oklch(1 0 0 / 0.36);
   --glass-standard: oklch(1 0 0 / 0.56);
-  --glass-elevated: oklch(0.995 0.004 var(--tint-h) / 0.62);
-  --glass-solid: oklch(0.995 0.004 var(--tint-h) / 0.86);
+  --glass-elevated: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.62);
+  --glass-solid: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.86);
   --glass-hover: oklch(1 0 0 / 0.5);
   --glass-selected: oklch(1 0 0 / 0.82);
   --glass-lens: oklch(1 0 0 / 0.5);
   --glass-border: oklch(1 0 0 / 0.72);
   --glass-border-strong: oklch(1 0 0 / 0.9);
-  --glass-ring: oklch(0.3 0.04 var(--tint-h) / 0.09);
+  --glass-ring: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.09);
   --glass-highlight: oklch(1 0 0 / 0.95);
-  --glass-lowlight: oklch(0.3 0.04 var(--tint-h) / 0.06);
+  --glass-lowlight: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.06);
   --glass-sheen: oklch(1 0 0 / 0.4);
-  --glass-shadow-color: oklch(0.32 0.05 var(--tint-h) / 0.2);
+  --glass-shadow-color: oklch(0.32 calc(0.05 * var(--tint-k)) var(--tint-h) / 0.2);
 
-  --primary: oklch(0.2 0.02 var(--tint-h));
-  --primary-foreground: oklch(0.99 0.003 var(--tint-h));
+  --primary: oklch(0.2 calc(0.02 * var(--tint-k)) var(--tint-h));
+  --primary-foreground: oklch(0.99 calc(0.003 * var(--tint-k)) var(--tint-h));
   --secondary: oklch(1 0 0 / 0.62);
-  --muted: oklch(0.3 0.04 var(--tint-h) / 0.05);
-  --muted-foreground: oklch(0.46 0.022 var(--tint-h));
-  --accent: oklch(0.3 0.04 var(--tint-h) / 0.065);
-  --border: oklch(0.3 0.04 var(--tint-h) / 0.11);
-  --input: oklch(0.3 0.04 var(--tint-h) / 0.17);
+  --muted: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.05);
+  --muted-foreground: oklch(0.46 calc(0.022 * var(--tint-k)) var(--tint-h));
+  --accent: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.065);
+  --border: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.11);
+  --input: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.17);
 
-  --brand: oklch(0.5 0.17 288);
-  --brand-foreground: oklch(0.99 0.003 288);
-  --brand-soft: oklch(0.5 0.17 288 / 0.1);
-  --ring: oklch(0.5 0.17 288);
+  --brand: oklch(0.18 0 0);
+  --brand-foreground: oklch(0.99 0 0);
+  --brand-soft: oklch(0 0 0 / 0.07);
+  --ring: oklch(0.45 0 0);
+  --avatar-surface: oklch(0.94 0 0);
+  --avatar-foreground: oklch(0.3 0 0);
+  --avatar-ring: oklch(0 0 0 / 0.06);
 
   --destructive: oklch(0.56 0.2 27);
   --destructive-soft: oklch(0.56 0.2 27 / 0.09);
@@ -186,8 +192,11 @@
   --primary-foreground: oklch(0.99 0 0);
   --ambient-veil: oklch(1 0 0 / 0.2);
 }
-html:root[data-glass-tone="tinted"][data-theme] {
+/* The tinted glass exists in Atmosphère only: Clair and Sombre stay neutral whatever is chosen. */
+html:root[data-glass-tone="tinted"][data-theme="atmosphere"] {
   --tint-h: 290;
+  --tint-k: 1;
+  --decor-strength: 16%;
 }
 
 /* Atmosphère palettes (accent, glass tint, background colours) are generated from
@@ -196,26 +205,26 @@ html:root[data-glass-tone="tinted"][data-theme] {
 /* Older browsers without backdrop blur, or people who ask for less transparency: firmer glass. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
-    --glass-elevated: oklch(0.2 0.022 var(--tint-h) / 0.94);
-    --glass-solid: oklch(0.19 0.02 var(--tint-h) / 0.97);
+    --glass-elevated: oklch(0.2 calc(0.022 * var(--tint-k)) var(--tint-h) / 0.94);
+    --glass-solid: oklch(0.19 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.97);
   }
   :root[data-scheme="light"] {
-    --glass-elevated: oklch(0.995 0.004 var(--tint-h) / 0.95);
-    --glass-solid: oklch(0.995 0.004 var(--tint-h) / 0.98);
+    --glass-elevated: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.95);
+    --glass-solid: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.98);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-subtle: oklch(0.22 0.02 var(--tint-h) / 0.9);
-    --glass-standard: oklch(0.21 0.02 var(--tint-h) / 0.95);
-    --glass-elevated: oklch(0.2 0.02 var(--tint-h) / 0.97);
-    --glass-solid: oklch(0.19 0.02 var(--tint-h) / 0.98);
+    --glass-subtle: oklch(0.22 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.9);
+    --glass-standard: oklch(0.21 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.95);
+    --glass-elevated: oklch(0.2 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.97);
+    --glass-solid: oklch(0.19 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.98);
   }
   :root[data-scheme="light"] {
-    --glass-subtle: oklch(0.99 0.004 var(--tint-h) / 0.92);
-    --glass-standard: oklch(0.995 0.003 var(--tint-h) / 0.96);
-    --glass-elevated: oklch(0.995 0.003 var(--tint-h) / 0.97);
-    --glass-solid: oklch(0.995 0.003 var(--tint-h) / 0.98);
+    --glass-subtle: oklch(0.99 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.92);
+    --glass-standard: oklch(0.995 calc(0.003 * var(--tint-k)) var(--tint-h) / 0.96);
+    --glass-elevated: oklch(0.995 calc(0.003 * var(--tint-k)) var(--tint-h) / 0.97);
+    --glass-solid: oklch(0.995 calc(0.003 * var(--tint-k)) var(--tint-h) / 0.98);
   }
 }
 
@@ -295,7 +304,7 @@ html:root[data-glass-tone="tinted"][data-theme] {
 :root[data-scheme="light"] {
   --avatar-base: #ffffff;
   --avatar-shine: oklch(1 0 0 / 0.95);
-  --avatar-depth: oklch(0.3 0.03 var(--tint-h) / 0.07);
+  --avatar-depth: oklch(0.3 calc(0.03 * var(--tint-k)) var(--tint-h) / 0.07);
 }
 @layer components {
   .avatar-glass {
@@ -362,10 +371,10 @@ html:root[data-glass-tone="tinted"][data-theme] {
   background: radial-gradient(70% 80% at 58% 50%, var(--ambient-veil), transparent 78%);
 }
 :root {
-  --ambient-veil: oklch(0.12 0.02 var(--tint-h) / 0.38);
+  --ambient-veil: oklch(0.12 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.38);
 }
 :root[data-scheme="light"] {
-  --ambient-veil: oklch(0.99 0.004 var(--tint-h) / 0.42);
+  --ambient-veil: oklch(0.99 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.42);
 }
 /* A device without a graphics chip keeps glass frosted, without bending (the background then draws
  * one still frame); one whose chip struggles only loses the bending (the background keeps moving). */
@@ -382,9 +391,32 @@ html:root[data-glass-tone="tinted"][data-theme] {
 /* ── Sidebar (components/shell/app-shell.tsx) ─────────────────────────────────────────────────────
  * A floating glass panel; collapsed, a narrow rail of icons with tooltips. */
 .shell-sidebar {
-  --sidebar-w: 17rem;
+  /* Dragged by its edge (app-shell.tsx); the cookie's width is set on <html> before the first paint. */
+  --sidebar-w: var(--sidebar-expanded-w, 17rem);
   position: relative;
   width: var(--sidebar-w);
+}
+/* While its edge is dragged, the panel follows the pointer at once (no width animation). */
+.shell-sidebar[data-resizing],
+.shell-sidebar[data-resizing] * {
+  transition: none !important;
+  user-select: none;
+}
+.shell-resizer::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 2px;
+  translate: -50% 0;
+  border-radius: 2px;
+  background: transparent;
+  transition: background-color var(--dur-micro);
+}
+.shell-resizer:hover::after,
+.shell-sidebar[data-resizing] .shell-resizer::after,
+.shell-resizer:focus-visible::after {
+  background: color-mix(in oklch, var(--foreground) 28%, transparent);
 }
 :root[data-sidebar="collapsed"] .shell-sidebar {
   --sidebar-w: 5.25rem;

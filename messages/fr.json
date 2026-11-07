@@ -22,7 +22,8 @@
     "themeSystem": "Comme l'appareil",
     "version": "Version {version}",
     "collapseSidebar": "Réduire le menu",
-    "expandSidebar": "Agrandir le menu"
+    "expandSidebar": "Agrandir le menu",
+    "resizeSidebar": "Largeur du menu : glisser, ou double-cliquer pour revenir à la largeur d'origine"
   },
   "roles": {
     "owner": "Propriétaire",
