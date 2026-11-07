@@ -130,7 +130,7 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         ...(text.includes("[[slides]]") ? ["", ...SAMPLE_SLIDES] : []),
         ...(text.includes("[[sheet]]") ? ["", ...SAMPLE_SHEET] : []),
         // Tools that ask for a table or a chart get sample ones, so exports and charts can be tested.
-        ...(tool && /Markdown table/.test(request.system) ? ["", ...SAMPLE_TABLE] : []),
+        ...(tool && /Present the result as a Markdown table/.test(request.system) ? ["", ...SAMPLE_TABLE] : []),
         ...(/```chart|language is `chart`/.test(request.system) ? ["", ...SAMPLE_CHART] : []),
         // Video agents: a small composition or edit plan the render worker can really make.
         ...(/language is `hyperframes`/.test(request.system) ? ["", ...sampleComposition(text)] : []),

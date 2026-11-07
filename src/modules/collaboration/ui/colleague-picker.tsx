@@ -34,6 +34,7 @@ export function ColleaguePicker({
   const [active, setActive] = React.useState(0);
   const input = React.useRef<HTMLInputElement>(null);
   const list = React.useRef<HTMLUListElement>(null);
+  const root = React.useRef<HTMLDivElement>(null);
 
   const matches = React.useMemo(() => colleagues.filter((c) => matchesSearch(query, c.name, c.email, c.expertise.join(" "))), [colleagues, query]);
   const shown = matches.slice(0, SHOWN);
@@ -51,6 +52,20 @@ export function ColleaguePicker({
     list.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active, open]);
 
+  // Échap closes the list first. The dialog listens for it before any element does, so the list
+  // catches it on the window, earlier; a second Échap then closes the dialog.
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || !root.current?.contains(document.activeElement)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [open]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
@@ -61,11 +76,6 @@ export function ColleaguePicker({
       const c = shown[active];
       if (open && c) toggle(c.userId);
       else setOpen(true);
-    } else if (e.key === "Escape" && open) {
-      // Closes the list only; a second Escape closes the dialog.
-      e.preventDefault();
-      e.stopPropagation();
-      setOpen(false);
     } else if (e.key === "Backspace" && !query && chosen.length) {
       toggle(chosen[chosen.length - 1].userId);
     }
@@ -73,6 +83,7 @@ export function ColleaguePicker({
 
   return (
     <div
+      ref={root}
       className="space-y-2"
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
