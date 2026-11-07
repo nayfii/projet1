@@ -183,38 +183,6 @@
     transform: none;
   }
 }
-@keyframes avatar-breathe {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-1.5%) scale(1.015);
-  }
-}
-@keyframes avatar-sway {
-  0%,
-  100% {
-    transform: rotate(0deg) translateY(0);
-  }
-  30% {
-    transform: rotate(-2.5deg) translateY(-2%);
-  }
-  70% {
-    transform: rotate(2deg) translateY(-1%);
-  }
-}
-@keyframes halo-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.04);
-  }
-}
 @keyframes dot-wave {
   0%,
   60%,
@@ -281,102 +249,24 @@
 }
 
 /*
- * AI assistants' faces (modules/avatars/ui/assistant-avatar.tsx). The eyes glow softly, blink at
- * rest, look up while thinking; a small mouth talks while the answer is being written.
+ * The models' marks (modules/avatars/ui/assistant-avatar.tsx): the provider's logo on a neutral disc.
+ * While a model prepares or writes its answer, a thin ring breathes around it; nothing else moves.
  */
-@keyframes assistant-blink {
-  0%,
-  93%,
-  100% {
-    transform: scaleY(1);
-  }
-  95% {
-    transform: scaleY(0.12);
-  }
-}
-@keyframes assistant-talk {
+@keyframes assistant-ring {
   0%,
   100% {
-    transform: scaleY(0.6);
+    opacity: 0.25;
+    transform: scale(1);
   }
   50% {
-    transform: scaleY(1.7);
-  }
-}
-@keyframes assistant-glance {
-  0%,
-  100% {
-    transform: translate(3px, -4px) scaleY(0.82);
-  }
-  50% {
-    transform: translate(-3px, -4px) scaleY(0.82);
+    opacity: 0.7;
+    transform: scale(1.06);
   }
 }
 @layer components {
-  /* The robot's eyes glow blue like the Fluent robot's; the mouth is its dark slot. */
-  .assistant-face {
-    --eye: #3fb4ff;
-    filter: drop-shadow(0 0 3px color-mix(in oklch, var(--eye) 70%, transparent));
-  }
-  .assistant-face g,
-  .assistant-face rect,
-  .assistant-face path {
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-  .assistant-eye {
-    fill: var(--eye);
-    transition: transform 300ms var(--ease-out-soft), opacity 200ms;
-  }
-  .assistant-shine {
-    fill: #fff;
-    opacity: 0.75;
-  }
-  .assistant-smile path {
-    fill: none;
-    stroke: var(--eye);
-    stroke-width: 9;
-    stroke-linecap: round;
-    opacity: 0;
-    transition: opacity 200ms;
-  }
-  .assistant-mouth {
-    fill: #3a2a57;
-    filter: none;
-    transition: transform 200ms;
-  }
-  .assistant-avatar[data-animated] .assistant-eye {
-    animation: assistant-blink 5.5s ease-in-out infinite;
-    animation-delay: var(--blink-delay);
-  }
-  .assistant-avatar[data-animated] .assistant-figure {
-    animation: avatar-breathe 5s ease-in-out infinite;
-    animation-delay: calc(var(--blink-delay) * -1);
-    transform-origin: 50% 90%;
-  }
-  .assistant-avatar[data-animated][data-state="thinking"] .assistant-eyes {
-    animation: assistant-glance 2.6s ease-in-out infinite;
-    transform-box: fill-box;
-  }
-  .assistant-avatar[data-animated][data-state="thinking"] .assistant-figure {
-    animation: avatar-sway 3.2s ease-in-out infinite;
-  }
-  .assistant-avatar[data-animated][data-state="speaking"] .assistant-mouth {
-    opacity: 1;
-    animation: assistant-talk 0.42s ease-in-out infinite;
-  }
-  .assistant-avatar[data-animated][data-state="speaking"] .assistant-eye {
-    transform: scaleY(1.08);
-  }
-  .assistant-avatar[data-state="happy"] .assistant-eye {
-    opacity: 0;
-  }
-  .assistant-avatar[data-state="happy"] .assistant-smile path {
-    opacity: 1;
-  }
-  .assistant-halo {
-    background: radial-gradient(circle, color-mix(in oklch, var(--tint) 55%, transparent) 0%, transparent 68%);
-    animation: halo-pulse 2.4s ease-in-out infinite;
+  .assistant-ring {
+    border: 1.5px solid color-mix(in oklch, var(--foreground) 45%, transparent);
+    animation: assistant-ring 1.8s ease-in-out infinite;
     pointer-events: none;
   }
 }

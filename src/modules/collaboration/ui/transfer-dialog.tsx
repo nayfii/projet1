@@ -3,11 +3,12 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { ArrowRightLeftIcon, TriangleAlertIcon } from "lucide-react";
+import { ArrowRightLeftIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { matchesSearch } from "@/lib/search";
 import { cn } from "@/lib/utils";
 import { transferClientAction, transferConversationAction } from "../server/actions";
 import type { Colleague } from "../server/queries";
@@ -36,6 +37,9 @@ export function TransferDialog({
   const tCommon = useTranslations("common");
   const [to, setTo] = React.useState<string | null>(null);
   const [running, setRunning] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  // The chosen person stays listed while searching for someone else.
+  const shownColleagues = colleagues.filter((c) => c.userId === to || matchesSearch(query, c.name, c.email, c.expertise.join(" ")));
   const recipient = colleagues.find((c) => c.userId === to) ?? null;
   // The recipient sees the whole conversation: warn if it cites memories they cannot read.
   const { warnings, checking } = useHistoryWarnings(target.id, to ? [to] : [], 1, open && target.kind === "conversation");
@@ -79,8 +83,22 @@ export function TransferDialog({
         ) : (
           <fieldset className="space-y-1" disabled={running}>
             <legend className="mb-1 text-sm font-medium">{t("transferTo")}</legend>
+            {colleagues.length > 5 ? (
+              <label className="mb-1 flex h-9 items-center gap-2 rounded-lg border bg-background/40 px-2.5 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30">
+                <SearchIcon aria-hidden className="size-4 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t("whoPlaceholder")}
+                  aria-label={t("whoPlaceholder")}
+                  autoComplete="off"
+                  className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </label>
+            ) : null}
             <div className="max-h-64 space-y-0.5 overflow-y-auto">
-              {colleagues.map((c) => (
+              {shownColleagues.length === 0 ? <p className="px-3 py-4 text-center text-[13px] text-muted-foreground">{t("whoEmpty", { query })}</p> : null}
+              {shownColleagues.map((c) => (
                 <label
                   key={c.userId}
                   className={cn("flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent/50", to === c.userId && "bg-brand-soft/60")}

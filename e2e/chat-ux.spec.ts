@@ -78,6 +78,25 @@ test("an earlier prompt is edited and run again; the old answer goes", async () 
   await expect(answers()).toHaveCount(1);
 });
 
+test("a double-click on the title renames the conversation; Échap cancels", async () => {
+  const title = () => page.locator('h1[title="Double-cliquez pour renommer"]');
+  await title().dblclick();
+  const field = page.getByRole("textbox", { name: "Renommer la conversation" });
+  await expect(field).toBeFocused();
+  await field.fill("Titre à oublier");
+  await field.press("Escape");
+  await expect(field).toHaveCount(0);
+  await expect(title()).not.toContainText("Titre à oublier");
+
+  await title().dblclick();
+  await page.getByRole("textbox", { name: "Renommer la conversation" }).fill("Plan de lancement");
+  await page.getByRole("textbox", { name: "Renommer la conversation" }).press("Enter");
+  await expect(title()).toContainText("Plan de lancement");
+  await expect(page.getByTestId("conversation-row").first()).toContainText("Plan de lancement");
+  await page.reload();
+  await expect(title()).toContainText("Plan de lancement");
+});
+
 test("the sidebar: rename, pin, archive, with each change kept", async () => {
   const row = page.getByTestId("conversation-row").first();
   await row.hover();
@@ -124,6 +143,19 @@ test("dictation sent with the arrow goes out at once; the recording bar shows th
   await expect(page.title()).resolves.not.toContain("Dictée en cours");
 });
 
+test("an app's long field takes dictation: the text is added for review, the form is not sent", async () => {
+  await page.goto("/apps");
+  await page.getByRole("main").getByText("Préparation de rendez-vous").first().click();
+  const goal = page.getByLabel("Objectif du rendez-vous *");
+  await goal.fill("Point budget.");
+  await page.getByRole("main").getByRole("button", { name: "Dicter" }).click();
+  await expect(page.getByTestId("dictation-bar")).toBeVisible();
+  await page.waitForTimeout(1200);
+  await page.getByRole("button", { name: "Terminer et transcrire" }).click();
+  await expect(goal).toHaveValue(/^Point budget\. Ceci est une dictée de démonstration/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/apps\//);
+});
+
 test("an image is created from a request, and the Image button forces one", async () => {
   await page.goto("/chat");
   await send("Crée une image d'un vélo rouge sur fond blanc");
@@ -135,4 +167,94 @@ test("an image is created from a request, and the Image button forces one", asyn
   await page.getByRole("button", { name: "Image", exact: true }).click();
   await send("un coucher de soleil sur Paris");
   await expect(answers().last().getByTestId("generated-images").locator("img")).toBeVisible();
+  // An image stays in the conversation: the workspace on the right does not open for it.
+  await expect(page.getByTestId("artifact-panel")).toHaveCount(0);
 });
+
+test("a document opens in the workspace on the right: download, edit by hand, new version by the AI", async () => {
+  await page.goto("/chat");
+  await send("Prépare la facture [[invoice]]");
+  const panel = page.getByTestId("artifact-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole("heading", { level: 2 })).toHaveText("[TEST] Facture — Boulangerie Martin");
+  await expect(panel).toContainText("Facture n° 2026-042");
+  await expect(panel).toContainText("1200");
+  const card = answers().last().getByTestId("artifact-card");
+  await expect(card).toContainText("Document · version 1");
+
+  // Downloads: PDF and Word, built on our server from the document only.
+  for (const [label, extension] of [["PDF", ".pdf"], ["Word (.docx)", ".docx"]] as const) {
+    await panel.getByRole("button", { name: "Télécharger" }).click();
+    const [file] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: label }).click()]);
+    expect(file.suggestedFilename()).toMatch(new RegExp(`facture-boulangerie-martin\\${extension}$`));
+  }
+
+  // Edited by hand: a new version, posted to the conversation (no AI answer), shown at once.
+  await panel.getByRole("button", { name: "Modifier" }).click();
+  const editor = panel.getByRole("textbox", { name: "Modifier" });
+  await editor.fill((await editor.inputValue()).replace("| 2 | 600 | 1200 |", "| 2 | 600 | 999 |"));
+  const before = await answers().count();
+  await panel.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByText("Nouvelle version enregistrée.")).toBeVisible();
+  await expect(panel.getByRole("combobox", { name: "Versions" })).toHaveValue("2");
+  await expect(panel).toContainText("999");
+  await expect(answers()).toHaveCount(before);
+
+  // Closed, then opened again from the card.
+  await panel.getByRole("button", { name: "Fermer l'espace de travail" }).click();
+  await expect(panel).toHaveCount(0);
+  await card.click();
+  await expect(panel).toBeVisible();
+
+  // The AI changes it: same document, version 3.
+  await send("Passe à 3 ateliers [[revise]]");
+  await expect(panel.getByRole("combobox", { name: "Versions" })).toHaveValue("3");
+  await expect(panel).toContainText("1800");
+  await panel.getByRole("combobox", { name: "Versions" }).selectOption("1");
+  await expect(panel).toContainText("Version 1 sur 3");
+  await expect(panel).toContainText("1200");
+  await page.reload();
+  await expect(answers().last().getByTestId("artifact-card")).toContainText("version 3");
+});
+
+test("slides and a spreadsheet get their own views", async () => {
+  await send("Fais une présentation du lancement [[slides]]");
+  const panel = page.getByTestId("artifact-panel");
+  await expect(panel.getByTestId("artifact-slide")).toContainText("Lancement du produit");
+  await expect(panel).toContainText("1 / 2");
+  await panel.getByRole("button", { name: "Diapositive suivante" }).click();
+  await expect(panel.getByTestId("artifact-slide")).toContainText("Calendrier");
+
+  await send("Fais le tableau du budget [[sheet]]");
+  await expect(panel.getByRole("table")).toContainText("Publicité");
+  await panel.getByRole("button", { name: "Modifier" }).click();
+  await panel.getByRole("textbox", { name: "Cellule ligne 1, colonne 2" }).fill("1300");
+  await panel.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(panel.getByRole("combobox", { name: "Versions" })).toHaveValue("2");
+  await expect(panel.getByRole("table")).toContainText("1300");
+  await panel.getByRole("button", { name: "Télécharger" }).click();
+  const [file] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "Excel (.xlsx)" }).click()]);
+  expect(file.suggestedFilename()).toMatch(/budget-trimestriel\.xlsx$/);
+});
+
+test("@Albert prepares a meeting or writes its minutes with the meeting apps, in the conversation", async () => {
+  await page.goto("/chat");
+  await composer().fill("@Alb");
+  const option = page.getByRole("option", { name: /@Albert/ });
+  await expect(option).toContainText("Réunions");
+  await option.click();
+  await expect(composer()).toHaveValue("@Albert ");
+  await send("@Albert prépare mon rendez-vous de demain avec la Boulangerie Martin");
+  await expect(answers().last()).toContainText("Tool instructions received: Meeting Prep");
+  await send("@Albert fais le compte rendu de ces notes : budget validé, lancement en mars");
+  await expect(answers().last()).toContainText("Tool instructions received: Meeting Minutes");
+});
+
+test("'/' offers to create a document, a presentation or a spreadsheet right here", async () => {
+  await composer().fill("/pres");
+  const shortcut = page.getByRole("option", { name: /Une présentation/ });
+  await expect(shortcut).toBeVisible();
+  await shortcut.click();
+  await expect(composer()).toHaveValue("Crée une présentation sur ");
+});
+

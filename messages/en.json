@@ -796,7 +796,9 @@
     "imagePlaceholder": "Describe the image to create, or what to change…",
     "imaging": "Creating the image…",
     "openImage": "Open the image",
-    "downloadImage": "Download"
+    "downloadImage": "Download",
+    "renameTitle": "Rename the conversation",
+    "renameHint": "Double-click to rename"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -1243,6 +1245,11 @@
     "addBody": "You talk together here. The AI only answers when mentioned (@AI, @Claude, @ChatGPT, @Gemini).",
     "noColleagues": "No colleague can join this conversation for now.",
     "who": "Who?",
+    "whoPlaceholder": "Search a colleague (name or e-mail)…",
+    "whoMorePlaceholder": "Add someone else…",
+    "whoEmpty": "No colleague matches “{query}”.",
+    "whoNarrow": "{count, plural, one {# more colleague matches: refine the search.} other {# more colleagues match: refine the search.}}",
+    "whoRemove": "Remove {name}",
     "historyTitle": "What they will see",
     "historyNow": "From now on",
     "historyNowHint": "Earlier messages stay visible to you only.",
@@ -1327,7 +1334,8 @@
     "copyBanner": "Conversation transferred to {name} on {date}. This is your copy: you can continue it on your side. {name} does not see your copy, and you do not see what follows on theirs.",
     "copyBannerUnknown": "Conversation transferred on {date}. This is your private copy: you can continue it on your side.",
     "mentionsYou": "mentions you",
-    "mentionedYou": "{name} mentioned you"
+    "mentionedYou": "{name} mentioned you",
+    "albertHint": "Meetings: preparation, minutes"
   },
   "confronter": {
     "title": "Confront",
@@ -2191,7 +2199,26 @@
     "pickerEmpty": "No app",
     "pickerAll": "All apps",
     "quickAccess": "Quick access",
-    "favorite": "Favourite"
+    "favorite": "Favourite",
+    "shortcutsTitle": "Create here",
+    "shortcut": {
+      "document": "A document (report, invoice, quote…)",
+      "slides": "A presentation",
+      "sheet": "A spreadsheet",
+      "image": "An image"
+    },
+    "shortcutCommand": {
+      "document": "document",
+      "slides": "slides",
+      "sheet": "sheet",
+      "image": "image"
+    },
+    "shortcutPrompt": {
+      "document": "Write a document: ",
+      "slides": "Create a presentation about ",
+      "sheet": "Create a spreadsheet: "
+    },
+    "chatHint": "Also from a conversation: type “/” for an app or to create a document, a presentation, a spreadsheet; “@Albert” prepares a meeting or writes its minutes."
   },
   "platformApps": {
     "title": "Apps",
@@ -2424,5 +2451,52 @@
     "learningOff": "Private",
     "learningOnHint": "Useful facts from this conversation (decisions, budgets, dates, contacts) enrich {client}'s memory, for your colleagues and every model. Your personal details stay private. Click to keep nothing.",
     "learningOffHint": "This conversation does not enrich the client's memory. Click to turn it back on."
+  },
+  "artifacts": {
+    "writing": "Writing…",
+    "meta": "{kind} · version {version}{edited, select, yes { · edited by hand} other {}}",
+    "kind": {
+      "document": "Document",
+      "sheet": "Spreadsheet",
+      "slides": "Presentation",
+      "code": "Code"
+    },
+    "open": "Open",
+    "opened": "Open",
+    "panel": "Workspace: {title}",
+    "versions": "Versions",
+    "versionOption": "v{version} · {by, select, user {edited by hand} other {AI}} · {date}",
+    "edit": "Edit",
+    "editOld": "Edit from this version",
+    "download": "Download",
+    "format": {
+      "pdf": "PDF",
+      "docx": "Word (.docx)",
+      "md": "Markdown text (.md)",
+      "xlsx": "Excel (.xlsx)",
+      "csv": "CSV",
+      "code": "Code file"
+    },
+    "close": "Close the workspace",
+    "updating": "The AI is writing a new version…",
+    "oldVersion": "Version {version} of {total}",
+    "showLatest": "Show the latest",
+    "empty": "This document is empty.",
+    "editHint": "Edit the text (# title, - list, | table |). “Save” creates a new version, shown in the conversation: the AI will start from it.",
+    "editCodeHint": "Edit the code. “Save” creates a new version, shown in the conversation.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "slideOf": "{index} / {total}",
+    "slide": "Slide",
+    "cell": "Cell row {row}, column {column}",
+    "removeRow": "Remove row {row}",
+    "addRow": "Add a row",
+    "copy": "Copy",
+    "copied": "Copied",
+    "editIntro": "I edited “{title}”.",
+    "saved": "New version saved.",
+    "resize": "Workspace width"
   }
 }

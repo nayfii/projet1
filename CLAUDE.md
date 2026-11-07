@@ -233,6 +233,7 @@ Taken on the framing page ("Cadrage de la plateforme") and in the conversation. 
 **Name.** The product is called **Cendr**.
 
 **Art direction and avatars (Step 11).** Near-black premium interface; 3D characters for the AI assistants; personal 3D avatars made from a photo with one standardized prompt (docs/DESIGN.md).
+*Updated 2026-11-07 (founder's refinement brief):* the AI models are shown by their providers' own logos (OpenAI, Claude, Gemini) instead of the 3D robots; Light and Dark are neutral (true black, white, greys; the accent is monochrome there), expressive colour belongs to the Atmosphère themes only; no permanent column beside the chat. Substantial documents, spreadsheets, presentations and code open in a workspace on the right of the conversation (artifacts, provider-independent). "@Albert" is the one named specialist (meetings: Meeting Prep and Meeting Minutes). Personal 3D avatars stay.
 
 **Roles.** Add a **Manager** role: a manager manages access to clients for the members of their team (assignments), without any access to conversation content. Owner and delegated Admins stay as they are (the 10 delegable scopes are kept; ready-made profiles may be offered as shortcuts). Administrative rights and content access stay separate for every role.
 

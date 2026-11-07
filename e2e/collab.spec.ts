@@ -115,7 +115,17 @@ test("Olivier adds Nathalie from the suggestion, sharing history from a chosen m
   await nathaliePage.goto("/");
   await olivierPage.getByRole("button", { name: "Inviter Nathalie Durand" }).click();
   const dialog = olivierPage.getByRole("dialog", { name: "Ajouter des collègues" });
-  await expect(dialog.getByRole("checkbox", { name: "Nathalie Durand" })).toBeChecked();
+  await expect(dialog.getByRole("button", { name: "Retirer Nathalie Durand" })).toBeVisible();
+  // "Qui ?" searches by name or e-mail, without caring about case or accents; the choice is kept.
+  const who = dialog.getByRole("combobox", { name: "Qui ?" });
+  await who.fill("NATHALIE dur");
+  await expect(dialog.getByRole("option", { name: /Nathalie Durand/ })).toHaveAttribute("aria-selected", "true");
+  await who.fill("personne-inconnue");
+  await expect(dialog).toContainText("Aucun collègue ne correspond à « personne-inconnue ».");
+  await who.fill("");
+  await who.press("Escape");
+  await expect(dialog.getByRole("listbox")).toHaveCount(0);
+  await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("radio", { name: /À partir de maintenant/ })).toBeChecked();
   await expect(dialog).toContainText("Le titre de la conversation est visible par tous");
 

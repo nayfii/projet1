@@ -62,6 +62,12 @@
   --brand-soft: oklch(1 0 0 / 0.12);
   --ring: oklch(0.82 0 0);
 
+  /* Avatars (initials, models' logos) and decorative washes: neutral unless tinted Atmosphère. */
+  --avatar-surface: oklch(0.24 0 0);
+  --avatar-foreground: oklch(0.92 0 0);
+  --avatar-ring: oklch(1 0 0 / 0.08);
+  --decor-strength: 0%;
+
   --destructive: oklch(0.71 0.16 22);
   --destructive-soft: oklch(0.71 0.16 22 / 0.15);
   --success: oklch(0.8 0.12 160);

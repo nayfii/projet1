@@ -1,35 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
-import { ASSISTANTS, assistantFor, blinkDelay, ROBOT_FACE } from "@/modules/avatars/assistants";
 import { avatarUrlFor, sniffPhotoType } from "@/modules/avatars/files";
 import { AVATAR_BACKGROUND, AVATAR_PROMPT } from "@/modules/avatars/prompt";
 
 /** Step 11: assistant characters, the standardized avatar prompt, and photo checks. */
-describe("assistant characters", () => {
-  it("exist for every provider and Auto, with a face drawn inside the 256 px robot", () => {
-    for (const id of ["openai", "anthropic", "google", "auto"] as const) {
-      expect(ASSISTANTS[id].image).toMatch(/^\/avatars\/assistants\/[a-z]+\.png$/);
-      expect(existsSync(`public${ASSISTANTS[id].image}`)).toBe(true);
-      // A PNG with an alpha channel (colour type 6): a cut-out set on the app's glass.
-      const png = readFileSync(`public${ASSISTANTS[id].image}`);
-      expect(png.subarray(1, 4).toString()).toBe("PNG");
-      expect(png[25]).toBe(6);
-    }
-    for (const part of [...ROBOT_FACE.eyes, ROBOT_FACE.mouth]) {
-      expect(part.x).toBeGreaterThan(0);
-      expect(part.x + part.w).toBeLessThan(256);
-      expect(part.y + part.h).toBeLessThan(256);
-    }
-    // The robot is open art: its licence ships with the images.
-    expect(existsSync("public/avatars/assistants/LICENSE-fluent-emoji.txt")).toBe(true);
-    expect(assistantFor(null).id).toBe("auto");
-    expect(assistantFor("anthropic").id).toBe("anthropic");
-  });
-
-  it("blink at stable, different moments", () => {
-    expect(blinkDelay("a")).toBe(blinkDelay("a"));
-    expect(blinkDelay("message-1")).toBeGreaterThanOrEqual(0);
-    expect(blinkDelay("message-1")).toBeLessThan(4);
+describe("models' marks", () => {
+  it("are the providers' own logos, one per provider (no robot images left)", async () => {
+    const source = readFileSync("src/modules/providers/ui/provider-logo.tsx", "utf8");
+    expect(source).toContain("LobeHub Icons");
+    for (const provider of ["openai", "anthropic"]) expect(source).toContain(`provider === "${provider}"`);
+    expect(existsSync("public/avatars/assistants")).toBe(false);
   });
 });
 

@@ -399,6 +399,8 @@ describe("web search and files", () => {
 
   it("tells the model the workspace turns its answer into a PDF, Word or Excel file", () => {
     expect(prompt(false)).toMatch(/never say that you cannot create files/);
+    expect(prompt(false)).toMatch(/`artifact-document`, `artifact-slides`, `artifact-sheet`, `artifact-code`/);
+    expect(prompt(false)).toMatch(/SAME id/);
   });
 
   it("test mode: a search is counted and its page cited, only when web search is on", async () => {

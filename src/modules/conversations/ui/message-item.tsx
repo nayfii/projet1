@@ -55,6 +55,8 @@ import { mentionsPerson, type PersonToken } from "@/modules/collaboration/mentio
 import { ConfrontationView } from "@/modules/confronter/ui/confrontation-view";
 import type { ConfrontationProgress } from "@/modules/confronter/types";
 import { hasTable } from "@/modules/exports/blocks";
+import { ArtifactCard, ArtifactMessageContext } from "@/modules/artifacts/ui/artifact-card";
+import { artifactSource, artifactsIn, textBeforeArtifacts } from "@/modules/artifacts/parse";
 
 type MemoryProps = { memoryTargets: MemoryTarget[]; conversationId: string | null };
 
@@ -170,15 +172,18 @@ function withMentions(text: string, key: string): React.ReactNode {
   );
 }
 
-/** Colleagues' bubbles: one soft tint per person, distinct from the AI's neutral bubble. */
+/**
+ * Colleagues' bubbles: one soft tint per person in the expressive themes (--decor-strength); plain
+ * card and border in the neutral ones (names and avatars already say who wrote).
+ */
 const PERSON_TINTS = ["--pastel-sky", "--pastel-mint", "--pastel-peach", "--pastel-lavender"];
 function personTint(id: string | undefined): React.CSSProperties {
   let hash = 0;
   for (const c of id ?? "") hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
   const token = PERSON_TINTS[hash % PERSON_TINTS.length];
   return {
-    backgroundColor: `color-mix(in oklch, var(${token}) 16%, var(--card))`,
-    borderColor: `color-mix(in oklch, var(${token}) 38%, transparent)`,
+    backgroundColor: `color-mix(in oklch, var(${token}) var(--decor-strength), var(--card))`,
+    borderColor: `color-mix(in oklch, var(${token}) calc(var(--decor-strength) * 2.4), var(--border))`,
   };
 }
 
@@ -234,6 +239,30 @@ function UserMessage({
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(message.content);
   const [copied, setCopied] = React.useState(false);
+  const edits = React.useMemo(() => artifactsIn(message.content), [message.content]);
+  const editScope = React.useMemo(() => ({ messageId: message.id, live: false }), [message.id]);
+  if (edits.length > 0) {
+    // A person's edit of an artifact: their line, then the new version as a card.
+    const name = message.author?.name ?? t("someone");
+    return (
+      <div className={cn("flex animate-message-in flex-col gap-1", mine ? "items-end" : "items-start")}>
+        {!mine ? (
+          <div className="flex items-center gap-2 text-[13px]">
+            <Avatar name={name} src={avatarUrl} className="size-7" />
+            <span className="font-medium">{name}</span>
+          </div>
+        ) : null}
+        {textBeforeArtifacts(message.content) ? (
+          <p className="max-w-[85%] rounded-2xl bg-secondary px-4 py-2 text-[14px] leading-relaxed">{textBeforeArtifacts(message.content)}</p>
+        ) : null}
+        <ArtifactMessageContext.Provider value={editScope}>
+          {edits.map((a, i) => (
+            <ArtifactCard key={i} kind={a.kind} raw={artifactSource(a)} />
+          ))}
+        </ArtifactMessageContext.Provider>
+      </div>
+    );
+  }
   if (!mine) {
     // A colleague's message (group conversation, or a conversation taken over after a transfer).
     const name = message.author?.name ?? t("someone");
@@ -471,6 +500,8 @@ function AssistantMessage({
   const imageAnswer = message.model?.id === "chatgpt-image";
   const canRegenerate = !confrontation && !imageAnswer && isLastAnswer && !live && !busy && message.status !== "streaming";
   const mood = useAssistantMood(Boolean(live), waiting, message.status);
+  const streaming = Boolean(live) || message.status === "streaming";
+  const artifactScope = React.useMemo(() => ({ messageId: message.id, live: streaming }), [message.id, streaming]);
 
   return (
     <article className="group/answer animate-message-in space-y-2.5" aria-busy={live}>
@@ -503,13 +534,15 @@ function AssistantMessage({
           </span>
         </p>
       ) : message.content ? (
-        bubble ? (
-          <div data-testid="ai-bubble" className="glass-standard w-fit max-w-[92%] rounded-2xl rounded-tl-md border px-4 py-3">
+        <ArtifactMessageContext.Provider value={artifactScope}>
+          {bubble ? (
+            <div data-testid="ai-bubble" className="glass-standard w-fit max-w-[92%] rounded-2xl rounded-tl-md border px-4 py-3">
+              <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
+            </div>
+          ) : (
             <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
-          </div>
-        ) : (
-          <Markdown onCite={message.sources.length ? setOpenSource : undefined}>{message.content}</Markdown>
-        )
+          )}
+        </ArtifactMessageContext.Provider>
       ) : null}
       {message.attachments.some((a) => a.kind === "image" && a.generated) ? (
         <GeneratedImages images={message.attachments.filter((a) => a.kind === "image" && a.generated)} />

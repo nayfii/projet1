@@ -110,3 +110,29 @@ describe("natural mentions of colleagues and assistants (typed or dictated)", ()
     expect(mentionsPerson("olivier@exemple.fr", tokens.get("1")!)).toBe(false);
   });
 });
+
+describe("colleague search (Qui ?)", () => {
+  it("finds by first name, last name or e-mail, ignoring case and accents", async () => {
+    const { matchesSearch } = await import("@/lib/search");
+    const eloise = ["Éloïse Dupré", "eloise.dupre@atelier.fr", "finance"] as const;
+    expect(matchesSearch("eloise", ...eloise)).toBe(true);
+    expect(matchesSearch("DUPRE", ...eloise)).toBe(true);
+    expect(matchesSearch("elo dup", ...eloise)).toBe(true);
+    expect(matchesSearch("atelier.fr", ...eloise)).toBe(true);
+    expect(matchesSearch("  ", ...eloise)).toBe(true);
+    expect(matchesSearch("nathalie", ...eloise)).toBe(false);
+    expect(matchesSearch("eloise martin", ...eloise)).toBe(false);
+  });
+});
+
+describe("named assistants (@Albert)", () => {
+  it("routes meetings: preparation by default, minutes for summaries and notes", async () => {
+    const { assistantMention } = await import("@/modules/agents/named-assistants");
+    expect(assistantMention("@Albert prépare mon rendez-vous avec Atlas")?.builtinKey).toBe("meeting_prep");
+    expect(assistantMention("Salut @albert, fais le compte rendu de ces notes")?.builtinKey).toBe("meeting_minutes");
+    expect(assistantMention("@Albert write the minutes and action items")?.builtinKey).toBe("meeting_minutes");
+    expect(assistantMention("Albert prépare mon rendez-vous")).toBeNull();
+    expect(assistantMention("email@albert.fr")).toBeNull();
+    expect(assistantMention("@Alberto")).toBeNull();
+  });
+});

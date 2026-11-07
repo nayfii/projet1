@@ -1,16 +1,11 @@
 import { modelDisplay } from "@/modules/providers/catalog";
+import { ProviderLogo } from "@/modules/providers/ui/provider-logo";
 import type { ProviderId } from "@/modules/providers/types";
 import { cn } from "@/lib/utils";
 
-/** Muted per-provider hue so model labels are easy to tell apart without loud colours. */
-const DOT: Record<ProviderId, string> = {
-  openai: "bg-[oklch(0.62_0.1_165)]",
-  anthropic: "bg-[oklch(0.66_0.12_50)]",
-  google: "bg-[oklch(0.6_0.12_255)]",
-};
-
+/** The provider's own small logo next to a model's name (it used to be a coloured dot). */
 export function ProviderDot({ provider, className }: { provider: ProviderId; className?: string }) {
-  return <span aria-hidden className={cn("inline-block size-2 shrink-0 rounded-full", DOT[provider], className)} />;
+  return <ProviderLogo provider={provider} className={cn("inline-block size-3.5 shrink-0", className)} />;
 }
 
 /** "Claude · Sonnet 5.5" with the brand in medium weight. */

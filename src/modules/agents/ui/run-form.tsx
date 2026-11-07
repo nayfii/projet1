@@ -22,6 +22,7 @@ import { deleteToolAction, saveToolAction, startRunAction } from "../server/acti
 import type { AgentDetail } from "../server/queries";
 import { ToolEditor } from "./tool-editor";
 import type { ToolEditorContext } from "./turn-into-tool-dialog";
+import { DictationField } from "@/modules/dictation/ui/dictation-field";
 
 /** Key under which the first message of a run waits for the conversation screen to send it. */
 export const RUN_STORAGE_PREFIX = "tool-run:";
@@ -41,6 +42,7 @@ export function RunForm({
   editor,
   canDelete,
   initialClient,
+  dictation = false,
 }: {
   agent: AgentDetail;
   clients: { id: string; name: string }[];
@@ -48,6 +50,8 @@ export function RunForm({
   canDelete: boolean;
   /** Opened from a conversation linked to a client: its client fields start on that client. */
   initialClient?: string;
+  /** Voice dictation is on for the company: long fields get a microphone. */
+  dictation?: boolean;
 }) {
   const t = useTranslations("tools");
   const tErrors = useTranslations("errors");
@@ -124,7 +128,9 @@ export function RunForm({
             }}
           />
         ) : f.type === "textarea" ? (
-          <Textarea id={id} rows={5} value={values[f.key] ?? ""} onChange={(e) => set(e.target.value)} />
+          <DictationField enabled={dictation} value={values[f.key] ?? ""} onChange={set}>
+            <Textarea id={id} rows={5} value={values[f.key] ?? ""} onChange={(e) => set(e.target.value)} />
+          </DictationField>
         ) : f.type === "client" ? (
           <Select value={values[f.key] || NO_CLIENT} onValueChange={(v) => set(v === NO_CLIENT ? "" : v)}>
             <SelectTrigger id={id} aria-label={text.field(f)}>

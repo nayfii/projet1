@@ -363,6 +363,23 @@ Design, threat model, permission matrix and measured performance: `docs/CONSCIOU
 | Dictation while switching tab, window or application | **done within the browser's limits**: the recording continues (the browser keeps the microphone; the tab title shows "● Dictée en cours"). It stops if the tab is closed or the person leaves the conversation in Cendr. Dictating into other applications needs a desktop app (not built). Mobile browsers may pause the microphone when the app goes to the background |
 | Applis: one page | **done**: "Accès rapide" (favourites, then recently used), search, departments, shelves; optional form fields folded under "N options de plus" |
 
+## Refinement brief (2026-11-07): workspace, logos, neutral themes, Apps
+
+| Feature | Status |
+|---|---|
+| "Qui ?" when adding colleagues | **done**: a searchable list (first name, last name or e-mail; case and accents ignored), several people, each once, chips to remove, ↑ ↓ Entrée Échap, empty state, 80 shown at once with "refine the search" beyond. The transfer dialog got the same search |
+| Providers' logos instead of the robots | **done**: OpenAI, Claude and Gemini logos (LobeHub Icons, MIT; trademarks of their owners) on a neutral disc everywhere a model is shown (answers, picker, @ menu, Confronter, client brief, memory rules, next to model names); "Auto" is a plain sparkle; a thin ring breathes while a model works. Robot images and their generator removed |
+| Thinking column beside the chat | **removed**: the conversation is centred; who is answering is shown under each answer, as before |
+| Double-click to rename | **done**: double-click the title in the chat header, Entrée saves, Échap cancels, a click elsewhere saves; the sidebar updates at once; a hidden button does the same from the keyboard |
+| Workspace on the right (artifacts) | **done**: any model can write a document, a spreadsheet, a presentation or a code file in an `artifact-…` block (the instruction is in the system prompt for every provider); it opens on the right (resizable on a large screen, full screen on a phone): page view, slides one by one, table, code; versions (the AI's and edits by hand), "Modifier" (a person's edit is posted to the conversation without an AI answer, masked by Hide like any message, so the next answer starts from it), downloads PDF / Word / Markdown, Excel / CSV, or the code file, built on our server. Ordinary answers, short tables and images stay in the conversation. **Tested with the simulated provider**; real models were told the format but not run on it here (no credit left on this environment's OpenAI account) |
+| Microphone in long app fields | **done**: every long text field of an app's form (e.g. Préparation de rendez-vous → Objectif) has the chat's dictation; the text is added after what is there, never sent automatically; off when the company switched dictation off |
+| "@Albert" (meetings) | **done**: in any conversation, "@Albert …" answers that message with Meeting Prep's instructions, or Meeting Minutes' for minutes, summaries and action items (same engine, history and permissions as the apps; refused if the person may not use them). In the "@" menu alone or in a group |
+| "/" shortcuts | **done**: "/" lists "Créer ici" (document, presentation, spreadsheet, image) before the apps; a shortcut puts a starting sentence in the input (or turns Image on) |
+| Light and Dark themes | **done on main**: neutral tokens (white / true black, greys, no blue or violet cast); the accent is monochrome (black on light, white on dark); avatars of initials and models use theme tokens; decorative tints (colleagues' bubbles, client summary) only in expressive themes |
+| Apps audit | **recommendations written** (`docs/APPS.md`); nothing deleted or hidden in this step |
+| Languages | **checked**: no interface text hard-coded in the code (lint rule + search). "Le PDF est un document test." in Consciousness → Recent activity is the title of a memory entry (content in the language of its source), not interface text; it is not translated on purpose |
+| Resizable sidebar, Glass Clear, Atmosphère colours, Waylume animation | **on the Liquid Glass branch** (see below) |
+
 ## Quick fixes (2026-11-07): images, glass, dictation, speed, real-model test
 
 | Feature | Status |

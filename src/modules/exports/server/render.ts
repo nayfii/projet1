@@ -55,23 +55,30 @@ const pdfText = (text: string) =>
     .replace(/[→]/g, "->")
     .replace(/[^\x09\x0a\x20-\x7e -ÿŒœ€]/g, "");
 
-export function toPdf(title: string, blocks: Block[]): Promise<Buffer> {
+/**
+ * A PDF of the blocks. `slides`: a presentation, one landscape page per slide ("---" between slides),
+ * larger type, no separate title line (each slide starts with its own).
+ */
+export function toPdf(title: string, blocks: Block[], options: { slides?: boolean } = {}): Promise<Buffer> {
+  const slides = options.slides === true;
+  // Type sizes grow by half on slides.
+  const k = slides ? 1.5 : 1;
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margin: 56, info: { Title: pdfText(title) } });
+    const doc = new PDFDocument({ size: "A4", layout: slides ? "landscape" : "portrait", margin: 56, info: { Title: pdfText(title) } });
     const chunks: Buffer[] = [];
     doc.on("data", (c: Buffer) => chunks.push(c));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
     const width = doc.page.width - 112;
     const write = (parts: Inline[], size = 11, indent = 0) => {
-      doc.fontSize(size);
+      doc.fontSize(size * k);
       parts.forEach((p, i) => {
         doc.font(p.code ? "Courier" : p.bold && p.italic ? "Helvetica-BoldOblique" : p.bold ? "Helvetica-Bold" : p.italic ? "Helvetica-Oblique" : "Helvetica");
         doc.text(pdfText(p.text), { continued: i < parts.length - 1, width: width - indent, indent: i === 0 ? indent : 0 });
       });
       if (parts.length === 0) doc.text("");
     };
-    doc.font("Helvetica-Bold").fontSize(18).text(pdfText(title)).moveDown(0.8);
+    if (!slides) doc.font("Helvetica-Bold").fontSize(18).text(pdfText(title)).moveDown(0.8);
     for (const b of blocks) {
       if (b.type === "heading") {
         doc.moveDown(0.4);
@@ -83,7 +90,8 @@ export function toPdf(title: string, blocks: Block[]): Promise<Buffer> {
       } else if (b.type === "code") {
         doc.font("Courier").fontSize(9).text(pdfText(b.text), { width }).moveDown(0.5);
       } else if (b.type === "rule") {
-        doc.moveTo(56, doc.y).lineTo(56 + width, doc.y).strokeColor("#cccccc").stroke().moveDown(0.5);
+        if (slides) doc.addPage();
+        else doc.moveTo(56, doc.y).lineTo(56 + width, doc.y).strokeColor("#cccccc").stroke().moveDown(0.5);
       } else if (b.type === "list") {
         b.items.forEach((item, i) => write([{ text: b.ordered ? `${i + 1}. ` : "- " }, ...item], 11, 12));
         doc.moveDown(0.5);

@@ -38,7 +38,12 @@ export function ClientSummaryCard({ clientId }: { clientId: string }) {
   return (
     <section
       aria-labelledby="client-summary"
-      className="relative overflow-hidden rounded-2xl border bg-[linear-gradient(135deg,color-mix(in_oklch,var(--pastel-lavender)_9%,var(--card)),var(--card)_55%,color-mix(in_oklch,var(--pastel-sky)_7%,var(--card)))] p-6"
+      className="relative overflow-hidden rounded-2xl border bg-card p-6"
+      // A faint wash in the expressive themes only (--decor-strength is 0% in Light and Dark).
+      style={{
+        backgroundImage:
+          "linear-gradient(135deg, color-mix(in oklch, var(--pastel-lavender) calc(var(--decor-strength) * 0.56), var(--card)), var(--card) 55%, color-mix(in oklch, var(--pastel-sky) calc(var(--decor-strength) * 0.44), var(--card)))",
+      }}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 id="client-summary" className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
