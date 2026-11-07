@@ -5,7 +5,7 @@ import { paletteOf } from "@/lib/ambient/palettes";
 import { createAmbientRenderer, type AmbientRenderer } from "@/lib/ambient/renderer";
 
 /** The background is soft: drawn at a fraction of the screen's pixels and smoothed by the browser. */
-const RENDER_SCALE = 0.75;
+const RENDER_SCALE = 0.5;
 const MAX_WIDTH = 1800;
 /** Thirty frames a second is fluid for slow cloth and light, and halves the work of the glass above. */
 const FRAME_MS = 1000 / 30;

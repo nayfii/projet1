@@ -24,6 +24,15 @@ export const MOTION_COOKIE = "motion";
 export const DEFAULT_MOTION: Motion = "on";
 
 export const SIDEBAR_COOKIE = "sidebar";
+
+/** The glass: clear (neutral, the default) or tinted violet (the earlier look). */
+export const GLASS_TONES = ["clear", "tinted"] as const;
+export type GlassTone = (typeof GLASS_TONES)[number];
+export const GLASS_TONE_COOKIE = "glass_tone";
+export const DEFAULT_GLASS_TONE: GlassTone = "clear";
+export function isGlassTone(value: unknown): value is GlassTone {
+  return typeof value === "string" && (GLASS_TONES as readonly string[]).includes(value);
+}
 export type SidebarState = "expanded" | "collapsed";
 
 export function isTheme(value: unknown): value is Theme {

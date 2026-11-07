@@ -152,6 +152,44 @@
   --pastel-sky-ink: oklch(0.5 0.13 240);
 }
 
+/* ── Glass tone (Settings → Appearance → Verre) ─────────────────────────────────────────────────
+ * "clear" (the default): neutral glass with a light fill and little blur, so the background really
+ * shows through; text keeps its contrast thanks to the shadowed rim and a neutral veil.
+ * "tinted": the violet-tinted glass (whatever the Atmosphère colours). */
+:root[data-glass-tone="clear"] {
+  --foreground: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.78 0 0);
+  --glass-subtle: oklch(0.18 0 0 / 0.14);
+  --glass-standard: oklch(0.16 0 0 / 0.22);
+  --glass-elevated: oklch(0.15 0 0 / 0.26);
+  --glass-solid: oklch(0.17 0 0 / 0.8);
+  --glass-shadow-color: oklch(0 0 0 / 0.5);
+  --glass-highlight: oklch(1 0 0 / 0.16);
+  --glass-sheen: oklch(1 0 0 / 0.04);
+  --glass-blur: 8px;
+  --glass-saturate: 120%;
+  --primary: oklch(0.97 0 0);
+  --primary-foreground: oklch(0.16 0 0);
+  --ambient-veil: oklch(0.08 0 0 / 0.22);
+}
+:root[data-glass-tone="clear"][data-scheme="light"] {
+  --foreground: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.42 0 0);
+  --glass-subtle: oklch(1 0 0 / 0.2);
+  --glass-standard: oklch(1 0 0 / 0.3);
+  --glass-elevated: oklch(1 0 0 / 0.36);
+  --glass-solid: oklch(1 0 0 / 0.84);
+  --glass-shadow-color: oklch(0.25 0 0 / 0.16);
+  --glass-ring: oklch(0.2 0 0 / 0.08);
+  --glass-lowlight: oklch(0.2 0 0 / 0.05);
+  --primary: oklch(0.18 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --ambient-veil: oklch(1 0 0 / 0.2);
+}
+html:root[data-glass-tone="tinted"][data-theme] {
+  --tint-h: 290;
+}
+
 /* Atmosphère palettes (accent, glass tint, background colours) are generated from
  * lib/ambient/palettes.ts by lib/ambient/css.ts and written in the root layout. */
 

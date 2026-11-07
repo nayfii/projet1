@@ -17,6 +17,10 @@ import {
   MOTION_COOKIE,
   SCHEME_SCRIPT,
   SIDEBAR_COOKIE,
+  GLASS_TONE_COOKIE,
+  DEFAULT_GLASS_TONE,
+  isGlassTone,
+  type GlassTone,
   THEME_COOKIE,
   isAmbient,
   isMotion,
@@ -38,6 +42,7 @@ async function appearance() {
     ambient: isAmbient(ambient) ? ambient : DEFAULT_AMBIENT,
     motion: isMotion(motion) ? motion : DEFAULT_MOTION,
     sidebar: (jar.get(SIDEBAR_COOKIE)?.value === "collapsed" ? "collapsed" : "expanded") as SidebarState,
+    glassTone: isGlassTone(jar.get(GLASS_TONE_COOKIE)?.value) ? (jar.get(GLASS_TONE_COOKIE)!.value as GlassTone) : DEFAULT_GLASS_TONE,
   };
 }
 
@@ -68,7 +73,7 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const initial = await appearance();
-  const { theme, ambient, motion, sidebar } = initial;
+  const { theme, ambient, motion, sidebar, glassTone } = initial;
   return (
     // data-scheme is corrected before the first paint by SCHEME_SCRIPT when following the device.
     <html
@@ -78,6 +83,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       data-ambient={ambient}
       data-motion={motion}
       data-sidebar={sidebar}
+      data-glass-tone={glassTone}
       className={`${GeistMono.variable} h-full`}
       suppressHydrationWarning
     >

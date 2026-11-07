@@ -2292,7 +2292,11 @@
     },
     "lowPower": "This device struggles with the moving effects: the background is still and the glass no longer bends, to keep the app smooth.",
     "lowPowerRestore": "Turn the effects back on",
-    "glassFlat": "To keep the app smooth on this device, the glass no longer bends. The background keeps moving."
+    "glassFlat": "To keep the app smooth on this device, the glass no longer bends. The background keeps moving.",
+    "glass": "Glass",
+    "glassClear": "Clear",
+    "glassTinted": "Violet tint",
+    "glassHint": "Clear shows the background through neutral glass. Violet tint gives a coloured, softer glass."
   },
   "consciousness": {
     "used": "{count, plural, one {# memory used} other {# memories used}}",

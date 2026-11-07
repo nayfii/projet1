@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { LiquidGlass } from "@/components/ui/liquid-glass";
 import { PALETTES } from "@/lib/ambient/palettes";
 import { renderAmbientStill } from "@/lib/ambient/renderer";
-import { isTheme } from "@/lib/theme";
+import { isGlassTone, isTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { useAppearance } from "./appearance-provider";
 import { GLASS_KEY, PERF_KEY } from "./performance-guard";
@@ -23,7 +23,7 @@ import { WaylumePreview } from "@/components/ambient/waylume-layer";
  */
 export function AppearanceSettings() {
   const t = useTranslations("appearance");
-  const { theme, ambient, motion, setTheme, setAmbient, setMotion } = useAppearance();
+  const { theme, ambient, motion, glassTone, setTheme, setAmbient, setMotion, setGlassTone } = useAppearance();
   const lowPower = useLowPower();
 
   return (
@@ -54,6 +54,24 @@ export function AppearanceSettings() {
             }}
           />
           <p className="text-xs text-muted-foreground">{t("interfaceHint")}</p>
+        </section>
+
+        <section className="space-y-2.5">
+          <h4 className="text-[13px] font-medium" id="appearance-glass">
+            {t("glass")}
+          </h4>
+          <SegmentedControl
+            aria-labelledby="appearance-glass"
+            items={[
+              { value: "clear", label: t("glassClear") },
+              { value: "tinted", label: t("glassTinted") },
+            ]}
+            value={glassTone}
+            onValueChange={(value) => {
+              if (isGlassTone(value)) setGlassTone(value);
+            }}
+          />
+          <p className="text-xs text-muted-foreground">{t("glassHint")}</p>
         </section>
 
         {theme === "atmosphere" ? (

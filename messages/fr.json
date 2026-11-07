@@ -2292,7 +2292,11 @@
     },
     "lowPower": "Cet appareil peine avec les effets animés : le fond est immobile et le verre ne se courbe plus, pour garder l'application fluide.",
     "lowPowerRestore": "Réactiver les effets",
-    "glassFlat": "Pour garder l'application fluide sur cet appareil, le verre ne se courbe plus. Le fond continue de bouger."
+    "glassFlat": "Pour garder l'application fluide sur cet appareil, le verre ne se courbe plus. Le fond continue de bouger.",
+    "glass": "Verre",
+    "glassClear": "Transparent",
+    "glassTinted": "Teinté violet",
+    "glassHint": "Transparent laisse voir le fond à travers un verre neutre. Teinté violet donne un verre coloré, plus doux."
   },
   "consciousness": {
     "used": "{count, plural, one {# mémoire utilisée} other {# mémoires utilisées}}",

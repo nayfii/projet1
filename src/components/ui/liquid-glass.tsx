@@ -33,7 +33,11 @@ type LiquidGlassProps = React.ComponentProps<"div"> & {
 };
 
 function LiquidGlass({ material = "card", reach = 26, className, children, ...props }: LiquidGlassProps) {
-  const liquid = useQuietPage();
+  const quiet = useQuietPage();
+  // Bending a large pane over a moving background costs the graphics chip on every frame: large panes
+  // keep their clear, frosted glass while the background moves; small lenses always bend.
+  const moving = React.useSyncExternalStore(subscribeBackground, backgroundMoves, () => false);
+  const liquid = quiet && (material === "lens" || !moving);
   return (
     <div data-liquid={liquid ? "" : undefined} className={cn("lq-host isolate", FROST[material], className)} {...props}>
       {liquid ? <Lens material={material} reach={reach} /> : null}
@@ -113,6 +117,23 @@ function useQuietPage(): boolean {
     return () => observer.disconnect();
   }, [ready]);
   return ready;
+}
+
+function subscribeBackground(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-motion", "data-perf"] });
+  const media = matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", onChange);
+  return () => {
+    observer.disconnect();
+    media.removeEventListener("change", onChange);
+  };
+}
+
+/** The Atmosphère background is animated (motion on, a device that can, no reduced motion). */
+function backgroundMoves(): boolean {
+  const root = document.documentElement;
+  return root.dataset.theme === "atmosphere" && root.dataset.motion !== "off" && root.dataset.perf !== "low" && !matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 export { LiquidGlass };

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { capFrames } from "./frame-cap";
 
 /** The Waylume scenes' code (about 75 kB each) loads only for people who choose one. */
 const WaylumeBackground = dynamic(() => import("./WaylumeBackground"), { ssr: false });
@@ -28,25 +29,106 @@ function snapshot(): Snapshot {
   return root.dataset.glass === "flat" ? `${variant}:light` : `${variant}:on`;
 }
 
+/** How much of the scene a device can afford this session: 0 full, 1 lighter, 2 a still frame. */
+type Level = 0 | 1 | 2;
+const LEVEL_KEY = "cendr-waylume-level";
+/** Frames are capped at 60 a second: below 45 for two measures in a row, the page is no longer smooth. */
+const SMOOTH_FPS = 45;
+/** Below 20, a lighter drawing would not be enough: straight to the still frame. */
+const STUCK_FPS = 20;
+
+function savedLevel(): Level {
+  try {
+    const value = Number(sessionStorage.getItem(LEVEL_KEY));
+    return value === 1 || value === 2 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * While the scene moves, the page's frame rate is measured every 2 seconds. When it stays below
+ * smooth, the scene steps down (lighter drawing, then a still frame) for the rest of the session, so
+ * the chat never lags because of the background.
+ */
+function useSmoothness(active: boolean, level: Level, stepDown: (to: Level) => void) {
+  React.useEffect(() => {
+    if (!active || level >= 2) return;
+    let raf = 0;
+    let start = 0;
+    let last = 0;
+    let frames = 0;
+    let slow = 0;
+    const tick = (now: number) => {
+      // A fresh measure after the tab was hidden or the computer slept (a slow page still counts).
+      if (start === 0 || now - last > 5000) {
+        start = now;
+        frames = 0;
+      }
+      last = now;
+      frames += 1;
+      if (now - start >= 2000) {
+        const fps = (frames - 1) / ((now - start) / 1000);
+        slow = fps < SMOOTH_FPS ? slow + 1 : 0;
+        start = now;
+        frames = 1;
+        if (fps < STUCK_FPS) return stepDown(2);
+        if (slow >= 2) return stepDown((level + 1) as Level);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    const restart = () => {
+      start = 0;
+    };
+    // Measured once the page has settled (first paint, fonts, the scene's own start).
+    const warm = window.setTimeout(() => (raf = requestAnimationFrame(tick)), 4000);
+    document.addEventListener("visibilitychange", restart);
+    return () => {
+      window.clearTimeout(warm);
+      cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", restart);
+    };
+  }, [active, level, stepDown]);
+}
+
 /**
  * The Waylume backgrounds of the Atmosphère interface, when one is chosen. Same rules as our own
- * backgrounds: still when motion is off or the device has no graphics chip; drawn at half resolution
- * (a quarter of the pixels) when the device struggles. Waylume itself pauses offscreen and in hidden
- * tabs and shows a still frame for reduced motion. Nothing runs otherwise.
+ * backgrounds: still when motion is off or the device has no graphics chip; drawn at reduced
+ * resolution and at most 60 frames a second otherwise, lighter (then still) if the page stops being
+ * smooth. Waylume itself pauses offscreen and in hidden tabs and shows a still frame for reduced
+ * motion. Nothing runs otherwise.
  */
 export function WaylumeLayer() {
   const state = React.useSyncExternalStore(subscribe, snapshot, () => "off" as Snapshot);
+  const [level, setLevel] = React.useState<Level>(() => (typeof window === "undefined" ? 0 : savedLevel()));
+  const stepDown = React.useCallback((to: Level) => {
+    setLevel((current) => {
+      const next = Math.max(current, Math.min(2, to)) as Level;
+      try {
+        sessionStorage.setItem(LEVEL_KEY, String(next));
+      } catch {
+        // Not remembered: measured again on the next visit.
+      }
+      return next;
+    });
+  }, []);
+  const animated = state !== "off" && !state.endsWith(":paused") && level < 2;
+  // The scene draws on every frame the screen offers (120 a second on many laptops): capped at 60.
+  React.useEffect(() => (animated ? capFrames() : undefined), [animated]);
+  useSmoothness(animated, level, stepDown);
   if (state === "off") return null;
   const [variant, mode] = state.split(":") as [Variant, "on" | "paused" | "light"];
   const Scene = SCENES[variant];
-  if (mode === "light") {
-    return (
-      <div aria-hidden className="absolute left-0 top-0 h-1/2 w-1/2 origin-top-left scale-[2]">
-        <Scene />
-      </div>
-    );
-  }
-  return <Scene paused={mode === "paused"} />;
+  if (mode === "paused" || level >= 2) return <Scene paused />;
+  // Drawn at half resolution and enlarged (a quarter of the pixels): the scene is soft light, the
+  // difference does not show, the graphics chip does four times less work on every frame. A chip
+  // that still struggles gets a third.
+  const scale = mode === "light" || level === 1 ? 3 : 2;
+  return (
+    <div aria-hidden className="absolute left-0 top-0 origin-top-left" style={{ width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` }}>
+      <Scene />
+    </div>
+  );
 }
 
 /** A still frame of a Waylume scene, for the palette tile in Settings → Appearance. */

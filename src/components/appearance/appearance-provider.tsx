@@ -5,7 +5,9 @@ import { setAppearance } from "@/modules/identity/server/actions";
 import { usePerformanceGuard } from "./performance-guard";
 import {
   APPEARANCE_COOKIE_MAX_AGE,
+  GLASS_TONE_COOKIE,
   SIDEBAR_COOKIE,
+  type GlassTone,
   resolveScheme,
   type Ambient,
   type Motion,
@@ -13,13 +15,14 @@ import {
   type Theme,
 } from "@/lib/theme";
 
-type Appearance = { theme: Theme; ambient: Ambient; motion: Motion; sidebar: SidebarState };
+type Appearance = { theme: Theme; ambient: Ambient; motion: Motion; sidebar: SidebarState; glassTone: GlassTone };
 
 type AppearanceContextValue = Appearance & {
   setTheme: (theme: Theme) => void;
   setAmbient: (ambient: Ambient) => void;
   setMotion: (motion: Motion) => void;
   setSidebar: (sidebar: SidebarState) => void;
+  setGlassTone: (tone: GlassTone) => void;
 };
 
 const AppearanceContext = React.createContext<AppearanceContextValue | null>(null);
@@ -59,6 +62,12 @@ export function AppearanceProvider({ initial, children }: { initial: Appearance;
         root().dataset.sidebar = sidebar;
         document.cookie = `${SIDEBAR_COOKIE}=${sidebar}; path=/; max-age=${APPEARANCE_COOKIE_MAX_AGE}; samesite=lax`;
         setState((s) => ({ ...s, sidebar }));
+      },
+      setGlassTone(glassTone) {
+        // Shown at once (CSS), kept in a cookie for the next visits without redrawing the page.
+        root().dataset.glassTone = glassTone;
+        document.cookie = `${GLASS_TONE_COOKIE}=${glassTone}; path=/; max-age=${APPEARANCE_COOKIE_MAX_AGE}; samesite=lax`;
+        setState((s) => ({ ...s, glassTone }));
       },
     };
   }, [state]);
