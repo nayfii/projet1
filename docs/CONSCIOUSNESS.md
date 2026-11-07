@@ -140,6 +140,24 @@ Local database, simulated embeddings, 20 runs of the Context Gateway for a clien
 question (network, typically 100–300 ms; it runs in parallel with the wait for learning), and the
 model's own time to first token. Learning runs after the stream and never delays the answer.
 
+## 8b. Checked with a real model (2026-11-07)
+
+`e2e/consciousness-real.spec.ts` runs the same story with real models (`E2E_REAL_AI=1`, a server
+without `AI_FAKE_PROVIDER`). With ChatGPT (gpt-6-luna) for the answers and the extraction, it found
+four problems, now fixed and unit-tested:
+
+- "about: person" was read as "about a person": a client's contact was kept private. The model is
+  now asked for "writer" (the person writing) versus "client" (its people included).
+- A Hide placeholder ended up in a fact's key ("contact:person_1"); placeholder numbers belong to
+  one conversation, so the real value now replaces them in keys.
+- An answer that restates the memory to a colleague is no longer proposed "à confirmer".
+- A new value written next to the value it replaces is accepted (that old value is known); the
+  model is also asked to write the current value only.
+
+The model is now told when a key fact replaced an earlier value (masked by Hide like the rest), so
+it says the value changed rather than calling an earlier answer a mistake. Claude and Gemini were
+not run (no keys in the build environment).
+
 ## 9. Known limits and next steps
 
 - Team memory (a space per team) is designed but not built: today knowledge is company-wide or per

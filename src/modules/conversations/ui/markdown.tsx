@@ -16,7 +16,7 @@ import { EditPlanView } from "@/modules/render/ui/edit-plan-view";
  * AI answers rendered as Markdown. Raw HTML in the text is never rendered (react-markdown's default),
  * so a model cannot inject markup or scripts into the page.
  */
-export function Markdown({ children, className, onCite }: { children: string; className?: string; onCite?: (position: number) => void }) {
+function MarkdownView({ children, className, onCite }: { children: string; className?: string; onCite?: (position: number) => void }) {
   // "[S1]" citations become small badges that open the Source Proof.
   const content = onCite ? linkCitations(children) : children;
   const withCitations = React.useMemo<Components>(
@@ -48,6 +48,12 @@ export function Markdown({ children, className, onCite }: { children: string; cl
     </div>
   );
 }
+
+/**
+ * Memoised: an answer is parsed again only when its text changes (not when the person types, or when
+ * another answer streams). Parsing Markdown is the costliest part of drawing a conversation.
+ */
+export const Markdown = React.memo(MarkdownView);
 
 const components: Components = {
   // Images in an answer are never loaded: a planted instruction could otherwise make the AI write an

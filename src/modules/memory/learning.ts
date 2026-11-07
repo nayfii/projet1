@@ -43,10 +43,12 @@ export const LEARN_FACTS_SYSTEM = [
   "Keep: decisions (with who decided and when if said), commitments and deadlines (with owner and due date), budgets and amounts, key dates (launch, renewal, delivery), contacts and their roles, preferences and constraints, project context.",
   "Leave out: the question itself, greetings, drafts, generic advice, brainstorming, opinions, anything hypothetical or uncertain, anything about the person writing (their own life, mood, private matters), and anything not about this client.",
   'For each fact, say who stated it: "user" when the person wrote it in their message, "assistant" when only the assistant\'s answer says it (its own suggestion, estimate or claim).',
+  'For each fact, say what it is about: "client" for anything about the client, its people and contacts included (a contact person at the client is "client"); "writer" only for the person writing themself (their own life, health, preferences or contact details); "other" for anything else.',
   'Give each fact a short stable key in English snake_case naming what it is about, so a later change replaces it: "budget", "launch_date", "contract_end", "decision:hosting_provider", "contact:jean_dupont", "deadline:proposal". Reuse the key of a known fact when the exchange changes or confirms it.',
+  "Write each fact as it stands now, with its current value only: never the earlier value it replaces (Cendr keeps the history).",
   "Known facts about this client (key — fact):",
   "{KNOWN}",
-  'Return ONLY JSON: an array of at most 6 objects {"kind": "fact|decision|commitment|preference|contact|procedure", "key": "…", "title": "short title, max 80 characters", "content": "the fact in 1 or 2 self-contained sentences, with its date when known", "stated_by": "user|assistant", "about": "client|person|other", "confidence": 0 to 1, "attributes": {"amount": number, "currency": "EUR", "date": "YYYY-MM-DD", "person": "…", "role": "…", "owner": "…", "due": "YYYY-MM-DD"} (only the ones that apply), "effective_date": "YYYY-MM-DD or null"}, written in the language of the exchange. Return [] when there is nothing worth keeping, which is often the case.',
+  'Return ONLY JSON: an array of at most 6 objects {"kind": "fact|decision|commitment|preference|contact|procedure", "key": "…", "title": "short title, max 80 characters", "content": "the fact in 1 or 2 self-contained sentences, with its date when known", "stated_by": "user|assistant", "about": "client|writer|other", "confidence": 0 to 1, "attributes": {"amount": number, "currency": "EUR", "date": "YYYY-MM-DD", "person": "…", "role": "…", "owner": "…", "due": "YYYY-MM-DD"} (only the ones that apply), "effective_date": "YYYY-MM-DD or null"}, written in the language of the exchange. Return [] when there is nothing worth keeping, which is often the case.',
 ].join("\n");
 
 /** Fills the client name and the facts already known (so the model reuses their keys). */
@@ -96,6 +98,20 @@ function cleanAttributes(raw: unknown, restore: (s: string) => string): FactAttr
  * Reads the model's answer; anything malformed is dropped, never repaired into a fact. `restore`
  * puts Hide's real values back in each text field (and in the key, before it is normalised).
  */
+/**
+ * A key the model built from a Hide placeholder ("contact:person_1" for "[PERSON_1]"): the number
+ * belongs to one conversation only, so the real value takes its place (else another conversation's
+ * PERSON_1 would replace this contact).
+ */
+const PLACEHOLDER_IN_KEY = /(?<![a-z0-9])(iban|card|email|phone|amount|person|client|project|file|term)_(\d+)(?![0-9])/gi;
+
+function restoreKey(key: string, restore: (s: string) => string): string {
+  return restore(key).replace(PLACEHOLDER_IN_KEY, (found, category: string, n: string) => {
+    const real = restore(`[${category.toUpperCase()}_${n}]`);
+    return real.startsWith("[") ? found : real;
+  });
+}
+
 export function parseCandidateFacts(text: string, restore: (s: string) => string = (s) => s): CandidateFact[] {
   const items = parseModelJson(text);
   if (!Array.isArray(items)) return [];
@@ -106,7 +122,7 @@ export function parseCandidateFacts(text: string, restore: (s: string) => string
     const kind = FACT_KINDS.includes(i.kind as FactKind) ? (i.kind as FactKind) : "fact";
     const title = typeof i.title === "string" ? restore(i.title).trim().slice(0, 200) : "";
     const content = typeof i.content === "string" ? restore(i.content).trim().slice(0, 2000) : "";
-    const key = normalizeSubjectKey(typeof i.key === "string" ? restore(i.key) : title);
+    const key = normalizeSubjectKey(typeof i.key === "string" ? restoreKey(i.key, restore) : title);
     if (!title || !content || !key) continue;
     const confidence = typeof i.confidence === "number" && Number.isFinite(i.confidence) ? Math.min(Math.max(i.confidence, 0), 1) : 0.5;
     out.push({
@@ -115,7 +131,8 @@ export function parseCandidateFacts(text: string, restore: (s: string) => string
       title,
       content,
       statedBy: i.stated_by === "user" ? "user" : "assistant",
-      about: i.about === "client" ? "client" : i.about === "person" ? "person" : "other",
+      // "writer" (asked) or "person" (older wording): the person writing themself, kept private.
+      about: i.about === "client" ? "client" : i.about === "writer" || i.about === "person" ? "person" : "other",
       confidence,
       attributes: cleanAttributes(i.attributes, restore),
       effectiveDate: typeof i.effective_date === "string" && ISO_DATE.test(i.effective_date) ? i.effective_date : null,
@@ -143,9 +160,10 @@ function numbersIn(text: string): string[] {
  * number it contains, and the person it names, appear there. Otherwise it is treated as the
  * assistant's claim (and goes to confirmation, never straight into memory).
  */
-export function groundedInUserText(fact: Pick<CandidateFact, "content" | "title" | "attributes">, userText: string): boolean {
+export function groundedInUserText(fact: Pick<CandidateFact, "content" | "title" | "attributes">, userText: string, replacing = ""): boolean {
   const user = fold(userText);
-  const userNumbers = new Set(numbersIn(userText));
+  // The value being replaced may be named too ("passe à 18 000 € au lieu de 15 000 €"): it is already known.
+  const userNumbers = new Set([...numbersIn(userText), ...numbersIn(replacing)]);
   const numbers = [...numbersIn(`${fact.title} ${fact.content}`), ...(fact.attributes.amount !== undefined ? [String(Math.round(fact.attributes.amount))] : [])];
   for (const n of numbers) {
     // Years and dates may be reformatted (12/03/2027 → 2027-03-12): check their parts.
@@ -163,11 +181,15 @@ export function groundedInUserText(fact: Pick<CandidateFact, "content" | "title"
 
 export type FactDecision = "learn" | "confirm" | "private" | "drop";
 
-/** What happens to a candidate: deterministic, explainable rules. */
-export function decideFact(fact: CandidateFact, userText: string): FactDecision {
+/**
+ * What happens to a candidate: deterministic, explainable rules. `known` are the client's current
+ * facts: the value a fact replaces may appear in it without counting as made up.
+ */
+export function decideFact(fact: CandidateFact, userText: string, known: KnownFact[] = []): FactDecision {
   if (fact.about === "person") return "private";
   if (fact.about !== "client") return "drop";
-  if (fact.statedBy !== "user" || fact.confidence < 0.6 || !groundedInUserText(fact, userText)) return "confirm";
+  const replacing = known.filter((k) => k.key === fact.key).map((k) => `${k.title} ${k.content}`).join(" ");
+  if (fact.statedBy !== "user" || fact.confidence < 0.6 || !groundedInUserText(fact, userText, replacing)) return "confirm";
   return "learn";
 }
 

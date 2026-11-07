@@ -46,6 +46,7 @@ import type { QuotaState } from "@/modules/usage/quota";
 import { CHAT_REQUEST_ERRORS, type ChatRequestError, type ChatStreamEvent } from "../stream-events";
 import type { AttachmentKind, TimelineMessage } from "../types";
 import type { RenderKind } from "@/modules/render/formats";
+import type { LearningState } from "@/modules/memory/types";
 import { splitNdjson } from "../ndjson";
 import {
   createConversationAction,
@@ -836,14 +837,6 @@ export function ChatView(props: Props) {
     );
   }
 
-  /** The question a "Confronter" button refers to: the message itself, or the question an answer replies to. */
-  function confrontHandler(index: number): (() => void) | undefined {
-    const m = messages[index];
-    const question = m.role === "user" ? m : messages.slice(0, index).reverse().find((x) => x.role === "user");
-    if (!conversationId || !question || question.id === "pending-user" || !question.content.trim() || busy || pendingElsewhere) return undefined;
-    return () => setConfrontTarget({ conversationId, messageId: question.id, excerpt: question.content.slice(0, 200) });
-  }
-
   function changeModel(choice: string) {
     setModelChoice(choice);
     if (conversationId) void setConversationModelAction({ conversationId, modelChoice: choice });
@@ -923,7 +916,10 @@ export function ChatView(props: Props) {
     if (a.id) await removePendingAttachmentAction({ attachmentId: a.id });
   }
 
-  const memoryTargets = [...props.memoryTargets].sort((a, b) => Number(b.clientId === clientId) - Number(a.clientId === clientId));
+  const memoryTargets = React.useMemo(
+    () => [...props.memoryTargets].sort((a, b) => Number(b.clientId === clientId) - Number(a.clientId === clientId)),
+    [props.memoryTargets, clientId],
+  );
   // A client named in an unlinked conversation: suggest linking it, or creating it (CLAUDE.md §11).
   const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
   const clientMention = !clientId && isOwner ? detectClientMention(`${lastUserText}\n${input}`, allClients) : null;
@@ -946,7 +942,30 @@ export function ChatView(props: Props) {
       people: participants.map((p) => ({ userId: p.userId, name: p.name, avatarUrl: p.avatarUrl, online: online.has(p.userId) })),
     };
   })();
-  const people: PeopleLookup = new Map(participants.map((p) => [p.userId, { name: p.name, avatarUrl: p.avatarUrl }]));
+  const people: PeopleLookup = React.useMemo(() => new Map(participants.map((p) => [p.userId, { name: p.name, avatarUrl: p.avatarUrl }])), [participants]);
+  // The timeline below is drawn again only when what it shows changes (typing does not redraw it).
+  const participantKey = participants.map((p) => p.userId).join(",");
+  const renderInfo = React.useMemo(() => (renderKind ? { kind: renderKind, attachments: conversationFiles } : null), [renderKind, conversationFiles]);
+  const actionsRef = React.useRef<TimelineActions | null>(null);
+  React.useEffect(() => {
+    actionsRef.current = {
+      regenerate: (m, choice) => regenerate(m, choice),
+      invite: (userId) => void openAdd([userId]),
+      confront: (question) => conversationId && setConfrontTarget({ conversationId, messageId: question.id, excerpt: question.content.slice(0, 200) }),
+      learning: (id, state) => setMessages((list) => list.map((x) => (x.id === id ? { ...x, learning: state } : x))),
+      edit: (m, text) => void editPrompt(m, text),
+    };
+  });
+  const timelineActions = React.useMemo<TimelineActions>(
+    () => ({
+      regenerate: (m, choice) => actionsRef.current?.regenerate(m, choice),
+      invite: (userId) => actionsRef.current?.invite(userId),
+      confront: (question) => actionsRef.current?.confront(question),
+      learning: (id, state) => actionsRef.current?.learning(id, state),
+      edit: (m, text) => actionsRef.current?.edit(m, text),
+    }),
+    [],
+  );
   const castOptions: AssistantId[] = [
     ...PROVIDER_IDS.filter((provider) => pickerModels.some((m) => m.provider === provider && m.available)),
     ...(props.autoEnabled && !props.agent?.allowedModels.length ? (["auto"] as const) : []),
@@ -958,8 +977,6 @@ export function ChatView(props: Props) {
     if (first) changeModel(first.id);
   }
 
-  const lastAnswerId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
-  const lastIsAnswer = messages.at(-1)?.role === "assistant";
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col md:h-dvh">
@@ -1151,41 +1168,24 @@ export function ChatView(props: Props) {
               cast={castOptions.length > 1 ? { options: castOptions, selected: selectedAssistant, onSelect: pickAssistant } : null}
             />
           ) : (
-            <div className="space-y-8">
-              {messages.map((m, index) => {
-                return (
-                  <React.Fragment key={m.id}>
-                    <MessageItem
-                      message={m}
-                      live={m.id === liveId}
-                      isLastAnswer={m.id === lastAnswerId && lastIsAnswer}
-                      busy={busy || pendingElsewhere}
-                      models={props.models}
-                      onRegenerate={(choice) => regenerate(m, choice)}
-                      memoryTargets={memoryTargets}
-                      conversationId={conversationId}
-                      meId={props.me.id}
-                      // Who Can Help: colleagues not here yet who may join (access to the linked client).
-                      invitable={m.suggestedColleagues.filter((c) => !participantIds.has(c.userId) && props.colleagues.some((x) => x.userId === c.userId))}
-                      onInvite={(userId) => void openAdd([userId])}
-                      onConfront={confrontHandler(index)}
-                      confrontProgress={confrontProgress[m.id]}
-                      onLearning={(state) => setMessages((list) => list.map((x) => (x.id === m.id ? { ...x, learning: state } : x)))}
-                      onEdit={
-                        m.role === "user" && !group && !readOnly && !props.agent && (!m.author || m.author.id === props.me.id) && !m.id.startsWith("pending")
-                          ? (text) => void editPrompt(m, text)
-                          : undefined
-                      }
-                      render={renderKind ? { kind: renderKind, attachments: conversationFiles } : null}
-                      people={people}
-                      group={group}
-                      myToken={myToken}
-                      pdfAsked={m.role === "assistant" && /\bpdf\b/i.test(messages.slice(0, index).reverse().find((x) => x.role === "user")?.content ?? "")}
-                    />
-                  </React.Fragment>
-                );
-              })}
-            </div>
+            <ChatTimeline
+              messages={messages}
+              liveId={liveId}
+              busy={busy || pendingElsewhere}
+              models={props.models}
+              memoryTargets={memoryTargets}
+              conversationId={conversationId}
+              meId={props.me.id}
+              participantKey={participantKey}
+              colleagues={props.colleagues}
+              confrontProgress={confrontProgress}
+              renderInfo={renderInfo}
+              people={people}
+              group={group}
+              myToken={myToken}
+              editable={!group && !readOnly && !props.agent}
+              actions={timelineActions}
+            />
           )}
         </div>
         <div className="hidden xl:block">{messages.length > 0 ? <CastRail cast={cast} className="sticky top-8 mt-8 ml-2" /> : null}</div>
@@ -1744,3 +1744,92 @@ function writeLocal(key: string, value: string | null) {
     // Not kept: the draft only lives in the page.
   }
 }
+
+type TimelineActions = {
+  regenerate: (message: TimelineMessage, choice?: string) => void;
+  invite: (userId: string) => void;
+  confront: (question: TimelineMessage) => void;
+  learning: (messageId: string, state: LearningState) => void;
+  edit: (message: TimelineMessage, text: string) => void;
+};
+
+/**
+ * The conversation's messages. Memoised: typing in the input, the Hide check or the header do not
+ * draw it again; only new messages, a streamed word, or a change of rights do.
+ */
+const ChatTimeline = React.memo(function ChatTimeline({
+  messages,
+  liveId,
+  busy,
+  models,
+  memoryTargets,
+  conversationId,
+  meId,
+  participantKey,
+  colleagues,
+  confrontProgress,
+  renderInfo,
+  people,
+  group,
+  myToken,
+  editable,
+  actions,
+}: {
+  messages: TimelineMessage[];
+  liveId: string | null;
+  busy: boolean;
+  models: PickerModel[];
+  memoryTargets: Props["memoryTargets"];
+  conversationId: string | null;
+  meId: string;
+  participantKey: string;
+  colleagues: Colleague[];
+  confrontProgress: Record<string, ConfrontationProgress>;
+  renderInfo: { kind: RenderKind; attachments: TimelineMessage["attachments"] } | null;
+  people: PeopleLookup;
+  group: boolean;
+  myToken: PersonToken | null;
+  editable: boolean;
+  actions: TimelineActions;
+}) {
+  const participantIds = new Set(participantKey ? participantKey.split(",") : []);
+  const lastAnswerId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
+  const lastIsAnswer = messages.at(-1)?.role === "assistant";
+  return (
+    <div className="space-y-8">
+      {messages.map((m, index) => {
+        // The question a "Confronter" button refers to: the message itself, or the question an answer replies to.
+        const question = m.role === "user" ? m : messages.slice(0, index).reverse().find((x) => x.role === "user");
+        const canConfront = conversationId && question && question.id !== "pending-user" && question.content.trim() && !busy;
+        return (
+          <MessageItem
+            key={m.id}
+            message={m}
+            live={m.id === liveId}
+            isLastAnswer={m.id === lastAnswerId && lastIsAnswer}
+            busy={busy}
+            models={models}
+            onRegenerate={(choice) => actions.regenerate(m, choice)}
+            memoryTargets={memoryTargets}
+            conversationId={conversationId}
+            meId={meId}
+            // Who Can Help: colleagues not here yet who may join (access to the linked client).
+            invitable={m.suggestedColleagues.filter((c) => !participantIds.has(c.userId) && colleagues.some((x) => x.userId === c.userId))}
+            onInvite={(userId) => actions.invite(userId)}
+            onConfront={canConfront ? () => actions.confront(question) : undefined}
+            confrontProgress={confrontProgress[m.id]}
+            onLearning={(state) => actions.learning(m.id, state)}
+            onEdit={
+              editable && m.role === "user" && (!m.author || m.author.id === meId) && !m.id.startsWith("pending") ? (text) => actions.edit(m, text) : undefined
+            }
+            render={renderInfo}
+            people={people}
+            group={group}
+            myToken={myToken}
+            pdfAsked={m.role === "assistant" && /\bpdf\b/i.test(question?.content ?? "")}
+          />
+        );
+      })}
+    </div>
+  );
+});

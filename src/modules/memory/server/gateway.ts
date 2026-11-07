@@ -136,11 +136,12 @@ async function clientBrief(supabase: UserClient, space: MemorySpace, names: Map<
     .order("updated_at", { ascending: false })
     .limit(40);
   const now = Date.now();
-  return (data ?? [])
+  const kept = (data ?? [])
     .filter((e) => !e.expires_at || new Date(e.expires_at).getTime() > now)
     .sort((a, b) => (KIND_PRIORITY[a.kind] ?? 3) - (KIND_PRIORITY[b.kind] ?? 3) || b.updated_at.localeCompare(a.updated_at))
-    .slice(0, BRIEF_MAX_FACTS)
-    .map((e, i) => ({
+    .slice(0, BRIEF_MAX_FACTS);
+  const replaced = await recentlyReplaced(supabase, kept.map((e) => e.id));
+  return kept.map((e, i) => ({
       position: i + 1,
       sourceType: "memory_entry" as const,
       id: e.id,
@@ -156,7 +157,31 @@ async function clientBrief(supabase: UserClient, space: MemorySpace, names: Map<
       sourceDate: e.effective_at ?? e.updated_at,
       reason: "brief" as const,
       kind: e.kind,
+      ...(replaced.has(e.id) ? { replaced: replaced.get(e.id) } : {}),
     }));
+}
+
+/**
+ * Facts that replaced an older value in the last 90 days: the model is told what changed and when,
+ * so it says "the budget went from 15 000 € to 18 000 €" rather than taking an earlier answer for a
+ * mistake (found with a real model).
+ */
+async function recentlyReplaced(supabase: UserClient, ids: string[]): Promise<Map<string, { content: string; on: string }>> {
+  const notes = new Map<string, { content: string; on: string }>();
+  if (ids.length === 0) return notes;
+  const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
+  const { data } = await supabase
+    .from("memory_entries")
+    .select("content, superseded_by, superseded_at")
+    .in("superseded_by", ids)
+    .gte("superseded_at", since)
+    .order("superseded_at", { ascending: false });
+  for (const old of data ?? []) {
+    if (!old.superseded_by || !old.superseded_at || notes.has(old.superseded_by)) continue;
+    const content = old.content.length > BRIEF_FACT_CHARS ? `${old.content.slice(0, BRIEF_FACT_CHARS)}…` : old.content;
+    notes.set(old.superseded_by, { content, on: old.superseded_at.slice(0, 10) });
+  }
+  return notes;
 }
 
 /** Two current facts about the same subject in one memory: both are flagged. */

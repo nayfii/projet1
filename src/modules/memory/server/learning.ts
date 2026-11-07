@@ -119,7 +119,7 @@ export async function runLearningJob(supabase: UserClient, ctx: MemberContext, j
     // means a value this person was not shown, never stored.
     for (const fact of parseCandidateFacts(result.text, (text) => restorePlaceholders(text, values))) {
       if (new RegExp(PLACEHOLDER_PATTERN.source).test(`${fact.title}\n${fact.content}\n${fact.key}`)) continue;
-      const decision = decideFact(fact, question.content);
+      const decision = decideFact(fact, question.content, known);
       if (decision === "drop") continue;
       if (decision === "private") {
         counts.keptPrivate++;
@@ -127,6 +127,8 @@ export async function runLearningJob(supabase: UserClient, ctx: MemberContext, j
       }
       const restored = fact;
       if (decision === "confirm") {
+        // An answer restating what the memory already holds (a colleague asked for it): nothing to confirm.
+        if (planWrite(restored, known).action === "confirm") continue;
         proposals.push({ fact: restored, reason: fact.statedBy === "user" ? "uncertain" : "assistant_claim" });
         continue;
       }
