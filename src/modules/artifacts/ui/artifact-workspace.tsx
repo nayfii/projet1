@@ -15,11 +15,13 @@ const clamp = (w: number) => Math.round(Math.max(MIN_WIDTH, Math.min(w, typeof w
 export function useStoredWidth(): [number, (w: number) => void] {
   const [width, setWidth] = React.useState(() => {
     if (typeof window === "undefined") return DEFAULT_WIDTH;
+    // Without a width chosen, at most 42 % of the window: the conversation keeps room.
+    const fallback = clamp(Math.min(DEFAULT_WIDTH, window.innerWidth * 0.42));
     try {
       const saved = Number(localStorage.getItem(KEY));
-      return saved ? clamp(saved) : DEFAULT_WIDTH;
+      return saved ? clamp(saved) : fallback;
     } catch {
-      return DEFAULT_WIDTH;
+      return fallback;
     }
   });
   const set = React.useCallback((w: number) => {

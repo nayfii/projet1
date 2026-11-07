@@ -54,12 +54,13 @@ export function ModelPicker({
         {isAuto || !current ? (
           <>
             <AssistantAvatar provider="auto" size={22} />
-            <span className="font-medium text-foreground">{t("auto")}</span>
+            {/* In a narrow composer (workspace open, small window) the logo alone names the model. */}
+            <span className="hidden font-medium text-foreground @sm:inline">{t("auto")}</span>
           </>
         ) : (
           <>
             <AssistantAvatar provider={current.provider} size={22} />
-            <span className="truncate">
+            <span className="hidden truncate @sm:inline">
               <span className="font-medium text-foreground">{modelDisplay(current.provider, current.label).brand}</span>{" "}
               {modelDisplay(current.provider, current.label).name}
             </span>

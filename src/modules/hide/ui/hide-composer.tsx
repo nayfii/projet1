@@ -289,7 +289,7 @@ export function AutoSwitch({ state, disabled }: { state: HideComposerState; disa
     <span className="inline-flex items-center rounded-lg hover:bg-accent/60">
       <label className="inline-flex h-8 cursor-pointer items-center gap-2 pl-2 pr-1 text-[13px] text-muted-foreground">
         {state.on ? <ShieldCheckIcon className="size-4 text-success" /> : <ShieldIcon className="size-4" />}
-        <span className="hidden sm:inline">{t("auto")}</span>
+        <span className="hidden @md:inline">{t("auto")}</span>
         <Switch checked={state.on} onCheckedChange={state.setOn} disabled={disabled} aria-label={t("auto")} />
       </label>
       <DropdownMenu>
