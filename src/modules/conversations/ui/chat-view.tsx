@@ -1462,7 +1462,8 @@ export function ChatView(props: Props) {
                 )}
               />
             </div>
-            <div className={cn("flex items-center gap-1 px-2 pb-2", dictating && "[&>*:not([data-dictation])]:hidden")}>
+            {/* A container: in a narrow composer (workspace open, small window) labels give way to icons. */}
+            <div className={cn("@container flex min-w-0 items-center gap-1 px-2 pb-2", dictating && "[&>*:not([data-dictation])]:hidden")}>
               {canAttach ? (
                 <Tooltip content={t("attach")}>
                   <Button
