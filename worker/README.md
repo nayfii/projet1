@@ -36,3 +36,4 @@ development environment (its network blocks the package mirrors); to verify at d
 | `RENDER_JOB_TIMEOUT_MS` | 900000 | A render taking longer is stopped |
 | `RENDER_CHILD_UID`, `RENDER_CHILD_GID`, `RENDER_CHILD_HOME` | — | User the renders run as (container) |
 | `CAPTION_FONT_FILE` | Inter SemiBold | Font of the Video Editor's captions |
+| `HYPERFRAMES_BROWSER_PATH` | the browser HyperFrames finds | Headless Chromium to render with, when it is not where HyperFrames looks (e.g. a development machine: `/opt/pw-browsers/chromium_headless_shell-*/chrome-linux/headless_shell`) |
