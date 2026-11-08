@@ -67,6 +67,7 @@
   --avatar-foreground: oklch(0.92 0 0);
   --avatar-ring: oklch(1 0 0 / 0.08);
   --decor-strength: 0%;
+  --glass-edge-rgb: rgb(255 255 255 / 0.1);
 
   --destructive: oklch(0.71 0.16 22);
   --destructive-soft: oklch(0.71 0.16 22 / 0.15);
@@ -142,6 +143,7 @@
   --brand-foreground: oklch(0.99 0 0);
   --brand-soft: oklch(0 0 0 / 0.07);
   --ring: oklch(0.45 0 0);
+  --glass-edge-rgb: rgb(255 255 255 / 0.72);
   --avatar-surface: oklch(0.94 0 0);
   --avatar-foreground: oklch(0.3 0 0);
   --avatar-ring: oklch(0 0 0 / 0.06);
@@ -200,6 +202,7 @@
 }
 /* The tinted glass exists in Atmosphère only: Clair and Sombre stay neutral whatever is chosen. */
 html:root[data-glass-tone="tinted"][data-theme="atmosphere"] {
+  --glass-dispersion: 0.7;
   --tint-h: 290;
   --tint-k: 1;
   --decor-strength: 16%;
@@ -484,8 +487,11 @@ html:root[data-glass-tone="tinted"][data-theme="atmosphere"] {
   box-shadow: none;
 }
 .lg-glass.lq {
-  --lg-glass-dispersion: 0.7;
-  --lg-edge: var(--glass-border);
+  /* Colour fringes at the glass edge only with the tinted glass of Atmosphère; neutral elsewhere. */
+  --lg-glass-dispersion: var(--glass-dispersion, 0);
+  /* The library reads this colour with a canvas and only understands rgb()/hex: an oklch() value
+   * came out as a reddish rim line. Same colour as --glass-border, written in rgb(). */
+  --lg-edge: var(--glass-edge-rgb);
   --lg-drop: transparent;
 }
 .lg-glass.lq-panel {
