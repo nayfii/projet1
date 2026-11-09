@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { requirePlatformAdmin } from "@/lib/auth/guards";
 import { AppShell, type NavSection } from "@/components/shell/app-shell";
 import { getShellLabels } from "@/components/shell/labels";
+import { RememberSpacePath } from "@/modules/scale/ui/space-memory";
 
 /** Platform console (our team). Metadata only: no access to any customer content. */
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
@@ -39,15 +40,21 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   ];
 
   return (
-    <AppShell
-      sections={sections}
-      context={{ title: t("title"), subtitle: t("subtitle") }}
-      user={{ name: ctx.profile.fullName, email: ctx.user.email, avatarUrl: ctx.profile.avatarUrl }}
-      menuLinks={[{ href: "/platform/password", label: tPassword("title"), icon: "shield" }]}
-      locale={(await getLocale()) as "fr" | "en"}
-      labels={await getShellLabels()}
-    >
-      {children}
-    </AppShell>
+    <>
+      {/* Remembers the last console page, so coming back from Scale lands there (renders nothing). */}
+      <RememberSpacePath space="platform" />
+      <AppShell
+        sections={sections}
+        context={{ title: t("title"), subtitle: t("subtitle") }}
+        user={{ name: ctx.profile.fullName, email: ctx.user.email, avatarUrl: ctx.profile.avatarUrl }}
+        menuLinks={[{ href: "/platform/password", label: tPassword("title"), icon: "shield" }]}
+        // Our second space, Scale (structuring and growing Cendr), one click away at the bottom of the menu.
+        footerLink={{ href: "/scale?resume=1", label: t("scale"), icon: "scale" }}
+        locale={(await getLocale()) as "fr" | "en"}
+        labels={await getShellLabels()}
+      >
+        {children}
+      </AppShell>
+    </>
   );
 }

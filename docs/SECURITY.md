@@ -121,6 +121,10 @@ Every AI call is built by our server. Providers receive one self-contained reque
 | Usage | `usage_events` | Token counts, credits, estimated cost, model, status (chat, embeddings, memory tasks). No content |
 | Activity | `audit_log` | Ids and settings only (e.g. "request blocked: personal limit"). No content |
 
+### Scale (our team's internal space, 2026-11-09)
+
+Scale holds Cendr's own plans, tests, documents and indicators, for platform admins only: pages answer "not found" to anyone else, every server action checks `platformAdminOrNull()`, and each of the 22 `scale_*` tables and the private bucket `scale-files` has a single RLS policy on `private.is_platform_admin()` (tested in `tests/integration/scale.test.ts`). Customer companies are linked by their id only; Scale shows their name, status and plan (what the console already shows), never their conversations, documents or memories, and linking a customer gives that customer nothing. No data from Scale is sent to an AI provider. The history (`scale_activity`) cannot be modified through the API. Exports are for our team only and turn spreadsheet formulas into plain text.
+
 ## 4. Remaining risks before accepting real customer data
 
 - **Release tokens (our console).** `GITHUB_RELEASE_TOKEN` (Vercel) and `RELEASE_TOKEN` (GitHub secret) can change the
