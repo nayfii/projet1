@@ -37,6 +37,7 @@ import {
   MonitorCheckIcon,
   WrenchIcon,
   LayoutGridIcon,
+  PanelsTopLeftIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +87,7 @@ const ICONS = {
   releases: RocketIcon,
   preview: MonitorCheckIcon,
   debug: WrenchIcon,
+  console: PanelsTopLeftIcon,
 } as const;
 
 export type IconName = keyof typeof ICONS;

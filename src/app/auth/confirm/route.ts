@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/public-env";
-import { safeNextPath } from "@/lib/safe-redirect";
+import { landingPath, safeNextPath } from "@/lib/safe-redirect";
 import { afterSignIn } from "@/modules/identity/server/after-sign-in";
 
 const OTP_TYPES: EmailOtpType[] = ["magiclink", "email", "invite", "signup", "recovery", "email_change"];
@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     if (!error && data.user) {
-      await afterSignIn(supabase, data.user);
-      return NextResponse.redirect(new URL(next, request.url));
+      const { isPlatformAdmin } = await afterSignIn(supabase, data.user);
+      return NextResponse.redirect(new URL(landingPath(next, isPlatformAdmin), request.url));
     }
   }
   return NextResponse.redirect(new URL("/login?error=link_invalid", request.url));

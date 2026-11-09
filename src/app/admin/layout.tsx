@@ -10,6 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const ctx = await requireCompanyAdmin();
   const t = await getTranslations("adminNav");
   const tRoles = await getTranslations("roles");
+  const tNav = await getTranslations("nav");
 
   const item = (scope: AdminScope | null, entry: NavItem): NavItem[] =>
     scope === null || hasScope(ctx.active, scope) ? [entry] : [];
@@ -54,7 +55,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       sections={sections}
       context={{ title: t("title"), subtitle: `${ctx.active.companyName} · ${tRoles(ctx.active.role)}` }}
       user={{ name: ctx.profile.fullName, email: ctx.user.email, avatarUrl: ctx.profile.avatarUrl }}
-      menuLinks={[{ href: "/profile", label: t("profile"), icon: "profile" }]}
+      menuLinks={[
+        { href: "/profile", label: t("profile"), icon: "profile" },
+        ...(ctx.isPlatformAdmin ? [{ href: "/platform", label: tNav("platformConsole"), icon: "console" as const }] : []),
+      ]}
       footerLink={{ href: "/", label: t("backToApp"), icon: "back" }}
       locale={(await getLocale()) as "fr" | "en"}
       labels={await getShellLabels()}

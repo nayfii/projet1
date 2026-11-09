@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/public-env";
-import { safeNextPath } from "@/lib/safe-redirect";
+import { landingPath, safeNextPath } from "@/lib/safe-redirect";
 import type { ActionResult, ErrorCode } from "@/lib/errors";
 import { newPasswordSchema, openedByRecentEmailLink } from "../password";
 import { acceptPasswordSignIn, afterSignIn, hasCendrPassword } from "./after-sign-in";
@@ -33,8 +33,8 @@ export async function signInWithPasswordAction(_: unknown, formData: FormData): 
     return { ok: false, error: error && rateLimited(error) ? "email_rate_limited" : "invalid_credentials" };
   }
   if (!(await acceptPasswordSignIn(supabase, data.user))) return { ok: false, error: "invalid_credentials" };
-  await afterSignIn(supabase, data.user);
-  redirect(next);
+  const { isPlatformAdmin } = await afterSignIn(supabase, data.user);
+  redirect(landingPath(next, isPlatformAdmin));
 }
 
 /** "Forgot password": always the same answer, whether or not the address has an account. */

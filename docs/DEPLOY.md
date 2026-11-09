@@ -118,6 +118,8 @@ Sans Resend, Supabase envoie lui-même **2 e-mails par heure au maximum, et seul
    nom, places, crédits par mois, crédits vidéo, prix par place, et **activez « Offre attribuée aux nouvelles inscriptions »**.
 3. Revenez à l'adresse du site : l'assistant de démarrage vous fait créer votre entreprise.
 4. Testez : conversation, mémoire, Hide, agents, administration (**/admin**), et la console de notre équipe (**/platform**).
+
+Un compte de notre équipe qui appartient aussi à une entreprise arrive sur la console à chaque connexion ; dans l'espace entreprise, le menu du compte (en bas à gauche) propose **Console Cendr** pour y revenir.
 5. Pour donner la console à un collègue de notre équipe : **/platform/team** → son adresse → **Donner l'accès**. Il l'aura à sa première connexion avec cette adresse (rien à changer sur Vercel).
 
 Notez ce qui va et ce qui ne va pas, avec la page et ce que vous avez cliqué : Claude corrigera.
