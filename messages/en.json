@@ -329,6 +329,7 @@
     "library": "Apps",
     "profile": "My profile",
     "adminConsole": "Admin",
+    "platformConsole": "Cendr console",
     "newConversation": "New conversation"
   },
   "home": {

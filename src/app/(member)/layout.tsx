@@ -41,7 +41,11 @@ export default async function MemberLayout({ children }: { children: React.React
         sections={sections}
         context={{ title: ctx.active.companyName, subtitle: tRoles(ctx.active.role) }}
         user={{ name: ctx.profile.fullName, email: ctx.user.email, avatarUrl: ctx.profile.avatarUrl }}
-        menuLinks={[{ href: "/profile", label: t("profile"), icon: "profile" }]}
+        menuLinks={[
+          { href: "/profile", label: t("profile"), icon: "profile" },
+          // Our team only: the way back to our console when the same account also belongs to a company.
+          ...(ctx.isPlatformAdmin ? [{ href: "/platform", label: t("platformConsole"), icon: "console" as const }] : []),
+        ]}
         footerLink={isCompanyAdmin(ctx.active) ? { href: "/admin", label: t("adminConsole"), icon: "settings" } : undefined}
         sidebarExtra={
           <>

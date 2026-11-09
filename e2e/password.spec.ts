@@ -42,7 +42,7 @@ test("first sign-in by link; the home page asks for a password; the profile crea
   await expect(page).toHaveURL(/\/chat$/);
 
   await page.goto("/");
-  await expect(page.getByTestId("password-reminder")).toBeVisible();
+  await expect(page.getByTestId("password-reminder").filter({ visible: true })).toBeVisible();
   await page.getByRole("link", { name: "Créer mon mot de passe" }).click();
   await expect(page).toHaveURL(/\/profile#password$/);
   const card = page.locator("#password");
@@ -63,7 +63,7 @@ test("first sign-in by link; the home page asks for a password; the profile crea
   await card.getByRole("button", { name: "Créer mon mot de passe" }).click();
   await expect(page.getByText("Mot de passe enregistré.")).toBeVisible();
   await page.goto("/");
-  await expect(page.getByTestId("password-reminder")).toHaveCount(0);
+  await expect(page.getByTestId("password-reminder").filter({ visible: true })).toHaveCount(0);
 });
 
 test("sign-in with the password; a wrong one gets one neutral message", async () => {
@@ -165,5 +165,39 @@ test("our team gives the console to a new address from Équipe: it lands in the 
   await admin.getByRole("button", { name: `Retirer l'accès de ${newcomer}` }).click();
   await expect(admin.getByTestId("team-member").filter({ hasText: newcomer })).toHaveCount(0);
   await them.context().close();
+  await admin.context().close();
+});
+
+test("our team member who also owns a company: sign-in opens the console, the company space links back to it", async ({ browser }) => {
+  // The founder's case (2026-11-09): the console account accepted a company invitation, so every
+  // sign-in opened that company and the console seemed gone.
+  const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
+  await signIn(admin, "platform@demo.local");
+  await admin.goto("/platform/team");
+  await admin.getByLabel("Adresse e-mail").fill(email);
+  await admin.getByRole("button", { name: "Donner l'accès" }).click();
+  await expect(admin.getByTestId("team-member").filter({ hasText: email })).toBeVisible();
+
+  await signOut(page);
+  await signInWithPassword(page, second);
+  await expect(page).toHaveURL(/\/platform$/);
+
+  // Their company stays one address away, and its account menu leads back to the console.
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
+  await page.getByRole("button", { name: /Claire Martin/ }).click();
+  await shot(page, "pw-06-console-link");
+  await page.getByRole("menuitem", { name: "Console Cendr" }).click();
+  await expect(page).toHaveURL(/\/platform$/);
+
+  // Taken back: the sign-in opens the company again, without the link.
+  await admin.reload();
+  await admin.getByTestId("team-member").filter({ hasText: email }).getByRole("button", { name: "Retirer l'accès de Claire Martin" }).click();
+  await expect(admin.getByTestId("team-member").filter({ hasText: email })).toHaveCount(0);
+  await signOut(page);
+  await signInWithPassword(page, second);
+  await expect(page.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
+  await page.getByRole("button", { name: /Claire Martin/ }).click();
+  await expect(page.getByRole("menuitem", { name: "Console Cendr" })).toHaveCount(0);
   await admin.context().close();
 });

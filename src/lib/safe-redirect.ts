@@ -15,3 +15,11 @@ export function safeNextPath(next: string | null | undefined, appUrl: string): s
     return "/";
   }
 }
+
+/**
+ * Where a sign-in lands: our team (platform admins) opens our console unless a precise page was asked
+ * for, even when the same account also belongs to a company (a test company, for instance).
+ */
+export function landingPath(next: string, isPlatformAdmin: boolean): string {
+  return isPlatformAdmin && next === "/" ? "/platform" : next;
+}

@@ -15,8 +15,9 @@ import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
  *   PLATFORM_ADMIN_EMAILS (verified emails only);
  * - records the sign-in in the company activity log;
  * - applies the user's saved language.
+ * Returns whether the account is in our team (platform admin), so the sign-in can open our console.
  */
-export async function afterSignIn(supabase: UserClient, user: User) {
+export async function afterSignIn(supabase: UserClient, user: User): Promise<{ isPlatformAdmin: boolean }> {
   if (!(await hasCendrPassword(user.id))) await createAdminClient().rpc("clear_user_password", { p_user: user.id });
   const email = user.email?.toLowerCase();
   if (email && user.email_confirmed_at && platformAdminEmails().has(email)) {
@@ -52,6 +53,9 @@ export async function afterSignIn(supabase: UserClient, user: User) {
   if (isLocale(profile?.locale)) {
     (await cookies()).set(LOCALE_COOKIE, profile.locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   }
+
+  const { data: platformAdmin } = await createAdminClient().from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  return { isPlatformAdmin: Boolean(platformAdmin) };
 }
 
 /** Whether the account's password was chosen in Cendr (profile, welcome screen or reset link). */

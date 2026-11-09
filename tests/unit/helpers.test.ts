@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeNextPath } from "@/lib/safe-redirect";
+import { landingPath, safeNextPath } from "@/lib/safe-redirect";
 import { initials } from "@/lib/utils";
 import { toErrorCode } from "@/lib/errors";
 import { describeEvent } from "@/modules/audit/describe";
@@ -31,6 +31,17 @@ it("follows an email link through /auth/callback, on our site only", () => {
   // Our templates encode the destination ({{ .RedirectTo }}), so it arrives as one `next` value.
   const link = new URL(`${APP}/auth/confirm?token_hash=t&type=magiclink&next=${encodeURIComponent(`${APP}/auth/callback?via=email&next=%2Fadmin`)}`);
   expect(safeNextPath(link.searchParams.get("next"), APP)).toBe("/auth/callback?via=email&next=%2Fadmin");
+});
+
+describe("landingPath (where a sign-in lands)", () => {
+  it("opens our console for our team when no precise page was asked for", () => {
+    expect(landingPath("/", true)).toBe("/platform");
+  });
+  it("keeps the asked page, and the company space for everyone else", () => {
+    expect(landingPath("/invite/abc", true)).toBe("/invite/abc");
+    expect(landingPath("/chat", true)).toBe("/chat");
+    expect(landingPath("/", false)).toBe("/");
+  });
 });
 
 describe("initials", () => {
