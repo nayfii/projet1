@@ -1,6 +1,6 @@
 # Status
 
-Last update: Cendr Consciousness, chat at ChatGPT level, dictation and Applis (2026-11-06).
+Last update: dictation like Wispr Flow — cleanup, live text, vocabulary, push-to-talk (2026-11-10).
 Legend: **done** · **partial** · **not started** · **known issue**
 
 ---
@@ -315,6 +315,20 @@ A second space of our console, for our team only, to structure and grow Cendr. T
 | Permissions: platform admins only (pages answer "not found" to anyone else, actions refuse, RLS on the 22 tables and the `scale-files` bucket) | **done**, tested (`tests/integration/scale.test.ts`, `e2e/scale.spec.ts`) |
 | Tests: unit 17 (`tests/unit/scale.test.ts`), integration 6, end to end 15 (`e2e/scale.spec.ts`: console unchanged, switching spaces, objective → project → milestone → tasks, Kanban ↔ list, reload, capacity overload, dependency and loop, test with conclusion and customer link, document saved and reopened, search, archive/restore, no invented indicator, failed save with retry, keyboard, phone (8 pages, no sideways scroll), outsider refused) | **done** |
 | Known limits | Data is read at once (fine for our team's volume; documents' text is loaded on opening). Changes by another team member appear when the tab comes back into focus (no live updates). Drag and drop works with a mouse; on touch screens and with the keyboard, the menus do the same. Indicators from other sources (revenue, spending) are typed in by hand. |
+
+## Dictation like Wispr Flow (founder's request, 2026-11-10)
+
+We keep OpenAI's transcription (Wispr Flow's API is not open to new customers and its price is not public) and bring its comfort to Cendr.
+
+| Item | Status |
+|---|---|
+| Cleanup: hesitations ("euh", "hum", "um"…) and words said twice removed (not "nous nous", "vous vous"), punctuation, the speaker's own corrections applied ("non pardon…"), nothing added, answered or translated; "Voir l'original" puts the transcript back | **done**: our rules always; then a fast OpenAI model the company allows (the voice already went to OpenAI). Its version is used only if it stays close in length, otherwise our rules' version. **Not yet tried with the real model**: the OpenAI account answered "no credits remaining" on 2026-11-10 (same for the vocabulary hint and the transcription in parts); in test mode only our rules run |
+| Text appearing while speaking | **done**: the recording is cut at the person's pauses and each part transcribed at once; the text so far shows under the message box (and under app fields); at the end only the last part remains, so the text arrives faster on long dictations |
+| Our words recognised | **done**: Cendr, Consciousness, Confronter, Hide, Albert, Applis, Scale, ChatGPT, Claude, Gemini given to the transcription model as a hint, with what was already said in the same recording (continuity between parts). **Never client names** (Hide protects them) |
+| Push-to-talk | **done** in the chat: hold **Ctrl + Maj + Espace** to talk, release to get the text; a quick press keeps the microphone on until the next press; Échap cancels. Shown in the microphone's tooltip. Works only while Cendr's tab is in front (a browser cannot listen to the keyboard elsewhere; that needs a desktop app) |
+| Robustness | **done**: a part that fails is retried once; if one is still missing the text lands in the box to be read (never sent unread) with a warning; quota or switch-off stops the recording and keeps what was written; silent parts are not sent (cost, and models invent text on silence); known artefacts ("Sous-titres réalisés par la communauté d'Amara.org") dropped |
+| Cost | Each part costs at least one second of dictation; cleanup adds a small model request (tokens counted under "Dictée vocale") |
+| Tests | unit 9 new (`tests/unit/dictation.test.ts`: cleanup rules, artefacts, hints, model answer accepted or not, cutting at pauses); end to end 3 new (`e2e/chat-ux.spec.ts`: cleanup and "Voir l'original", hold-to-talk with live text, quick press and Échap) |
 
 ## Cendr Consciousness — memory shared across models (2026-11-06)
 
