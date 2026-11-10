@@ -1237,6 +1237,584 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"scale_activity": {
+                  Row: {
+                    "action": string,"actor_id": string | null,"created_at": string,"details": NonNullable<Json>,"entity_id": string | null,"entity_type": string,"id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"actor_id"?: string | null,"created_at"?: string,"details"?: NonNullable<Json>,"entity_id"?: string | null,"entity_type": string,"id"?: never
+                  }
+                  Update: {
+                    "action"?: string,"actor_id"?: string | null,"created_at"?: string,"details"?: NonNullable<Json>,"entity_id"?: string | null,"entity_type"?: string,"id"?: never
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_activity_actor_id_fkey"
+      columns: ["actor_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_attachments": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"entity_id": string,"entity_type": string,"id": string,"kind": string,"label": string,"mime_type": string | null,"size_bytes": number | null,"storage_path": string | null,"url": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"entity_id": string,"entity_type": string,"id"?: string,"kind": string,"label": string,"mime_type"?: string | null,"size_bytes"?: number | null,"storage_path"?: string | null,"url"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"entity_id"?: string,"entity_type"?: string,"id"?: string,"kind"?: string,"label"?: string,"mime_type"?: string | null,"size_bytes"?: number | null,"storage_path"?: string | null,"url"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_attachments_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_comments": {
+                  Row: {
+                    "author_id": string | null,"body": string,"created_at": string,"entity_id": string,"entity_type": string,"id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id"?: string | null,"body": string,"created_at"?: string,"entity_id": string,"entity_type": string,"id"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "author_id"?: string | null,"body"?: string,"created_at"?: string,"entity_id"?: string,"entity_type"?: string,"id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_comments_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_company_links": {
+                  Row: {
+                    "company_id": string,"created_at": string,"created_by": string | null,"entity_id": string,"entity_type": string,"id": string,"note": string | null,"role": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": string,"created_at"?: string,"created_by"?: string | null,"entity_id": string,"entity_type": string,"id"?: string,"note"?: string | null,"role"?: string
+                  }
+                  Update: {
+                    "company_id"?: string,"created_at"?: string,"created_by"?: string | null,"entity_id"?: string,"entity_type"?: string,"id"?: string,"note"?: string | null,"role"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_company_links_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_company_links_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_decisions": {
+                  Row: {
+                    "archived_at": string | null,"choice": string | null,"created_at": string,"created_by": string | null,"decided_on": string | null,"document_id": string | null,"evidence": string | null,"id": string,"options": string | null,"owner_id": string | null,"project_id": string | null,"reasons": string | null,"review_condition": string | null,"review_on": string | null,"status": string,"subject": string,"test_id": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"choice"?: string | null,"created_at"?: string,"created_by"?: string | null,"decided_on"?: string | null,"document_id"?: string | null,"evidence"?: string | null,"id"?: string,"options"?: string | null,"owner_id"?: string | null,"project_id"?: string | null,"reasons"?: string | null,"review_condition"?: string | null,"review_on"?: string | null,"status"?: string,"subject": string,"test_id"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"choice"?: string | null,"created_at"?: string,"created_by"?: string | null,"decided_on"?: string | null,"document_id"?: string | null,"evidence"?: string | null,"id"?: string,"options"?: string | null,"owner_id"?: string | null,"project_id"?: string | null,"reasons"?: string | null,"review_condition"?: string | null,"review_on"?: string | null,"status"?: string,"subject"?: string,"test_id"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_decisions_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_decisions_document_id_fkey"
+      columns: ["document_id"]
+isOneToOne: false
+      referencedRelation: "scale_documents"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_decisions_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_decisions_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "scale_projects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_decisions_test_id_fkey"
+      columns: ["test_id"]
+isOneToOne: false
+      referencedRelation: "scale_tests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_documents": {
+                  Row: {
+                    "archived_at": string | null,"content": NonNullable<Json>,"created_at": string,"created_by": string | null,"id": string,"project_id": string | null,"template_key": string | null,"title": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"content"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"id"?: string,"project_id"?: string | null,"template_key"?: string | null,"title": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"content"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"id"?: string,"project_id"?: string | null,"template_key"?: string | null,"title"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_documents_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_documents_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "scale_projects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_documents_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_measurements": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"kind": string,"metric_id": string,"note": string | null,"period_start": string,"updated_at": string,"value": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string,"metric_id": string,"note"?: string | null,"period_start": string,"updated_at"?: string,"value": number
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string,"metric_id"?: string,"note"?: string | null,"period_start"?: string,"updated_at"?: string,"value"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_measurements_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_measurements_metric_id_fkey"
+      columns: ["metric_id"]
+isOneToOne: false
+      referencedRelation: "scale_metrics"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_metrics": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"created_by": string | null,"definition": string | null,"id": string,"name": string,"period": string,"sort_order": number,"source": string,"template_key": string | null,"unit": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"definition"?: string | null,"id"?: string,"name": string,"period"?: string,"sort_order"?: number,"source"?: string,"template_key"?: string | null,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"definition"?: string | null,"id"?: string,"name"?: string,"period"?: string,"sort_order"?: number,"source"?: string,"template_key"?: string | null,"unit"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_metrics_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_milestones": {
+                  Row: {
+                    "achieved_date": string | null,"archived_at": string | null,"created_at": string,"created_by": string | null,"description": string | null,"id": string,"project_id": string,"sort_order": number,"target_date": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "achieved_date"?: string | null,"archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"id"?: string,"project_id": string,"sort_order"?: number,"target_date"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "achieved_date"?: string | null,"archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"id"?: string,"project_id"?: string,"sort_order"?: number,"target_date"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_milestones_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_milestones_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "scale_projects"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_objectives": {
+                  Row: {
+                    "archived_at": string | null,"baseline": number | null,"created_at": string,"created_by": string | null,"current_value": number | null,"description": string | null,"due_date": string | null,"id": string,"is_focus": boolean,"kind": string,"metric": string | null,"metric_source": string | null,"metric_updated_at": string | null,"owner_id": string | null,"sort_order": number,"status": string,"target": number | null,"template_key": string | null,"title": string,"unit": string | null,"updated_at": string,"validation_state": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"baseline"?: number | null,"created_at"?: string,"created_by"?: string | null,"current_value"?: number | null,"description"?: string | null,"due_date"?: string | null,"id"?: string,"is_focus"?: boolean,"kind"?: string,"metric"?: string | null,"metric_source"?: string | null,"metric_updated_at"?: string | null,"owner_id"?: string | null,"sort_order"?: number,"status"?: string,"target"?: number | null,"template_key"?: string | null,"title": string,"unit"?: string | null,"updated_at"?: string,"validation_state"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"baseline"?: number | null,"created_at"?: string,"created_by"?: string | null,"current_value"?: number | null,"description"?: string | null,"due_date"?: string | null,"id"?: string,"is_focus"?: boolean,"kind"?: string,"metric"?: string | null,"metric_source"?: string | null,"metric_updated_at"?: string | null,"owner_id"?: string | null,"sort_order"?: number,"status"?: string,"target"?: number | null,"template_key"?: string | null,"title"?: string,"unit"?: string | null,"updated_at"?: string,"validation_state"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_objectives_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_objectives_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_observations": {
+                  Row: {
+                    "body": string,"created_at": string,"created_by": string | null,"id": string,"kind": string,"observed_on": string,"test_id": string,"unit": string | null,"updated_at": string,"value": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string,"observed_on"?: string,"test_id": string,"unit"?: string | null,"updated_at"?: string,"value"?: number | null
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string,"observed_on"?: string,"test_id"?: string,"unit"?: string | null,"updated_at"?: string,"value"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_observations_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_observations_test_id_fkey"
+      columns: ["test_id"]
+isOneToOne: false
+      referencedRelation: "scale_tests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_project_dependencies": {
+                  Row: {
+                    "created_at": string,"depends_on_id": string,"project_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"depends_on_id": string,"project_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"depends_on_id"?: string,"project_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_project_dependencies_depends_on_id_fkey"
+      columns: ["depends_on_id"]
+isOneToOne: false
+      referencedRelation: "scale_projects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_project_dependencies_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "scale_projects"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_projects": {
+                  Row: {
+                    "achieved_date": string | null,"archived_at": string | null,"axis": string | null,"created_at": string,"created_by": string | null,"description": string | null,"health": string,"horizon": string | null,"id": string,"next_action": string | null,"objective_id": string | null,"outcome": string | null,"owner_id": string | null,"priority": string,"sort_order": number,"start_date": string | null,"status": string,"success_criterion": string | null,"target_date": string | null,"template_key": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "achieved_date"?: string | null,"archived_at"?: string | null,"axis"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"health"?: string,"horizon"?: string | null,"id"?: string,"next_action"?: string | null,"objective_id"?: string | null,"outcome"?: string | null,"owner_id"?: string | null,"priority"?: string,"sort_order"?: number,"start_date"?: string | null,"status"?: string,"success_criterion"?: string | null,"target_date"?: string | null,"template_key"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "achieved_date"?: string | null,"archived_at"?: string | null,"axis"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"health"?: string,"horizon"?: string | null,"id"?: string,"next_action"?: string | null,"objective_id"?: string | null,"outcome"?: string | null,"owner_id"?: string | null,"priority"?: string,"sort_order"?: number,"start_date"?: string | null,"status"?: string,"success_criterion"?: string | null,"target_date"?: string | null,"template_key"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_projects_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_projects_objective_id_fkey"
+      columns: ["objective_id"]
+isOneToOne: false
+      referencedRelation: "scale_objectives"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_projects_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_saved_views": {
+                  Row: {
+                    "config": NonNullable<Json>,"created_at": string,"id": string,"name": string,"owner_id": string | null,"section": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "config"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"name": string,"owner_id"?: string | null,"section": string
+                  }
+                  Update: {
+                    "config"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"name"?: string,"owner_id"?: string | null,"section"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_saved_views_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_settings": {
+                  Row: {
+                    "id": boolean,"launch_target": string | null,"onboarded_at": string | null,"team_note": string | null,"updated_at": string,"updated_by": string | null,"weekly_capacity_hours": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: boolean,"launch_target"?: string | null,"onboarded_at"?: string | null,"team_note"?: string | null,"updated_at"?: string,"updated_by"?: string | null,"weekly_capacity_hours"?: number | null
+                  }
+                  Update: {
+                    "id"?: boolean,"launch_target"?: string | null,"onboarded_at"?: string | null,"team_note"?: string | null,"updated_at"?: string,"updated_by"?: string | null,"weekly_capacity_hours"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_settings_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_simulations": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"created_by": string | null,"id": string,"inputs": NonNullable<Json>,"name": string,"note": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"inputs"?: NonNullable<Json>,"name": string,"note"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"inputs"?: NonNullable<Json>,"name"?: string,"note"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_simulations_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_task_dependencies": {
+                  Row: {
+                    "created_at": string,"depends_on_id": string,"task_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"depends_on_id": string,"task_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"depends_on_id"?: string,"task_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_task_dependencies_depends_on_id_fkey"
+      columns: ["depends_on_id"]
+isOneToOne: false
+      referencedRelation: "scale_tasks"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_task_dependencies_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "scale_tasks"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_tasks": {
+                  Row: {
+                    "archived_at": string | null,"blocked_reason": string | null,"commercial_urgency": string,"completed_at": string | null,"confidence": number | null,"created_at": string,"created_by": string | null,"description": string | null,"done_criterion": string | null,"due_date": string | null,"effort": number | null,"estimate_hours": number | null,"expected_result": string | null,"id": string,"impact": number | null,"kind": string,"milestone_id": string | null,"objective_id": string | null,"owner_id": string | null,"parent_id": string | null,"priority": string,"project_id": string | null,"recurrence": string | null,"sort_order": number,"start_date": string | null,"status": string,"test_id": string | null,"title": string,"updated_at": string,"week_start": string | null,"why": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"blocked_reason"?: string | null,"commercial_urgency"?: string,"completed_at"?: string | null,"confidence"?: number | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"done_criterion"?: string | null,"due_date"?: string | null,"effort"?: number | null,"estimate_hours"?: number | null,"expected_result"?: string | null,"id"?: string,"impact"?: number | null,"kind"?: string,"milestone_id"?: string | null,"objective_id"?: string | null,"owner_id"?: string | null,"parent_id"?: string | null,"priority"?: string,"project_id"?: string | null,"recurrence"?: string | null,"sort_order"?: number,"start_date"?: string | null,"status"?: string,"test_id"?: string | null,"title": string,"updated_at"?: string,"week_start"?: string | null,"why"?: string | null
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"blocked_reason"?: string | null,"commercial_urgency"?: string,"completed_at"?: string | null,"confidence"?: number | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"done_criterion"?: string | null,"due_date"?: string | null,"effort"?: number | null,"estimate_hours"?: number | null,"expected_result"?: string | null,"id"?: string,"impact"?: number | null,"kind"?: string,"milestone_id"?: string | null,"objective_id"?: string | null,"owner_id"?: string | null,"parent_id"?: string | null,"priority"?: string,"project_id"?: string | null,"recurrence"?: string | null,"sort_order"?: number,"start_date"?: string | null,"status"?: string,"test_id"?: string | null,"title"?: string,"updated_at"?: string,"week_start"?: string | null,"why"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_tasks_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tasks_milestone_id_fkey"
+      columns: ["milestone_id"]
+isOneToOne: false
+      referencedRelation: "scale_milestones"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tasks_objective_id_fkey"
+      columns: ["objective_id"]
+isOneToOne: false
+      referencedRelation: "scale_objectives"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tasks_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tasks_parent_id_fkey"
+      columns: ["parent_id"]
+isOneToOne: false
+      referencedRelation: "scale_tasks"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tasks_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "scale_projects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tasks_test_id_fkey"
+      columns: ["test_id"]
+isOneToOne: false
+      referencedRelation: "scale_tests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_test_comparisons": {
+                  Row: {
+                    "conditions": string | null,"created_at": string,"id": string,"label": string,"notes": string | null,"sort_order": number,"test_id": string,"updated_at": string,"with_corrections": number | null,"with_cost": number | null,"with_minutes": number | null,"with_quality": number | null,"without_corrections": number | null,"without_cost": number | null,"without_minutes": number | null,"without_quality": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "conditions"?: string | null,"created_at"?: string,"id"?: string,"label": string,"notes"?: string | null,"sort_order"?: number,"test_id": string,"updated_at"?: string,"with_corrections"?: number | null,"with_cost"?: number | null,"with_minutes"?: number | null,"with_quality"?: number | null,"without_corrections"?: number | null,"without_cost"?: number | null,"without_minutes"?: number | null,"without_quality"?: number | null
+                  }
+                  Update: {
+                    "conditions"?: string | null,"created_at"?: string,"id"?: string,"label"?: string,"notes"?: string | null,"sort_order"?: number,"test_id"?: string,"updated_at"?: string,"with_corrections"?: number | null,"with_cost"?: number | null,"with_minutes"?: number | null,"with_quality"?: number | null,"without_corrections"?: number | null,"without_cost"?: number | null,"without_minutes"?: number | null,"without_quality"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_test_comparisons_test_id_fkey"
+      columns: ["test_id"]
+isOneToOne: false
+      referencedRelation: "scale_tests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_tests": {
+                  Row: {
+                    "archived_at": string | null,"audience": string | null,"baseline": string | null,"budget_actual": number | null,"budget_planned": number | null,"category": string | null,"channel": string | null,"conclusion": string | null,"conclusion_note": string | null,"continuation": string | null,"created_at": string,"created_by": string | null,"end_date": string | null,"hypothesis": string | null,"id": string,"importance": string | null,"limits": string | null,"metrics": string | null,"next_actions": string | null,"objective_id": string | null,"owner_id": string | null,"project_id": string | null,"protocol": string | null,"results": string | null,"segment": string | null,"start_date": string | null,"started_at": string | null,"status": string,"success_criterion": string | null,"template_key": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"audience"?: string | null,"baseline"?: string | null,"budget_actual"?: number | null,"budget_planned"?: number | null,"category"?: string | null,"channel"?: string | null,"conclusion"?: string | null,"conclusion_note"?: string | null,"continuation"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_date"?: string | null,"hypothesis"?: string | null,"id"?: string,"importance"?: string | null,"limits"?: string | null,"metrics"?: string | null,"next_actions"?: string | null,"objective_id"?: string | null,"owner_id"?: string | null,"project_id"?: string | null,"protocol"?: string | null,"results"?: string | null,"segment"?: string | null,"start_date"?: string | null,"started_at"?: string | null,"status"?: string,"success_criterion"?: string | null,"template_key"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"audience"?: string | null,"baseline"?: string | null,"budget_actual"?: number | null,"budget_planned"?: number | null,"category"?: string | null,"channel"?: string | null,"conclusion"?: string | null,"conclusion_note"?: string | null,"continuation"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_date"?: string | null,"hypothesis"?: string | null,"id"?: string,"importance"?: string | null,"limits"?: string | null,"metrics"?: string | null,"next_actions"?: string | null,"objective_id"?: string | null,"owner_id"?: string | null,"project_id"?: string | null,"protocol"?: string | null,"results"?: string | null,"segment"?: string | null,"start_date"?: string | null,"started_at"?: string | null,"status"?: string,"success_criterion"?: string | null,"template_key"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_tests_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tests_objective_id_fkey"
+      columns: ["objective_id"]
+isOneToOne: false
+      referencedRelation: "scale_objectives"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tests_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scale_tests_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "scale_projects"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_weekly_reviews": {
+                  Row: {
+                    "blocked": string | null,"completed_at": string | null,"created_by": string | null,"decisions": string | null,"done_summary": string | null,"learned": string | null,"next_priorities": string | null,"updated_at": string,"week_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "blocked"?: string | null,"completed_at"?: string | null,"created_by"?: string | null,"decisions"?: string | null,"done_summary"?: string | null,"learned"?: string | null,"next_priorities"?: string | null,"updated_at"?: string,"week_start": string
+                  }
+                  Update: {
+                    "blocked"?: string | null,"completed_at"?: string | null,"created_by"?: string | null,"decisions"?: string | null,"done_summary"?: string | null,"learned"?: string | null,"next_priorities"?: string | null,"updated_at"?: string,"week_start"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scale_weekly_reviews_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"scale_weeks": {
+                  Row: {
+                    "capacity_hours": number | null,"priority_task_ids": (string)[],"updated_at": string,"week_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "capacity_hours"?: number | null,"priority_task_ids"?: (string)[],"updated_at"?: string,"week_start": string
+                  }
+                  Update: {
+                    "capacity_hours"?: number | null,"priority_task_ids"?: (string)[],"updated_at"?: string,"week_start"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"sensitive_terms": {
                   Row: {
                     "category": string,"company_id": string,"created_at": string,"created_by": string | null,"id": string,"term": string

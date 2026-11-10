@@ -160,7 +160,7 @@ test("the AI proposes memory entries, saved once approved; the client memory is 
   await page.keyboard.press("Escape");
 
   await page.goto(clientSpaceUrl);
-  await expect(page.getByText("Remise annuelle Client A")).toBeVisible();
+  await expect(page.getByText("Remise annuelle Client A").filter({ visible: true })).toBeVisible();
   // One approved by hand, one added automatically after the answers (CLAUDE.md §11), each with its origin.
   await expect(page.getByText("[TEST] Point clé").first()).toBeVisible();
   await expect(page.getByText("Depuis une conversation").first()).toBeVisible();
@@ -198,7 +198,7 @@ test("Nathalie, without access to Client A, gets nothing from it: pages, links o
   await expect(p.getByRole("heading", { name: "Que puis-je faire pour vous ?" })).toBeVisible();
 
   await p.goto("/memory");
-  await expect(p.getByText("Aucune mémoire client accessible")).toBeVisible();
+  await expect(p.getByText("Aucune mémoire client accessible").filter({ visible: true })).toBeVisible();
   await expect(p.getByRole("link", { name: /Mémoire de l'entreprise/ })).toContainText("Lecture seule");
   await shot(p, "40-member-memory");
 
