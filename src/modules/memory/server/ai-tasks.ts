@@ -17,7 +17,7 @@ export type MemoryTaskError = "quota_exceeded" | "no_model_available" | "provide
 export async function runMemoryTask(
   supabase: UserClient,
   ctx: MemberContext,
-  task: { system: string; user: string; modelChoice?: string; feature?: "memory" | "handover" | "agent" | "client_summary" | "title" },
+  task: { system: string; user: string; modelChoice?: string; feature?: "memory" | "handover" | "agent" | "client_summary" | "title" | "dictation" },
 ): Promise<{ ok: true; text: string } | { ok: false; error: MemoryTaskError }> {
   const quota = await getMyQuota(ctx.active.companyId);
   if (!quota || quota.state.state === "blocked") return { ok: false, error: "quota_exceeded" };

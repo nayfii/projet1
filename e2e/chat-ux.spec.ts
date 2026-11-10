@@ -156,6 +156,63 @@ test("an app's long field takes dictation: the text is added for review, the for
   await expect(page).toHaveURL(/\/apps\//);
 });
 
+test("dictation is made ready to read (hesitations out), and the original can come back", async () => {
+  await page.goto("/chat");
+  await composer().fill("");
+  await page.getByRole("button", { name: "Dicter" }).click();
+  await expect(page.getByTestId("dictation-bar")).toBeVisible();
+  await page.waitForTimeout(1200);
+  await page.getByRole("button", { name: "Terminer et transcrire" }).click();
+  // Test mode transcribes "Euh, ceci est…": the hesitation is gone in the message box.
+  await expect(composer()).toHaveValue("Ceci est une dictée de démonstration (mode test).", { timeout: 20_000 });
+  await page.getByRole("button", { name: "Voir l'original" }).click();
+  await expect(composer()).toHaveValue("Euh, ceci est une dictée de démonstration (mode test).");
+  // The cleanup service alone: hesitations and words said twice go, nothing is added.
+  const cleaned = await page.request.post("/api/dictation/clean", { data: { text: "euh le le devis est prêt", locale: "fr" } });
+  expect(await cleaned.json()).toEqual({ ok: true, text: "Le devis est prêt", polished: false });
+  await composer().fill("");
+});
+
+test("holding Ctrl + Shift + Space dictates while held, and the text appears while the person talks", async () => {
+  test.setTimeout(90_000);
+  await expect(page.getByRole("button", { name: "Dicter" })).toHaveAttribute("aria-keyshortcuts", "Control+Shift+Space");
+  await composer().click();
+  await page.keyboard.down("Control");
+  await page.keyboard.down("Shift");
+  await page.keyboard.down("Space");
+  await expect(page.getByTestId("dictation-bar")).toBeVisible();
+  // A long dictation is cut at a pause (at the latest after about 15 s) and each part transcribed at
+  // once: the first part shows under the message box before the person has finished.
+  await expect(page.getByTestId("dictation-live")).toContainText("ceci est une dictée", { timeout: 40_000 });
+  await expect(page.getByTestId("dictation-bar")).toBeVisible();
+  await page.keyboard.up("Space");
+  await page.keyboard.up("Shift");
+  await page.keyboard.up("Control");
+  await expect(page.getByTestId("dictation-bar")).toBeHidden();
+  await expect(composer()).toHaveValue(/^Ceci est une dictée de démonstration \(mode test\)\./, { timeout: 20_000 });
+  await expect(page.getByTestId("dictation-live")).toBeHidden();
+  // Nothing typed by the shortcut itself, nothing sent.
+  expect(await composer().inputValue()).not.toContain("  ");
+  await composer().fill("");
+});
+
+test("a quick press of the shortcut keeps the microphone on until it is pressed again; Échap cancels", async () => {
+  await composer().click();
+  await page.keyboard.press("Control+Shift+Space");
+  await expect(page.getByTestId("dictation-bar")).toBeVisible();
+  await page.waitForTimeout(1200);
+  await expect(page.getByTestId("dictation-bar")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("dictation-bar")).toBeHidden();
+  await expect(composer()).toHaveValue("");
+  await page.keyboard.press("Control+Shift+Space");
+  await expect(page.getByTestId("dictation-bar")).toBeVisible();
+  await page.waitForTimeout(1200);
+  await page.keyboard.press("Control+Shift+Space");
+  await expect(composer()).toHaveValue("Ceci est une dictée de démonstration (mode test).", { timeout: 20_000 });
+  await composer().fill("");
+});
+
 test("an image is created from a request, and the Image button forces one", async () => {
   await page.goto("/chat");
   await send("Crée une image d'un vélo rouge sur fond blanc");

@@ -1,6 +1,8 @@
 /** Voice dictation limits (CLAUDE.md §11). One recording is at most a few minutes of speech. */
 export const DICTATION_MAX_SECONDS = 300;
 export const DICTATION_MAX_BYTES = 12 * 1024 * 1024;
+/** How much of what was already said in the same recording goes with the next part, as a hint. */
+export const DICTATION_CONTEXT_CHARS = 600;
 
 export const DICTATION_TYPES = ["audio/webm", "audio/ogg", "audio/mp4", "audio/wav", "audio/mpeg"] as const;
 export type DictationType = (typeof DICTATION_TYPES)[number];

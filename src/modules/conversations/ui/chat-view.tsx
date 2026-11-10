@@ -66,6 +66,7 @@ import { ModelPicker, type PickerModel } from "./model-picker";
 import { ConversationSuggestions } from "@/modules/memory/ui/conversation-suggestions";
 import { AutoSwitch, FilePreview, HideBar, HideOverlay, useHideComposer, type HidePayload } from "@/modules/hide/ui/hide-composer";
 import { DictationButton } from "@/modules/dictation/ui/dictation-button";
+import { LiveDictation } from "@/modules/dictation/ui/live-dictation";
 import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
 import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
 import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
@@ -176,6 +177,7 @@ export function ChatView(props: Props) {
   const tCollab = useTranslations("collaboration");
   const tApps = useTranslations("apps");
   const tErrors = useTranslations("errors");
+  const tDictation = useTranslations("dictation");
   const [participants, setParticipants] = React.useState(props.participants);
   // "Ajouter" dialog, open with these colleagues preselected (Who Can Help's "Inviter").
   const [adding, setAdding] = React.useState<string[] | null>(null);
@@ -221,6 +223,8 @@ export function ChatView(props: Props) {
   const [imageMode, setImageMode] = React.useState(false);
   // While dictating, the recording bar takes the whole toolbar line (nothing overlaps).
   const [dictating, setDictating] = React.useState(false);
+  // What is being dictated, shown under the message box while the person talks.
+  const [liveDictation, setLiveDictation] = React.useState("");
   const fileInput = React.useRef<HTMLInputElement>(null);
   const textarea = React.useRef<HTMLTextAreaElement>(null);
   const creating = React.useRef<Promise<string | null> | null>(null);
@@ -519,6 +523,14 @@ export function ChatView(props: Props) {
   /** Dictated text follows what was already typed, then the caret waits after it for a read-through. */
   function insertDictation(text: string) {
     insertAtCaret(input.length, input.length, (input && !/\s$/.test(input) ? " " : "") + text);
+  }
+
+  /** "Show the original": the tidied dictation, if still in the box, gives way to what was transcribed. */
+  function replaceDictation(from: string, to: string) {
+    const at = input.lastIndexOf(from);
+    if (at < 0) return false;
+    insertAtCaret(at, at + from.length, to);
+    return true;
   }
 
   function insertAtCaret(start: number, end: number, text: string) {
@@ -1465,6 +1477,7 @@ export function ChatView(props: Props) {
                 )}
               />
             </div>
+            {liveDictation ? <LiveDictation text={liveDictation} label={tDictation("live")} className="mx-4 mb-1" /> : null}
             {/* A container: in a narrow composer (workspace open, small window) labels give way to icons. */}
             <div className={cn("@container flex min-w-0 items-center gap-1 px-2 pb-2", dictating && "[&>*:not([data-dictation])]:hidden")}>
               {canAttach ? (
@@ -1487,6 +1500,9 @@ export function ChatView(props: Props) {
                   // The send arrow: what was typed, then the dictated text, sent at once.
                   onSend={(text) => void send(undefined, `${input.trim()}${input.trim() ? " " : ""}${text}`, true)}
                   onRecordingChange={setDictating}
+                  onLive={setLiveDictation}
+                  onReplace={replaceDictation}
+                  shortcut
                 />
               ) : null}
               <Tooltip content={tApps("picker")}>
