@@ -26,13 +26,15 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
+import { LiquidGlass } from "@/components/ui/liquid-glass";
+import { useAppearance } from "@/components/appearance/appearance-provider";
 import { cn } from "@/lib/utils";
 import { CommandMenu } from "./command";
 import { CreateDialog, type CreateKind, type CreateDefaults } from "./create";
 import { StudioPanel } from "./panel";
 import { Kbd } from "./primitives";
 import { RememberSpacePath, SpaceSwitch } from "./spaces";
-import { usePref, useSaveState } from "./store";
+import { useSaveState } from "./store";
 
 export const STUDIO_NAV = [
   { key: "overview", href: "/studio", icon: LayoutDashboardIcon, exact: true, shortcut: "o" },
@@ -58,7 +60,9 @@ function isTyping(target: EventTarget | null): boolean {
 export function StudioShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("studio.shell");
   const router = useRouter();
-  const [collapsed, setCollapsed] = usePref("sidebar-collapsed", false);
+  // Folded or not like our console's menu (the same appearance setting on this device).
+  const { sidebar, setSidebar } = useAppearance();
+  const collapsed = sidebar === "collapsed";
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [creating, setCreating] = React.useState<{ kind: CreateKind; defaults: CreateDefaults } | null>(null);
@@ -107,18 +111,18 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
   return (
     <ShellContext.Provider value={ui}>
       <RememberSpacePath space="studio" />
-      <div className="flex min-h-dvh bg-background" data-space="studio">
-        <aside
-          className={cn(
-            "sticky top-0 hidden h-dvh shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-[var(--ease-out-soft)] md:flex",
-            collapsed ? "w-[3.75rem]" : "w-60",
-          )}
-        >
-          <SidebarBody collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      {/* The same glass frame as our console: the theme's background shows through. */}
+      <div className="flex min-h-dvh" data-space="studio">
+        <aside data-shell-sidebar className="shell-sidebar sticky top-0 hidden h-dvh shrink-0 md:block">
+          <div className="shell-panel-frame">
+            <LiquidGlass material="panel" reach={56} className="flex h-full flex-col overflow-hidden rounded-[22px]">
+              <SidebarBody collapsed={collapsed} onToggle={() => setSidebar(collapsed ? "expanded" : "collapsed")} />
+            </LiquidGlass>
+          </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Small screens: a bar with the menu, search and "new". */}
-          <div className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-3 backdrop-blur md:hidden">
+          <LiquidGlass material="panel" reach={14} className="sticky top-0 z-30 flex h-14 items-center gap-2 rounded-none border-b px-3 md:hidden">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon-sm" aria-label={t("openMenu")}>
@@ -136,7 +140,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
               </Button>
               <NewMenu compact />
             </div>
-          </div>
+          </LiquidGlass>
           <main className="min-w-0 flex-1 animate-space-in" id="studio-main">
             {children}
           </main>
@@ -228,7 +232,7 @@ function SidebarBody({ collapsed, onToggle, onNavigate }: { collapsed: boolean; 
         })}
       </nav>
 
-      <div className={cn("shrink-0 border-t border-sidebar-border p-2", collapsed && "flex justify-center")}>
+      <div className={cn("shrink-0 border-t border-border/60 p-2", collapsed && "flex justify-center")}>
         <SaveIndicator compact={collapsed} />
       </div>
     </div>
