@@ -60,6 +60,7 @@ import { LiquidGlass } from "@/components/ui/liquid-glass";
 import { Logo } from "@/components/brand/logo";
 import { setLocale } from "@/modules/identity/server/actions";
 import { cn } from "@/lib/utils";
+import { HoverPill } from "./hover-pill";
 import { useSidebarFold } from "./use-sidebar-fold";
 import { APPEARANCE_COOKIE_MAX_AGE, SIDEBAR_WIDTH, SIDEBAR_WIDTH_COOKIE } from "@/lib/theme";
 
@@ -208,6 +209,8 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
         className="shell-nav relative min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-2.5 py-2 rail:px-0"
         aria-label={labels.navigation}
       >
+        {/* Under the mouse, a light glass pill glides from row to row (below the page's own lens). */}
+        <HoverPill rows=".glass-interactive" />
         {/* A drop of Liquid Glass that slides to the page you are on, under the row (the label stays crisp). */}
         <LiquidGlass
           aria-hidden

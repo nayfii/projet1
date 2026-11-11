@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
 import { LiquidGlass } from "@/components/ui/liquid-glass";
+import { HoverPill } from "@/components/shell/hover-pill";
 import { useSidebarFold } from "@/components/shell/use-sidebar-fold";
 import { cn } from "@/lib/utils";
 import { CommandMenu } from "./command";
@@ -201,7 +202,8 @@ function SidebarBody({ collapsed, onToggle, onNavigate }: { collapsed: boolean; 
         <NewMenu compact={collapsed} side={collapsed ? "right" : "bottom"} />
       </div>
 
-      <nav aria-label={t("navigation")} className={cn("min-h-0 flex-1 space-y-0.5 overflow-y-auto py-1", collapsed ? "px-2" : "px-2")}>
+      <nav aria-label={t("navigation")} className="relative min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-1">
+        <HoverPill rows="a" />
         {STUDIO_NAV.map((item) => {
           const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;

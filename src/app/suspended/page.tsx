@@ -1,12 +1,19 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { PauseCircleIcon } from "lucide-react";
 import { requireUser } from "@/lib/auth/guards";
 import { Button } from "@/components/ui/button";
 import AuthLayout from "@/app/(auth)/layout";
 
-/** Shown when the user's company is suspended or their access was deactivated. */
+/**
+ * Shown when the user's company is suspended or their access was deactivated. Checked again on every
+ * visit: once our team reactivates the company (or an admin the access), reloading the page opens the
+ * workspace instead of keeping the person on this screen.
+ */
 export default async function SuspendedPage() {
-  await requireUser();
+  const ctx = await requireUser();
+  if (ctx.active) redirect("/");
+  if (!ctx.memberships.some((m) => m.companyStatus === "suspended" || m.memberStatus === "deactivated")) redirect(ctx.isPlatformAdmin ? "/platform" : "/");
   const t = await getTranslations("suspended");
   return (
     <AuthLayout>

@@ -159,3 +159,25 @@ test("our console opens on the morning dashboard, with shortcuts, and no way int
   await shot(admin, "107-platform-home");
   await admin.context().close();
 });
+
+test("a suspended company sees the pause screen; once reactivated, a reload brings its people back in", async ({ browser }) => {
+  const admin = await (await browser.newContext({ locale: "fr-FR" })).newPage();
+  await signIn(admin, "platform@demo.local");
+  await admin.goto("/platform/companies");
+  await admin.getByPlaceholder("Rechercher une entreprise ou une adresse").fill(companyName);
+  const row = admin.getByRole("row", { name: new RegExp(companyName) });
+  await row.getByRole("button", { name: "Suspendre" }).click();
+  await expect(row.getByText("Suspendue", { exact: true })).toBeVisible();
+
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/suspended$/);
+  await expect(page.getByRole("heading", { name: "Accès en pause" })).toBeVisible();
+
+  await row.getByRole("button", { name: "Réactiver" }).click();
+  await expect(row.getByText("Active", { exact: true })).toBeVisible();
+  // The person was left on the pause screen: reloading it opens the workspace again.
+  await page.reload();
+  await expect(page).not.toHaveURL(/\/suspended$/);
+  await expect(page.getByRole("heading", { name: "Accès en pause" })).toHaveCount(0);
+  await admin.context().close();
+});
