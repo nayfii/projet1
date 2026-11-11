@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
     return [
       { source: "/library", destination: "/apps", permanent: true },
       { source: "/library/:id", destination: "/apps/:id", permanent: true },
+      // Scale became Studio (2026-11-11): its documents are in Knowledge, its projects on the Roadmap.
+      { source: "/scale/strategy/:id", destination: "/studio/knowledge/:id", permanent: true },
+      { source: "/scale/strategy", destination: "/studio/knowledge", permanent: true },
+      { source: "/scale/:section(roadmap|projects)/:rest*", destination: "/studio/roadmap", permanent: true },
+      { source: "/scale/:rest*", destination: "/studio", permanent: true },
     ];
   },
   // The Motion Design preview's open-source files, copied by scripts/copy-vendor.mjs (read at run time).

@@ -6,7 +6,7 @@
 
 /** Our product's words, given to the transcription model so it spells them right. Never a customer's
  * words: client names and sensitive terms are protected by Hide and must not leave for OpenAI as hints. */
-export const DICTATION_VOCABULARY = ["Cendr", "Consciousness", "Confronter", "Hide", "Albert", "Applis", "Scale", "ChatGPT", "Claude", "Gemini"] as const;
+export const DICTATION_VOCABULARY = ["Cendr", "Consciousness", "Confronter", "Hide", "Albert", "Applis", "Studio", "ChatGPT", "Claude", "Gemini"] as const;
 
 /**
  * The transcription model's hint: our vocabulary, then the end of what was already said in this

@@ -124,6 +124,8 @@ type ShellProps = {
   footerLink?: MenuLink;
   /** Extra sidebar content below the navigation (e.g. recent conversations). */
   sidebarExtra?: React.ReactNode;
+  /** Our console only: the Workspace | Studio switch, under the logo (the same place as in Studio). */
+  spaceSwitch?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -153,19 +155,20 @@ export function AppShell(props: ShellProps) {
           </Sheet>
           <Logo />
         </div>
-        <main className="flex-1">{props.children}</main>
+        <main className={cn("flex-1", props.spaceSwitch && "animate-space-in")}>{props.children}</main>
       </div>
     </div>
   );
 }
 
-function SidebarBody({ sections, context, user, menuLinks, locale, labels, footerLink, sidebarExtra }: ShellProps) {
+function SidebarBody({ sections, context, user, menuLinks, locale, labels, footerLink, sidebarExtra, spaceSwitch }: ShellProps) {
   const pathname = usePathname();
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex h-14 items-center px-4">
         <Logo />
       </div>
+      {spaceSwitch ? <div className="pb-4">{spaceSwitch}</div> : null}
       <div className="px-4 pb-3">
         <p className="truncate text-[13px] font-medium">{context.title}</p>
         {context.subtitle ? <p className="truncate text-xs text-muted-foreground">{context.subtitle}</p> : null}

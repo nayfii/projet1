@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { DropdownMenu as MenuPrimitive } from "radix-ui";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DropdownMenu = MenuPrimitive.Root;
@@ -76,7 +76,33 @@ function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typ
   return <MenuPrimitive.Separator className={cn("-mx-1 my-1 h-px bg-border", className)} {...props} />;
 }
 
+const DropdownMenuSub = MenuPrimitive.Sub;
+
+function DropdownMenuSubTrigger({ className, children, ...props }: React.ComponentProps<typeof MenuPrimitive.SubTrigger>) {
+  return (
+    <MenuPrimitive.SubTrigger className={cn(itemBase, "data-[state=open]:bg-accent", className)} {...props}>
+      {children}
+      <ChevronRightIcon className="ml-auto" />
+    </MenuPrimitive.SubTrigger>
+  );
+}
+
+function DropdownMenuSubContent({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.SubContent>) {
+  return (
+    <MenuPrimitive.Portal>
+      <MenuPrimitive.SubContent
+        sideOffset={4}
+        className={cn("z-50 min-w-44 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=open]:fade-in-0", className)}
+        {...props}
+      />
+    </MenuPrimitive.Portal>
+  );
+}
+
 export {
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
