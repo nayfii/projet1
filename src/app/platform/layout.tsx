@@ -48,6 +48,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         context={{ title: t("title"), subtitle: t("subtitle") }}
         user={{ name: ctx.profile.fullName, email: ctx.user.email, avatarUrl: ctx.profile.avatarUrl }}
         menuLinks={[{ href: "/platform/password", label: tPassword("title"), icon: "shield" }]}
+        appearanceHref="/platform/appearance"
         // Our second space, Studio (building and running Cendr): the switch at the top of the menu.
         spaceSwitch={<SpaceSwitch current="workspace" />}
         locale={(await getLocale()) as "fr" | "en"}

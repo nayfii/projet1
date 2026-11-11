@@ -163,7 +163,7 @@ function StartStep({ fullName, email, invitations = [], signupOpen = false }: Pr
           <StepHeading title={t("invitedTitle")} subtitle={t("invitedSubtitle")} />
           <ul className="space-y-2">
             {invitations.map((inv) => (
-              <li key={inv.id} className="flex items-center gap-3 rounded-xl border bg-card p-4">
+              <li key={inv.id} className="flex items-center gap-3 glass-standard rounded-xl border p-4">
                 <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
                   <UsersIcon className="size-4" />
                 </div>
@@ -271,7 +271,7 @@ function FirstDocument({ spaceId }: { spaceId: string | null }) {
   const [added, setAdded] = useState(false);
   if (!spaceId) return <SoonCard icon={<FileTextIcon />} text={t("documentUnavailable")} />;
   return (
-    <div className="flex flex-col items-start gap-3 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
+    <div className="flex flex-col items-start gap-3 glass-standard rounded-xl border p-4 text-sm text-muted-foreground">
       <p>{t("documentBody")}</p>
       <DocumentUploader spaceId={spaceId} onUploaded={() => setAdded(true)} />
       {added ? <p className="text-success">{t("documentAdded")}</p> : null}

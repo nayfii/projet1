@@ -1,0 +1,555 @@
+/*
+ * Appearance (Liquid Glass, v18): design tokens for both schemes, the glass materials and the living
+ * background of the Atmosphère interface. Imported by globals.css.
+ *
+ * <html> carries the person's choices (cookies, read by the root layout):
+ *   data-theme   light | dark | system | atmosphere   what the person chose
+ *   data-scheme  dark | light            what is shown (for "system", set before first paint;
+ *                                        for "atmosphere", the palette's own)
+ *   data-ambient aurora | ember | …      the Atmosphère colours (lib/ambient/palettes.ts)
+ *   data-motion  on | off                the background moves, or stays still
+ *   data-sidebar expanded | collapsed    the desktop sidebar, or its narrow rail
+ *   data-perf    low (optional)          a device that cannot keep up: still background, unbent glass
+ */
+
+/* ── Tokens: dark scheme (Sombre, the default: a plain black interface) ───────────────────────── */
+:root {
+  color-scheme: dark;
+  --radius: 0.75rem;
+  --tint-h: 284;
+  /* Colour of the surfaces: none (neutral glass), except Atmosphère with the tinted glass (below). */
+  --tint-k: 0;
+
+  --background: #0a0a0a;
+  --foreground: oklch(0.97 calc(0.006 * var(--tint-k)) var(--tint-h));
+
+  /* Glass fills, from the lightest to the most opaque (content-heavy surfaces need the latter). */
+  --glass-subtle: oklch(0.27 calc(0.03 * var(--tint-k)) var(--tint-h) / 0.26);
+  --glass-standard: oklch(0.22 calc(0.028 * var(--tint-k)) var(--tint-h) / 0.52);
+  --glass-elevated: oklch(0.2 calc(0.026 * var(--tint-k)) var(--tint-h) / 0.6);
+  --glass-solid: oklch(0.185 calc(0.022 * var(--tint-k)) var(--tint-h) / 0.84);
+  --glass-hover: oklch(1 0 0 / 0.055);
+  --glass-selected: oklch(1 0 0 / 0.1);
+  --glass-lens: oklch(1 0 0 / 0.07);
+  --glass-border: oklch(1 0 0 / 0.1);
+  --glass-border-strong: oklch(1 0 0 / 0.15);
+  --glass-ring: transparent;
+  --glass-highlight: oklch(1 0 0 / 0.13);
+  --glass-lowlight: oklch(0 0 0 / 0.18);
+  --glass-sheen: oklch(1 0 0 / 0.05);
+  --glass-shadow-color: oklch(0.04 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.6);
+  --glass-blur: 22px;
+  --glass-saturate: 165%;
+
+  --card: var(--glass-standard);
+  --card-foreground: var(--foreground);
+  --popover: var(--glass-solid);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.97 calc(0.006 * var(--tint-k)) var(--tint-h));
+  --primary-foreground: oklch(0.17 calc(0.02 * var(--tint-k)) var(--tint-h));
+  --secondary: oklch(1 0 0 / 0.08);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(1 0 0 / 0.055);
+  --muted-foreground: oklch(0.76 calc(0.016 * var(--tint-k)) var(--tint-h));
+  --accent: oklch(1 0 0 / 0.085);
+  --accent-foreground: var(--foreground);
+  --border: oklch(1 0 0 / 0.095);
+  --input: oklch(1 0 0 / 0.14);
+
+  /* The accent is monochrome (white here) unless Atmosphère with the tinted glass gives its colour. */
+  --brand: oklch(0.97 0 0);
+  --brand-foreground: oklch(0.14 0 0);
+  --brand-soft: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.82 0 0);
+
+  /* Avatars (initials, models' logos) and decorative washes: neutral unless tinted Atmosphère. */
+  --avatar-surface: oklch(0.24 0 0);
+  --avatar-foreground: oklch(0.92 0 0);
+  --avatar-ring: oklch(1 0 0 / 0.08);
+  --decor-strength: 0%;
+  --glass-edge-rgb: rgb(255 255 255 / 0.1);
+
+  --destructive: oklch(0.71 0.16 22);
+  --destructive-soft: oklch(0.71 0.16 22 / 0.15);
+  --success: oklch(0.8 0.12 160);
+  --success-soft: oklch(0.8 0.12 160 / 0.14);
+  --warning: oklch(0.84 0.12 80);
+  --warning-soft: oklch(0.84 0.12 80 / 0.14);
+
+  --sidebar: var(--glass-elevated);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: var(--glass-border);
+  --sidebar-accent: oklch(1 0 0 / 0.07);
+
+  /* Pastel family: each AI assistant has one. */
+  --pastel-lavender: oklch(0.84 0.075 290);
+  --pastel-peach: oklch(0.86 0.07 55);
+  --pastel-mint: oklch(0.87 0.08 165);
+  --pastel-sky: oklch(0.85 0.07 235);
+  --pastel-pearl: oklch(0.92 0.015 285);
+  --pastel-lavender-ink: var(--pastel-lavender);
+  --pastel-peach-ink: var(--pastel-peach);
+  --pastel-mint-ink: var(--pastel-mint);
+  --pastel-sky-ink: var(--pastel-sky);
+
+  /* Chart series (validated for colour-blind separation, 3 series at most). */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+
+  /* Motion tokens: instant-feeling controls, soft panels, calm layout changes. */
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-standard: cubic-bezier(0.3, 0.6, 0.2, 1);
+  --dur-micro: 150ms;
+  --dur-panel: 220ms;
+  --dur-layout: 300ms;
+
+  /* Glisse (Liquid Glass controls): our accent and surfaces. */
+  --lg-on: var(--brand);
+  --lg-fill: var(--brand);
+}
+
+/* ── Light scheme ─────────────────────────────────────────────────────────────────────────────── */
+:root[data-scheme="light"] {
+  color-scheme: light;
+  --background: #f7f7f7;
+  --foreground: oklch(0.2 calc(0.02 * var(--tint-k)) var(--tint-h));
+
+  --glass-subtle: oklch(1 0 0 / 0.36);
+  --glass-standard: oklch(1 0 0 / 0.56);
+  --glass-elevated: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.62);
+  --glass-solid: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.86);
+  --glass-hover: oklch(1 0 0 / 0.5);
+  --glass-selected: oklch(1 0 0 / 0.82);
+  --glass-lens: oklch(1 0 0 / 0.5);
+  --glass-border: oklch(1 0 0 / 0.72);
+  --glass-border-strong: oklch(1 0 0 / 0.9);
+  --glass-ring: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.09);
+  --glass-highlight: oklch(1 0 0 / 0.95);
+  --glass-lowlight: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.06);
+  --glass-sheen: oklch(1 0 0 / 0.4);
+  --glass-shadow-color: oklch(0.32 calc(0.05 * var(--tint-k)) var(--tint-h) / 0.2);
+
+  --primary: oklch(0.2 calc(0.02 * var(--tint-k)) var(--tint-h));
+  --primary-foreground: oklch(0.99 calc(0.003 * var(--tint-k)) var(--tint-h));
+  --secondary: oklch(1 0 0 / 0.62);
+  --muted: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.05);
+  --muted-foreground: oklch(0.46 calc(0.022 * var(--tint-k)) var(--tint-h));
+  --accent: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.065);
+  --border: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.11);
+  --input: oklch(0.3 calc(0.04 * var(--tint-k)) var(--tint-h) / 0.17);
+
+  --brand: oklch(0.18 0 0);
+  --brand-foreground: oklch(0.99 0 0);
+  --brand-soft: oklch(0 0 0 / 0.07);
+  --ring: oklch(0.45 0 0);
+  --glass-edge-rgb: rgb(255 255 255 / 0.72);
+  --avatar-surface: oklch(0.94 0 0);
+  --avatar-foreground: oklch(0.3 0 0);
+  --avatar-ring: oklch(0 0 0 / 0.06);
+
+  --destructive: oklch(0.56 0.2 27);
+  --destructive-soft: oklch(0.56 0.2 27 / 0.09);
+  --success: oklch(0.52 0.12 155);
+  --success-soft: oklch(0.52 0.12 155 / 0.1);
+  --warning: oklch(0.6 0.14 70);
+  --warning-soft: oklch(0.7 0.14 70 / 0.14);
+
+  --sidebar-accent: oklch(1 0 0 / 0.6);
+
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --pastel-lavender-ink: oklch(0.5 0.14 290);
+  --pastel-peach-ink: oklch(0.57 0.15 50);
+  --pastel-mint-ink: oklch(0.5 0.11 165);
+  --pastel-sky-ink: oklch(0.5 0.13 240);
+}
+
+/* ── Glass tone (Settings → Appearance → Verre) ─────────────────────────────────────────────────
+ * "clear" (the default): neutral glass with a light fill and little blur, so the background really
+ * shows through; text keeps its contrast thanks to the shadowed rim and a neutral veil.
+ * "tinted": the violet-tinted glass (whatever the Atmosphère colours). */
+:root[data-glass-tone="clear"] {
+  --foreground: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.78 0 0);
+  --glass-subtle: oklch(0.18 0 0 / 0.14);
+  --glass-standard: oklch(0.16 0 0 / 0.22);
+  --glass-elevated: oklch(0.15 0 0 / 0.26);
+  --glass-solid: oklch(0.17 0 0 / 0.8);
+  --glass-shadow-color: oklch(0 0 0 / 0.5);
+  --glass-highlight: oklch(1 0 0 / 0.16);
+  --glass-sheen: oklch(1 0 0 / 0.04);
+  --glass-blur: 8px;
+  --glass-saturate: 120%;
+  --primary: oklch(0.97 0 0);
+  --primary-foreground: oklch(0.16 0 0);
+  --ambient-veil: oklch(0.08 0 0 / 0.22);
+}
+:root[data-glass-tone="clear"][data-scheme="light"] {
+  --foreground: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.42 0 0);
+  --glass-subtle: oklch(1 0 0 / 0.2);
+  --glass-standard: oklch(1 0 0 / 0.3);
+  --glass-elevated: oklch(1 0 0 / 0.36);
+  --glass-solid: oklch(1 0 0 / 0.84);
+  --glass-shadow-color: oklch(0.25 0 0 / 0.16);
+  --glass-ring: oklch(0.2 0 0 / 0.08);
+  --glass-lowlight: oklch(0.2 0 0 / 0.05);
+  --primary: oklch(0.18 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --ambient-veil: oklch(1 0 0 / 0.2);
+}
+/* The tinted glass exists in Atmosphère only: Clair and Sombre stay neutral whatever is chosen. */
+html:root[data-glass-tone="tinted"][data-theme="atmosphere"] {
+  --glass-dispersion: 0.7;
+  --tint-h: 290;
+  --tint-k: 1;
+  --decor-strength: 16%;
+}
+
+/* Atmosphère palettes (accent, glass tint, background colours) are generated from
+ * lib/ambient/palettes.ts by lib/ambient/css.ts and written in the root layout. */
+
+/* Older browsers without backdrop blur, or people who ask for less transparency: firmer glass. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-elevated: oklch(0.2 calc(0.022 * var(--tint-k)) var(--tint-h) / 0.94);
+    --glass-solid: oklch(0.19 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.97);
+  }
+  :root[data-scheme="light"] {
+    --glass-elevated: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.95);
+    --glass-solid: oklch(0.995 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.98);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-subtle: oklch(0.22 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.9);
+    --glass-standard: oklch(0.21 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.95);
+    --glass-elevated: oklch(0.2 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.97);
+    --glass-solid: oklch(0.19 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.98);
+  }
+  :root[data-scheme="light"] {
+    --glass-subtle: oklch(0.99 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.92);
+    --glass-standard: oklch(0.995 calc(0.003 * var(--tint-k)) var(--tint-h) / 0.96);
+    --glass-elevated: oklch(0.995 calc(0.003 * var(--tint-k)) var(--tint-h) / 0.97);
+    --glass-solid: oklch(0.995 calc(0.003 * var(--tint-k)) var(--tint-h) / 0.98);
+  }
+}
+
+/* ── Glass materials ──────────────────────────────────────────────────────────────────────────────
+ * Four intensities, used everywhere through the shared components. Only floating surfaces (sidebar,
+ * menus, dialogs, toasts, the composer) blur what is behind them: cards and rows stay plain
+ * translucent fills, so the page never stacks blur layers. Borders come from the element's own
+ * `border`; the materials add the light (top highlight, sheen, a lower edge) and the depth. */
+@layer components {
+  .glass-subtle {
+    background-color: var(--glass-subtle);
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklch, var(--glass-highlight) 70%, transparent),
+      0 0 0 1px var(--glass-ring);
+  }
+  .glass-standard {
+    background-color: var(--glass-standard);
+    background-image: linear-gradient(180deg, var(--glass-sheen), transparent 46%);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 -1px 0 0 var(--glass-lowlight),
+      0 0 0 1px var(--glass-ring),
+      0 12px 32px -22px var(--glass-shadow-color);
+  }
+  .glass-elevated,
+  .glass-solid {
+    background-color: var(--glass-elevated);
+    background-image:
+      linear-gradient(180deg, var(--glass-sheen), transparent 34%),
+      radial-gradient(140% 70% at 0% 0%, var(--glass-sheen), transparent 55%);
+    border-color: var(--glass-border);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 -1px 0 0 var(--glass-lowlight),
+      0 0 0 1px var(--glass-ring),
+      0 2px 6px -2px var(--glass-shadow-color),
+      0 28px 64px -28px var(--glass-shadow-color);
+  }
+  .glass-solid {
+    background-color: var(--glass-solid);
+  }
+  /* Selectable rows and controls: a soft hover, and a lit glass pill once selected. */
+  .glass-interactive {
+    transition:
+      background-color var(--dur-micro) var(--ease-standard),
+      box-shadow var(--dur-micro) var(--ease-standard),
+      color var(--dur-micro) var(--ease-standard),
+      transform var(--dur-micro) var(--ease-standard);
+  }
+  .glass-interactive:hover {
+    background-color: var(--glass-hover);
+  }
+  .glass-interactive:active {
+    transform: scale(0.985);
+  }
+  .glass-interactive:is([aria-current="page"], [data-active], [aria-selected="true"]) {
+    background-color: var(--glass-selected);
+    background-image: linear-gradient(180deg, var(--glass-sheen), transparent 60%);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 0 0 1px var(--glass-border),
+      0 0 0 1px var(--glass-ring),
+      0 6px 16px -10px var(--glass-shadow-color);
+  }
+}
+
+/* ── Avatars on glass ─────────────────────────────────────────────────────────────────────────────
+ * People's and assistants' avatars are cut-outs (transparent PNG) set on a small glass bead: black in
+ * the dark interface, white in the light one, with a lit rim and a soft reflection over the top. */
+:root {
+  --avatar-base: #050506;
+  --avatar-shine: oklch(1 0 0 / 0.16);
+  --avatar-depth: oklch(1 0 0 / 0.07);
+}
+:root[data-scheme="light"] {
+  --avatar-base: #ffffff;
+  --avatar-shine: oklch(1 0 0 / 0.95);
+  --avatar-depth: oklch(0.3 calc(0.03 * var(--tint-k)) var(--tint-h) / 0.07);
+}
+@layer components {
+  .avatar-glass {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(120% 90% at 30% 0%, var(--avatar-shine), transparent 55%),
+      var(--avatar-base);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 0 0 1px var(--glass-border),
+      inset 0 -5px 10px -6px var(--avatar-depth),
+      0 2px 8px -3px var(--glass-shadow-color);
+  }
+  /* The reflection sits over the character, like the curved front of a bead of glass. */
+  .avatar-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(90% 55% at 50% -8%, oklch(1 0 0 / 0.28), transparent 62%),
+      radial-gradient(120% 120% at 50% 120%, transparent 62%, oklch(1 0 0 / 0.1) 76%, transparent 80%);
+  }
+}
+
+/* ── The living background (Atmosphère only) ──────────────────────────────────────────────────────
+ * A full-screen canvas drawn by the graphics chip (components/shell/ambient-canvas.tsx); until it
+ * draws, or without WebGL, a soft gradient of the palette's colours stands in. Clair and Sombre have
+ * no background at all. */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: none;
+  pointer-events: none;
+  contain: strict;
+  background:
+    radial-gradient(70% 60% at 25% 75%, color-mix(in srgb, var(--amb-c2) 45%, transparent), transparent 70%),
+    radial-gradient(60% 55% at 80% 30%, color-mix(in srgb, var(--amb-c3) 35%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--amb-base), var(--amb-deep));
+}
+:root[data-theme="atmosphere"] .ambient {
+  display: block;
+}
+.ambient-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 600ms var(--ease-standard);
+}
+.ambient-canvas[data-ready] {
+  opacity: 1;
+}
+/* A soft veil over the middle, where text is read: the light stays at the edges and behind the glass. */
+.ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 80% at 58% 50%, var(--ambient-veil), transparent 78%);
+}
+:root {
+  --ambient-veil: oklch(0.12 calc(0.02 * var(--tint-k)) var(--tint-h) / 0.38);
+}
+:root[data-scheme="light"] {
+  --ambient-veil: oklch(0.99 calc(0.004 * var(--tint-k)) var(--tint-h) / 0.42);
+}
+/* A device without a graphics chip keeps glass frosted, without bending (the background then draws
+ * one still frame); one whose chip struggles only loses the bending (the background keeps moving). */
+:root[data-perf="low"] .lg-glass,
+:root[data-glass="flat"] .lg-glass {
+  --lg-filter: saturate(1.5) !important;
+}
+@media print {
+  .ambient {
+    display: none;
+  }
+}
+
+/* ── Sidebar (components/shell/app-shell.tsx) ─────────────────────────────────────────────────────
+ * A floating glass panel; collapsed, a narrow rail of icons with tooltips. */
+.shell-sidebar {
+  /* Dragged by its edge (app-shell.tsx); the cookie's width is set on <html> before the first paint. */
+  --sidebar-w: var(--sidebar-expanded-w, 17rem);
+  position: relative;
+  width: var(--sidebar-w);
+}
+/* While its edge is dragged, the panel follows the pointer at once (no width animation). */
+.shell-sidebar[data-resizing],
+.shell-sidebar[data-resizing] * {
+  transition: none !important;
+  user-select: none;
+}
+.shell-resizer::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 2px;
+  translate: -50% 0;
+  border-radius: 2px;
+  background: transparent;
+  transition: background-color var(--dur-micro);
+}
+.shell-resizer:hover::after,
+.shell-sidebar[data-resizing] .shell-resizer::after,
+.shell-resizer:focus-visible::after {
+  background: color-mix(in oklch, var(--foreground) 28%, transparent);
+}
+:root[data-sidebar="collapsed"] .shell-sidebar {
+  --sidebar-w: 5.25rem;
+}
+/* The panel animates its own width on top of the page; the page itself moves once (app-shell.tsx). */
+.shell-panel-frame {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: calc(var(--sidebar-w) - 10px);
+  transition: width var(--dur-layout) var(--ease-standard);
+}
+/* While it animates, the panel keeps its frost but does not bend: its lens is refitted at rest. */
+.shell-sidebar[data-animating] .lg-glass {
+  --lg-filter: saturate(1.5) !important;
+}
+/* Once the lens is in place it marks the current page; before that, the row's own lit pill does. */
+.shell-nav[data-lens-ready] .glass-interactive[aria-current="page"] {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell-panel-frame {
+    transition: none;
+  }
+}
+
+/* ── Liquid Glass (glisse) materials ──────────────────────────────────────────────────────────────
+ * components/ui/liquid-glass.tsx. A pane (.lq-host) is frosted glass from the first paint; once the
+ * page is quiet, glisse's lens (.lq-layer) is added behind its content: little frost, so the bend of
+ * the rim shows (Chromium), lit by glisse's painted rim and lightly split into colours. */
+@layer components {
+  .lq-host {
+    position: relative;
+  }
+  /* The lens layer takes over the fill and the frost; the pane keeps its outer shadow (the layer's
+     would be clipped by panes that hide their overflow). */
+  .lq-host[data-liquid] {
+    background-color: transparent;
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass-lens-fallback {
+    background-color: var(--glass-lens);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 0 0 1px var(--glass-border);
+  }
+}
+.lg-glass.lq-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: none;
+}
+.lg-glass.lq {
+  /* Colour fringes at the glass edge only with the tinted glass of Atmosphère; neutral elsewhere. */
+  --lg-glass-dispersion: var(--glass-dispersion, 0);
+  /* The library reads this colour with a canvas and only understands rgb()/hex: an oklch() value
+   * came out as a reddish rim line. Same colour as --glass-border, written in rgb(). */
+  --lg-edge: var(--glass-edge-rgb);
+  --lg-drop: transparent;
+}
+.lg-glass.lq-panel {
+  --lg-glass: var(--glass-elevated);
+  --lg-blur: 5px;
+}
+.lg-glass.lq-card {
+  --lg-glass: var(--glass-standard);
+  --lg-blur: 2.5px;
+}
+.lg-glass.lq-solid {
+  --lg-glass: var(--glass-solid);
+  --lg-blur: 14px;
+}
+/* The sidebar's moving lens: almost clear, so it reads as a drop of glass over the selection. */
+.lg-glass.lq-lens {
+  --lg-glass: var(--glass-lens);
+  --lg-blur: 0px;
+}
+.shell-lens {
+  box-shadow: 0 6px 18px -10px var(--glass-shadow-color);
+}
+.shell-lens[data-lifted] .lg-glass.lq-lens {
+  --lg-glass: color-mix(in oklch, var(--glass-lens) 60%, transparent);
+}
+.shell-lens[data-lifted] {
+  box-shadow:
+    0 0 0 1px var(--glass-border-strong),
+    0 10px 26px -10px var(--glass-shadow-color);
+}
+
+/* The lens glides to the current row; held, it lifts (a little larger, clearer, brighter rim) and
+ * follows the pointer quickly from row to row. */
+.shell-lens {
+  transition:
+    transform var(--dur-layout) var(--ease-standard),
+    width var(--dur-layout) var(--ease-standard),
+    height var(--dur-layout) var(--ease-standard),
+    opacity var(--dur-panel) var(--ease-standard);
+}
+.shell-lens[data-lifted] {
+  transition-duration: 160ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell-lens {
+    transition: none;
+  }
+}
+/* Navigation rows are pressed and slid, not selected as text or dragged as links. */
+.shell-nav {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.shell-nav a {
+  -webkit-user-drag: none;
+}
+/* Rows sit above the lens. */
+.shell-nav .glass-interactive {
+  position: relative;
+  z-index: 1;
+}

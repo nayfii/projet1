@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -27,13 +26,15 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
+import { LiquidGlass } from "@/components/ui/liquid-glass";
+import { useSidebarFold } from "@/components/shell/use-sidebar-fold";
 import { cn } from "@/lib/utils";
 import { CommandMenu } from "./command";
 import { CreateDialog, type CreateKind, type CreateDefaults } from "./create";
 import { StudioPanel } from "./panel";
 import { Kbd } from "./primitives";
 import { RememberSpacePath, SpaceSwitch } from "./spaces";
-import { usePref, useSaveState } from "./store";
+import { useSaveState } from "./store";
 
 export const STUDIO_NAV = [
   { key: "overview", href: "/studio", icon: LayoutDashboardIcon, exact: true, shortcut: "o" },
@@ -59,26 +60,9 @@ function isTyping(target: EventTarget | null): boolean {
 export function StudioShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("studio.shell");
   const router = useRouter();
-  const [collapsed, setCollapsed] = usePref("sidebar-collapsed", false);
-  const panelRef = React.useRef<HTMLDivElement>(null);
-  const columnRef = React.useRef<HTMLDivElement>(null);
-
-  /**
-   * Folding the menu lays the page out once, at its new width; the page then slides into place and the
-   * menu's panel follows on its own layer. Animating the menu's width made the whole page lay itself
-   * out again on every frame.
-   */
-  const toggleSidebar = () => {
-    const panel = panelRef.current;
-    const column = columnRef.current;
-    const before = { left: column?.getBoundingClientRect().left ?? 0, width: panel?.offsetWidth ?? 0 };
-    ReactDOM.flushSync(() => setCollapsed((c) => !c));
-    if (!panel || !column || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const dx = before.left - column.getBoundingClientRect().left;
-    const timing: KeyframeAnimationOptions = { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" };
-    column.animate([{ transform: `translate3d(${dx}px, 0, 0)` }, { transform: "translate3d(0, 0, 0)" }], timing);
-    panel.animate([{ width: `${before.width}px` }, { width: `${panel.offsetWidth}px` }], timing);
-  };
+  // Folded or not like our console's menu (the same appearance setting on this device), and folded the
+  // same way: the page slides once instead of laying itself out on every frame.
+  const { collapsed, toggle: toggleSidebar, asideRef, columnRef } = useSidebarFold();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [creating, setCreating] = React.useState<{ kind: CreateKind; defaults: CreateDefaults } | null>(null);
@@ -127,15 +111,18 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
   return (
     <ShellContext.Provider value={ui}>
       <RememberSpacePath space="studio" />
-      <div className="flex min-h-dvh overflow-x-clip bg-background" data-space="studio">
-        <aside className={cn("sticky top-0 z-20 hidden h-dvh shrink-0 md:block", collapsed ? "w-[3.75rem]" : "w-60")}>
-          <div ref={panelRef} className="absolute inset-y-0 left-0 flex w-full border-r border-sidebar-border bg-sidebar">
-            <SidebarBody collapsed={collapsed} onToggle={toggleSidebar} />
+      {/* The same glass frame as our console: the theme's background shows through. */}
+      <div className="flex min-h-dvh overflow-x-clip" data-space="studio">
+        <aside ref={asideRef} data-shell-sidebar className="shell-sidebar sticky top-0 hidden h-dvh shrink-0 md:block">
+          <div className="shell-panel-frame">
+            <LiquidGlass material="panel" reach={56} className="flex h-full flex-col overflow-hidden rounded-[22px]">
+              <SidebarBody collapsed={collapsed} onToggle={toggleSidebar} />
+            </LiquidGlass>
           </div>
         </aside>
         <div ref={columnRef} className="flex min-w-0 flex-1 flex-col">
           {/* Small screens: a bar with the menu, search and "new". */}
-          <div className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-3 backdrop-blur md:hidden">
+          <LiquidGlass material="panel" reach={14} className="sticky top-0 z-30 flex h-14 items-center gap-2 rounded-none border-b px-3 md:hidden">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon-sm" aria-label={t("openMenu")}>
@@ -153,7 +140,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
               </Button>
               <NewMenu compact />
             </div>
-          </div>
+          </LiquidGlass>
           <main className="min-w-0 flex-1 animate-space-in" id="studio-main">
             {children}
           </main>
@@ -245,7 +232,7 @@ function SidebarBody({ collapsed, onToggle, onNavigate }: { collapsed: boolean; 
         })}
       </nav>
 
-      <div className={cn("shrink-0 border-t border-sidebar-border p-2", collapsed && "flex justify-center")}>
+      <div className={cn("shrink-0 border-t border-border/60 p-2", collapsed && "flex justify-center")}>
         <SaveIndicator compact={collapsed} />
       </div>
     </div>

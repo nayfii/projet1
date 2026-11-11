@@ -14,7 +14,7 @@ export function RenderRatesForm({ motion, videoEdit }: { motion: number; videoEd
   const tErrors = useTranslations("errors");
   const [saving, startSaving] = React.useTransition();
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-5" aria-labelledby="render-rates">
+    <section className="space-y-3 glass-standard rounded-xl border p-5" aria-labelledby="render-rates">
       <div>
         <h2 id="render-rates" className="text-[15px] font-medium">
           {t("renderRatesTitle")}

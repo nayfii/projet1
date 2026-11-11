@@ -66,7 +66,7 @@ export function MemorySpaceView({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-lg bg-muted p-1" role="tablist">
+        <div className="glass-subtle flex gap-1 rounded-full border p-1" role="tablist">
           {tabs
             .filter((x) => x.show)
             .map((x) => (
@@ -76,8 +76,8 @@ export function MemorySpaceView({
                 aria-selected={tab === x.key}
                 onClick={() => setTab(x.key)}
                 className={cn(
-                  "flex h-8 items-center gap-1.5 rounded-md px-3 text-[13px] transition-colors",
-                  tab === x.key ? "bg-card font-medium shadow-xs" : "text-muted-foreground hover:text-foreground",
+                  "flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[13px] transition-colors duration-[var(--dur-micro)]",
+                  tab === x.key ? "bg-[var(--glass-selected)] font-medium shadow-[inset_0_1px_0_0_var(--glass-highlight),0_0_0_1px_var(--glass-ring)]" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {x.label}

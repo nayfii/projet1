@@ -283,6 +283,31 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | **Our team member who also belongs to a company** (founder's case, 2026-11-09: his console account had accepted a company invitation, so every sign-in opened that company and the console seemed gone): a sign-in without a precise page now opens our console; the company space's account menu shows **Console Cendr** to our team only (the console itself still has no link to a company space). Tested end to end (`password.spec.ts`) | **done** |
 | Online, without our own mail server, Supabase sends its default "reset password" e-mail: the link must be opened in the browser that asked for it (like the sign-in links today) | known limit |
 
+### Liquid Glass experiment v18 (2026-11-04/05) — branch `experiment/liquid-glass-v18`, not merged
+
+| Item | Status |
+|---|---|
+| Interfaces: **Clair** and **Sombre** are plain (white, black) with glass; **Système** follows the device; **Atmosphère** sets the glass over a living background in six palettes (Midnight Aurora, Solar Ember, Lagon, Orchidée, Nacre, Pêche); Settings → Apparence with a live preview of each palette | **done** (founder's review of 2026-11-04) |
+| **Waylume** background added to Atmosphère (the founder's export from the Waylume studio, kept verbatim, loaded only when chosen); its licence for commercial use is **to be confirmed by the founder** | **done**, checked in the app and its Settings tile |
+| Backgrounds redone: a WebGL shader, smooth at any size (the SVG version looked pixelated), visible calm motion at 30 fps, still on request / reduced motion / hidden tab / low-power device; a CSS gradient without WebGL; a veil keeps text readable | **done**; colours and motion checked on screenshots and two moments of each scene, **not yet seen on the founder's screen** |
+| Liquid Glass with glisse on the sidebar, chat composer, sign-in and onboarding panes, home tiles, key figures, the sidebar lens; menus and dialogs are frosted glass ready at once | **done**; bending in Chromium browsers only (Safari and Firefox: frost and lit rim) |
+| First click after sign-in: glisse's lens is computed only once the page is quiet (no movement, scroll or key), as a layer behind the content; measured on the production build: no blocking task during the first second | **done** |
+| Sidebar collapse: one layout, then a slide (no per-frame layout); collapse button centred on the header line | **done** |
+| Glass lens in the sidebar: lifts when a row is pressed, follows press-and-drag across rows and conversations, opens the row it is released on | **done**, checked in a browser |
+| Avatars: transparent PNG on a glass bead, black in dark interfaces, white in light ones; new personal avatars generated as transparent PNG; existing ones keep their old background until regenerated | **done** |
+| Performance | Measured here only without a graphics chip (software rendering): such a device is recognised before the first paint (still background, unbent glass). **Not measured on a real computer yet** |
+| Tests | type check, lint, build, unit 262, integration 209, end to end 117/117 (below) | **done** |
+| Undo | The experiment lives on its own branch; the customers' version is untouched until it is merged | — |
+
+### Tests (Liquid Glass fixes, 2026-11-05)
+
+| Suite | Result |
+|---|---|
+| Type check, lint, production build | pass |
+| Unit (`pnpm test`; the robots are checked as PNG with transparency) | 262 passed |
+| Integration (`pnpm test:integration`) | 209 passed |
+| End to end (`playwright test`, production build, simulated AI) | 117 passed in one run |
+
 ### Speed, light theme and UI audit (2026-11-03)
 
 | Item | Status |

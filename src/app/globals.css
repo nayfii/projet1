@@ -3,157 +3,13 @@
 @source not "../../.claude";
 @import "tw-animate-css";
 
-/*
- * Design tokens. Near-black by default, white type, one pastel accent ("brand", lavender)
- * and a small pastel family used sparingly (assistant avatars, highlights).
- * The light theme stays available: <html data-theme="light">, or "system" to follow the device.
- */
-:root {
-  color-scheme: dark;
-  --radius: 0.75rem;
+/* Liquid Glass controls (glisse): their stylesheet in the page from the first paint. */
+@import "glisse/styles.css";
+/* Design tokens for both schemes and both ambient backgrounds, glass materials, living background. */
+@import "./appearance.css";
 
-  /* Dark: true black and neutral greys, no blue or violet cast (founder, 2026-11-07). */
-  --background: oklch(0.11 0 0);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.155 0 0);
-  --card-foreground: var(--foreground);
-  --popover: oklch(0.18 0 0);
-  --popover-foreground: var(--foreground);
-  --primary: oklch(0.97 0 0);
-  --primary-foreground: oklch(0.14 0 0);
-  --secondary: oklch(0.2 0 0);
-  --secondary-foreground: var(--foreground);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.22 0 0);
-  --accent-foreground: var(--foreground);
-  --border: oklch(1 0 0 / 0.09);
-  --input: oklch(1 0 0 / 0.14);
-  --ring: oklch(0.75 0 0);
-
-  /* The interface's accent is monochrome in Light and Dark (white here); colour is for meaning only. */
-  --brand: oklch(0.97 0 0);
-  --brand-foreground: oklch(0.14 0 0);
-  --brand-soft: oklch(1 0 0 / 0.1);
-
-  /* Avatars (initials, models' logos): a neutral surface that follows the theme. */
-  --avatar-surface: oklch(0.24 0 0);
-  --avatar-foreground: oklch(0.92 0 0);
-  --avatar-ring: oklch(1 0 0 / 0.08);
-  /* Decorative washes (client summary, people's bubbles): none in the neutral themes. */
-  --decor-strength: 0%;
-
-  --destructive: oklch(0.71 0.16 22);
-  --destructive-soft: oklch(0.71 0.16 22 / 0.14);
-  --success: oklch(0.8 0.12 160);
-  --success-soft: oklch(0.8 0.12 160 / 0.13);
-  --warning: oklch(0.84 0.12 80);
-  --warning-soft: oklch(0.84 0.12 80 / 0.13);
-
-  --sidebar: oklch(0.13 0 0);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-border: oklch(1 0 0 / 0.07);
-  --sidebar-accent: oklch(1 0 0 / 0.07);
-
-  /* Pastel family: each AI assistant has one; never used for text on dark surfaces' small sizes. */
-  --pastel-lavender: oklch(0.84 0.075 290);
-  --pastel-peach: oklch(0.86 0.07 55);
-  --pastel-mint: oklch(0.87 0.08 165);
-  --pastel-sky: oklch(0.85 0.07 235);
-  --pastel-pearl: oklch(0.92 0.015 285);
-  /* Pastels as text or icon colour: as is on dark, deeper on light (readable on white). */
-  --pastel-lavender-ink: var(--pastel-lavender);
-  --pastel-peach-ink: var(--pastel-peach);
-  --pastel-mint-ink: var(--pastel-mint);
-  --pastel-sky-ink: var(--pastel-sky);
-
-  /* Chart series (validated for colour-blind separation on these surfaces, 3 series at most). */
-  --chart-1: #3987e5;
-  --chart-2: #d95926;
-  --chart-3: #199e70;
-
-  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-/* Light theme, chosen in the account menu (or following the device with "system"). */
-:root[data-theme="light"] {
-  color-scheme: light;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.2 0 0);
-  --card: oklch(1 0 0);
-  --popover: oklch(1 0 0);
-  --primary: oklch(0.18 0 0);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.965 0 0);
-  --muted: oklch(0.965 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.95 0 0);
-  --border: oklch(0 0 0 / 0.11);
-  --input: oklch(0 0 0 / 0.15);
-  --ring: oklch(0.55 0 0);
-  --brand: oklch(0.18 0 0);
-  --brand-foreground: oklch(1 0 0);
-  --brand-soft: oklch(0 0 0 / 0.06);
-  --avatar-surface: oklch(0.94 0 0);
-  --avatar-foreground: oklch(0.3 0 0);
-  --avatar-ring: oklch(0 0 0 / 0.06);
-  --destructive: oklch(0.57 0.2 27);
-  --destructive-soft: oklch(0.57 0.2 27 / 0.08);
-  --success: oklch(0.55 0.12 155);
-  --success-soft: oklch(0.55 0.12 155 / 0.09);
-  --warning: oklch(0.62 0.14 70);
-  --warning-soft: oklch(0.7 0.14 70 / 0.12);
-  --sidebar: oklch(0.975 0 0);
-  --sidebar-border: oklch(0 0 0 / 0.09);
-  --sidebar-accent: oklch(0 0 0 / 0.05);
-  --chart-1: #2a78d6;
-  --chart-2: #eb6834;
-  --chart-3: #1baf7a;
-  --pastel-lavender-ink: oklch(0.5 0.14 290);
-  --pastel-peach-ink: oklch(0.58 0.15 50);
-  --pastel-mint-ink: oklch(0.52 0.11 165);
-  --pastel-sky-ink: oklch(0.52 0.13 240);
-}
-@media (prefers-color-scheme: light) {
-  :root[data-theme="system"] {
-    color-scheme: light;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.2 0 0);
-    --card: oklch(1 0 0);
-    --popover: oklch(1 0 0);
-    --primary: oklch(0.18 0 0);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.965 0 0);
-    --muted: oklch(0.965 0 0);
-    --muted-foreground: oklch(0.45 0 0);
-    --accent: oklch(0.95 0 0);
-    --border: oklch(0 0 0 / 0.11);
-    --input: oklch(0 0 0 / 0.15);
-    --ring: oklch(0.55 0 0);
-    --brand: oklch(0.18 0 0);
-    --brand-foreground: oklch(1 0 0);
-    --brand-soft: oklch(0 0 0 / 0.06);
-    --avatar-surface: oklch(0.94 0 0);
-    --avatar-foreground: oklch(0.3 0 0);
-    --avatar-ring: oklch(0 0 0 / 0.06);
-    --destructive: oklch(0.57 0.2 27);
-    --destructive-soft: oklch(0.57 0.2 27 / 0.08);
-    --success: oklch(0.55 0.12 155);
-    --success-soft: oklch(0.55 0.12 155 / 0.09);
-    --warning: oklch(0.62 0.14 70);
-    --warning-soft: oklch(0.7 0.14 70 / 0.12);
-    --sidebar: oklch(0.975 0 0);
-    --sidebar-border: oklch(0 0 0 / 0.09);
-    --sidebar-accent: oklch(0 0 0 / 0.05);
-    --chart-1: #2a78d6;
-    --chart-2: #eb6834;
-    --chart-3: #1baf7a;
-    --pastel-lavender-ink: oklch(0.5 0.14 290);
-    --pastel-peach-ink: oklch(0.58 0.15 50);
-    --pastel-mint-ink: oklch(0.52 0.11 165);
-    --pastel-sky-ink: oklch(0.52 0.13 240);
-  }
-}
+/* Inside the desktop sidebar while it is a narrow rail (components/shell/app-shell.tsx). */
+@custom-variant rail (&:where(:root[data-sidebar="collapsed"] [data-shell-sidebar] *));
 
 @theme inline {
   --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
@@ -208,9 +64,10 @@
   }
   html {
     -webkit-text-size-adjust: 100%;
+    background-color: var(--background);
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
     font-optical-sizing: auto;
     text-rendering: optimizeLegibility;
   }

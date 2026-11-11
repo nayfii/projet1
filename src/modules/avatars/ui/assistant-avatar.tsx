@@ -5,7 +5,8 @@ import type { ProviderId } from "@/modules/providers/types";
 import type { AssistantState } from "../assistants";
 
 /**
- * A model's mark: its provider's own logo (OpenAI, Claude, Gemini) on a neutral disc that follows the
+ * A model's mark: its provider's own logo (OpenAI, Claude, Gemini) on the small glass bead people's
+ * avatars use (black in the dark interface, white in the light one), a neutral disc that follows the
  * theme; "Auto" (our Smart Router) gets a plain sparkle. While the model prepares or writes its answer
  * (`animated` and not idle) a thin ring breathes around it, still for reduced motion (globals.css).
  * Decorative: the model's name is always written next to it.
@@ -36,13 +37,13 @@ export function AssistantAvatar({
       data-assistant={id}
       data-state={state}
       className={cn(
-        "assistant-avatar relative inline-flex shrink-0 items-center justify-center rounded-full bg-[var(--avatar-surface)] text-foreground ring-1 ring-[var(--avatar-ring)]",
+        "assistant-avatar avatar-glass relative inline-flex shrink-0 items-center justify-center rounded-full text-foreground",
         className,
       )}
       style={{ width: size, height: size }}
     >
       {working ? <span className="assistant-ring absolute -inset-[3px] rounded-full" /> : null}
-      {id === "auto" ? <SparklesIcon className="size-[50%] opacity-85" strokeWidth={1.75} /> : <ProviderLogo provider={id} className="size-[56%]" />}
+      {id === "auto" ? <SparklesIcon className="relative z-[1] size-[50%] opacity-85" strokeWidth={1.75} /> : <ProviderLogo provider={id} className="relative z-[1] size-[56%]" />}
     </span>
   );
 }

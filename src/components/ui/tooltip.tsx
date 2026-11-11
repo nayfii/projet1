@@ -15,7 +15,7 @@ function Tooltip({ content, children, side = "top" }: { content: React.ReactNode
           side={side}
           sideOffset={6}
           className={cn(
-            "z-50 max-w-64 rounded-md bg-primary px-2.5 py-1.5 text-xs text-primary-foreground shadow-md",
+            "z-50 max-w-64 rounded-full bg-primary/92 px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-[0_8px_24px_-8px_var(--glass-shadow-color),inset_0_1px_0_0_oklch(1_0_0/0.35)] backdrop-blur-md",
             "data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           )}
         >

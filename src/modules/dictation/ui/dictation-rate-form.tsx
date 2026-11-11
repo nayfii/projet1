@@ -14,7 +14,7 @@ export function DictationRateForm({ credits, costUsd, model }: { credits: number
   const tErrors = useTranslations("errors");
   const [saving, startSaving] = React.useTransition();
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-5" aria-labelledby="dictation-rate">
+    <section className="space-y-3 glass-standard rounded-xl border p-5" aria-labelledby="dictation-rate">
       <div>
         <h2 id="dictation-rate" className="text-[15px] font-medium">
           {t("dictationRateTitle")}

@@ -116,17 +116,15 @@ export function AvatarStudio({
         ) : shown ? (
           <>
             {phase.kind === "ready" ? <span aria-hidden className="avatar-studio-burst absolute -inset-[30%] rounded-full" /> : null}
-            {/* eslint-disable-next-line @next/next/no-img-element -- the person's own avatar, served by our route */}
-            <img
-              key={shown}
-              src={shown}
-              alt={t("alt", { name })}
-              className={cn("relative size-full rounded-full object-cover ring-1 ring-white/10", phase.kind === "ready" && "animate-reveal-pop")}
-            />
+            {/* The cut-out avatar on its bead of glass (black or white with the interface). */}
+            <span key={shown} className={cn("avatar-glass block size-full overflow-hidden rounded-full", phase.kind === "ready" && "animate-reveal-pop")}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- the person's own avatar, served by our route */}
+              <img src={shown} alt={t("alt", { name })} className="relative z-[1] size-full object-cover" />
+            </span>
           </>
         ) : (
           <span className="flex size-full items-center justify-center rounded-full bg-[conic-gradient(from_200deg,color-mix(in_oklch,var(--pastel-lavender)_30%,transparent),color-mix(in_oklch,var(--pastel-sky)_30%,transparent),color-mix(in_oklch,var(--pastel-mint)_30%,transparent),color-mix(in_oklch,var(--pastel-peach)_30%,transparent),color-mix(in_oklch,var(--pastel-lavender)_30%,transparent))] p-[2px]">
-            <span className="flex size-full items-center justify-center rounded-full bg-card text-[2.5rem] font-semibold tracking-tight text-muted-foreground">
+            <span className="avatar-glass flex size-full items-center justify-center rounded-full text-[2.5rem] font-semibold tracking-tight text-muted-foreground">
               {initials(name)}
             </span>
           </span>

@@ -17,17 +17,19 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & { closeLabel: string }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/30 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+      {/* A tinted veil, no blur: blurring the whole screen behind a dialog cost frames while it opened. */}
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[oklch(0.1_0.02_var(--tint-h)/0.32)] duration-[var(--dur-panel)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+      {/* Firm frosted glass, ready at once (a dialog opens instantly, even the first time). */}
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border bg-popover p-6 text-popover-foreground shadow-lg duration-200",
-          "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.98]",
+          "glass-solid fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 rounded-[22px] border p-6 text-popover-foreground duration-[var(--dur-panel)] ease-[var(--ease-standard)]",
+          "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.98]",
           className,
         )}
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1.5 text-muted-foreground transition-colors duration-[var(--dur-micro)] hover:bg-accent hover:text-foreground">
           <XIcon className="size-4" />
           <span className="sr-only">{closeLabel}</span>
         </DialogPrimitive.Close>

@@ -13,25 +13,30 @@ const DropdownMenuRadioGroup = MenuPrimitive.RadioGroup;
 function DropdownMenuContent({
   className,
   sideOffset = 6,
+  children,
   ...props
 }: React.ComponentProps<typeof MenuPrimitive.Content>) {
   return (
     <MenuPrimitive.Portal>
+      {/* Frosted glass, ready at once: a menu opens instantly, even the first time (Liquid Glass would
+          compute its lens on first open). */}
       <MenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-48 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-md",
+          "glass-solid z-50 min-w-48 overflow-hidden rounded-[14px] border p-1 text-popover-foreground",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           className,
         )}
         {...props}
-      />
+      >
+        {children}
+      </MenuPrimitive.Content>
     </MenuPrimitive.Portal>
   );
 }
 
 const itemBase =
-  "relative flex cursor-default select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4 [&_svg]:text-muted-foreground";
+  "relative flex cursor-default select-none items-center gap-2 rounded-[9px] px-2 py-1.5 text-sm outline-none transition-colors duration-[var(--dur-micro)] focus:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4 [&_svg]:text-muted-foreground";
 
 function DropdownMenuItem({
   className,

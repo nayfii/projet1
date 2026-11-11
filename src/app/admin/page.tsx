@@ -133,7 +133,7 @@ export default async function AdminOverviewPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => {
           const card = (
-            <Card className="h-full p-5">
+            <Card liquid className="h-full p-5">
               <p className="text-[13px] text-muted-foreground">{s.label}</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{s.value}</p>
               {s.hint ? <p className="mt-1 text-[13px] text-muted-foreground">{s.hint}</p> : null}
@@ -160,7 +160,7 @@ export default async function AdminOverviewPage() {
             {t("todo.none")}
           </p>
         ) : (
-          <ul className="mt-3 divide-y rounded-xl border bg-card">
+          <ul className="mt-3 divide-y glass-standard rounded-xl border">
             {todos.map((todo) => (
               <li key={todo.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-[13px]">
                 {todo.tone === "warning" ? (

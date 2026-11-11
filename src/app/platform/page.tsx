@@ -121,7 +121,7 @@ export default async function PlatformHomePage() {
 
       <section aria-label={t("numbers")} className="grid grid-cols-2 gap-3 md:grid-cols-5" data-testid="dashboard-kpis">
         {kpis.map((k) => (
-          <Card key={k.label} className="p-4">
+          <Card liquid key={k.label} className="p-4">
             <p className="text-[12px] text-muted-foreground">{k.label}</p>
             <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight">{k.value}</p>
             <p className="mt-1 text-[12px] text-muted-foreground">{k.sub}</p>

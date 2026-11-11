@@ -69,7 +69,7 @@ export function Chart({ spec }: { spec: ChartSpec }) {
   const tooltipLeft = active === null ? 0 : Math.min(Math.max(x(active) + 12, 8), width - 180);
 
   return (
-    <figure className="not-prose my-4 rounded-lg border bg-card px-3 pt-3 pb-2">
+    <figure className="glass-standard not-prose my-4 rounded-xl border px-3 pt-3 pb-2">
       {spec.title ? <figcaption className="px-1 text-[13px] font-medium">{spec.unit ? `${spec.title} (${spec.unit})` : spec.title}</figcaption> : null}
       {k > 1 ? (
         <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">

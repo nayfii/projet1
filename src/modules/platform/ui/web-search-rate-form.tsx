@@ -14,7 +14,7 @@ export function WebSearchRateForm({ credits, costUsd }: { credits: number; costU
   const tErrors = useTranslations("errors");
   const [saving, startSaving] = React.useTransition();
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-5" aria-labelledby="web-search-rate">
+    <section className="space-y-3 glass-standard rounded-xl border p-5" aria-labelledby="web-search-rate">
       <div>
         <h2 id="web-search-rate" className="text-[15px] font-medium">
           {t("webSearchRateTitle")}

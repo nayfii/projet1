@@ -20,7 +20,10 @@
     "themeDark": "Dark",
     "themeLight": "Light",
     "themeSystem": "Match device",
-    "version": "Version {version}"
+    "version": "Version {version}",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "resizeSidebar": "Menu width: drag, or double-click to restore the default width"
   },
   "roles": {
     "owner": "Owner",
@@ -2298,6 +2301,47 @@
     "waiting": "Waiting for a first sign-in",
     "waitingSince": "invited on {date}",
     "cancel": "Cancel {email}'s invitation"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "The interface and, with Atmosphere, the background behind the glass. These choices are kept on this device.",
+    "interface": "Interface",
+    "interfaceHint": "Light and Dark are plain, with glass. System follows your device. Atmosphere sets the glass over a living background, in the colours you choose.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "motion": "Moving background",
+    "motionHint": "The background moves slowly. It stays still when your device asks for less motion.",
+    "pageTitle": "Appearance",
+    "themeAtmosphere": "Atmosphere",
+    "colours": "Colours",
+    "palette": {
+      "aurora": "Midnight Aurora",
+      "ember": "Solar Ember",
+      "lagoon": "Lagoon",
+      "orchid": "Orchid",
+      "pearl": "Pearl",
+      "peach": "Peach",
+      "waylume": "Waylume",
+      "waylumeNight": "Waylume Night"
+    },
+    "paletteHint": {
+      "aurora": "Violet and midnight-blue silk",
+      "ember": "An amber sunset",
+      "lagoon": "Dark water, turquoise light",
+      "orchid": "Folds of rose and plum",
+      "pearl": "Light satin, lavender",
+      "peach": "Soft light, peach and lilac",
+      "waylume": "Prismatic light, violet and pink",
+      "waylumeNight": "The same light on deep black, slower"
+    },
+    "lowPower": "This device struggles with the moving effects: the background is still and the glass no longer bends, to keep the app smooth.",
+    "lowPowerRestore": "Turn the effects back on",
+    "glassFlat": "To keep the app smooth on this device, the glass no longer bends. The background keeps moving.",
+    "glass": "Glass",
+    "glassClear": "Clear",
+    "glassTinted": "Violet tint",
+    "glassHint": "Clear shows the background through neutral glass. Violet tint gives a coloured, softer glass."
   },
   "consciousness": {
     "used": "{count, plural, one {# memory used} other {# memories used}}",

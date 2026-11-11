@@ -10,7 +10,7 @@ export function EditPlanView({ plan }: { plan: EditPlan }) {
   const time = (seconds: number) =>
     seconds < 60 ? t("seconds", { value: Math.round(seconds * 10) / 10 }) : `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
   return (
-    <section aria-label={t("planTitle")} className="not-prose my-4 rounded-lg border bg-card">
+    <section aria-label={t("planTitle")} className="glass-standard not-prose my-4 rounded-xl border">
       <header className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-2.5">
         <h3 className="text-[13px] font-medium">{plan.title || t("planTitle")}</h3>
         <span className="text-xs text-muted-foreground">{t("planSummary", { segments: plan.segments.length, duration: time(planDuration(plan)) })}</span>

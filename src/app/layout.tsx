@@ -6,12 +6,47 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
-import { DEFAULT_THEME, THEME_COLORS, THEME_COOKIE, isTheme, type Theme } from "@/lib/theme";
+import { AmbientBackground } from "@/components/shell/ambient-background";
+import { AppearanceProvider } from "@/components/appearance/appearance-provider";
+import { paletteStyles } from "@/lib/ambient/css";
+import {
+  AMBIENT_COOKIE,
+  DEFAULT_AMBIENT,
+  DEFAULT_MOTION,
+  DEFAULT_THEME,
+  MOTION_COOKIE,
+  SCHEME_SCRIPT,
+  SIDEBAR_COOKIE,
+  SIDEBAR_WIDTH_COOKIE,
+  sidebarWidth,
+  GLASS_TONE_COOKIE,
+  DEFAULT_GLASS_TONE,
+  isGlassTone,
+  type GlassTone,
+  THEME_COOKIE,
+  isAmbient,
+  isMotion,
+  isTheme,
+  resolveScheme,
+  themeColor,
+  type SidebarState,
+} from "@/lib/theme";
 import "./globals.css";
 
-async function currentTheme(): Promise<Theme> {
-  const value = (await cookies()).get(THEME_COOKIE)?.value;
-  return isTheme(value) ? value : DEFAULT_THEME;
+/** The device's appearance choices (cookies), applied on the server so the first paint is right. */
+async function appearance() {
+  const jar = await cookies();
+  const theme = jar.get(THEME_COOKIE)?.value;
+  const ambient = jar.get(AMBIENT_COOKIE)?.value;
+  const motion = jar.get(MOTION_COOKIE)?.value;
+  return {
+    theme: isTheme(theme) ? theme : DEFAULT_THEME,
+    ambient: isAmbient(ambient) ? ambient : DEFAULT_AMBIENT,
+    motion: isMotion(motion) ? motion : DEFAULT_MOTION,
+    sidebar: (jar.get(SIDEBAR_COOKIE)?.value === "collapsed" ? "collapsed" : "expanded") as SidebarState,
+    sidebarWidth: sidebarWidth(jar.get(SIDEBAR_WIDTH_COOKIE)?.value),
+    glassTone: isGlassTone(jar.get(GLASS_TONE_COOKIE)?.value) ? (jar.get(GLASS_TONE_COOKIE)!.value as GlassTone) : DEFAULT_GLASS_TONE,
+  };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,12 +59,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export async function generateViewport(): Promise<Viewport> {
-  const theme = await currentTheme();
-  if (theme !== "system") return { themeColor: THEME_COLORS[theme], colorScheme: theme };
+  const { theme, ambient } = await appearance();
+  if (theme !== "system") {
+    const scheme = resolveScheme(theme, ambient);
+    return { themeColor: themeColor(theme, ambient, scheme), colorScheme: scheme };
+  }
   return {
     themeColor: [
-      { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
-      { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
+      { media: "(prefers-color-scheme: light)", color: themeColor(theme, ambient, "light") },
+      { media: "(prefers-color-scheme: dark)", color: themeColor(theme, ambient, "dark") },
     ],
     colorScheme: "dark light",
   };
@@ -37,13 +75,33 @@ export async function generateViewport(): Promise<Viewport> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
-  const theme = await currentTheme();
+  const initial = await appearance();
+  const { theme, ambient, motion, sidebar, glassTone, sidebarWidth: width } = initial;
   return (
-    <html lang={locale} data-theme={theme} className={`${GeistMono.variable} h-full`}>
+    // data-scheme is corrected before the first paint by SCHEME_SCRIPT when following the device.
+    <html
+      lang={locale}
+      data-theme={theme}
+      data-scheme={resolveScheme(theme, ambient)}
+      data-ambient={ambient}
+      data-motion={motion}
+      data-sidebar={sidebar}
+      data-glass-tone={glassTone}
+      style={width ? ({ "--sidebar-expanded-w": `${width}px` } as React.CSSProperties) : undefined}
+      className={`${GeistMono.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCHEME_SCRIPT }} />
+        <style dangerouslySetInnerHTML={{ __html: paletteStyles() }} />
+      </head>
       <body className="min-h-full font-sans">
+        <AmbientBackground />
         <NextIntlClientProvider>
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster />
+          <AppearanceProvider initial={initial}>
+            <TooltipProvider>{children}</TooltipProvider>
+            <Toaster />
+          </AppearanceProvider>
         </NextIntlClientProvider>
       </body>
     </html>

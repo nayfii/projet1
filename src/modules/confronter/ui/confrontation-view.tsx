@@ -39,7 +39,7 @@ export function ConfrontationView({
   const s = confrontation.synthesis;
 
   return (
-    <section aria-label={t("title")} className="overflow-hidden rounded-xl border bg-card shadow-xs">
+    <section aria-label={t("title")} className="overflow-hidden glass-standard rounded-xl border">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-3">
         <span className="inline-flex items-center gap-1.5 text-sm font-medium">
           <ScaleIcon className="size-4 text-brand" />

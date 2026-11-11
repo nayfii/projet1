@@ -89,6 +89,7 @@ import type { Confrontation, ConfrontationProgress } from "@/modules/confronter/
 import { TurnIntoToolDialog, type ToolEditorContext } from "@/modules/agents/ui/turn-into-tool-dialog";
 import { RUN_STORAGE_PREFIX, type PendingRun } from "@/modules/agents/ui/run-form";
 import { AgentNotice } from "@/modules/agents/ui/agent-notice";
+import { LiquidGlass } from "@/components/ui/liquid-glass";
 import type { AgentNotice as AgentNoticeKind } from "@/modules/agents/builtins";
 import { artifactsIn, collectArtifacts, editMessage, hasOpenArtifact, type ArtifactVersion } from "@/modules/artifacts/parse";
 import { ArtifactsContext, type ArtifactsApi } from "@/modules/artifacts/ui/artifact-card";
@@ -1100,7 +1101,7 @@ export function ChatView(props: Props) {
     <ArtifactsContext.Provider value={artifactsApi}>
     <div className="flex h-[calc(100dvh-3.5rem)] md:h-dvh">
     <div className="flex min-w-0 flex-1 flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sm:px-6">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-[var(--glass-border)] px-4 sm:px-6">
         <EditableTitle
           conversationId={conversationId}
           title={title}
@@ -1358,9 +1359,11 @@ export function ChatView(props: Props) {
             </div>
           ) : null}
           <HideBar state={hide} onProtectAndSend={() => void send(hide.payloadProtectingAll())} onSendAnyway={() => void send(hide.payload())} />
-          <div
+          <LiquidGlass
+            material="panel"
+            reach={34}
             className={cn(
-              "relative rounded-2xl border bg-card shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
+              "relative rounded-[22px] border transition-[border-color,box-shadow] duration-[var(--dur-micro)] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
               inputBlocked && "opacity-60",
             )}
             onDragOver={(e) => e.preventDefault()}
@@ -1583,7 +1586,7 @@ export function ChatView(props: Props) {
                 </Button>
               )}
             </div>
-          </div>
+          </LiquidGlass>
           <p className="text-center text-[11px] text-muted-foreground/80">{props.fakeMode ? t("fakeMode") : t("disclaimer")}</p>
         </div>
       </div>
@@ -1737,7 +1740,7 @@ function CopyBanner({ copyOf }: { copyOf: { toName: string | null; at: string } 
   const format = useFormatter();
   const date = format.dateTime(new Date(copyOf.at), { dateStyle: "long" });
   return (
-    <div role="note" className="mb-8 flex items-start gap-3 rounded-xl border bg-card px-4 py-3 text-[13px] text-muted-foreground">
+    <div role="note" className="mb-8 flex items-start gap-3 glass-standard rounded-xl border px-4 py-3 text-[13px] text-muted-foreground">
       <GitBranchIcon className="mt-0.5 size-4 shrink-0 text-brand" />
       <p>{copyOf.toName ? tCollab("copyBanner", { name: copyOf.toName, date }) : tCollab("copyBannerUnknown", { date })}</p>
     </div>

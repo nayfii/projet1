@@ -97,7 +97,7 @@ export default async function HomePage() {
                 ) : (
                   <Link
                     href={`/onboarding?step=${key}`}
-                    className={cn("group flex h-full items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm transition-colors hover:border-foreground/25")}
+                    className={cn("group flex h-full items-center gap-3 glass-standard rounded-xl border px-4 py-3 text-sm transition-colors hover:border-foreground/25")}
                   >
                     <span className="flex size-7 items-center justify-center rounded-full bg-brand-soft text-brand">
                       <Icon className="size-4" />
@@ -115,7 +115,7 @@ export default async function HomePage() {
       <div className="grid gap-3 sm:grid-cols-2">
         {tiles.map(({ icon: Icon, title, body, href }) => (
           <Link key={title} href={href} className="rounded-xl">
-            <Card className="h-full p-5 transition-colors hover:border-foreground/20">
+            <Card liquid className="h-full p-5 transition-colors hover:border-foreground/20">
               <div className="flex items-start justify-between">
                 <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                   <Icon className="size-4" />
