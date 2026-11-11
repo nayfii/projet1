@@ -133,6 +133,8 @@ type ShellProps = {
   sidebarExtra?: React.ReactNode;
   /** Where the account menu's "Appearance" leads (the profile, or our console's own page). */
   appearanceHref?: string;
+  /** Our console only: the Workspace | Studio switch, under the logo (the same place as in Studio). */
+  spaceSwitch?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -215,13 +217,13 @@ export function AppShell(props: ShellProps) {
           </Sheet>
           <Logo />
         </LiquidGlass>
-        <main className="flex-1">{props.children}</main>
+        <main className={cn("flex-1", props.spaceSwitch && "animate-space-in")}>{props.children}</main>
       </div>
     </div>
   );
 }
 
-function SidebarBody({ sections, context, user, menuLinks, locale, labels, footerLink, sidebarExtra, appearanceHref, rail }: ShellProps & { rail: boolean }) {
+function SidebarBody({ sections, context, user, menuLinks, locale, labels, footerLink, sidebarExtra, appearanceHref, spaceSwitch, rail }: ShellProps & { rail: boolean }) {
   const pathname = usePathname();
   const navRef = React.useRef<HTMLElement>(null);
   const lens = useSelectionLens(navRef, `${pathname}|${rail}`);
@@ -230,6 +232,7 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
       <div className="flex h-14 shrink-0 items-center px-4 rail:justify-center rail:px-0">
         <Logo className="rail:[&>span:last-child]:sr-only" />
       </div>
+      {spaceSwitch ? <div className="pb-4 rail:hidden">{spaceSwitch}</div> : null}
       <div className="px-4 pb-2 rail:hidden">
         <p className="truncate text-[13px] font-medium">{context.title}</p>
         {context.subtitle ? <p className="truncate text-xs text-muted-foreground">{context.subtitle}</p> : null}
