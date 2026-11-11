@@ -228,16 +228,7 @@ export function HistoryWarnings({ warnings, people, kind }: { warnings: HistoryW
  * Invite colleagues. By default they see the conversation from their arrival; "Partager l'historique"
  * lets the person choose, on the timeline, the first message they will see.
  */
-export function AddPeopleDialog({
-  open,
-  onOpenChange,
-  conversationId,
-  title,
-  colleagues,
-  messages,
-  preselected,
-  onAdded,
-}: {
+type AddPeopleProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conversationId: string | null;
@@ -247,25 +238,33 @@ export function AddPeopleDialog({
   messages: TimelineMessage[];
   preselected: string[];
   onAdded: () => void;
-}) {
+};
+
+/**
+ * "Add" to a conversation. Its content (who, rights, and the timeline to share history from) is built
+ * only while the dialog is open: built on every key typed in the conversation, it slowed typing down.
+ */
+export function AddPeopleDialog(props: AddPeopleProps) {
+  const tCommon = useTranslations("common");
+  return (
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto" closeLabel={tCommon("close")}>
+        {/* A fresh form each time it opens, or when other colleagues are preselected. */}
+        <AddPeopleForm key={props.preselected.join(",")} {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddPeopleForm({ open, onOpenChange, conversationId, title, colleagues, messages, preselected, onAdded }: AddPeopleProps) {
   const t = useTranslations("collaboration");
   const tErrors = useTranslations("errors");
   const tCommon = useTranslations("common");
   const format = useFormatter();
-  const [selected, setSelected] = React.useState<Set<string>>(new Set(preselected));
+  const [selected, setSelected] = React.useState<Set<string>>(() => new Set(preselected));
   const [history, setHistory] = React.useState<HistoryChoice>("now");
   const [right, setRight] = React.useState<ParticipantRight>("participant");
   const [saving, startSaving] = React.useTransition();
-  const [openedFor, setOpenedFor] = React.useState<string | null>(null);
-  const key = open ? preselected.join(",") || "open" : null;
-  if (key !== openedFor) {
-    setOpenedFor(key);
-    if (open) {
-      setSelected(new Set(preselected));
-      setHistory("now");
-      setRight("participant");
-    }
-  }
   const timeline = messages.filter((m) => m.content && m.id !== "pending-user");
   const fromSeq = history === "now" ? null : history === "all" ? (timeline[0]?.seq ?? null) : history;
   const { warnings, checking } = useHistoryWarnings(conversationId, [...selected], fromSeq, open && fromSeq !== null);
@@ -284,77 +283,75 @@ export function AddPeopleDialog({
     });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto" closeLabel={tCommon("close")}>
-        <DialogHeader>
-          <DialogTitle>{t("addTitle")}</DialogTitle>
-          <DialogDescription>{t("addBody")}</DialogDescription>
-        </DialogHeader>
-        {colleagues.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-4 py-6 text-center text-[13px] text-muted-foreground">{t("noColleagues")}</p>
-        ) : (
-          <ColleaguePicker colleagues={colleagues} selected={selected} onChange={setSelected} label={t("who")} />
-        )}
+    <>
+    <DialogHeader>
+      <DialogTitle>{t("addTitle")}</DialogTitle>
+      <DialogDescription>{t("addBody")}</DialogDescription>
+    </DialogHeader>
+    {colleagues.length === 0 ? (
+      <p className="rounded-lg border border-dashed px-4 py-6 text-center text-[13px] text-muted-foreground">{t("noColleagues")}</p>
+    ) : (
+      <ColleaguePicker colleagues={colleagues} selected={selected} onChange={setSelected} label={t("who")} />
+    )}
 
-        <fieldset className="space-y-2">
-          <legend className="mb-1 text-sm font-medium">{t("rightTitle")}</legend>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {PARTICIPANT_RIGHTS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                aria-pressed={right === r}
-                onClick={() => setRight(r)}
-                className={cn("rounded-lg border px-3 py-2 text-left text-sm transition-colors", right === r ? "border-brand/50 bg-brand-soft" : "hover:bg-accent")}
-              >
-                <span className="block font-medium">{t(`right.${r}`)}</span>
-                <span className="block text-xs text-muted-foreground">{t(`rightHint.${r}`)}</span>
-              </button>
-            ))}
+    <fieldset className="space-y-2">
+      <legend className="mb-1 text-sm font-medium">{t("rightTitle")}</legend>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {PARTICIPANT_RIGHTS.map((r) => (
+          <button
+            key={r}
+            type="button"
+            aria-pressed={right === r}
+            onClick={() => setRight(r)}
+            className={cn("rounded-lg border px-3 py-2 text-left text-sm transition-colors", right === r ? "border-brand/50 bg-brand-soft" : "hover:bg-accent")}
+          >
+            <span className="block font-medium">{t(`right.${r}`)}</span>
+            <span className="block text-xs text-muted-foreground">{t(`rightHint.${r}`)}</span>
+          </button>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset className="space-y-2">
+      <legend className="mb-1 text-sm font-medium">{t("historyTitle")}</legend>
+      <HistoryOption checked={history === "now"} onSelect={() => setHistory("now")} label={t("historyNow")} hint={t("historyNowHint")} />
+      {timeline.length > 0 ? (
+        <>
+          <HistoryOption checked={history === "all"} onSelect={() => setHistory("all")} label={t("historyAll")} />
+          <div className="rounded-lg border">
+            <p className="border-b px-3 py-2 text-xs text-muted-foreground">{t("historyFrom")}</p>
+            <div className="max-h-44 overflow-y-auto py-1">
+              {timeline.map((m) => (
+                <label key={m.id} className={cn("flex cursor-pointer items-start gap-2.5 px-3 py-1.5 text-[13px] hover:bg-accent/50", history === m.seq && "bg-brand-soft/60")}>
+                  <input type="radio" name="history-from" className="mt-1 accent-[var(--brand)]" checked={history === m.seq} onChange={() => setHistory(m.seq)} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs text-muted-foreground">
+                      {m.role === "assistant" ? (m.model?.label ?? t("ai")) : (m.author?.name ?? t("someone"))}
+                      {" · "}
+                      {format.dateTime(new Date(m.createdAt), { dateStyle: "short", timeStyle: "short" })}
+                    </span>
+                    <span className="line-clamp-1">{plainPreview(m.content)}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
-        </fieldset>
+        </>
+      ) : null}
+      {title ? <p className="text-xs text-muted-foreground">{t("titleShared", { title })}</p> : null}
+    </fieldset>
+    <HistoryWarnings warnings={warnings} people={colleagues} kind="share" />
 
-        <fieldset className="space-y-2">
-          <legend className="mb-1 text-sm font-medium">{t("historyTitle")}</legend>
-          <HistoryOption checked={history === "now"} onSelect={() => setHistory("now")} label={t("historyNow")} hint={t("historyNowHint")} />
-          {timeline.length > 0 ? (
-            <>
-              <HistoryOption checked={history === "all"} onSelect={() => setHistory("all")} label={t("historyAll")} />
-              <div className="rounded-lg border">
-                <p className="border-b px-3 py-2 text-xs text-muted-foreground">{t("historyFrom")}</p>
-                <div className="max-h-44 overflow-y-auto py-1">
-                  {timeline.map((m) => (
-                    <label key={m.id} className={cn("flex cursor-pointer items-start gap-2.5 px-3 py-1.5 text-[13px] hover:bg-accent/50", history === m.seq && "bg-brand-soft/60")}>
-                      <input type="radio" name="history-from" className="mt-1 accent-[var(--brand)]" checked={history === m.seq} onChange={() => setHistory(m.seq)} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-xs text-muted-foreground">
-                          {m.role === "assistant" ? (m.model?.label ?? t("ai")) : (m.author?.name ?? t("someone"))}
-                          {" · "}
-                          {format.dateTime(new Date(m.createdAt), { dateStyle: "short", timeStyle: "short" })}
-                        </span>
-                        <span className="line-clamp-1">{plainPreview(m.content)}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : null}
-          {title ? <p className="text-xs text-muted-foreground">{t("titleShared", { title })}</p> : null}
-        </fieldset>
-        <HistoryWarnings warnings={warnings} people={colleagues} kind="share" />
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {tCommon("cancel")}
-          </Button>
-          <Button onClick={submit} disabled={saving || checking || selected.size === 0}>
-            {saving ? <Spinner /> : <UserPlusIcon />}
-            {warnings.length > 0 ? t("addAnyway") : t("addSubmit")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DialogFooter>
+      <Button variant="ghost" onClick={() => onOpenChange(false)}>
+        {tCommon("cancel")}
+      </Button>
+      <Button onClick={submit} disabled={saving || checking || selected.size === 0}>
+        {saving ? <Spinner /> : <UserPlusIcon />}
+        {warnings.length > 0 ? t("addAnyway") : t("addSubmit")}
+      </Button>
+    </DialogFooter>
+    </>
   );
 }
 

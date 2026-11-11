@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import * as ReactDOM from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -59,6 +60,25 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("studio.shell");
   const router = useRouter();
   const [collapsed, setCollapsed] = usePref("sidebar-collapsed", false);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const columnRef = React.useRef<HTMLDivElement>(null);
+
+  /**
+   * Folding the menu lays the page out once, at its new width; the page then slides into place and the
+   * menu's panel follows on its own layer. Animating the menu's width made the whole page lay itself
+   * out again on every frame.
+   */
+  const toggleSidebar = () => {
+    const panel = panelRef.current;
+    const column = columnRef.current;
+    const before = { left: column?.getBoundingClientRect().left ?? 0, width: panel?.offsetWidth ?? 0 };
+    ReactDOM.flushSync(() => setCollapsed((c) => !c));
+    if (!panel || !column || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const dx = before.left - column.getBoundingClientRect().left;
+    const timing: KeyframeAnimationOptions = { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" };
+    column.animate([{ transform: `translate3d(${dx}px, 0, 0)` }, { transform: "translate3d(0, 0, 0)" }], timing);
+    panel.animate([{ width: `${before.width}px` }, { width: `${panel.offsetWidth}px` }], timing);
+  };
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [creating, setCreating] = React.useState<{ kind: CreateKind; defaults: CreateDefaults } | null>(null);
@@ -107,16 +127,13 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
   return (
     <ShellContext.Provider value={ui}>
       <RememberSpacePath space="studio" />
-      <div className="flex min-h-dvh bg-background" data-space="studio">
-        <aside
-          className={cn(
-            "sticky top-0 hidden h-dvh shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-[var(--ease-out-soft)] md:flex",
-            collapsed ? "w-[3.75rem]" : "w-60",
-          )}
-        >
-          <SidebarBody collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <div className="flex min-h-dvh overflow-x-clip bg-background" data-space="studio">
+        <aside className={cn("sticky top-0 z-20 hidden h-dvh shrink-0 md:block", collapsed ? "w-[3.75rem]" : "w-60")}>
+          <div ref={panelRef} className="absolute inset-y-0 left-0 flex w-full border-r border-sidebar-border bg-sidebar">
+            <SidebarBody collapsed={collapsed} onToggle={toggleSidebar} />
+          </div>
         </aside>
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div ref={columnRef} className="flex min-w-0 flex-1 flex-col">
           {/* Small screens: a bar with the menu, search and "new". */}
           <div className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-3 backdrop-blur md:hidden">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>

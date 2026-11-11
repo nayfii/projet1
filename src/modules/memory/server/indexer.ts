@@ -3,6 +3,7 @@ import type { MemberContext } from "@/lib/auth/guards";
 import { embeddingsConfig } from "@/lib/env";
 import type { UserClient } from "@/lib/supabase/server";
 import { toCatalogModel } from "@/modules/providers/catalog";
+import { readCatalog } from "@/modules/providers/server/catalog-store";
 import { embeddingModelName, embeddingsAvailable, embedTexts, toVectorLiteral } from "@/modules/providers/server/embeddings";
 import { computeCharge } from "@/modules/usage/credits";
 import { recordUsage } from "@/modules/usage/server/record";
@@ -17,7 +18,7 @@ import { chunkText } from "../chunking";
 
 async function chargeEmbedding(supabase: UserClient, ctx: MemberContext, tokens: number, status: "ok" | "error", errorCode: string | null, started: number) {
   const config = embeddingsConfig();
-  const { data } = await supabase.from("ai_models").select("*").eq("provider", config.provider).eq("api_model_id", config.model).maybeSingle();
+  const data = (await readCatalog()).find((m) => m.provider === config.provider && m.api_model_id === config.model) ?? null;
   const charge = data ? computeCharge(toCatalogModel(data).pricing, { inputTokens: tokens, outputTokens: 0, cachedInputTokens: 0 }) : { credits: 0, estimatedCostUsd: 0 };
   await recordUsage({
     companyId: ctx.active.companyId,

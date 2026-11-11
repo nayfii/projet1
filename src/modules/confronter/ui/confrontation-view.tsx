@@ -173,7 +173,7 @@ function Progress({ confrontation, progress }: { confrontation: Confrontation; p
           const s = seat(m.id);
           return (
             <div key={m.id} className="flex w-28 flex-col items-center gap-2 text-center">
-              <AssistantAvatar provider={m.provider} size={s.active ? 64 : 52} state={s.state} animated={s.active || s.state === "happy"} seed={m.id} className="transition-[width,height] duration-500" />
+              <AssistantAvatar provider={m.provider} size={64} state={s.state} animated={s.active || s.state === "happy"} seed={m.id} className={cn("transition-transform duration-500", !s.active && "scale-[0.8125]")} />
               <span className="text-[13px] font-medium">{modelDisplay(m.provider, m.label).brand}</span>
               <span className={cn("text-xs", s.active ? "text-foreground" : "text-muted-foreground")}>{s.label}</span>
             </div>

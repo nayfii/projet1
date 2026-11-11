@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ArrowRightIcon, BriefcaseIcon, BuildingIcon, KeyRoundIcon, SettingsIcon, SparklesIcon } from "lucide-react";
+import { ArrowRightIcon, BriefcaseIcon, BuildingIcon, ChevronRightIcon, KeyRoundIcon, SettingsIcon, SparklesIcon } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
@@ -115,8 +115,8 @@ export default async function MemoryPage() {
           </section>
         </div>
 
-        <aside className="space-y-6">
-          <section className="space-y-2.5">
+        <aside className="space-y-4">
+          <section className="space-y-2.5 rounded-xl border bg-card p-4">
             <h2 className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
               <SparklesIcon className="size-4" />
               {tc("activity")}
@@ -140,31 +140,34 @@ export default async function MemoryPage() {
             )}
           </section>
           {overview.mine.length > 0 ? (
-            <section className="space-y-2">
+            <section className="space-y-2 rounded-xl border bg-card p-4">
               <h2 className="text-[13px] font-medium text-muted-foreground">{tc("myRequests")}</h2>
               <MyAccessRequests requests={overview.mine} />
             </section>
           ) : null}
           {governance ? (
-            <section className="space-y-2">
-              <h2 className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+            <section className="space-y-1.5 rounded-xl border bg-card p-2">
+              <h2 className="flex items-center gap-2 px-2 pt-2 text-[13px] font-medium text-muted-foreground">
                 <SettingsIcon className="size-4" />
                 {tc("governance")}
               </h2>
-              <ul className="space-y-1 text-[13px]">
+              <ul className="text-[13px]">
                 <li>
-                  <Link href="/admin/permissions" className="text-muted-foreground hover:text-foreground">
+                  <Link href="/admin/permissions" className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent">
                     {tc("governancePermissions")}
+                    <ChevronRightIcon className="size-3.5 text-muted-foreground" />
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin/models" className="text-muted-foreground hover:text-foreground">
+                  <Link href="/admin/models" className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent">
                     {tc("governanceLearning")}
+                    <ChevronRightIcon className="size-3.5 text-muted-foreground" />
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin/activity" className="text-muted-foreground hover:text-foreground">
+                  <Link href="/admin/activity" className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent">
                     {tc("governanceActivity")}
+                    <ChevronRightIcon className="size-3.5 text-muted-foreground" />
                   </Link>
                 </li>
               </ul>

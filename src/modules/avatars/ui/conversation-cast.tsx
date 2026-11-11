@@ -42,10 +42,11 @@ export function CastPicker({
           >
             <AssistantAvatar
               provider={id}
-              size={on ? 56 : 44}
+              size={56}
+              // Grows by scale (drawn by the graphics chip), not by size: nothing around it moves.
               className={cn(
-                "transition-[width,height,transform,box-shadow] duration-300 ease-[var(--ease-out-soft)]",
-                on ? "ring-2 ring-foreground/25" : "opacity-75 group-hover:-translate-y-0.5 group-hover:opacity-100",
+                "transition-[transform,opacity,box-shadow] duration-300 ease-[var(--ease-out-soft)]",
+                on ? "ring-2 ring-foreground/25" : "scale-[0.79] opacity-75 group-hover:-translate-y-0.5 group-hover:opacity-100",
               )}
             />
             <span className={cn("text-[13px] transition-colors", on ? "font-medium text-foreground" : "text-muted-foreground group-hover:text-foreground")}>{name(id)}</span>

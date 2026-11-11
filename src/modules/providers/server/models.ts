@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MODEL_CHOICE_AUTO, toCatalogModel, type CatalogModel } from "../catalog";
 import { routeRequest, type RouterInput, type RoutingDecision } from "../router";
 import type { ProviderId } from "../types";
+import { readCatalog } from "./catalog-store";
 import { configuredProviders } from "./registry";
 
 export type CompanyModels = {
@@ -17,15 +18,15 @@ export type CompanyModels = {
   configured: Set<ProviderId>;
 };
 
-/** Read with the user's session: RLS lets members read their company's settings and the catalogue. */
+/** The company's settings with the user's session (RLS); the catalogue and its prices from the server. */
 export async function getCompanyModels(companyId: string): Promise<CompanyModels> {
   const supabase = await createClient();
-  const [catalogRes, allowedRes, settingsRes] = await Promise.all([
-    supabase.from("ai_models").select("*").eq("is_enabled", true).eq("kind", "chat").order("sort_order"),
+  const [catalogRows, allowedRes, settingsRes] = await Promise.all([
+    readCatalog(),
     supabase.from("company_allowed_models").select("model_id").eq("company_id", companyId),
     supabase.from("company_ai_settings").select("auto_enabled, default_model_id").eq("company_id", companyId).maybeSingle(),
   ]);
-  const catalog = (catalogRes.data ?? []).map(toCatalogModel);
+  const catalog = catalogRows.filter((r) => r.is_enabled && r.kind === "chat").map(toCatalogModel);
   const allowedIds = new Set((allowedRes.data ?? []).map((r) => r.model_id));
   const allowed = catalog.filter((m) => allowedIds.has(m.id));
   const autoEnabled = settingsRes.data?.auto_enabled ?? true;

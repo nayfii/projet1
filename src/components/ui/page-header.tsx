@@ -23,8 +23,17 @@ function PageHeader({
   );
 }
 
-function PageContainer({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("mx-auto w-full max-w-5xl px-4 py-8 sm:px-8 sm:py-10", className)} {...props} />;
+/**
+ * A page's frame. Every page of a space starts at the same left edge, so the title does not jump from
+ * one page to the next; `className` narrows the content (a form, a short list) without moving that edge.
+ * The frame is 64rem wide, or what the space sets in `--page-frame` (our console: 72rem).
+ */
+function PageContainer({ className, children, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div className="mx-auto w-full max-w-[var(--page-frame,64rem)] px-4 py-8 sm:px-8 sm:py-10" {...props}>
+      <div className={cn("w-full max-w-5xl", className)}>{children}</div>
+    </div>
+  );
 }
 
 export { PageHeader, PageContainer };

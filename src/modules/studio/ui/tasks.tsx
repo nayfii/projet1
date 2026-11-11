@@ -230,7 +230,7 @@ export function TaskRow({ task, leaving, onDone, draggable, onDragStart, onDragE
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        "group/row relative flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 transition-all duration-500 ease-[var(--ease-out-soft)] hover:bg-accent/50",
+        "group/row relative flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 transition-[transform,opacity,background-color] duration-500 ease-[var(--ease-out-soft)] hover:bg-accent/50 hover:duration-150",
         leaving && "pointer-events-none -translate-y-0.5 opacity-0",
         className,
       )}

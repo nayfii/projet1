@@ -164,7 +164,7 @@ test("the AI proposes memory entries, saved once approved; the client memory is 
   // One approved by hand, one added automatically after the answers (CLAUDE.md §11), each with its origin.
   await expect(page.getByText("[TEST] Point clé").first()).toBeVisible();
   await expect(page.getByText("Depuis une conversation").first()).toBeVisible();
-  await expect(page.getByText("Suggestion de l'IA approuvée")).toBeVisible();
+  await expect(page.getByText("Suggestion de l'IA approuvée").filter({ visible: true })).toBeVisible();
   await expect(page.getByText("Ajouté automatiquement depuis une conversation").first()).toBeVisible();
   await shot(page, "38-client-memory-entries");
 });

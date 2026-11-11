@@ -31,7 +31,7 @@ export default async function ProfilePage() {
   return (
     <PageContainer className="max-w-2xl">
       <PageHeader title={t("title")} description={t("description")} />
-      <section aria-labelledby="avatar-title" className="mb-10 rounded-2xl border bg-card px-6 py-8">
+      <section aria-labelledby="avatar-title" className="mb-6 rounded-xl border bg-card px-5 py-8">
         <h2 id="avatar-title" className="text-center text-[15px] font-semibold tracking-tight">
           {tAvatar("title")}
         </h2>

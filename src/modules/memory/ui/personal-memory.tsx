@@ -24,12 +24,12 @@ export function PersonalMemory({ notes }: { notes: { id: string; content: string
   const examples = [t("example1"), t("example2"), t("example3")];
 
   return (
-    <section aria-labelledby="personal-memory" className="mb-10 rounded-2xl border bg-card px-6 py-6">
+    <section aria-labelledby="personal-memory" className="mb-6 rounded-xl border bg-card p-5">
       <h2 id="personal-memory" className="text-[15px] font-semibold tracking-tight">
         {t("title")}
       </h2>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-        <LockIcon className="size-3.5 shrink-0" />
+      <p className="mt-1 flex items-start gap-1.5 text-sm text-muted-foreground">
+        <LockIcon className="mt-[3px] size-3.5 shrink-0" />
         {t("description")}
       </p>
       <ul className="mt-5 space-y-1.5">

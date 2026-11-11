@@ -47,7 +47,7 @@ export function ModelsManager({ header, models, configured }: { header: { title:
       <Card className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
           <thead>
-            <tr className="border-b text-left text-[13px] text-muted-foreground">
+            <tr className="border-b bg-muted/50 text-left text-[13px] whitespace-nowrap text-muted-foreground">
               <th className="px-4 py-2.5 font-medium">{t("colModel")}</th>
               <th className="px-4 py-2.5 font-medium">{t("colApiId")}</th>
               <th className="px-4 py-2.5 text-right font-medium">{t("colPrice")}</th>
@@ -64,14 +64,14 @@ export function ModelsManager({ header, models, configured }: { header: { title:
                   <p className="mt-0.5 text-[13px] text-muted-foreground">{tChat(`tier.${m.tier}`)}</p>
                 </td>
                 <td className="px-4 py-3 font-mono text-[12px] text-muted-foreground">{m.apiModelId}</td>
-                <td className="px-4 py-3 text-right tabular-nums text-[13px]">
+                <td className="px-4 py-3 text-right text-[13px] whitespace-nowrap tabular-nums">
                   {t("perMillion", { input: price(m.pricing.inputUsdPerMtok), output: price(m.pricing.outputUsdPerMtok) })}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums text-[13px]">
+                <td className="px-4 py-3 text-right text-[13px] whitespace-nowrap tabular-nums">
                   {t("perMillion", { input: price(m.pricing.inputCreditsPerMtok), output: price(m.pricing.outputCreditsPerMtok) })}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex gap-1 whitespace-nowrap">
                     {m.isEnabled ? <Badge variant="success">{t("enabled")}</Badge> : <Badge variant="outline">{t("disabled")}</Badge>}
                     {!configured.includes(m.provider) ? <Badge variant="warning">{t("noKey")}</Badge> : null}
                   </div>

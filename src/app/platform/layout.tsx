@@ -53,7 +53,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         locale={(await getLocale()) as "fr" | "en"}
         labels={await getShellLabels()}
       >
-        {children}
+        {/* Our console's pages are wider (tables of companies, usage, models). */}
+        <div className="contents [--page-frame:72rem]">{children}</div>
       </AppShell>
     </>
   );

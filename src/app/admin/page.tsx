@@ -155,7 +155,7 @@ export default async function AdminOverviewPage() {
           {t("todo.title")}
         </h2>
         {todos.length === 0 ? (
-          <p className="mt-3 flex items-center gap-2 text-[13px] text-muted-foreground">
+          <p className="mt-3 flex items-center gap-2 rounded-xl border bg-card px-4 py-3 text-[13px] text-muted-foreground">
             <CheckCircle2Icon className="size-4 text-success" />
             {t("todo.none")}
           </p>

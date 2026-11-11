@@ -148,6 +148,7 @@ type Props = {
 
 // Shared by the input and the Manual-mode overlay drawn under it: they must wrap text identically.
 const TEXTAREA_LAYOUT = "px-4 pt-3.5 pb-2 text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:break-word]";
+const FIELD_SIZING = typeof CSS !== "undefined" && CSS.supports("field-sizing", "content");
 
 export function ChatView(props: Props) {
   const t = useTranslations("chat");
@@ -218,6 +219,7 @@ export function ChatView(props: Props) {
   const stickToBottom = React.useRef(!props.handover);
   // "Jump to the latest message" appears once the person scrolled up.
   const [awayFromBottom, setAwayFromBottom] = React.useState(false);
+  const scrollSave = React.useRef<number | undefined>(undefined);
   // "Image": the next message asks ChatGPT's image model for an image (also detected from the text).
   const [imageMode, setImageMode] = React.useState(false);
   // While dictating, the recording bar takes the whole toolbar line (nothing overlaps).
@@ -272,9 +274,11 @@ export function ChatView(props: Props) {
     if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
+  // The input grows with its text. Browsers that size a field to its content do it in CSS
+  // (field-sizing), with no measuring: measuring here made the whole page lay itself out twice per key.
   React.useEffect(() => {
     const el = textarea.current;
-    if (!el) return;
+    if (!el || FIELD_SIZING) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
   }, [input]);
@@ -1274,7 +1278,13 @@ export function ChatView(props: Props) {
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
           if (awayFromBottom === stickToBottom.current) setAwayFromBottom(!stickToBottom.current);
           // Reading position kept for this tab: coming back to the conversation reopens it there.
-          if (conversationId) writeSession(`${SCROLL_KEY}${conversationId}`, stickToBottom.current ? null : String(Math.round(el.scrollTop)));
+          // Written once the scrolling pauses, not on every scrolled pixel.
+          if (conversationId) {
+            window.clearTimeout(scrollSave.current);
+            const key = `${SCROLL_KEY}${conversationId}`;
+            const value = stickToBottom.current ? null : String(Math.round(el.scrollTop));
+            scrollSave.current = window.setTimeout(() => writeSession(key, value), 150);
+          }
         }}
       >
         <div className="w-full">
@@ -1470,7 +1480,7 @@ export function ChatView(props: Props) {
                 className={cn(
                   TEXTAREA_LAYOUT,
                   // The visible text is drawn by HideOverlay underneath.
-                  "relative block max-h-60 w-full resize-none bg-transparent text-transparent caret-foreground outline-none [scrollbar-width:none] selection:bg-brand/25 selection:text-transparent placeholder:text-muted-foreground/80 disabled:cursor-not-allowed",
+                  "relative block max-h-60 w-full resize-none [field-sizing:content] bg-transparent text-transparent caret-foreground outline-none [scrollbar-width:none] selection:bg-brand/25 selection:text-transparent placeholder:text-muted-foreground/80 disabled:cursor-not-allowed",
                 )}
               />
             </div>

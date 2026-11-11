@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { BriefcaseIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { BriefcaseIcon, LockIcon, PlusIcon, SearchIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -44,7 +44,7 @@ export function ClientsDirectory({ clients, canRestrict }: { clients: ClientRow[
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {shown.map((c) => (
                 <Link key={c.id} href={`/clients/${c.id}`} className="rounded-xl">
-                  <Card className="flex h-full flex-col gap-4 p-5 transition-colors hover:border-foreground/20">
+                  <Card className="flex h-full flex-col gap-3 p-5 transition-colors hover:border-foreground/20">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate font-medium">{c.name}</p>
@@ -52,7 +52,20 @@ export function ClientsDirectory({ clients, canRestrict }: { clients: ClientRow[
                       </div>
                       <VisibilityBadge visibility={c.visibility} />
                     </div>
-                    <div className="mt-auto flex items-center justify-between">{c.visibility === "restricted" ? <AvatarStack people={c.assignees} /> : <span />}</div>
+                    {/* Who uses this client, so every card reads the same way. */}
+                    <div className="mt-auto flex items-center gap-2 border-t pt-3 text-[13px] text-muted-foreground">
+                      {c.visibility === "restricted" ? (
+                        <>
+                          {c.assignees.length > 0 ? <AvatarStack people={c.assignees} /> : <LockIcon className="size-4" />}
+                          <span>{c.assignees.length > 0 ? t("assignedCount", { count: c.assignees.length }) : t("noAssigneeYet")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <UsersIcon className="size-4" />
+                          <span>{t("openForAll")}</span>
+                        </>
+                      )}
+                    </div>
                   </Card>
                 </Link>
               ))}

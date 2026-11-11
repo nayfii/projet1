@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { ClapperboardIcon, DatabaseIcon } from "lucide-react";
 import { requirePlatformAdmin } from "@/lib/auth/guards";
+import { cn } from "@/lib/utils";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -78,21 +79,21 @@ export default async function PlatformHealthPage() {
               <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
                 <div>
                   <dt className="text-[12px] text-muted-foreground">{t("requests")}</dt>
-                  <dd className="tabular-nums">{n(traffic?.requests ?? 0)}</dd>
+                  <dd className="mt-0.5 text-[15px] font-medium tabular-nums">{n(traffic?.requests ?? 0)}</dd>
                 </div>
                 <div>
                   <dt className="text-[12px] text-muted-foreground">{t("errorRate")}</dt>
-                  <dd className={errorRate > 0.05 ? "tabular-nums text-warning" : "tabular-nums"}>
+                  <dd className={cn("mt-0.5 text-[15px] font-medium tabular-nums", errorRate > 0.05 && "text-warning")}>
                     {traffic?.requests ? format.number(errorRate, { style: "percent", maximumFractionDigits: 1 }) : "—"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-[12px] text-muted-foreground">{t("latency")}</dt>
-                  <dd className="tabular-nums">{traffic?.avg_latency_ms ? t("seconds", { s: format.number(traffic.avg_latency_ms / 1000, { maximumFractionDigits: 1 }) }) : "—"}</dd>
+                  <dd className="mt-0.5 text-[15px] font-medium tabular-nums">{traffic?.avg_latency_ms ? t("seconds", { s: format.number(traffic.avg_latency_ms / 1000, { maximumFractionDigits: 1 }) }) : "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-[12px] text-muted-foreground">{t("lastOk")}</dt>
-                  <dd>{ago(traffic?.last_ok_at ?? null)}</dd>
+                  <dd className="mt-0.5 text-[15px] font-medium">{ago(traffic?.last_ok_at ?? null)}</dd>
                 </div>
               </dl>
               {traffic?.top_error ? <p className="mt-3 text-[13px] text-muted-foreground">{t("topError", { reason: t(`codes.${knownCode(traffic.top_error)}`) })}</p> : null}
@@ -126,15 +127,15 @@ export default async function PlatformHealthPage() {
           <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
             <div>
               <dt className="text-[12px] text-muted-foreground">{t("queued")}</dt>
-              <dd className="tabular-nums">{n(health.render.queued)}</dd>
+              <dd className="mt-0.5 text-[15px] font-medium tabular-nums">{n(health.render.queued)}</dd>
             </div>
             <div>
               <dt className="text-[12px] text-muted-foreground">{t("running")}</dt>
-              <dd className="tabular-nums">{n(health.render.running)}</dd>
+              <dd className="mt-0.5 text-[15px] font-medium tabular-nums">{n(health.render.running)}</dd>
             </div>
             <div>
               <dt className="text-[12px] text-muted-foreground">{t("finished")}</dt>
-              <dd className="tabular-nums">{t("finishedValue", { ok: health.render.succeeded, failed: health.render.failed })}</dd>
+              <dd className="mt-0.5 text-sm font-medium tabular-nums">{t("finishedValue", { ok: health.render.succeeded, failed: health.render.failed })}</dd>
             </div>
           </dl>
           <p className="mt-3 text-[13px] text-muted-foreground">

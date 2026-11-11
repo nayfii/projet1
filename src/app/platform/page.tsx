@@ -4,6 +4,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import {
   ArrowUpRightIcon,
   BuildingIcon,
+  ChevronRightIcon,
   CircleAlertIcon,
   CircleCheckIcon,
   MonitorCheckIcon,
@@ -146,36 +147,42 @@ export default async function PlatformHomePage() {
         )}
       </section>
 
-      <section className="mt-10" aria-labelledby="deck">
-        <h2 id="deck" className="mb-3 text-[13px] font-medium text-muted-foreground">
-          {t("deck")}
-        </h2>
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-5">
-          {actions.map(({ href, icon: Icon, label }) => (
-            <Link key={href} href={href} className="group flex aspect-[4/3] flex-col justify-between rounded-2xl border bg-card p-4 transition-colors hover:border-foreground/25 hover:bg-accent/40">
-              <Icon className="size-5 text-brand" />
-              <span className="text-sm font-medium">{label}</span>
-            </Link>
-          ))}
-        </div>
-        <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-5" data-testid="deck-tools">
-          {externalTools().map((tool) => (
-            <a
-              key={tool.name}
-              href={tool.href}
-              target="_blank"
-              rel="noreferrer"
-              className="group relative flex aspect-[4/3] flex-col justify-between rounded-2xl border bg-card p-4 transition-colors hover:border-foreground/25 hover:bg-accent/40"
-            >
-              <span className={cn("flex size-8 items-center justify-center rounded-lg text-[13px] font-semibold", tool.color)}>{tool.name.charAt(0)}</span>
-              <span>
-                <span className="block text-sm font-medium">{tool.name}</span>
-                <span className="block text-[12px] text-muted-foreground">{t(`tools.${tool.key}` as "tools.vercel")}</span>
-              </span>
-              <ArrowUpRightIcon className="absolute right-3 top-3 size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-            </a>
-          ))}
-        </div>
+      {/* Shortcuts in two groups: what we do here, and the services we run Cendr on (new tab). */}
+      <section className="mt-10 grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" aria-label={t("deck")}>
+        <Card className="p-2">
+          <h2 className="px-3 pt-2.5 pb-2 text-[13px] font-medium text-muted-foreground">{t("deckActions")}</h2>
+          <ul>
+            {actions.map(({ href, icon: Icon, label }) => (
+              <li key={href}>
+                <Link href={href} className="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{label}</span>
+                  <ChevronRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <Card className="p-2">
+          <h2 className="flex items-baseline justify-between gap-3 px-3 pt-2.5 pb-2 text-[13px] font-medium text-muted-foreground">
+            {t("deckServices")}
+            <span className="text-[12px] font-normal">{t("deckServicesHint")}</span>
+          </h2>
+          <div className="grid gap-x-1 sm:grid-cols-2" data-testid="deck-tools">
+            {externalTools().map((tool) => (
+              <a key={tool.name} href={tool.href} target="_blank" rel="noreferrer" className="group flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent">
+                <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold", tool.color)}>{tool.name.charAt(0)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{tool.name}</span>
+                  <span className="block truncate text-[12px] text-muted-foreground">{t(`tools.${tool.key}` as "tools.vercel")}</span>
+                </span>
+                <ArrowUpRightIcon className="size-4 shrink-0 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" />
+              </a>
+            ))}
+          </div>
+        </Card>
       </section>
     </PageContainer>
   );

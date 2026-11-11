@@ -115,7 +115,7 @@ function DocCards({ docs }: { docs: DocumentMeta[] }) {
       {docs.map((d) => {
         const c = d.category_id ? index.categories.get(d.category_id) : null;
         return (
-          <Link key={d.id} href={`/studio/knowledge/${d.id}`} className="group flex min-h-20 flex-col justify-between rounded-xl border bg-card/40 p-4 outline-none transition-all hover:-translate-y-px hover:bg-card hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring">
+          <Link key={d.id} href={`/studio/knowledge/${d.id}`} className="group flex min-h-20 flex-col justify-between rounded-xl border bg-card/40 p-4 outline-none transition-[transform,background-color,box-shadow] hover:-translate-y-px hover:bg-card hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring">
             <span className="line-clamp-2 text-sm font-medium leading-snug">{d.title}</span>
             <span className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
               {c ? <CategoryGlyph icon={c.icon} className="size-3" /> : <FileTextIcon className="size-3" />}
@@ -139,7 +139,7 @@ function CategoryCard({ category, docs, onEdit }: { category: Category | null; d
   const href = `/studio/knowledge/c/${category?.id ?? UNCATEGORIZED}`;
   return (
     <div className="group relative">
-      <Link href={href} className="flex min-h-24 flex-col justify-between rounded-xl border bg-card/40 p-3.5 sm:min-h-28 sm:p-4 outline-none transition-all hover:-translate-y-px hover:bg-card hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring">
+      <Link href={href} className="flex min-h-24 flex-col justify-between rounded-xl border bg-card/40 p-3.5 sm:min-h-28 sm:p-4 outline-none transition-[transform,background-color,box-shadow] hover:-translate-y-px hover:bg-card hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring">
         <span className="flex items-center gap-2.5">
           <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground/80">{category ? <CategoryGlyph icon={category.icon} /> : <InboxIcon className="size-4" />}</span>
           <span className="truncate text-[15px] font-semibold tracking-tight">{name(category)}</span>

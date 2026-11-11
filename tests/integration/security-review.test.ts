@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
-import { addMember, anonClient, createClientRecord, createCompany, createUser, serviceClient, sql, type TestUser } from "../helpers/supabase";
+import { addMember, anonClient, createClientRecord, createCompany, createUser, makePlatformAdmin, serviceClient, sql, type TestUser } from "../helpers/supabase";
 
 /**
  * Step 10 security review (docs/SECURITY.md §5): the database fixes, each with the attack it stops.
@@ -117,5 +117,26 @@ describe("function rights", () => {
     expect((await olivier.client.rpc("hide_assign_placeholders", { p_conversation: randomUUID(), p_items: [] })).error).not.toBeNull();
     const [{ ok }] = await sql<{ ok: boolean }>("select has_function_privilege('anon', 'private.is_company_member(uuid)', 'execute') as ok");
     expect(ok).toBe(false);
+  });
+});
+
+/** Audit 2026-11-11: our dollar prices per model stay in our console; customers see credits only. */
+describe("the model catalogue", () => {
+  it("shows customers names and credit rates, never our dollar prices", async () => {
+    expect((await olivier.client.from("ai_models").select("input_usd_per_mtok")).error).not.toBeNull();
+    expect((await olivier.client.from("ai_models").select("*")).error).not.toBeNull();
+    const visible = await olivier.client.from("ai_models").select("id, label, input_credits_per_mtok").limit(1);
+    expect(visible.error).toBeNull();
+    expect(visible.data).toHaveLength(1);
+  });
+
+  it("can still be changed by our team, and only by our team", async () => {
+    const team = await createUser("sec-team", "Team");
+    await makePlatformAdmin(team);
+    const [{ id, label }] = await sql<{ id: string; label: string }>("select id, label from public.ai_models order by sort_order limit 1");
+    expect((await olivier.client.from("ai_models").update({ input_usd_per_mtok: 0 }).eq("id", id).select("id")).data).toEqual([]);
+    const changed = await team.client.from("ai_models").update({ label }).eq("id", id).select("id");
+    expect(changed.error).toBeNull();
+    expect(changed.data).toEqual([{ id }]);
   });
 });

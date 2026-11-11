@@ -161,7 +161,7 @@ export function AppsBrowser({ apps, departments, recent }: { apps: BrowserApp[];
                     <DepartmentIcon department={d.key} className="size-6 rounded-md" />
                     {d.label}
                   </h2>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{shown.filter((a) => a.department === d.key).map(card)}</div>
+                  <div className="grid gap-3 sm:grid-cols-2">{shown.filter((a) => a.department === d.key).map(card)}</div>
                 </section>
               ))
           )}

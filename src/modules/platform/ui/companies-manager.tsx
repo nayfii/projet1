@@ -4,7 +4,7 @@ import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { BuildingIcon, CoinsIcon, PlusIcon } from "lucide-react";
+import { BuildingIcon, CoinsIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Field, FormMessage, SubmitButton } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip } from "@/components/ui/tooltip";
 import { CopyLinkButton } from "@/modules/organizations/ui/invite-form";
 import { createCompanyForCustomerAction, updateCompanyForPlatformAction } from "../server/actions";
 import { grantCreditsAction } from "@/modules/usage/server/actions";
@@ -51,6 +52,9 @@ export function CompaniesManager({
   const [creating, setCreating] = useState(startWithNew && plans.length > 0);
   const [granting, setGranting] = useState<Company | null>(null);
   const [pending, startTransition] = useTransition();
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLocaleLowerCase();
+  const shown = needle ? companies.filter((c) => `${c.name} ${c.ownerEmail ?? ""}`.toLocaleLowerCase().includes(needle)) : companies;
 
   const update = (input: Parameters<typeof updateCompanyForPlatformAction>[0]) =>
     startTransition(async () => {
@@ -73,13 +77,22 @@ export function CompaniesManager({
         }
       />
 
+      {companies.length > 8 ? (
+        <div className="relative max-w-sm">
+          <SearchIcon aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("searchCompanies")} aria-label={t("searchCompanies")} className="pl-9" />
+        </div>
+      ) : null}
+
       {companies.length === 0 ? (
         <EmptyState icon={<BuildingIcon />} title={t("noCompanies")} />
+      ) : shown.length === 0 ? (
+        <EmptyState icon={<SearchIcon />} title={t("noCompanyMatch")} />
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-sm">
             <thead>
-              <tr className="border-b text-left text-[13px] text-muted-foreground">
+              <tr className="border-b bg-muted/50 text-left text-[13px] whitespace-nowrap text-muted-foreground">
                 <th className="px-4 py-2.5 font-medium">{t("colCompany")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("colPlan")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("colSeats")}</th>
@@ -89,13 +102,17 @@ export function CompaniesManager({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {companies.map((c) => (
+              {shown.map((c) => (
                 <tr key={c.id}>
                   <td className="px-4 py-3">
-                    <Link href={`/platform/companies/${c.id}`} className="font-medium hover:underline">
-                      {c.name}
-                    </Link>
-                    <p className="text-[13px] text-muted-foreground">{c.ownerEmail ?? t("noOwner")}</p>
+                    <div className="max-w-64">
+                      <Link href={`/platform/companies/${c.id}`} className="block truncate font-medium hover:underline">
+                        {c.name}
+                      </Link>
+                      <p className="truncate text-[13px] text-muted-foreground" title={c.ownerEmail ?? undefined}>
+                        {c.ownerEmail ?? t("noOwner")}
+                      </p>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <Select value={c.planId ?? undefined} disabled={pending} onValueChange={(v) => update({ companyId: c.id, planId: v })}>
@@ -111,14 +128,14 @@ export function CompaniesManager({
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="px-4 py-3 tabular-nums">
+                  <td className="px-4 py-3 whitespace-nowrap tabular-nums">
                     {c.seatLimit ? t("seatsValue", { used: c.activeSeats, limit: c.seatLimit }) : c.activeSeats}
                     {c.pendingInvitations > 0 ? (
                       <span className="ml-1.5 text-[13px] text-muted-foreground">{t("pending", { count: c.pendingInvitations })}</span>
                     ) : null}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 whitespace-nowrap">
                       <div className="min-w-0">
                         <p className="tabular-nums">
                           {c.credits
@@ -134,12 +151,14 @@ export function CompaniesManager({
                           </p>
                         ) : null}
                       </div>
-                      <Button variant="ghost" size="icon-sm" aria-label={t("grantCredits")} onClick={() => setGranting(c)}>
-                        <CoinsIcon />
-                      </Button>
+                      <Tooltip content={t("grantCredits")}>
+                        <Button variant="ghost" size="icon-sm" aria-label={t("grantCredits")} onClick={() => setGranting(c)} className="text-muted-foreground">
+                          <CoinsIcon />
+                        </Button>
+                      </Tooltip>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-muted-foreground">
+                  <td className="px-4 py-3 text-[13px] whitespace-nowrap text-muted-foreground">
                     {format.dateTime(new Date(c.createdAt), { dateStyle: "medium" })}
                   </td>
                   <td className="px-4 py-3">

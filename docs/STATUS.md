@@ -294,6 +294,24 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | **Light theme**: pastel icons and letters were almost invisible on white (Applis, our console's shortcuts): they now use a deeper version of each colour; every main screen checked in both themes, on a computer and a phone | **done** |
 | **Audit fixes**: the company usage page no longer mentions estimated costs and hides empty rows; title-writing appears as its own line in usage; the launch switches' explanation follows their state; on a phone the chat header keeps room for the title | **done** |
 
+## Audit: security, smoothness, visual clarity (2026-11-11, preview branch `preview/audit-securite-perf-visuel`)
+
+Not published to production: the branch gives a Vercel preview for the founder to check first.
+
+| Area | Status |
+|---|---|
+| Security | **2 fixes**: a link written by the AI can no longer carry a restored protected value in its address (planted-instruction leak); customers can no longer read our dollar price per model from the API. 3 points noted (sign-in links create empty accounts; 2 dependency advisories not exploitable; inline scripts allowed by the CSP). Details: `docs/SECURITY.md` §5, audit of 2026-11-11 |
+| Smoothness: typing in a conversation | **fixed**: the input grew by measuring itself, which made the whole page lay itself out twice per key (now sized by CSS in browsers that support it); the closed "Add colleagues" dialog rebuilt its whole timeline on every key (now built only when open). JS per key down to a few milliseconds in the profile |
+| Smoothness: Studio menu fold | **fixed**: the menu no longer animates its width (the page laid itself out on every frame); the page slides into place once (transform) |
+| Smoothness: other | avatars grow by scale instead of size (Confronter, assistant choice); Studio cards and rows animate only what changes (no `transition-all`); dialogs no longer blur the whole screen behind them; the reading position is saved once scrolling pauses |
+| Smoothness: tried and dropped | drawing answers only when they come on screen (`content-visibility`): opening an 80-message conversation got faster (1.8 s → 1.3 s, CPU slowed ×4) but scrolling dropped more frames; scrolling won |
+| Visual: same left edge on every page | **done**: pages of one space (app, company admin, our console) start at the same place; forms are narrower but no longer centred differently, so titles stop jumping between pages |
+| Visual: Workspace (our console) | **done**: home shortcuts in two groups (Actions; Our services, opening in a new tab) instead of 15 large tiles; companies table with a search, a tinted header, figures and dates on one line, e-mails cut with the full address on hover, an explained "Add credits" button; models table on one line per model; Providers figures emphasised |
+| Visual: light theme | **done**: secondary text and lines a step darker (they were too pale on white); still neutral black and white |
+| Visual: app | Applis in two columns (no empty third column); client cards say who uses the client; Conscience side column and the admin "To do" in cards; profile cards evenly spaced |
+| Tests | type check, lint, unit 321/321, integration 239/239, production build: pass. End to end (simulated AI): the specs of the touched screens, 9 files (consoles, Studio, chat, chat UX, collaboration, memory, Hide, foundation, Step 13): pass; one memory test locator made to look at the visible copy only, like its neighbours |
+| Not done in this pass | the other e2e files (agents, video, launch scenario…), not touched by these changes; the Liquid Glass branch does not have these changes yet; the database change (prices hidden from customers) reaches production only when the branch is merged and deployed: a preview that uses the production database runs without it, and the code works with or without it |
+
 ## Studio — building and running Cendr (founder's request, 2026-11-11; replaces Scale)
 
 | Item | Status |

@@ -4,6 +4,7 @@ import { requirePlatformAdmin } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { PageContainer } from "@/components/ui/page-header";
 import { toCatalogModel } from "@/modules/providers/catalog";
+import { readCatalog } from "@/modules/providers/server/catalog-store";
 import { configuredProviders } from "@/modules/providers/server/registry";
 import { ModelsManager } from "@/modules/platform/ui/models-manager";
 import { RenderRatesForm } from "@/modules/render/ui/render-rates-form";
@@ -23,8 +24,8 @@ export default async function PlatformModelsPage() {
   await requirePlatformAdmin();
   const t = await getTranslations("platformModels");
   const supabase = await createClient();
-  const [{ data }, { data: rates }, { data: settings }] = await Promise.all([
-    supabase.from("ai_models").select("*").order("sort_order"),
+  const [data, { data: rates }, { data: settings }] = await Promise.all([
+    readCatalog(),
     supabase.from("render_rates").select("kind, credits_per_second"),
     supabase
       .from("platform_settings")

@@ -84,7 +84,7 @@ function Indicators({ numbers }: { numbers: ReturnType<typeof indicators> }) {
   const shell = useShell();
   const next = numbers.nextMilestone;
   const days = next?.target_date ? diffDays(today, next.target_date) : null;
-  const tile = "group flex min-h-[7.5rem] flex-col justify-between rounded-2xl border bg-card/50 p-5 text-left shadow-xs outline-none transition-all hover:-translate-y-px hover:bg-card hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring";
+  const tile = "group flex min-h-[7.5rem] flex-col justify-between rounded-2xl border bg-card/50 p-5 text-left shadow-xs outline-none transition-[transform,background-color,box-shadow] hover:-translate-y-px hover:bg-card hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring";
   const label = "text-[13px] text-muted-foreground";
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -297,7 +297,7 @@ function QuickActions() {
             key={i.kind}
             type="button"
             onClick={() => shell.create(i.kind)}
-            className="flex items-center gap-3 rounded-xl border bg-background/40 px-3 py-2.5 text-left text-sm outline-none transition-all hover:-translate-y-px hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex items-center gap-3 rounded-xl border bg-background/40 px-3 py-2.5 text-left text-sm outline-none transition-[transform,background-color,box-shadow] hover:-translate-y-px hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="flex size-7 items-center justify-center rounded-lg bg-muted">
               <i.icon className="size-4" />
