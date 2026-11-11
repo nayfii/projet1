@@ -26,7 +26,13 @@ export type AppContext = {
   memberships: Membership[];
   /** The company the user is working in right now (active member of an active company). */
   active: Membership | null;
+  /** In our team and past two-step sign-in in this session (the database gives our team's powers only then). */
   isPlatformAdmin: boolean;
+  /**
+   * Two-step sign-in still to do in this session: "challenge" (the person has an authenticator: enter its
+   * code), "setup" (in our team without one yet: set it up). Nothing else is reachable until then.
+   */
+  twoStep: "challenge" | "setup" | null;
 };
 
 /** Everything the server needs to know about the signed-in user, loaded once per request. */
@@ -44,6 +50,21 @@ export const getAppContext = cache(async (): Promise<AppContext | null> => {
     supabase.rpc("my_memberships"),
     supabase.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
   ]);
+
+  // The database refuses every request of a person who set up two-step sign-in until this session passed
+  // it (migration 20261113000001_mfa.sql): ask for the code before anything else.
+  if (profileRes.error?.message === "mfa_required") {
+    return {
+      user: { id: user.id, email: user.email },
+      profile: { fullName: null, avatarUrl: null, locale: null, activeCompanyId: null, passwordSetAt: null },
+      memberships: [],
+      active: null,
+      isPlatformAdmin: false,
+      twoStep: "challenge",
+    };
+  }
+  const passedTwoStep = claims.aal === "aal2";
+  const inOurTeam = Boolean(platformRes.data);
 
   const memberships: Membership[] = (membershipsRes.data ?? []).map((m) => ({
     companyId: m.company_id,
@@ -70,7 +91,9 @@ export const getAppContext = cache(async (): Promise<AppContext | null> => {
     },
     memberships,
     active,
-    isPlatformAdmin: Boolean(platformRes.data),
+    isPlatformAdmin: inOurTeam && passedTwoStep,
+    // In our team without the code: they have no authenticator yet (with one, the request above was refused).
+    twoStep: inOurTeam && !passedTwoStep ? "setup" : null,
   };
 });
 

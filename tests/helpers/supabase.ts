@@ -1,3 +1,4 @@
+import { totpCode } from "./totp";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
@@ -26,7 +27,7 @@ export async function sql<T = Record<string, unknown>>(text: string, params: unk
   }
 }
 
-export type TestUser = { id: string; email: string; client: Client };
+export type TestUser = { id: string; email: string; password: string; client: Client };
 
 /** Creates a confirmed user and returns a client signed in as that user (real JWT, real RLS). */
 export async function createUser(label: string, fullName?: string): Promise<TestUser> {
@@ -43,11 +44,27 @@ export async function createUser(label: string, fullName?: string): Promise<Test
   const client = anonClient();
   const { error: signInError } = await client.auth.signInWithPassword({ email, password });
   if (signInError) throw signInError;
-  return { id: data.user.id, email, client };
+  return { id: data.user.id, email, password, client };
 }
 
+/** Our team's powers need two-step sign-in: the user sets up an authenticator and passes it (aal2). */
 export async function makePlatformAdmin(user: TestUser) {
   await sql("insert into public.platform_admins (user_id) values ($1) on conflict do nothing", [user.id]);
+  await passTwoStep(user);
+}
+
+/** Sets up an authenticator for `user` (once) and upgrades their session with a valid code. Returns the secret. */
+export async function passTwoStep(user: TestUser & { totpSecret?: string }): Promise<string> {
+  if (!user.totpSecret) {
+    const { data, error } = await user.client.auth.mfa.enroll({ factorType: "totp", friendlyName: `test-${user.id.slice(0, 8)}` });
+    if (error || !data) throw error ?? new Error("mfa enroll failed");
+    user.totpSecret = data.totp.secret;
+    (user as { factorId?: string }).factorId = data.id;
+  }
+  const factorId = (user as { factorId?: string }).factorId!;
+  const { error } = await user.client.auth.mfa.challengeAndVerify({ factorId, code: totpCode(user.totpSecret) });
+  if (error) throw error;
+  return user.totpSecret;
 }
 
 let signupOpened = false;

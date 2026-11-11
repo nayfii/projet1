@@ -319,6 +319,27 @@ Built from the founder's framing decisions (CLAUDE.md §11).
 | **Light theme**: pastel icons and letters were almost invisible on white (Applis, our console's shortcuts): they now use a deeper version of each colour; every main screen checked in both themes, on a computer and a phone | **done** |
 | **Audit fixes**: the company usage page no longer mentions estimated costs and hides empty rows; title-writing appears as its own line in usage; the launch switches' explanation follows their state; on a phone the chat header keeps room for the title | **done** |
 
+## Cendr V1.1 (started 2026-11-13, preview branch `preview/audit-securite-perf-visuel`)
+
+Initial map: everything listed in this file below is in place and tested (chat, Consciousness with company,
+client and personal memory, Hide, collaboration, apps, consoles, Studio, dictation). Missing for V1.1: two-
+step sign-in, compliance dossier, team and project memory (projects do not exist yet), knowledge import with
+a privacy filter, integrations, workflows, instant dictation, monitoring and alerting, backups and restore.
+
+| Lot | Status |
+|---|---|
+| 1. Two-step sign-in (TOTP): required for our team, offered to everyone, enforced in the database | **done**: tests `mfa.test.ts` (5), `totp.test.ts` (3), `e2e/two-step.spec.ts` (2); consoles, Studio and releases e2e pass with our team's account passing it |
+| 1. Compliance readiness dossier | **done as a working file**: `docs/COMPLIANCE.md` (asset and sub-processor inventory, data flows, risk register, controls matrix, ISO 27001 Annex A and SOC 2 correspondence, GDPR obligations, incident procedure, backups, retention, missing steps). Not a certification |
+| 2. Consciousness: team and project memory, measured with / without | not started |
+| 3. Knowledge import with privacy filter | not started |
+| 4. Integrations | not started (needs the founder's developer accounts: Google, Microsoft, Slack, Notion, Canva) |
+| 5–6. Workflows (engine, editor, copilot, Play/Pause, templates) | not started |
+| 7. Instant dictation | not started |
+| 8. Monitoring, performance, deployment | not started |
+
+**Before production**: the founder sets up two-step sign-in at the next sign-in to our console (required);
+TOTP is enabled in `supabase/config.toml`, pushed to the hosted project by the production deploy.
+
 ## Audit: security, smoothness, visual clarity (2026-11-11, preview branch `preview/audit-securite-perf-visuel`)
 
 Not published to production: the branch gives a Vercel preview for the founder to check first.

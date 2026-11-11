@@ -42,6 +42,23 @@ Status: **Step 8** (2026-10-21). Updated at every step. This document describes 
 | Our team (console access) | Managed from our console (Plateforme → Équipe) through functions that check the platform admin first: an address with a verified account gets access at once; otherwise the invitation waits and is granted only at a sign-in with that **verified** address (so nobody gets it by creating an account for someone else's address). Nobody removes themselves or the last member; every grant, invitation, removal and cancellation is logged (ids or address only). Invitations are readable by our team only. `PLATFORM_ADMIN_EMAILS` remains a fallback | migration `20261104000002_platform_team.sql`, `after-sign-in.ts`, `tests/integration/console-releases.test.ts`, `e2e/password.spec.ts` |
 | AI suggestions | Nothing is saved without a person's approval; pending suggestions are visible only to their author and to people who can write in the target memory; approval re-checks write rights in SQL | `decide_memory_suggestion`, integration tests |
 
+### Two-step sign-in (V1.1, 2026-11-13)
+
+- An authenticator app code (TOTP, Supabase Auth). Offered to everyone in the profile; **required for our
+  team**: a platform admin without one is sent to set it up before anything else, and our team's powers in
+  the database (`private.is_platform_admin()`) exist only in a session that passed it (`aal2`).
+- Once a person has a verified second factor, **every request of theirs needs a session that passed it**:
+  a pre-request check refuses every API call otherwise (`private.check_request`, `pgrst.db_pre_request`),
+  and restrictive policies guard what does not go through the API (real-time messages and participants,
+  stored files). A stolen password or sign-in link alone opens nothing.
+- The app asks for the code first (`/auth/two-step`, `src/lib/auth/guards.ts`); server actions and routes
+  refuse a session that has not passed it.
+- Recovery of a lost factor: done by the founder in the Supabase dashboard after checking the person's
+  identity (procedure in `docs/COMPLIANCE.md` §15).
+- Tests: `tests/integration/mfa.test.ts`, `tests/unit/totp.test.ts`, `e2e/two-step.spec.ts`.
+- Compliance readiness dossier (controls, sub-processors, risks, ISO/SOC 2/GDPR mapping, missing steps):
+  `docs/COMPLIANCE.md`.
+
 ## 2. Data sent to AI providers
 
 Every AI call is built by our server. Providers receive one self-contained request and are not asked to keep anything (no assistants, threads, files or vector stores on their side).

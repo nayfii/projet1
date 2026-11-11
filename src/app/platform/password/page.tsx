@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { requirePlatformAdmin } from "@/lib/auth/guards";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { PasswordCard } from "@/modules/identity/ui/password-forms";
+import { TwoStepCard } from "@/modules/identity/ui/two-step";
+import { twoStepEnabled } from "@/modules/identity/server/two-step";
 import { needsCurrentPassword } from "@/modules/identity/server/password-actions";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,6 +21,7 @@ export default async function PlatformPasswordPage() {
     <PageContainer className="max-w-2xl">
       <PageHeader title={t("title")} description={ctx.user.email} />
       <PasswordCard hasPassword={Boolean(ctx.profile.passwordSetAt)} needsCurrent={needsCurrent === true} />
+      <TwoStepCard enabled={await twoStepEnabled()} required />
     </PageContainer>
   );
 }

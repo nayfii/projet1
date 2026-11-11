@@ -10,6 +10,8 @@ import { fakeProviderEnabled } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { PersonalMemory } from "@/modules/memory/ui/personal-memory";
 import { PasswordCard } from "@/modules/identity/ui/password-forms";
+import { TwoStepCard } from "@/modules/identity/ui/two-step";
+import { twoStepEnabled } from "@/modules/identity/server/two-step";
 import { needsCurrentPassword } from "@/modules/identity/server/password-actions";
 import { AppearanceSettings } from "@/components/appearance/appearance-settings";
 
@@ -50,6 +52,7 @@ export default async function ProfilePage() {
       />
       <div className="mt-6">
         <PasswordCard hasPassword={Boolean(ctx.profile.passwordSetAt)} needsCurrent={needsCurrent === true} />
+        <TwoStepCard enabled={await twoStepEnabled()} required={ctx.isPlatformAdmin} />
       </div>
       <div className="mt-6">
         <AppearanceSettings />

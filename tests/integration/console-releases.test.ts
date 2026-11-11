@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { createCompany, createUser, makePlatformAdmin, serviceClient, sql, type TestUser } from "../helpers/supabase";
+import { createCompany, createUser, makePlatformAdmin, passTwoStep, serviceClient, sql, type TestUser } from "../helpers/supabase";
 
 /**
  * Our console's versions, checks and Claude Code requests (CLAUDE.md §11): our team only, never a
@@ -80,6 +80,9 @@ describe("our team, managed from the console (Plateforme → Équipe)", () => {
 
     // An account that exists gets the console at once; an unknown address waits for its first sign-in.
     expect((await platform.client.rpc("platform_add_admin", { p_email: colleague.email })).data).toBe("added");
+    // Our console opens only after two-step sign-in (an authenticator code), even for a new team member.
+    expect((await colleague.client.rpc("platform_team")).error?.message).toBe("forbidden");
+    await passTwoStep(colleague);
     expect((await colleague.client.rpc("platform_team")).error).toBeNull();
     const pending = `futur-${Date.now()}@test.local`;
     expect((await platform.client.rpc("platform_add_admin", { p_email: pending })).data).toBe("invited");

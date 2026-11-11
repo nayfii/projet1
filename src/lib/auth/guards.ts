@@ -11,6 +11,7 @@ import type { AdminScope } from "@/modules/organizations/scopes";
 export async function requireUser(): Promise<AppContext> {
   const ctx = await getAppContext();
   if (!ctx) redirect("/login");
+  if (ctx.twoStep) redirect("/auth/two-step");
   return ctx;
 }
 
@@ -51,7 +52,7 @@ export async function requirePlatformAdmin(): Promise<AppContext> {
 /** For server actions: returns the context or null instead of redirecting. */
 export async function memberOrNull(scope?: AdminScope): Promise<MemberContext | null> {
   const ctx = await getAppContext();
-  if (!ctx?.active) return null;
+  if (!ctx?.active || ctx.twoStep) return null;
   if (scope && !hasScope(ctx.active, scope)) return null;
   return ctx as MemberContext;
 }
