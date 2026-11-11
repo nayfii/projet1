@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Agent skills (.claude/skills) hold their own examples: not part of the app's styles. */
+@source not "../../.claude";
 @import "tw-animate-css";
 
 /*
