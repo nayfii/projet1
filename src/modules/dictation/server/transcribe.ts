@@ -1,7 +1,7 @@
 import "server-only";
 import { transcribe } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { aiProviderKey, dictationModel, fakeProviderEnabled } from "@/lib/env";
+import { aiProviderKey, dictationModel, fakeDictationLatencyMs, fakeProviderEnabled } from "@/lib/env";
 import { transcriptionPrompt } from "../cleanup";
 
 export type Transcript = { text: string; seconds: number | null; model: string; test: boolean };
@@ -15,6 +15,8 @@ export type Transcript = { text: string; seconds: number | null; model: string; 
  */
 export async function transcribeSpeech(audio: Uint8Array, locale: "fr" | "en", previous: string | null = null): Promise<Transcript | "not_configured"> {
   if (fakeProviderEnabled()) {
+    const wait = fakeDictationLatencyMs();
+    if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
     // With a hesitation, so the cleanup that follows (and "Show the original") can be seen in test mode.
     const text = locale === "fr" ? "Euh, ceci est une dictée de démonstration (mode test)." : "Um, this is a demo dictation (test mode).";
     return { text, seconds: null, model: "test", test: true };

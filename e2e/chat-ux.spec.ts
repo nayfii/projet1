@@ -133,8 +133,9 @@ test("a draft stays with its conversation", async () => {
 test("dictation sent with the arrow goes out at once; the recording bar shows the level and the time", async () => {
   await composer().fill("");
   await page.getByRole("button", { name: "Dicter" }).click();
-  await expect(page.getByTestId("dictation-bar")).toBeVisible();
-  await expect(page.title()).resolves.toContain("Dictée en cours");
+  // The bar shows at once; the tab says so once the microphone really listens.
+  await expect(page.getByTestId("dictation-bar")).toHaveAttribute("aria-label", "Enregistrement en cours");
+  await expect.poll(() => page.title()).toContain("Dictée en cours");
   await page.waitForTimeout(1200);
   await page.getByRole("button", { name: "Envoyer directement" }).click();
   await expect(answers()).toHaveCount(1, { timeout: 20_000 });

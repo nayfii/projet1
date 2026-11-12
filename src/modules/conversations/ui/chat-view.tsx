@@ -227,6 +227,8 @@ export function ChatView(props: Props) {
   const [dictating, setDictating] = React.useState(false);
   // What is being dictated, shown under the message box while the person talks.
   const [liveDictation, setLiveDictation] = React.useState("");
+  // The box as the last dictation left it (the polished version may only replace an untouched text).
+  const dictated = React.useRef<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement>(null);
   const textarea = React.useRef<HTMLTextAreaElement>(null);
   const creating = React.useRef<Promise<string | null> | null>(null);
@@ -354,7 +356,10 @@ export function ChatView(props: Props) {
   // A draft left in this conversation comes back (unless a tool run fills the input).
   const savedDraft = React.useSyncExternalStore(noSubscription, () => readLocal(`${DRAFT_KEY}${props.conversation?.id ?? "new"}`), () => null);
   const [draftRestored, setDraftRestored] = React.useState(false);
-  if (!draftRestored && savedDraft && !pendingRun && input === "") {
+  // Once the person has written (or dictated) here, the box is theirs: emptying it never brings an
+  // older draft back.
+  if (!draftRestored && (input !== "" || pendingRun)) setDraftRestored(true);
+  else if (!draftRestored && savedDraft && input === "") {
     setDraftRestored(true);
     setInput(savedDraft);
   }
@@ -526,13 +531,22 @@ export function ChatView(props: Props) {
 
   /** Dictated text follows what was already typed, then the caret waits after it for a read-through. */
   function insertDictation(text: string) {
-    insertAtCaret(input.length, input.length, (input && !/\s$/.test(input) ? " " : "") + text);
+    const added = (input && !/\s$/.test(input) ? " " : "") + text;
+    dictated.current = input + added;
+    insertAtCaret(input.length, input.length, added);
   }
 
-  /** "Show the original": the tidied dictation, if still in the box, gives way to what was transcribed. */
-  function replaceDictation(from: string, to: string) {
+  /**
+   * The dictation's text, if still in the box, gives way to another version: the original ("Show the
+   * original"), or the polished one arriving on its own (`auto`), which waits for nobody: it only
+   * replaces the text if the box is exactly as the dictation left it.
+   */
+  function replaceDictation(from: string, to: string, auto = false) {
+    if (auto && input !== dictated.current) return false;
     const at = input.lastIndexOf(from);
     if (at < 0) return false;
+    const next = input.slice(0, at) + to + input.slice(at + from.length);
+    if (auto) dictated.current = next;
     insertAtCaret(at, at + from.length, to);
     return true;
   }

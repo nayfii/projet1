@@ -112,6 +112,28 @@ describe("a long dictation, cut at the speaker's pauses", () => {
     expect(cuts[0]).toBeLessThan(SEGMENT_RULES.hardMs + 100);
   });
 
+  it("ends the first part sooner, so the first words show quickly", () => {
+    const pauseAt = (t: number) => (t > 1300 && t < 2000 ? 0.002 : speech(t));
+    const first = newCutter(0, true);
+    let cut: number | null = null;
+    for (let t = 60; t < 2400 && cut === null; t += 60) if (shouldCut(first, pauseAt(t), t)) cut = t;
+    expect(cut).not.toBeNull();
+    expect(cut!).toBeGreaterThanOrEqual(1300 + SEGMENT_RULES.pauseMs);
+    expect(cut!).toBeLessThan(2000);
+    // The same pause in a later part is too early to end it.
+    const later = newCutter(0);
+    let laterCut = false;
+    for (let t = 60; t < 2400; t += 60) laterCut ||= shouldCut(later, pauseAt(t), t);
+    expect(laterCut).toBe(false);
+  });
+
+  it("keeps the pause longer than the gaps between words", () => {
+    // Words separated by 200 ms gaps never end a part.
+    const words = (t: number) => (t % 600 < 200 ? 0.002 : speech(t));
+    expect(run(words, 9000)).toEqual([]);
+    expect(SEGMENT_RULES.pauseMs).toBeGreaterThan(300);
+  });
+
   it("knows a silent part, and measures the voice level of a waveform", () => {
     const cutter = newCutter(0);
     for (let t = 60; t < 3000; t += 60) shouldCut(cutter, 0.001, t);

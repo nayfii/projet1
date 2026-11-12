@@ -2050,6 +2050,7 @@
     "stop": "Terminer et transcrire",
     "cancel": "Annuler l'enregistrement",
     "recording": "Enregistrement en cours",
+    "starting": "Ouverture du micro…",
     "transcribing": "Transcription…",
     "cleaning": "Mise au propre…",
     "cleaned": "Texte mis au propre.",
@@ -2074,7 +2075,8 @@
       "not_configured": "La dictée n'est pas encore configurée (clé OpenAI manquante).",
       "disabled": "La dictée vocale est désactivée dans votre entreprise.",
       "forbidden": "Accès refusé.",
-      "empty": "Aucune parole détectée."
+      "empty": "Aucune parole détectée.",
+      "noDevice": "Aucun micro n'a été trouvé. Branchez-en un, puis réessayez."
     },
     "send": "Envoyer directement",
     "recordingTitle": "Dictée en cours"

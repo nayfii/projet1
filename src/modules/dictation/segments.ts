@@ -4,14 +4,16 @@
  * Pure logic, fed with voice levels (RMS, 0–1) about every 60 ms; shared by the microphone and the tests.
  */
 export const SEGMENT_RULES = {
-  /** A part is at least this long (shorter parts transcribe worse and cost the one-second minimum). */
-  minMs: 2_500,
-  /** From this length, the next short pause ends the part. */
-  maxMs: 15_000,
+  /** The first part ends at the first pause after this: the first words show quickly. */
+  firstMinMs: 1_200,
+  /** The next parts are at least this long (shorter parts transcribe worse and cost the one-second minimum). */
+  minMs: 2_000,
+  /** From this length, the next short pause ends the part (the part left when the person stops stays short). */
+  maxMs: 10_000,
   /** Without any pause, a part ends here anyway. */
-  hardMs: 22_000,
-  /** A pause: this long below the quiet threshold… */
-  pauseMs: 450,
+  hardMs: 18_000,
+  /** A pause: this long below the quiet threshold (longer than the gaps between words)… */
+  pauseMs: 380,
   /** …a short one once the part is long. */
   shortPauseMs: 150,
   /** Quiet = below this share of the recent peak… */
@@ -24,10 +26,11 @@ export const SEGMENT_RULES = {
   decay: 0.98,
 } as const;
 
-export type Cutter = { startedAt: number; peak: number; loudest: number; quietSince: number | null };
+export type Cutter = { startedAt: number; peak: number; loudest: number; quietSince: number | null; first: boolean };
 
-export function newCutter(now: number): Cutter {
-  return { startedAt: now, peak: 0, loudest: 0, quietSince: null };
+/** A new part; `first` for the first part of a recording (which may end sooner). */
+export function newCutter(now: number, first = false): Cutter {
+  return { startedAt: now, peak: 0, loudest: 0, quietSince: null, first };
 }
 
 /** One voice-level sample; true when the current part should end here. */
@@ -38,7 +41,7 @@ export function shouldCut(cutter: Cutter, level: number, now: number, rules: typ
   cutter.quietSince = quiet ? (cutter.quietSince ?? now) : null;
   const length = now - cutter.startedAt;
   if (length >= rules.hardMs) return true;
-  if (length < rules.minMs || cutter.quietSince === null || isSilent(cutter, rules)) return false;
+  if (length < (cutter.first ? rules.firstMinMs : rules.minMs) || cutter.quietSince === null || isSilent(cutter, rules)) return false;
   return now - cutter.quietSince >= (length >= rules.maxMs ? rules.shortPauseMs : rules.pauseMs);
 }
 

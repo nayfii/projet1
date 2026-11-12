@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { memberOrNull } from "@/lib/auth/guards";
-import { fakeProviderEnabled } from "@/lib/env";
+import { fakeDictationLatencyMs, fakeProviderEnabled } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { runMemoryTask } from "@/modules/memory/server/ai-tasks";
 import { getCompanyModels } from "@/modules/providers/server/models";
@@ -33,6 +33,11 @@ export async function POST(request: Request) {
   const { text, locale } = parsed.data;
   const tidy = tidyDictation(text, locale);
   const words = tidy.split(/\s+/).filter(Boolean).length;
+  if (fakeProviderEnabled()) {
+    // Speed tests: the simulated polish takes as long as a fast model would.
+    const wait = fakeDictationLatencyMs();
+    if (wait && words >= CLEANUP_AI_MIN_WORDS) await new Promise((resolve) => setTimeout(resolve, wait));
+  }
   if (fakeProviderEnabled() || words < CLEANUP_AI_MIN_WORDS || tidy.length > CLEANUP_AI_MAX_CHARS) return reply({ ok: true, text: tidy, polished: false });
 
   const models = await getCompanyModels(member.active.companyId);

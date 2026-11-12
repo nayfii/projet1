@@ -27,6 +27,8 @@ export function DictationField({
   const t = useTranslations("dictation");
   const [recording, setRecording] = React.useState(false);
   const [live, setLive] = React.useState("");
+  // The field as the last dictation left it (the polished version may only replace an untouched text).
+  const dictated = React.useRef<string | null>(null);
   if (!enabled) return <>{children}</>;
   return (
     <div className="space-y-1.5">
@@ -37,11 +39,18 @@ export function DictationField({
           <DictationButton
             onRecordingChange={setRecording}
             onLive={setLive}
-            onText={(text) => onChange(value && !/\s$/.test(value) ? `${value} ${text}` : value + text)}
-            onReplace={(from, to) => {
+            onText={(text) => {
+              const next = value && !/\s$/.test(value) ? `${value} ${text}` : value + text;
+              dictated.current = next;
+              onChange(next);
+            }}
+            onReplace={(from, to, auto = false) => {
+              if (auto && value !== dictated.current) return false;
               const at = value.lastIndexOf(from);
               if (at < 0) return false;
-              onChange(value.slice(0, at) + to + value.slice(at + from.length));
+              const next = value.slice(0, at) + to + value.slice(at + from.length);
+              if (auto) dictated.current = next;
+              onChange(next);
               return true;
             }}
           />

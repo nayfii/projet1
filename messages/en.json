@@ -2050,6 +2050,7 @@
     "stop": "Finish and transcribe",
     "cancel": "Cancel the recording",
     "recording": "Recording",
+    "starting": "Opening the microphone…",
     "transcribing": "Transcribing…",
     "cleaning": "Tidying up…",
     "cleaned": "Text tidied up.",
@@ -2074,7 +2075,8 @@
       "not_configured": "Dictation is not set up yet (OpenAI key missing).",
       "disabled": "Voice dictation is turned off in your company.",
       "forbidden": "Access denied.",
-      "empty": "No speech detected."
+      "empty": "No speech detected.",
+      "noDevice": "No microphone was found. Plug one in, then try again."
     },
     "send": "Send now",
     "recordingTitle": "Dictating"

@@ -52,6 +52,16 @@ export function fakeProviderEnabled(): boolean {
   return process.env.AI_FAKE_PROVIDER === "true";
 }
 
+/**
+ * Automated speed tests only (with AI_FAKE_PROVIDER): how long the simulated transcription model and
+ * the simulated cleanup take, so the dictation pipeline can be measured with a realistic wait.
+ */
+export function fakeDictationLatencyMs(): number {
+  if (!fakeProviderEnabled()) return 0;
+  const value = Number(process.env.DICTATION_FAKE_LATENCY_MS ?? 0);
+  return Number.isFinite(value) ? Math.min(Math.max(value, 0), 10_000) : 0;
+}
+
 /** Image model that turns a photo into a personal 3D avatar (OpenAI; needs OPENAI_API_KEY). */
 export function avatarImageModel(): string {
   return process.env.AVATAR_IMAGE_MODEL?.trim() || "gpt-image-1.5";
