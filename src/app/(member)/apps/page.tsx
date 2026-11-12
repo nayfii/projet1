@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { PlugIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { requireMember } from "@/lib/auth/guards";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { DEPARTMENTS } from "@/modules/agents/definitions";
@@ -17,6 +20,7 @@ export default async function AppsPage({ searchParams }: PageProps<"/apps">) {
   const ctx = await requireMember();
   const t = await getTranslations("apps");
   const tTools = await getTranslations("tools");
+  const tIntegrations = await getTranslations("integrations");
   const [all, favorites, uses, recent] = await Promise.all([listLibrary(ctx), listFavoriteApps(ctx), popularApps(ctx), recentApps(ctx)]);
   // Shown: what the person may run, the apps coming soon, and their own tools whatever their state.
   const apps = all
@@ -42,7 +46,18 @@ export default async function AppsPage({ searchParams }: PageProps<"/apps">) {
 
   return (
     <PageContainer className="max-w-5xl">
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/integrations">
+              <PlugIcon />
+              {tIntegrations("title")}
+            </Link>
+          </Button>
+        }
+      />
       <p className="-mt-4 mb-6 text-[13px] text-muted-foreground">{t("chatHint")}</p>
       <AppsBrowser apps={apps} departments={departments} recent={recent} />
     </PageContainer>

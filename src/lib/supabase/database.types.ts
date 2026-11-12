@@ -385,6 +385,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"company_integration_settings": {
+                  Row: {
+                    "company_id": string,"disabled_providers": (string)[],"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": string,"disabled_providers"?: (string)[],"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "company_id"?: string,"disabled_providers"?: (string)[],"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "company_integration_settings_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: true
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"company_members": {
                   Row: {
                     "admin_scopes": (string)[],"company_id": string,"deactivated_at": string | null,"expertise": (string)[],"job_title": string | null,"joined_at": string,"role": Database["public"]['Enums']["company_role"],"status": Database["public"]['Enums']["member_status"],"team_id": string | null,"updated_at": string,"user_id": string,"who_can_help_opt_out": boolean
@@ -676,6 +696,78 @@ isOneToOne: false
       columns: ["conversation_id"]
 isOneToOne: false
       referencedRelation: "conversations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"integration_connections": {
+                  Row: {
+                    "account_id": string | null,"account_label": string | null,"apps": (string)[],"company_id": string,"created_at": string,"granted_scopes": (string)[],"id": string,"last_error": string | null,"last_used_at": string | null,"owner_id": string,"provider": string,"revoked_at": string | null,"scope": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id"?: string | null,"account_label"?: string | null,"apps"?: (string)[],"company_id": string,"created_at"?: string,"granted_scopes"?: (string)[],"id"?: string,"last_error"?: string | null,"last_used_at"?: string | null,"owner_id": string,"provider": string,"revoked_at"?: string | null,"scope": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string | null,"account_label"?: string | null,"apps"?: (string)[],"company_id"?: string,"created_at"?: string,"granted_scopes"?: (string)[],"id"?: string,"last_error"?: string | null,"last_used_at"?: string | null,"owner_id"?: string,"provider"?: string,"revoked_at"?: string | null,"scope"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "integration_connections_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "integration_connections_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"integration_oauth_states": {
+                  Row: {
+                    "apps": (string)[],"code_verifier": string,"company_id": string,"created_at": string,"provider": string,"scope": string,"state": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "apps"?: (string)[],"code_verifier": string,"company_id": string,"created_at"?: string,"provider": string,"scope": string,"state": string,"user_id": string
+                  }
+                  Update: {
+                    "apps"?: (string)[],"code_verifier"?: string,"company_id"?: string,"created_at"?: string,"provider"?: string,"scope"?: string,"state"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "integration_oauth_states_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "integration_oauth_states_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"integration_tokens": {
+                  Row: {
+                    "access_token": string,"connection_id": string,"expires_at": string | null,"refresh_token": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "access_token": string,"connection_id": string,"expires_at"?: string | null,"refresh_token"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "access_token"?: string,"connection_id"?: string,"expires_at"?: string | null,"refresh_token"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "integration_tokens_connection_id_fkey"
+      columns: ["connection_id"]
+isOneToOne: true
+      referencedRelation: "integration_connections"
       referencedColumns: ["id"]
     }
                   ]

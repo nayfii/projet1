@@ -1104,7 +1104,8 @@
     "autoUndone": "Retiré de la mémoire.",
     "feedOff": "Ne pas alimenter la mémoire du client",
     "feedOn": "Alimenter de nouveau la mémoire du client",
-    "autoBadge": "Ajouté automatiquement"
+    "autoBadge": "Ajouté automatiquement",
+    "documentAdded": "Document ajouté : il est en cours de lecture."
   },
   "sources": {
     "title": "Sources",
@@ -3160,5 +3161,178 @@
     "profileAction": "Enrichir mes connaissances",
     "onboardingLink": "Vous utilisez déjà ChatGPT, Claude ou Gemini ? Importez vos connaissances",
     "notReady": "L'import de connaissances arrive avec la prochaine version de la base de données."
+  },
+  "integrations": {
+    "title": "Intégrations",
+    "description": "Connectez les applications de votre entreprise. Cendr s'en sert dans le chat, la Conscience et les workflows, toujours dans la limite de vos droits.",
+    "notReady": "Les intégrations arrivent avec la prochaine version de la base de données.",
+    "connectedBanner": "{name} est connecté.",
+    "callbackError": {
+      "state": "La connexion a expiré ou ne vient pas de vous. Recommencez depuis cette page.",
+      "denied": "L'accès n'a pas été autorisé sur la page du fournisseur.",
+      "forbidden": "Seuls le propriétaire et les administrateurs autorisés connectent une application pour toute l'entreprise.",
+      "exchange_failed": "Le fournisseur n'a pas confirmé la connexion. Réessayez dans un instant.",
+      "not_configured": "Cette application n'est pas encore configurée par l'équipe Cendr.",
+      "no_key": "Les connexions ne sont pas encore activées sur ce serveur.",
+      "disabled": "Votre entreprise a désactivé cette application.",
+      "soon": "Cette application arrive bientôt.",
+      "no_app": "Choisissez au moins une application à connecter.",
+      "not_found": "Application inconnue."
+    },
+    "noKeyNotice": "Configuration Cendr requise : la clé de chiffrement des connexions (INTEGRATIONS_ENCRYPTION_KEY) n'est pas encore définie sur ce serveur. Personne ne peut connecter d'application en attendant.",
+    "footer": "Vos accès sont chiffrés sur nos serveurs et ne sont jamais montrés à personne. Cendr ne demande que les permissions des applications que vous choisissez. Les actions qui modifient quelque chose (envoyer un e-mail, publier un message) sont inscrites au journal d'activité de l'entreprise, sans leur contenu.",
+    "provider": {
+      "google": {
+        "body": "Gmail, Agenda, Drive (y compris Docs et Sheets).",
+        "limits": "Gmail et Drive sont des permissions « restreintes » chez Google : l'application Cendr doit passer la vérification de sécurité de Google avant d'être ouverte à tous. Les Docs et Sheets sont lus en texte (mise en forme non conservée) ; Cendr ne les modifie pas."
+      },
+      "microsoft": {
+        "body": "Outlook (e-mails et agenda), OneDrive et SharePoint (fichiers Word, Excel, PowerPoint), Teams.",
+        "limits": "Publier dans Teams demande souvent l'accord d'un administrateur Microsoft 365. Les fichiers PowerPoint ne sont pas lus en texte ; Word, Excel, PDF et texte le sont. Microsoft ne permet pas d'annuler un accès à distance : Cendr efface ses clés, et la personne peut retirer Cendr de son compte Microsoft."
+      },
+      "slack": {
+        "body": "Lire les canaux publics où Cendr est invité, y publier des messages.",
+        "limits": "Cendr ne lit que les canaux publics où son application a été ajoutée. Pas de messages privés."
+      },
+      "notion": {
+        "body": "Rechercher et lire des pages, en créer.",
+        "limits": "Cendr n'accède qu'aux pages que vous lui partagez au moment de la connexion (ou plus tard dans Notion). Le texte est lu sans les bases de données imbriquées."
+      },
+      "canva": {
+        "body": "Retrouver vos designs, créer un design vierge, l'exporter en PDF ou PNG.",
+        "limits": "L'API de Canva ne permet pas d'écrire du contenu dans un design (sauf les modèles de marque à remplir, réservés à Canva Enterprise) : Cendr crée un design vide à compléter dans Canva."
+      },
+      "hubspot": {
+        "body": "CRM : contacts, entreprises, opportunités.",
+        "limits": "Prévu après la V1.1 : la structure des intégrations est prête à l'accueillir."
+      }
+    },
+    "allowed": "Autorisé",
+    "allowFor": "Autoriser {name} dans l'entreprise",
+    "canDo": "Ce que Cendr peut faire",
+    "limits": "Limites",
+    "read": "Lecture",
+    "write": "Écriture",
+    "use": {
+      "chat": "chat",
+      "memory": "Conscience",
+      "workflow": "workflows"
+    },
+    "capability": {
+      "gmail_search": "Rechercher des e-mails",
+      "gmail_draft": "Préparer un brouillon",
+      "gmail_send": "Envoyer un e-mail",
+      "calendar_events": "Voir les événements à venir",
+      "calendar_create_event": "Créer un événement",
+      "drive_search": "Rechercher des fichiers",
+      "drive_read": "Lire un fichier (Docs, Sheets, PDF, Word, Excel, texte)",
+      "outlook_search": "Rechercher des e-mails",
+      "outlook_draft": "Préparer un brouillon",
+      "outlook_send": "Envoyer un e-mail",
+      "outlook_calendar_events": "Voir les événements à venir",
+      "outlook_calendar_create_event": "Créer un événement",
+      "onedrive_search": "Rechercher des fichiers",
+      "onedrive_read": "Lire un fichier (Word, Excel, PDF, texte)",
+      "teams_channels": "Lister les équipes et canaux",
+      "teams_post": "Publier dans un canal",
+      "slack_channels": "Lister les canaux",
+      "slack_read": "Lire un canal",
+      "slack_post": "Publier un message",
+      "notion_search": "Rechercher des pages",
+      "notion_read": "Lire une page",
+      "notion_create_page": "Créer une page",
+      "canva_designs": "Retrouver des designs",
+      "canva_create": "Créer un design vierge",
+      "canva_export": "Exporter un design (PDF, PNG)"
+    },
+    "connect": "Connecter",
+    "reason": {
+      "soon": "Bientôt disponible.",
+      "not_configured": "En attente de configuration par l'équipe Cendr.",
+      "no_key": "Les connexions ne sont pas encore activées sur ce serveur.",
+      "disabled": "Désactivé par votre entreprise."
+    },
+    "unknownAccount": "Compte connecté",
+    "scope": {
+      "personal": "Pour moi",
+      "company": "Pour toute l'entreprise"
+    },
+    "scopeBody": {
+      "personal": "Seul vous l'utilisez, dans vos conversations et vos workflows.",
+      "company": "Les membres de l'entreprise l'utilisent dans leurs workflows et conversations. À réserver aux comptes partagés (boîte contact@, espace Slack, Notion de l'équipe)."
+    },
+    "status": {
+      "active": "Connecté",
+      "expired": "À reconnecter"
+    },
+    "connectedBy": "Connecté par {name}",
+    "you": "vous",
+    "app": {
+      "gmail": "Gmail",
+      "calendar": "Google Agenda",
+      "drive": "Google Drive",
+      "outlook": "Outlook",
+      "outlook_calendar": "Agenda Outlook",
+      "onedrive": "OneDrive et SharePoint",
+      "teams": "Microsoft Teams",
+      "slack": "Slack",
+      "notion": "Notion",
+      "canva": "Canva",
+      "hubspot": "HubSpot"
+    },
+    "access": {
+      "gmail": "Lire vos e-mails, préparer des brouillons et envoyer des e-mails.",
+      "calendar": "Voir et créer des événements dans vos agendas.",
+      "drive": "Lire vos fichiers Drive, Docs et Sheets (sans les modifier).",
+      "outlook": "Lire vos e-mails, préparer des brouillons et envoyer des e-mails.",
+      "outlook_calendar": "Voir et créer des événements dans votre agenda.",
+      "onedrive": "Lire les fichiers OneDrive et SharePoint que vous pouvez ouvrir (sans les modifier).",
+      "teams": "Voir vos équipes et canaux, publier un message dans un canal.",
+      "slack": "Voir les canaux publics, lire ceux où Cendr est ajouté, y publier.",
+      "notion": "Lire et créer des pages, uniquement celles que vous partagez avec Cendr.",
+      "canva": "Voir vos designs, en créer et les exporter.",
+      "hubspot": "—"
+    },
+    "lastUsed": "utilisé {when}",
+    "reconnect": "Reconnecter",
+    "check": "Vérifier",
+    "checkOk": "La connexion fonctionne.",
+    "checkExpired": "La connexion ne répond plus : reconnectez-la.",
+    "revoke": "Révoquer",
+    "revokeTitle": "Révoquer cette connexion ?",
+    "revokeBody": "Cendr efface ses accès à {account} et demande au fournisseur de les annuler quand c'est possible. Les workflows qui l'utilisent s'arrêteront.",
+    "revoked": "Connexion révoquée.",
+    "cancel": "Annuler",
+    "connectTitle": "Connecter {name}",
+    "connectBody": "Cendr ne demande que les permissions des applications cochées.",
+    "whichApps": "Applications",
+    "forWhom": "Pour qui",
+    "connectSafety": "Vous allez sur la page de {name} pour autoriser l'accès. Cendr ne voit jamais votre mot de passe.",
+    "continueTo": "Continuer vers {name}",
+    "picker": {
+      "open": "Depuis une application",
+      "close": "Fermer",
+      "title": "Ajouter depuis une application",
+      "body": "Choisissez un document dans Google Drive, OneDrive ou Notion : son texte est lu sur nos serveurs et ajouté à cette mémoire, avec vos droits.",
+      "none": "Aucune application de documents n'est connectée pour vous (Google Drive, OneDrive ou Notion).",
+      "connect": "Connecter une application",
+      "source": "Application",
+      "searchPlaceholder": "Rechercher un document",
+      "search": "Rechercher",
+      "noResult": "Aucun document trouvé.",
+      "add": "Ajouter",
+      "adding": "Ajout…"
+    },
+    "runError": {
+      "not_found": "Cette connexion n'est plus disponible.",
+      "inactive": "Cette application n'est pas encore configurée.",
+      "not_granted": "Cette connexion n'a pas l'autorisation pour cette action : reconnectez-la en cochant l'application.",
+      "expired": "La connexion a expiré : reconnectez-la dans Intégrations.",
+      "forbidden": "Le fournisseur refuse l'accès à cet élément.",
+      "rate_limited": "Le fournisseur limite les demandes : réessayez dans un instant.",
+      "provider_error": "Le fournisseur n'a pas répondu. Réessayez.",
+      "unsupported_file": "Ce type de fichier ne peut pas être lu en texte.",
+      "validation": "Demande invalide."
+    }
   }
 }

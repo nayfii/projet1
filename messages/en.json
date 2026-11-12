@@ -1104,7 +1104,8 @@
     "autoUndone": "Removed from the memory.",
     "feedOff": "Do not feed the client's memory",
     "feedOn": "Feed the client's memory again",
-    "autoBadge": "Added automatically"
+    "autoBadge": "Added automatically",
+    "documentAdded": "Document added: it is being read."
   },
   "sources": {
     "title": "Sources",
@@ -3160,5 +3161,178 @@
     "profileAction": "Bring my knowledge",
     "onboardingLink": "Already using ChatGPT, Claude or Gemini? Import your knowledge",
     "notReady": "Knowledge import arrives with the next version of the database."
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Connect your company's apps. Cendr uses them in the chat, Consciousness and workflows, always within your rights.",
+    "notReady": "Integrations arrive with the next version of the database.",
+    "connectedBanner": "{name} is connected.",
+    "callbackError": {
+      "state": "The connection expired or did not come from you. Start again from this page.",
+      "denied": "Access was not allowed on the provider's page.",
+      "forbidden": "Only the Owner and allowed Admins connect an app for the whole company.",
+      "exchange_failed": "The provider did not confirm the connection. Try again in a moment.",
+      "not_configured": "This app is not set up by the Cendr team yet.",
+      "no_key": "Connections are not enabled on this server yet.",
+      "disabled": "Your company switched this app off.",
+      "soon": "This app is coming soon.",
+      "no_app": "Choose at least one app to connect.",
+      "not_found": "Unknown app."
+    },
+    "noKeyNotice": "Cendr setup needed: the connections' encryption key (INTEGRATIONS_ENCRYPTION_KEY) is not set on this server yet. Nobody can connect an app until then.",
+    "footer": "Your access is encrypted on our servers and never shown to anyone. Cendr only asks for the permissions of the apps you choose. Actions that change something (sending an e-mail, posting a message) are recorded in the company's activity log, without their content.",
+    "provider": {
+      "google": {
+        "body": "Gmail, Calendar, Drive (Docs and Sheets included).",
+        "limits": "Gmail and Drive are \"restricted\" permissions at Google: the Cendr app must pass Google's security verification before it is open to everyone. Docs and Sheets are read as text (formatting not kept); Cendr does not edit them."
+      },
+      "microsoft": {
+        "body": "Outlook (mail and calendar), OneDrive and SharePoint (Word, Excel, PowerPoint files), Teams.",
+        "limits": "Posting in Teams often needs a Microsoft 365 administrator's consent. PowerPoint files are not read as text; Word, Excel, PDF and text are. Microsoft offers no remote revocation for one app: Cendr deletes its keys, and the person can remove Cendr from their Microsoft account."
+      },
+      "slack": {
+        "body": "Read the public channels Cendr is invited to, post messages there.",
+        "limits": "Cendr only reads public channels its app was added to. No private messages."
+      },
+      "notion": {
+        "body": "Search and read pages, create pages.",
+        "limits": "Cendr only reaches the pages you share with it when connecting (or later in Notion). Text is read without nested databases."
+      },
+      "canva": {
+        "body": "Find your designs, create a blank design, export it as PDF or PNG.",
+        "limits": "Canva's API cannot write content into a design (except brand templates to fill, reserved to Canva Enterprise): Cendr creates an empty design to complete in Canva."
+      },
+      "hubspot": {
+        "body": "CRM: contacts, companies, deals.",
+        "limits": "Planned after V1.1: the integrations layer is ready for it."
+      }
+    },
+    "allowed": "Allowed",
+    "allowFor": "Allow {name} in the company",
+    "canDo": "What Cendr can do",
+    "limits": "Limits",
+    "read": "Read",
+    "write": "Write",
+    "use": {
+      "chat": "chat",
+      "memory": "Consciousness",
+      "workflow": "workflows"
+    },
+    "capability": {
+      "gmail_search": "Search e-mails",
+      "gmail_draft": "Prepare a draft",
+      "gmail_send": "Send an e-mail",
+      "calendar_events": "See upcoming events",
+      "calendar_create_event": "Create an event",
+      "drive_search": "Search files",
+      "drive_read": "Read a file (Docs, Sheets, PDF, Word, Excel, text)",
+      "outlook_search": "Search e-mails",
+      "outlook_draft": "Prepare a draft",
+      "outlook_send": "Send an e-mail",
+      "outlook_calendar_events": "See upcoming events",
+      "outlook_calendar_create_event": "Create an event",
+      "onedrive_search": "Search files",
+      "onedrive_read": "Read a file (Word, Excel, PDF, text)",
+      "teams_channels": "List teams and channels",
+      "teams_post": "Post in a channel",
+      "slack_channels": "List channels",
+      "slack_read": "Read a channel",
+      "slack_post": "Post a message",
+      "notion_search": "Search pages",
+      "notion_read": "Read a page",
+      "notion_create_page": "Create a page",
+      "canva_designs": "Find designs",
+      "canva_create": "Create a blank design",
+      "canva_export": "Export a design (PDF, PNG)"
+    },
+    "connect": "Connect",
+    "reason": {
+      "soon": "Coming soon.",
+      "not_configured": "Waiting for setup by the Cendr team.",
+      "no_key": "Connections are not enabled on this server yet.",
+      "disabled": "Switched off by your company."
+    },
+    "unknownAccount": "Connected account",
+    "scope": {
+      "personal": "For me",
+      "company": "For the whole company"
+    },
+    "scopeBody": {
+      "personal": "Only you use it, in your conversations and workflows.",
+      "company": "The company's members use it in their workflows and conversations. Keep it for shared accounts (a contact@ mailbox, the team's Slack or Notion)."
+    },
+    "status": {
+      "active": "Connected",
+      "expired": "Reconnect"
+    },
+    "connectedBy": "Connected by {name}",
+    "you": "you",
+    "app": {
+      "gmail": "Gmail",
+      "calendar": "Google Calendar",
+      "drive": "Google Drive",
+      "outlook": "Outlook",
+      "outlook_calendar": "Outlook Calendar",
+      "onedrive": "OneDrive and SharePoint",
+      "teams": "Microsoft Teams",
+      "slack": "Slack",
+      "notion": "Notion",
+      "canva": "Canva",
+      "hubspot": "HubSpot"
+    },
+    "access": {
+      "gmail": "Read your e-mails, prepare drafts and send e-mails.",
+      "calendar": "See and create events in your calendars.",
+      "drive": "Read your Drive files, Docs and Sheets (without changing them).",
+      "outlook": "Read your e-mails, prepare drafts and send e-mails.",
+      "outlook_calendar": "See and create events in your calendar.",
+      "onedrive": "Read the OneDrive and SharePoint files you can open (without changing them).",
+      "teams": "See your teams and channels, post a message in a channel.",
+      "slack": "See public channels, read those Cendr was added to, post there.",
+      "notion": "Read and create pages, only those you share with Cendr.",
+      "canva": "See your designs, create and export them.",
+      "hubspot": "—"
+    },
+    "lastUsed": "used {when}",
+    "reconnect": "Reconnect",
+    "check": "Check",
+    "checkOk": "The connection works.",
+    "checkExpired": "The connection no longer answers: reconnect it.",
+    "revoke": "Revoke",
+    "revokeTitle": "Revoke this connection?",
+    "revokeBody": "Cendr deletes its access to {account} and asks the provider to cancel it where possible. Workflows using it will stop.",
+    "revoked": "Connection revoked.",
+    "cancel": "Cancel",
+    "connectTitle": "Connect {name}",
+    "connectBody": "Cendr only asks for the permissions of the apps you tick.",
+    "whichApps": "Apps",
+    "forWhom": "For whom",
+    "connectSafety": "You go to {name}'s page to allow access. Cendr never sees your password.",
+    "continueTo": "Continue to {name}",
+    "picker": {
+      "open": "From an app",
+      "close": "Close",
+      "title": "Add from an app",
+      "body": "Choose a document in Google Drive, OneDrive or Notion: its text is read on our servers and added to this memory, with your rights.",
+      "none": "No document app is connected for you (Google Drive, OneDrive or Notion).",
+      "connect": "Connect an app",
+      "source": "App",
+      "searchPlaceholder": "Search a document",
+      "search": "Search",
+      "noResult": "No document found.",
+      "add": "Add",
+      "adding": "Adding…"
+    },
+    "runError": {
+      "not_found": "This connection is no longer available.",
+      "inactive": "This app is not set up yet.",
+      "not_granted": "This connection does not allow this action: reconnect it with the app ticked.",
+      "expired": "The connection expired: reconnect it in Integrations.",
+      "forbidden": "The provider refuses access to this item.",
+      "rate_limited": "The provider limits requests: try again in a moment.",
+      "provider_error": "The provider did not answer. Try again.",
+      "unsupported_file": "This kind of file cannot be read as text.",
+      "validation": "Invalid request."
+    }
   }
 }

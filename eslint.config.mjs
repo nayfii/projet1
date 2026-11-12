@@ -30,6 +30,7 @@ const eslintConfig = defineConfig([
       "src/modules/hide/server/store.ts",
       "src/modules/agents/server/builtin-sync.ts",
       "src/modules/providers/server/catalog-store.ts",
+      "src/modules/integrations/server/store.ts",
     ],
     rules: {
       "no-restricted-imports": [

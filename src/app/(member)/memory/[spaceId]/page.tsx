@@ -13,6 +13,7 @@ import { hasScope } from "@/lib/auth/context";
 import { listFactHistory } from "@/modules/memory/server/knowledge";
 import { ProviderPolicy } from "@/modules/memory/ui/provider-policy";
 import { HistoryIcon } from "lucide-react";
+import { readableConnections } from "@/modules/integrations/server/queries";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("memory");
@@ -47,7 +48,13 @@ export default async function MemorySpacePage({ params }: PageProps<"/memory/[sp
           <ProviderPolicy spaceId={spaceId} blocked={space.blockedProviders} />
         </div>
       ) : null}
-      <MemorySpaceView space={{ spaceId, kind: space.kind, canWrite: space.canWrite, label }} entries={entries} documents={documents} suggestions={suggestions} />
+      <MemorySpaceView
+        space={{ spaceId, kind: space.kind, canWrite: space.canWrite, label }}
+        entries={entries}
+        documents={documents}
+        suggestions={suggestions}
+        appConnections={space.canWrite ? await readableConnections(ctx) : []}
+      />
       {history.length > 0 ? (
         <details className="mt-8 rounded-xl border px-4 py-3" data-testid="fact-history">
           <summary className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-muted-foreground">

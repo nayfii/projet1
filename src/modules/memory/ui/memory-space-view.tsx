@@ -31,6 +31,7 @@ import type { DocumentRow, EntryRow, SuggestionRow } from "../server/queries";
 import { decideSuggestionAction, deleteDocumentAction, deleteEntryAction, proposePromotionAction } from "../server/actions";
 import { EntryDialog } from "./entry-dialog";
 import { DocumentUploader } from "./document-uploader";
+import { AppFilePicker, type PickerConnection } from "@/modules/integrations/ui/app-file-picker";
 
 type Tab = "entries" | "documents" | "suggestions";
 
@@ -39,14 +40,32 @@ export function MemorySpaceView({
   entries,
   documents,
   suggestions,
+  appConnections = [],
 }: {
   space: { spaceId: string; kind: MemoryKind; canWrite: boolean; label: string };
   entries: EntryRow[];
   documents: DocumentRow[];
   suggestions: SuggestionRow[];
+  /** Connected apps holding documents (Drive, OneDrive, Notion) this person may read through. */
+  appConnections?: PickerConnection[];
 }) {
   const t = useTranslations("memory");
+  const tErrors = useTranslations("errors");
   const router = useRouter();
+  // A document read from a connected app goes in like an uploaded one (same rights, quota and indexing).
+  const addFromApp = async (spaceId: string, file: { name: string; text: string }) => {
+    const form = new FormData();
+    form.set("file", new File([file.text], `${file.name.replace(/[\\/:*?"<>|]/g, " ").slice(0, 200)}.md`, { type: "text/markdown" }));
+    const response = await fetch(`/api/memory/${spaceId}/documents`, { method: "POST", body: form }).catch(() => null);
+    if (!response?.ok) {
+      const body = (await response?.json().catch(() => null)) as { error?: string } | null;
+      toast.error(tErrors((body?.error ?? "upload_failed") as "unknown"));
+      return false;
+    }
+    toast.success(t("documentAdded"));
+    router.refresh();
+    return true;
+  };
   const [tab, setTab] = React.useState<Tab>(suggestions.length > 0 && space.canWrite ? "suggestions" : "entries");
   const [creating, setCreating] = React.useState(false);
   const processing = documents.some((d) => d.status === "processing");
@@ -89,7 +108,10 @@ export function MemorySpaceView({
         {space.canWrite ? (
           <div className="flex gap-2">
             {tab === "documents" ? (
-              <DocumentUploader spaceId={space.spaceId} onUploaded={() => router.refresh()} />
+              <>
+                <AppFilePicker connections={appConnections} onPicked={(file) => addFromApp(space.spaceId, file)} />
+                <DocumentUploader spaceId={space.spaceId} onUploaded={() => router.refresh()} />
+              </>
             ) : (
               <Button onClick={() => setCreating(true)}>
                 <PlusIcon />

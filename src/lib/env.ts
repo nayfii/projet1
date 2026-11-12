@@ -112,3 +112,25 @@ export function importTutorialVideoUrl(): string | null {
     return null;
   }
 }
+
+/**
+ * Integrations (CLAUDE.md §12): secret used to encrypt the OAuth tokens of connected apps (Google,
+ * Microsoft, Slack, Notion, Canva). At least 32 characters; without it nobody can connect an app.
+ */
+export function integrationsSecret(): string | undefined {
+  const value = process.env.INTEGRATIONS_ENCRYPTION_KEY?.trim();
+  return value && value.length >= 32 ? value : undefined;
+}
+
+/** An app's OAuth client, as registered by our team with the provider (null: not set up yet). */
+export function oauthClient(env: { clientId: string; clientSecret: string }): { clientId: string; clientSecret: string } | null {
+  const clientId = process.env[env.clientId]?.trim();
+  const clientSecret = process.env[env.clientSecret]?.trim();
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
+}
+
+/** Where the providers send people back after they allow access. */
+export function oauthRedirectUri(provider: string): string {
+  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  return `${base}/api/integrations/${provider}/callback`;
+}

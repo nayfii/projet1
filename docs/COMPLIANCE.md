@@ -57,6 +57,7 @@ Status: **IMPL** (inventory written here; to be reviewed at each release — HUM
 | Google (Gemini API) | Gemini answers | prompts after Hide masking | not EU-resident unless configured | API terms, DPA — LEGAL/EXT |
 | GitHub | source, CI, container registry | no customer data (test data only) | US | — |
 | E-mail sender (Supabase mailer or own SMTP) | sign-in and invitation e-mails | e-mail address, links | depends on provider | LEGAL/EXT |
+| Google Workspace, Microsoft 365, Slack, Notion, Canva (V1.1, only when a company connects them) | the company's own apps, reached on its behalf | what a person or a workflow reads or sends there (search text, documents read, e-mails or messages sent) | the customer's own tenant at that provider | the customer's own contract with that provider; our app registration terms with each — LEGAL/EXT |
 
 We do not claim that AI providers process data in the EU. Exact data flows: `docs/SECURITY.md` §2.
 
@@ -91,6 +92,7 @@ We do not claim that AI providers process data in the EU. Exact data flows: `doc
 | R9 | Undetected incident | medium | high | audit log; no alerting yet | MISSING (alerting) |
 | R10 | Vulnerable dependency | medium | medium | `pnpm audit` at each audit (2 moderate, not exploitable) | IMPL; automated scanning MISSING |
 | R11 | Personal data kept longer than needed | medium | medium | no automatic expiry yet | MISSING (retention policy decisions) |
+| R14 | A connected app's token stolen or misused | low | high | tokens sealed (AES-256-GCM, separate key), never readable by signed-in people, PKCE and one-time state bound to the person, least-privilege permissions per app, personal connections usable by their owner only, company switch, revocation, write actions logged without content | IMPL+TEST (`tests/unit/integrations.test.ts`, `tests/integration/integrations.test.ts`); provider-side app verification MISSING (HUMAN) |
 | R13 | Private life of an employee imported into company memory (former AI exports) | medium | high | archive read in the browser and never stored; private topics and secrets removed without AI; second check; nothing saved without the person's tick; imports visible to their author only | IMPL+TEST (`tests/unit/knowledge-import.test.ts`, `tests/integration/knowledge-import.test.ts`, `e2e/knowledge-import.spec.ts`); word lists cannot catch everything (said in the UI) |
 | R12 | Hostile uploaded files (parsers) | medium | medium | size limits, type checked by content, parsing in server functions | IMPL+TEST (upload tests); isolation of parsing MISSING |
 
