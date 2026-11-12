@@ -30,6 +30,9 @@ jobs:
           cache: pnpm
       - name: Install
         run: pnpm install --frozen-lockfile
+      # The render worker has its own dependencies; only their types are needed here (no browser download).
+      - name: Install the render worker's dependencies (types)
+        run: npm ci --prefix worker --no-audit --no-fund --ignore-scripts
       - name: Types
         run: pnpm typecheck
       - name: Lint
