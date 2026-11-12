@@ -1,3 +1,6 @@
+/** The five levels of Consciousness are personal notes (separate) plus these four kinds of memory. */
+export type MemoryKind = "company" | "client" | "team" | "project";
+
 /** A passage found in memory and given to the model, numbered [S1], [S2]… in the prompt. */
 export type KnowledgePassage = {
   position: number;
@@ -5,7 +8,8 @@ export type KnowledgePassage = {
   id: string;
   documentId: string | null;
   spaceId: string;
-  spaceKind: "company" | "client";
+  spaceKind: MemoryKind;
+  /** Name of what the memory belongs to: the client, team or project (null for the company's memory). */
   clientName: string | null;
   title: string;
   content: string;
@@ -32,7 +36,8 @@ export type SourceProof = {
   page: number | null;
   sourceDate: string | null;
   spaceId: string | null;
-  spaceKind: "company" | "client" | null;
+  spaceKind: MemoryKind | null;
+  /** Name of the client, team or project the memory belongs to (null for the company's memory). */
   clientName: string | null;
   documentId: string | null;
   entryId: string | null;
@@ -52,7 +57,7 @@ export type MemoryTrace = {
   /** Learnings still running when the answer started (their facts may be missing). */
   pending: number;
   /** Memories kept away from this provider by a company rule. */
-  blocked: { spaceId: string; kind: "company" | "client"; clientName: string | null }[];
+  blocked: { spaceId: string; kind: MemoryKind; clientName: string | null }[];
   /** Time the whole retrieval took (ms). */
   ms: number;
 };

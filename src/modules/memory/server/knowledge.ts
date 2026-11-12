@@ -1,7 +1,8 @@
 import "server-only";
+import type { MemoryKind } from "../types";
 import type { MemberContext } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
-import { myMemorySpaces } from "./retrieval";
+import { myMemorySpaces, ownerNamesOf } from "./retrieval";
 
 /**
  * What Cendr knows, for people (Client Room brief, Consciousness hub). Read with the viewer's own
@@ -104,7 +105,7 @@ export type ActivityItem = {
   at: string;
   sourceType: string;
   status: string;
-  where: { kind: "company" | "client"; clientName: string | null; spaceId: string };
+  where: { kind: MemoryKind; clientName: string | null; spaceId: string };
   author: string | null;
 };
 
@@ -114,8 +115,7 @@ export async function consciousnessOverview(ctx: MemberContext) {
   const spaces = await myMemorySpaces(supabase, ctx.active.companyId);
   const ids = spaces.map((s) => s.spaceId);
   const weekAgo = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
-  const clientIds = spaces.filter((s) => s.clientId).map((s) => s.clientId!);
-  const [{ data: recent }, { count: learnedWeek }, { data: proposals }, { data: requests }, { data: clients }] = await Promise.all([
+  const [{ data: recent }, { count: learnedWeek }, { data: proposals }, { data: requests }, ownerNames] = await Promise.all([
     ids.length
       ? supabase
           .from("memory_entries")
@@ -140,12 +140,11 @@ export async function consciousnessOverview(ctx: MemberContext) {
       .eq("company_id", ctx.active.companyId)
       .order("created_at", { ascending: false })
       .limit(30),
-    clientIds.length ? supabase.from("clients").select("id, name").in("id", clientIds) : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    ownerNamesOf(supabase, spaces),
   ]);
-  const clientName = new Map((clients ?? []).map((c) => [c.id, c.name]));
   const where = (spaceId: string) => {
     const s = spaces.find((x) => x.spaceId === spaceId);
-    return { kind: s?.kind ?? "company", clientName: s?.clientId ? (clientName.get(s.clientId) ?? null) : null, spaceId } as ActivityItem["where"];
+    return { kind: s?.kind ?? "company", clientName: ownerNames.get(spaceId) ?? null, spaceId } as ActivityItem["where"];
   };
   const activity: ActivityItem[] = (recent ?? []).map((e) => ({
     id: e.id,

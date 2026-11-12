@@ -261,7 +261,7 @@ describe("warning before sharing history that cites a memory", () => {
   it("names the memory and the colleagues who cannot read it", async () => {
     const { data, error } = await check(question.seq, [nathalie, owner]);
     expect(error).toBeNull();
-    expect(data).toEqual([{ space_id: clientASpace, client_name: "Client A", user_id: nathalie.id }]);
+    expect(data).toEqual([{ space_id: clientASpace, client_name: "Client A", user_id: nathalie.id, kind: "client", owner_name: "Client A" }]);
   });
 
   it("says nothing when the shared part cites no such memory, or to someone outside the conversation", async () => {

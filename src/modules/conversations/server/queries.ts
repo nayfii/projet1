@@ -92,13 +92,22 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
   const rows = ids ? (allRows ?? []).filter((r) => ids.includes(r.id)) : (allRows ?? []);
 
   // RLS shows a source only to participants who can still read its memory.
-  const { data: sourceRows } = await supabase
+  const SOURCE_COLUMNS = "message_id, position, source_type, title, excerpt, page, source_date, space_id, document_id, entry_id, chunk_id, char_start, char_end";
+  const sourcesQuery = await supabase
     .from("message_sources")
-    .select(
-      "message_id, position, source_type, title, excerpt, page, source_date, space_id, document_id, entry_id, chunk_id, char_start, char_end, space:memory_spaces(kind, client:clients(name))",
-    )
+    .select(`${SOURCE_COLUMNS}, space:memory_spaces(kind, client:clients(name), team:teams(name), project:projects(name))`)
     .eq("conversation_id", conversationId)
     .order("position");
+  // A database without team and project memories yet (a preview before the V1.1 migration): clients only.
+  const sourceRows = sourcesQuery.error
+    ? ((
+        await supabase
+          .from("message_sources")
+          .select(`${SOURCE_COLUMNS}, space:memory_spaces(kind, client:clients(name))`)
+          .eq("conversation_id", conversationId)
+          .order("position")
+      ).data as unknown as typeof sourcesQuery.data)
+    : sourcesQuery.data;
   const sourcesByMessage = new Map<string, SourceProof[]>();
   for (const r of sourceRows ?? []) {
     const list = sourcesByMessage.get(r.message_id) ?? [];
@@ -111,7 +120,7 @@ async function loadTimeline(supabase: UserClientLike, conversationId: string, id
       sourceDate: r.source_date,
       spaceId: r.space_id,
       spaceKind: r.space?.kind ?? null,
-      clientName: r.space?.client?.name ?? null,
+      clientName: r.space?.client?.name ?? r.space?.team?.name ?? r.space?.project?.name ?? null,
       documentId: r.document_id,
       entryId: r.entry_id,
       chunkId: r.chunk_id,

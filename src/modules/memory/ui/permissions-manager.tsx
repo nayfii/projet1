@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
+import { memoryLabel } from "../labels";
+import type { MemoryKind } from "../types";
 import { toast } from "sonner";
-import { BriefcaseIcon, BuildingIcon, PencilIcon, PlusIcon, Trash2Icon, UsersIcon } from "lucide-react";
+import { BriefcaseIcon, BuildingIcon, FolderKanbanIcon, PencilIcon, PlusIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { deleteCategoryAction, saveCategoryAction, setSpaceGrantsAction } from "../server/permissions";
 
 type Category = { id: string; name: string; description: string | null; systemKey: "everyone" | "management" | null; members: string[] };
-type Space = { id: string; kind: "company" | "client"; clientName: string | null; read: string[]; write: string[] };
+type Space = { id: string; kind: MemoryKind; clientName: string | null; read: string[]; write: string[] };
 type Member = { userId: string; name: string; role: "owner" | "admin" | "manager" | "member" };
 
 export function PermissionsManager({ categories, spaces, members }: { categories: Category[]; spaces: Space[]; members: Member[] }) {
@@ -27,7 +29,8 @@ export function PermissionsManager({ categories, spaces, members }: { categories
   const categoryName = (c: Category) => (c.systemKey ? t(`system.${c.systemKey}`) : c.name);
   // Groups in the same order as the list above (automatic groups first).
   const groupList = (ids: string[]) => categories.filter((c) => ids.includes(c.id)).map(categoryName).join(", ") || t("nobody");
-  const spaceName = (s: Space) => (s.kind === "company" ? t("companyMemory") : s.clientName ? t("clientMemory", { client: s.clientName }) : t("restrictedClient"));
+  const spaceName = (s: Space) =>
+    s.kind === "client" ? (s.clientName ? t("clientMemory", { client: s.clientName }) : t("restrictedClient")) : memoryLabel(s.kind, s.clientName, t);
 
   return (
     <div className="space-y-10">
@@ -90,19 +93,28 @@ export function PermissionsManager({ categories, spaces, members }: { categories
         <Card className="divide-y overflow-hidden">
           {spaces.map((s) => (
             <div key={s.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap">
-              {s.kind === "company" ? <BuildingIcon className="size-4 shrink-0 text-brand" /> : <BriefcaseIcon className="size-4 shrink-0 text-muted-foreground" />}
+              {s.kind === "company" ? <BuildingIcon className="size-4 shrink-0 text-brand" /> : s.kind === "team" ? <UsersIcon className="size-4 shrink-0 text-muted-foreground" /> : s.kind === "project" ? <FolderKanbanIcon className="size-4 shrink-0 text-muted-foreground" /> : <BriefcaseIcon className="size-4 shrink-0 text-muted-foreground" />}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{spaceName(s)}</p>
                 <p className="text-[13px] text-muted-foreground">
-                  {t("readLine", { groups: groupList(s.read) })}
-                  {" · "}
-                  {t("writeLine", { groups: groupList(s.write) })}
+                  {s.kind === "team" ? (
+                    t("teamAccessLine")
+                  ) : (
+                    <>
+                      {t("readLine", { groups: groupList(s.read) })}
+                      {" · "}
+                      {t("writeLine", { groups: groupList(s.write) })}
+                    </>
+                  )}
                 </p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setEditingSpace(s)} aria-label={t("editAccess", { name: spaceName(s) })}>
-                <PencilIcon />
-                {t("edit")}
-              </Button>
+              {/* A team's memory follows the team: who belongs to it is set in Employees. */}
+              {s.kind === "team" ? null : (
+                <Button variant="ghost" size="sm" onClick={() => setEditingSpace(s)} aria-label={t("editAccess", { name: spaceName(s) })}>
+                  <PencilIcon />
+                  {t("edit")}
+                </Button>
+              )}
             </div>
           ))}
         </Card>

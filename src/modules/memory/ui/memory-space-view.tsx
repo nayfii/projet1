@@ -1,5 +1,6 @@
 "use client";
 
+import type { MemoryKind } from "../types";
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -39,7 +40,7 @@ export function MemorySpaceView({
   documents,
   suggestions,
 }: {
-  space: { spaceId: string; kind: "company" | "client"; canWrite: boolean; label: string };
+  space: { spaceId: string; kind: MemoryKind; canWrite: boolean; label: string };
   entries: EntryRow[];
   documents: DocumentRow[];
   suggestions: SuggestionRow[];
@@ -120,7 +121,7 @@ function EntriesList({
   onCreate,
 }: {
   entries: EntryRow[];
-  space: { spaceId: string; kind: "company" | "client"; canWrite: boolean; label: string };
+  space: { spaceId: string; kind: MemoryKind; canWrite: boolean; label: string };
   onCreate: () => void;
 }) {
   const t = useTranslations("memory");

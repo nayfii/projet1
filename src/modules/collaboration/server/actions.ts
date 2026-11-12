@@ -10,6 +10,7 @@ import { draftClientHandover, draftConversationHandover, HANDOVER_SECTIONS } fro
 import { getConversationPeople } from "./queries";
 import { completeFork } from "./fork";
 import { PARTICIPANT_RIGHTS, type ParticipantRight } from "../rights";
+import type { MemoryKind } from "@/modules/memory/types";
 
 /**
  * Adds colleagues to a conversation with a right (read only, participate, manage participants).
@@ -189,11 +190,12 @@ export async function loadParticipantsAction(input: { conversationId: string }) 
   return getConversationPeople(parsed.data.conversationId);
 }
 
-export type HistoryWarning = { clientName: string | null; userIds: string[] };
+/** A memory a colleague may not read: its kind and whose it is (client, team or project; none for the company). */
+export type HistoryWarning = { kind: MemoryKind; name: string | null; userIds: string[] };
 
 /**
  * Before sharing history or transferring: memories cited in the messages the colleagues would see
- * that some of them cannot read (null = the company memory). The person sharing decides.
+ * that some of them cannot read. The person sharing decides.
  */
 export async function checkSharedHistoryAction(input: { conversationId: string; userIds: string[]; fromSeq: number | null }): Promise<HistoryWarning[]> {
   const ctx = await memberOrNull();
@@ -209,7 +211,9 @@ export async function checkSharedHistoryAction(input: { conversationId: string; 
   });
   const bySpace = new Map<string, HistoryWarning>();
   for (const row of data ?? []) {
-    const warning = bySpace.get(row.space_id) ?? { clientName: row.client_name, userIds: [] };
+    // Before the V1.1 migration the database names clients only (kind and owner name absent).
+    const kind = (row.kind as MemoryKind | undefined) ?? (row.client_name ? "client" : "company");
+    const warning = bySpace.get(row.space_id) ?? { kind, name: row.owner_name ?? row.client_name ?? null, userIds: [] };
     warning.userIds.push(row.user_id);
     bySpace.set(row.space_id, warning);
   }

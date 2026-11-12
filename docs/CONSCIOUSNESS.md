@@ -3,7 +3,7 @@
 > The model can change. The knowledge stays.
 
 "Consciousness" is our product name for the company's durable knowledge. It is not AI sentience.
-This document describes what is built (November 2026), how it works and what remains.
+This document describes what is built (November 2026, V1.1), how it works and what remains.
 
 ## 1. Audit before this work (what existed)
 
@@ -44,6 +44,20 @@ This document describes what is built (November 2026), how it works and what rem
   never relied on. Embeddings record their model (`embedding_model`): a provider change re-indexes.
 - **No context cache**: every request rebuilds its context with the requester's session, so removed
   access, an expired grant, a correction or a deletion apply to the very next answer.
+
+## 2b. The five levels of memory (V1.1)
+
+| Level | What it holds | Who reads and writes | When the AI uses it |
+|---|---|---|---|
+| Personal | What the AI knows about one person (`personal_memory`, "What the AI knows about me") | That person only | Their own chats with the AI; never in a group conversation |
+| Team | One memory per team (`memory_spaces.kind = 'team'`), created with the team | The team's members and the Owner (belonging to the team is the rule; no categories) | Every chat of a team member; follows the person when they change team |
+| Client | One memory per client | Permission categories × access to the client (open / restricted, assignments, temporary access) | Chats linked to that client (key facts always given), or any chat when no client is linked |
+| Project | One memory per project (`projects`), alone or for a client | Every member for a project without a client; for a client's project, only those who may open that client; categories as for a client (everyone reads and writes by default) | Chats linked to the project's client, or any chat when no client is linked |
+| Company | The company's memory | Permission categories (everyone reads by default) | Every chat |
+
+A chat linked to a client uses the company, the person's team, that client and that client's
+projects; a chat with no client uses every memory the person may read. A group conversation uses only
+the memories **every** participant may read (`conversation_shared_spaces`, the same SQL rule).
 
 ## 3. Write path (learning)
 
@@ -93,6 +107,9 @@ database decides; the interface asks `client_permissions(client)` (same predicat
 | client.delete (archived, name retyped) | ✓ | — | — | — |
 | grant.approve (access request) | ✓ | clients | their team, clients they can open | — |
 | memory.read / contribute | categories × client access | same | same | same |
+| team memory read / write | all teams | their own team | their own team | their own team |
+| project.create | ✓ | ✓ | ✓ | ✓ (alone, or for a client they can open) |
+| project.rename / archive | ✓ | clients | its creator | its creator |
 | memory.correct / forget | writers of that memory | same | same | same |
 | memory.promote to company | proposal by any reader; approval by company-memory writers | | | |
 | provider restriction per memory | ✓ | permissions | — | — |
@@ -158,10 +175,36 @@ The model is now told when a key fact replaced an earlier value (masked by Hide 
 it says the value changed rather than calling an earlier answer a mistake. Claude and Gemini were
 not run (no keys in the build environment).
 
+## 8c. Measured with and without memory (V1.1, 2026-11-12)
+
+`tests/integration/consciousness-eval.test.ts` builds a fixed synthetic company (Owner, Alice in team
+Ventes and on the restricted client Atlas, Carol in team Finance and on the restricted client Vega;
+19 facts across company, team, client and project memories, 5 of them out of Alice's reach and
+worded alike on purpose) and asks Alice's questions through the real Context Gateway, with real
+users and RLS. It writes `test-results/consciousness-eval.json`.
+
+| Measure | With memory | Without memory |
+|---|---|---|
+| Questions whose answer-bearing fact reached the model | **17 / 17** (company 5/5, team 4/4, client 5/5, project 3/3) | 0 / 17 (the model can only ask or guess) |
+| Facts from memories Alice may not read, over 17 questions + 7 probing questions (incl. "ignore your rules…") | **0** | 0 |
+| Passages given per request | 3.4 on average, 7 at most | 0 |
+| Context added | ~365 characters (~90 tokens) on average, ~780 (~195 tokens) at most | 0 |
+| Time to build the context (local database) | p50 87 ms, p95 130 ms | 0 |
+| A replaced fact (budget 48 000 → 52 000) | current value given, old value not given | — |
+| A deleted fact, asked 3 ways afterwards | given 0 times | — |
+
+**What this does and does not prove.** The index was the **simulated** one (words hashed): the 100 %
+measures the pipeline (scopes, key facts, search, permissions, replacement, deletion), not the
+semantic quality of a real embeddings model on paraphrased questions. The same file runs with a real
+embeddings provider (`EVAL_REAL_EMBEDDINGS=1` and a working key); it was not run here because the
+OpenAI key of this environment returns "quota exceeded" (429). Answer quality with and without
+memory on real models (Claude, ChatGPT, Gemini) still needs that run; nothing here claims it.
+
 ## 9. Known limits and next steps
 
-- Team memory (a space per team) is designed but not built: today knowledge is company-wide or per
-  client. Personal notes stay the "What the AI knows about me" page.
+- Team and project memories are built (V1.1). Automatic learning still writes to client memory only;
+  team and project memories are fed deliberately (saved from a chat, typed, uploaded).
+- A project has no members list of its own: it follows its client's access (or is open).
 - Sharing a single fact with someone outside a client is not built (temporary access to the whole
   client is).
 - Provider restrictions are per memory; per-sensitivity rules are not built.

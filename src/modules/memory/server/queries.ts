@@ -1,26 +1,28 @@
 import "server-only";
 import type { MemberContext } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
-import { myMemorySpaces, type MemorySpace } from "./retrieval";
+import { myMemorySpaces, ownerNamesOf, type MemorySpace } from "./retrieval";
 
+const KIND_ORDER = { company: 0, team: 1, project: 2, client: 3 } as const;
+
+/** `clientName`: the name of the client, team or project the memory belongs to. */
 export type SpaceSummary = MemorySpace & { clientName: string | null; clientArchived: boolean };
 
-/** Memories the user can read, company first, then clients by name (RLS + SQL rights). */
+/** Memories the user can read: company first, then their team, projects and clients by name (RLS + SQL rights). */
 export async function listMemorySpaces(ctx: MemberContext): Promise<SpaceSummary[]> {
   const supabase = await createClient();
   const spaces = await myMemorySpaces(supabase, ctx.active.companyId);
   const clientIds = spaces.filter((s) => s.clientId).map((s) => s.clientId!);
-  const { data: clients } = clientIds.length
-    ? await supabase.from("clients").select("id, name, archived_at").in("id", clientIds)
-    : { data: [] as { id: string; name: string; archived_at: string | null }[] };
-  const byId = new Map((clients ?? []).map((c) => [c.id, c]));
+  const [names, { data: clients }] = await Promise.all([
+    ownerNamesOf(supabase, spaces),
+    clientIds.length
+      ? supabase.from("clients").select("id, archived_at").in("id", clientIds)
+      : Promise.resolve({ data: [] as { id: string; archived_at: string | null }[] }),
+  ]);
+  const archived = new Set((clients ?? []).filter((c) => c.archived_at).map((c) => c.id));
   return spaces
-    .map((s) => ({
-      ...s,
-      clientName: s.clientId ? (byId.get(s.clientId)?.name ?? null) : null,
-      clientArchived: s.clientId ? Boolean(byId.get(s.clientId)?.archived_at) : false,
-    }))
-    .sort((a, b) => (a.kind === b.kind ? (a.clientName ?? "").localeCompare(b.clientName ?? "") : a.kind === "company" ? -1 : 1));
+    .map((s) => ({ ...s, clientName: names.get(s.spaceId) ?? null, clientArchived: s.clientId ? archived.has(s.clientId) : false }))
+    .sort((a, b) => (a.kind === b.kind ? (a.clientName ?? "").localeCompare(b.clientName ?? "") : KIND_ORDER[a.kind] - KIND_ORDER[b.kind]));
 }
 
 export async function listEntries(spaceId: string) {
@@ -99,4 +101,10 @@ export async function getDocument(documentId: string) {
     .eq("id", documentId)
     .maybeSingle();
   return data;
+}
+
+/** Projects exist in this database (false on a preview before the V1.1 migration: the section is hidden). */
+export async function projectsAvailable(): Promise<boolean> {
+  const { error } = await (await createClient()).from("projects").select("id", { head: true }).limit(1);
+  return !error;
 }

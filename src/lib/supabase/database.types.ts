@@ -841,14 +841,14 @@ isOneToOne: false
                   ]
                 },"memory_spaces": {
                   Row: {
-                    "blocked_providers": (Database["public"]['Enums']["ai_provider"])[],"client_id": string | null,"company_id": string,"created_at": string,"id": string,"kind": Database["public"]['Enums']["memory_kind"]
+                    "blocked_providers": (Database["public"]['Enums']["ai_provider"])[],"client_id": string | null,"company_id": string,"created_at": string,"id": string,"kind": Database["public"]['Enums']["memory_kind"],"project_id": string | null,"team_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "blocked_providers"?: (Database["public"]['Enums']["ai_provider"])[],"client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["memory_kind"]
+                    "blocked_providers"?: (Database["public"]['Enums']["ai_provider"])[],"client_id"?: string | null,"company_id": string,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["memory_kind"],"project_id"?: string | null,"team_id"?: string | null
                   }
                   Update: {
-                    "blocked_providers"?: (Database["public"]['Enums']["ai_provider"])[],"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["memory_kind"]
+                    "blocked_providers"?: (Database["public"]['Enums']["ai_provider"])[],"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["memory_kind"],"project_id"?: string | null,"team_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -863,6 +863,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "companies"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "memory_spaces_project_id_company_id_fkey"
+      columns: ["project_id","company_id"]
+isOneToOne: false
+      referencedRelation: "projects"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "memory_spaces_team_id_company_id_fkey"
+      columns: ["team_id","company_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["id","company_id"]
     }
                   ]
                 },"memory_suggestions": {
@@ -1174,6 +1186,32 @@ isOneToOne: false
                     {
       foreignKeyName: "profiles_active_company_id_fkey"
       columns: ["active_company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"projects": {
+                  Row: {
+                    "archived_at": string | null,"client_id": string | null,"company_id": string,"created_at": string,"created_by": string | null,"description": string,"id": string,"name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"client_id"?: string | null,"company_id": string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"id"?: string,"name": string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"client_id"?: string | null,"company_id"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string,"id"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "projects_client_id_company_id_fkey"
+      columns: ["client_id","company_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "projects_company_id_fkey"
+      columns: ["company_id"]
 isOneToOne: false
       referencedRelation: "companies"
       referencedColumns: ["id"]
@@ -2139,7 +2177,7 @@ isOneToOne: false
                            },
 "history_unreadable_sources":
 { Args: { "p_conversation": string,"p_from_seq": number,"p_users": (string)[] }; Returns: {
-              "client_name": string,"space_id": string,"user_id": string
+              "client_name": string,"kind": Database["public"]['Enums']["memory_kind"],"owner_name": string,"space_id": string,"user_id": string
             }[]
                            },
 "leave_conversation":
@@ -2160,7 +2198,7 @@ isOneToOne: false
                            },
 "my_memory_spaces":
 { Args: { "p_company": string }; Returns: {
-              "blocked_providers": (Database["public"]['Enums']["ai_provider"])[],"can_write": boolean,"client_id": string,"document_count": number,"entry_count": number,"kind": Database["public"]['Enums']["memory_kind"],"space_id": string
+              "blocked_providers": (Database["public"]['Enums']["ai_provider"])[],"can_write": boolean,"client_id": string,"document_count": number,"entry_count": number,"kind": Database["public"]['Enums']["memory_kind"],"project_client_id": string,"project_id": string,"space_id": string,"team_id": string
             }[]
                            },
 "my_pending_invitations":
@@ -2360,7 +2398,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "ai_provider": "openai"|"anthropic"|"google","client_visibility": "open"|"restricted","company_role": "owner"|"admin"|"member"|"manager","company_status": "active"|"suspended","member_status": "active"|"deactivated","memory_kind": "company"|"client","model_tier": "fast"|"balanced"|"advanced"
+            "ai_provider": "openai"|"anthropic"|"google","client_visibility": "open"|"restricted","company_role": "owner"|"admin"|"member"|"manager","company_status": "active"|"suspended","member_status": "active"|"deactivated","memory_kind": "company"|"client"|"team"|"project","model_tier": "fast"|"balanced"|"advanced"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -2476,7 +2514,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "ai_provider": ["openai", "anthropic", "google"],"client_visibility": ["open", "restricted"],"company_role": ["owner", "admin", "member", "manager"],"company_status": ["active", "suspended"],"member_status": ["active", "deactivated"],"memory_kind": ["company", "client"],"model_tier": ["fast", "balanced", "advanced"]
+            "ai_provider": ["openai", "anthropic", "google"],"client_visibility": ["open", "restricted"],"company_role": ["owner", "admin", "member", "manager"],"company_status": ["active", "suspended"],"member_status": ["active", "deactivated"],"memory_kind": ["company", "client", "team", "project"],"model_tier": ["fast", "balanced", "advanced"]
           }
         }
 } as const

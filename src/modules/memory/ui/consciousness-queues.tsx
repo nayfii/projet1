@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { memoryLabel } from "../labels";
+import type { MemoryKind } from "../types";
 import { CheckIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,7 @@ export function ProposalQueue({ proposals }: { proposals: Proposal[] }) {
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="text-[13.5px]">{p.content}</p>
             <p className="text-xs text-muted-foreground">
-              {p.where.kind === "company" ? t("companyMemory") : p.where.clientName}
+              {memoryLabel(p.where.kind as MemoryKind, p.where.clientName, t)}
               {p.kind === "promotion" ? ` · ${t("hub.promotion")}` : p.reason ? ` · ${t(`proposalReason.${p.reason as "assistant_claim"}`)}` : ""}
             </p>
           </div>

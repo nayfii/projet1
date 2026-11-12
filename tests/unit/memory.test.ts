@@ -138,17 +138,25 @@ describe("memory passages in the prompt", () => {
   });
 });
 
+function space(spaceId: string, kind: MemorySpace["kind"], ids: Partial<Pick<MemorySpace, "clientId" | "teamId" | "projectId" | "projectClientId">> = {}): MemorySpace {
+  return { spaceId, kind, clientId: null, teamId: null, projectId: null, projectClientId: null, canWrite: true, entryCount: 0, documentCount: 0, blockedProviders: [], ...ids };
+}
+
 describe("which memories a conversation draws from", () => {
   const spaces: MemorySpace[] = [
-    { spaceId: "company", kind: "company", clientId: null, canWrite: false, entryCount: 0, documentCount: 0, blockedProviders: [] },
-    { spaceId: "a", kind: "client", clientId: "client-a", canWrite: true, entryCount: 0, documentCount: 0, blockedProviders: [] },
-    { spaceId: "b", kind: "client", clientId: "client-b", canWrite: true, entryCount: 0, documentCount: 0, blockedProviders: [] },
+    space("company", "company"),
+    space("a", "client", { clientId: "client-a" }),
+    space("b", "client", { clientId: "client-b" }),
+    space("team", "team", { teamId: "team-1" }),
+    space("pa", "project", { projectId: "p-a", projectClientId: "client-a" }),
+    space("pb", "project", { projectId: "p-b", projectClientId: "client-b" }),
+    space("p0", "project", { projectId: "p-0" }),
   ];
-  it("uses company memory + the linked client's memory only", () => {
-    expect(conversationScope(spaces, "client-a").map((s) => s.spaceId)).toEqual(["company", "a"]);
+  it("uses company and team memory, plus the linked client's memory and its projects only", () => {
+    expect(conversationScope(spaces, "client-a").map((s) => s.spaceId)).toEqual(["company", "a", "team", "pa"]);
   });
   it("uses every readable memory when no client is linked", () => {
-    expect(conversationScope(spaces, null).map((s) => s.spaceId)).toEqual(["company", "a", "b"]);
+    expect(conversationScope(spaces, null).map((s) => s.spaceId)).toEqual(["company", "a", "b", "team", "pa", "pb", "p0"]);
   });
   it("never adds a client memory the user cannot read", () => {
     expect(conversationScope(spaces.slice(0, 2), "client-b").map((s) => s.spaceId)).toEqual(["company"]);

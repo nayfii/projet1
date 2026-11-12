@@ -12,6 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** Who reads and who writes each memory, through named groups ("permissions" scope). */
+const KIND_ORDER = { company: 0, team: 1, project: 2, client: 3 } as const;
+
 export default async function AdminPermissionsPage() {
   const ctx = await requireScope("permissions");
   const t = await getTranslations("permissions");
@@ -20,7 +22,7 @@ export default async function AdminPermissionsPage() {
   const [categories, categoryMembers, spaces, grants, members] = await Promise.all([
     supabase.from("permission_categories").select("id, name, description, system_key").eq("company_id", companyId).order("created_at"),
     supabase.from("permission_category_members").select("category_id, user_id").eq("company_id", companyId),
-    supabase.from("memory_spaces").select("id, kind, client:clients(name, archived_at)").eq("company_id", companyId),
+    memorySpaces(supabase, companyId),
     supabase.from("memory_space_grants").select("space_id, category_id, can_read, can_write").eq("company_id", companyId),
     listMembers(companyId),
   ]);
@@ -37,18 +39,26 @@ export default async function AdminPermissionsPage() {
           members: (categoryMembers.data ?? []).filter((m) => m.category_id === c.id).map((m) => m.user_id),
         }))}
         spaces={(spaces.data ?? [])
-          .filter((s) => !s.client?.archived_at)
+          .filter((s) => !s.client?.archived_at && !s.project?.archived_at)
           .map((s) => ({
             id: s.id,
             kind: s.kind,
             // A restricted client's name is hidden from admins without access to it.
-            clientName: s.kind === "client" ? (s.client?.name ?? null) : null,
+            clientName: s.kind === "client" ? (s.client?.name ?? null) : (s.team?.name ?? s.project?.name ?? null),
             read: (grants.data ?? []).filter((g) => g.space_id === s.id && g.can_read).map((g) => g.category_id),
             write: (grants.data ?? []).filter((g) => g.space_id === s.id && g.can_write).map((g) => g.category_id),
           }))
-          .sort((a, b) => (a.kind === b.kind ? (a.clientName ?? "~").localeCompare(b.clientName ?? "~") : a.kind === "company" ? -1 : 1))}
+          .sort((a, b) => (a.kind === b.kind ? (a.clientName ?? "~").localeCompare(b.clientName ?? "~") : KIND_ORDER[a.kind] - KIND_ORDER[b.kind]))}
         members={members.filter((m) => m.status === "active").map((m) => ({ userId: m.userId, name: m.fullName ?? m.email, role: m.role }))}
       />
     </PageContainer>
   );
+}
+
+/** The company's memories with their owner's name; clients only on a database before the V1.1 migration. */
+async function memorySpaces(supabase: Awaited<ReturnType<typeof createClient>>, companyId: string) {
+  const full = await supabase.from("memory_spaces").select("id, kind, client:clients(name, archived_at), team:teams(name), project:projects(name, archived_at)").eq("company_id", companyId);
+  if (!full.error) return full;
+  const basic = await supabase.from("memory_spaces").select("id, kind, client:clients(name, archived_at)").eq("company_id", companyId);
+  return { ...basic, data: basic.data as unknown as typeof full.data };
 }

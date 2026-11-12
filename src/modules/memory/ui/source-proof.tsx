@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
+import { memoryLabel } from "../labels";
 import { BookmarkIcon, ExternalLinkIcon, FileTextIcon, XIcon } from "lucide-react";
 import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import type { SourceProof } from "../types";
 
-/** Where a source comes from, in words: "Company memory" or "Client memory · Client A". */
+/** Where a source comes from, in words: "Company memory", "Client memory · Client A", "Team …", "Project …". */
 export function useSourceOrigin() {
   const t = useTranslations("sources");
   return (s: Pick<SourceProof, "spaceKind" | "clientName">) =>
-    s.spaceKind === "company" ? t("companyMemory") : s.clientName ? t("clientMemoryNamed", { client: s.clientName }) : t("clientMemory");
+    s.spaceKind && s.spaceKind !== "client"
+      ? memoryLabel(s.spaceKind, s.clientName, t)
+      : s.clientName
+        ? t("clientMemoryNamed", { client: s.clientName })
+        : t("clientMemory");
 }
 
 /** Source Proof under an answer: each cited passage, with its origin and date, opening the exact passage. */

@@ -2,7 +2,7 @@ import "server-only";
 import type { MemberContext } from "@/lib/auth/guards";
 import type { UserClient } from "@/lib/supabase/server";
 import { keywordQuery } from "../keywords";
-import type { KnowledgePassage } from "../types";
+import type { KnowledgePassage, MemoryKind } from "../types";
 import { embeddingModelName } from "@/modules/providers/server/embeddings";
 import { embedQuery } from "./indexer";
 
@@ -11,8 +11,12 @@ const PASSAGE_MAX_CHARS = 1_600;
 
 export type MemorySpace = {
   spaceId: string;
-  kind: "company" | "client";
+  kind: MemoryKind;
   clientId: string | null;
+  teamId: string | null;
+  projectId: string | null;
+  /** A project done for a client: that client (its conversations use the project's memory). */
+  projectClientId: string | null;
   canWrite: boolean;
   entryCount: number;
   documentCount: number;
@@ -27,6 +31,10 @@ export async function myMemorySpaces(supabase: UserClient, companyId: string): P
     spaceId: s.space_id,
     kind: s.kind,
     clientId: s.client_id,
+    // Absent on a database before the V1.1 migration (team and project memories).
+    teamId: s.team_id ?? null,
+    projectId: s.project_id ?? null,
+    projectClientId: s.project_client_id ?? null,
     canWrite: s.can_write,
     entryCount: Number(s.entry_count),
     documentCount: Number(s.document_count),
@@ -35,12 +43,19 @@ export async function myMemorySpaces(supabase: UserClient, companyId: string): P
 }
 
 /**
- * Which memories a conversation may draw from. Linked to a client: company memory + that client's memory.
- * Not linked: company memory + every client memory the user can read. Group conversations (Step 5)
- * will intersect this with the other participants' spaces.
+ * Which memories a conversation may draw from, among those the person can read. Always the company's
+ * memory and their team's. Linked to a client: that client's memory and its projects'. Not linked: every
+ * client and project memory they can read. Group conversations intersect this with the participants'.
  */
 export function conversationScope(spaces: MemorySpace[], clientId: string | null): MemorySpace[] {
-  return spaces.filter((s) => s.kind === "company" || (clientId ? s.clientId === clientId : true));
+  return spaces.filter(
+    (s) =>
+      s.kind === "company" ||
+      s.kind === "team" ||
+      !clientId ||
+      (s.kind === "client" && s.clientId === clientId) ||
+      (s.kind === "project" && s.projectClientId === clientId),
+  );
 }
 
 /**
@@ -62,12 +77,21 @@ export async function retrievePassages(
   return searchSpaces(supabase, ctx, scope, { query: options.query, embedding: undefined, embeddingQuery: options.embeddingQuery });
 }
 
-/** Client names of the client memories in a scope (to label passages). */
-export async function clientNamesOf(supabase: UserClient, scope: MemorySpace[]): Promise<Map<string, string>> {
-  const clientIds = [...new Set(scope.filter((s) => s.clientId).map((s) => s.clientId!))];
-  if (clientIds.length === 0) return new Map();
-  const { data } = await supabase.from("clients").select("id, name").in("id", clientIds);
-  return new Map((data ?? []).map((c) => [c.id, c.name]));
+/** Name of what each memory of a scope belongs to (client, team or project), by memory id, to label passages. */
+export async function ownerNamesOf(supabase: UserClient, scope: MemorySpace[]): Promise<Map<string, string>> {
+  const ids = (key: "clientId" | "teamId" | "projectId") => [...new Set(scope.map((s) => s[key]).filter((id): id is string => Boolean(id)))];
+  const [clients, teams, projects] = await Promise.all([
+    ids("clientId").length ? supabase.from("clients").select("id, name").in("id", ids("clientId")) : null,
+    ids("teamId").length ? supabase.from("teams").select("id, name").in("id", ids("teamId")) : null,
+    ids("projectId").length ? supabase.from("projects").select("id, name").in("id", ids("projectId")) : null,
+  ]);
+  const byId = new Map([...(clients?.data ?? []), ...(teams?.data ?? []), ...(projects?.data ?? [])].map((r) => [r.id, r.name]));
+  const names = new Map<string, string>();
+  for (const s of scope) {
+    const name = byId.get(s.clientId ?? s.teamId ?? s.projectId ?? "");
+    if (name) names.set(s.spaceId, name);
+  }
+  return names;
 }
 
 /**
@@ -103,7 +127,7 @@ export async function searchSpaces(
   const rows = (data ?? []).filter((r) => ids.includes(r.space_id) && !options.excludeIds?.has(r.id)).slice(0, limit);
   if (rows.length === 0) return [];
 
-  const clientNames = await clientNamesOf(supabase, scope);
+  const ownerNames = await ownerNamesOf(supabase, scope);
   const spaceById = new Map(scope.map((s) => [s.spaceId, s]));
 
   return rows.map((r, i) => {
@@ -115,7 +139,7 @@ export async function searchSpaces(
       documentId: r.document_id,
       spaceId: r.space_id,
       spaceKind: space.kind,
-      clientName: space.clientId ? (clientNames.get(space.clientId) ?? null) : null,
+      clientName: ownerNames.get(space.spaceId) ?? null,
       title: r.title,
       content: r.content.length > PASSAGE_MAX_CHARS ? `${r.content.slice(0, PASSAGE_MAX_CHARS)}…` : r.content,
       page: r.page,

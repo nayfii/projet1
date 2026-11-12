@@ -251,3 +251,27 @@ test("the owner gives the Finance group the right to write in the company memory
   await expect(p.getByRole("button", { name: "Nouvelle entrée" }).first()).toBeVisible();
   await nathalieContext.close();
 });
+
+test("a project for Client A gets its own memory, which Nathalie (no access to Client A) never sees", async ({ browser }) => {
+  await page.goto("/memory");
+  await page.getByRole("button", { name: "Nouveau projet" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nouveau projet" });
+  await dialog.getByLabel("Nom du projet").fill("Refonte du site");
+  await dialog.getByLabel("Pour un client (facultatif)").click();
+  await page.getByRole("option", { name: "Client A" }).click();
+  await dialog.getByLabel("Objectif (facultatif)").fill("Nouveau site avant l'été");
+  await dialog.getByRole("button", { name: "Créer le projet" }).click();
+  await expect(page.getByText("Projet créé.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Projet Refonte du site" })).toBeVisible();
+  await page.goto("/memory");
+  await expect(page.getByRole("link", { name: /Refonte du site/ })).toBeVisible();
+  await shot(page, "43-memory-projects");
+
+  const nathalieContext = await browser.newContext({ locale: "fr-FR" });
+  const p = await nathalieContext.newPage();
+  await signIn(p, nathalie);
+  await p.goto("/memory");
+  await expect(p.getByRole("heading", { name: "Projets" })).toBeVisible();
+  await expect(p.getByRole("link", { name: /Refonte du site/ })).toHaveCount(0);
+  await nathalieContext.close();
+});

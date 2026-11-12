@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { memoryLabel } from "@/modules/memory/labels";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeftIcon } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
@@ -27,7 +28,8 @@ export default async function MemorySpacePage({ params }: PageProps<"/memory/[sp
   if (!space) notFound();
   const [entries, documents, suggestions, history] = await Promise.all([listEntries(spaceId), listDocuments(spaceId), listSuggestions(spaceId), listFactHistory(spaceId)]);
   const tc = await getTranslations("consciousness");
-  const label = space.kind === "company" ? t("companyMemory") : t("clientMemoryNamed", { client: space.clientName ?? "" });
+  const label = space.kind === "client" ? t("clientMemoryNamed", { client: space.clientName ?? "" }) : memoryLabel(space.kind, space.clientName, t);
+  const body = { company: t("companyMemoryBody"), client: t("clientMemoryBody"), team: t("teamMemoryBody"), project: t("projectMemoryBody") }[space.kind];
 
   return (
     <PageContainer className="max-w-4xl">
@@ -37,7 +39,7 @@ export default async function MemorySpacePage({ params }: PageProps<"/memory/[sp
       </Link>
       <PageHeader
         title={label}
-        description={space.kind === "company" ? t("companyMemoryBody") : t("clientMemoryBody")}
+        description={body}
         actions={!space.canWrite ? <Badge variant="outline">{t("readOnly")}</Badge> : null}
       />
       {hasScope(ctx.active, "permissions") ? (

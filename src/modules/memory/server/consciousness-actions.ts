@@ -1,5 +1,6 @@
 "use server";
 
+import type { MemoryKind } from "../types";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { memberOrNull } from "@/lib/auth/guards";
@@ -116,7 +117,7 @@ export type UsedMemory = {
   type: "entry" | "document";
   title: string;
   excerpt: string;
-  where: { kind: "company" | "client"; clientName: string | null };
+  where: { kind: MemoryKind; clientName: string | null };
   date: string | null;
   reason: "brief" | "search";
   kind: string | null;
@@ -145,9 +146,9 @@ export async function usedMemoryAction(input: { messageId: string }): Promise<{ 
     chunkIds.length
       ? supabase.from("document_chunks").select("id, space_id, content, document:documents(id, filename, created_at)").in("id", chunkIds)
       : Promise.resolve({ data: [] as { id: string; space_id: string; content: string; document: { id: string; filename: string; created_at: string } | null }[] }),
-    supabase.from("memory_spaces").select("id, kind, client:clients(name)").in("id", [...new Set(trace.used.map((u) => u.s))]),
+    spacesWithOwners(supabase, [...new Set(trace.used.map((u) => u.s))]),
   ]);
-  const spaceById = new Map((spaces ?? []).map((s) => [s.id, { kind: s.kind, clientName: s.client?.name ?? null }]));
+  const spaceById = new Map((spaces ?? []).map((s) => [s.id, { kind: s.kind, clientName: s.client?.name ?? s.team?.name ?? s.project?.name ?? null }]));
   const items: UsedMemory[] = [];
   for (const u of trace.used) {
     const where = spaceById.get(u.s);
@@ -219,4 +220,12 @@ export async function setProviderPolicyAction(input: { spaceId: string; blocked:
   if (error) return { ok: false, error: toErrorCode(error) };
   revalidatePath(`/memory/${parsed.data.spaceId}`);
   return { ok: true };
+}
+
+/** Memories with the name of what they belong to; clients only on a database before the V1.1 migration. */
+async function spacesWithOwners(supabase: Awaited<ReturnType<typeof createClient>>, ids: string[]) {
+  const full = await supabase.from("memory_spaces").select("id, kind, client:clients(name), team:teams(name), project:projects(name)").in("id", ids);
+  if (!full.error) return full;
+  const basic = await supabase.from("memory_spaces").select("id, kind, client:clients(name)").in("id", ids);
+  return { ...basic, data: basic.data as unknown as typeof full.data };
 }

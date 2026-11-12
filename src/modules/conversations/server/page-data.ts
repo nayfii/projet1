@@ -8,7 +8,8 @@ import { getMyQuota } from "@/modules/usage/server/quota";
 import type { PickerModel } from "../ui/model-picker";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { myMemorySpaces } from "@/modules/memory/server/retrieval";
+import { myMemorySpaces, ownerNamesOf } from "@/modules/memory/server/retrieval";
+import { memoryLabel } from "@/modules/memory/labels";
 import { getHideSettings } from "@/modules/hide/server/masker";
 import { hasScope } from "@/lib/auth/context";
 
@@ -27,6 +28,7 @@ export async function getChatPageData(ctx: MemberContext) {
     supabase.from("company_ai_settings").select("dictation_enabled, image_generation_enabled").eq("company_id", companyId).maybeSingle(),
   ]);
   const clientName = new Map(clients.map((c) => [c.id, c.name]));
+  const ownerNames = await ownerNamesOf(supabase, spaces.filter((sp) => sp.kind === "team" || sp.kind === "project"));
   const picker: PickerModel[] = models.allowed.map((m) => ({
     id: m.id,
     provider: m.provider,
@@ -45,11 +47,14 @@ export async function getChatPageData(ctx: MemberContext) {
     quota: quota?.state ?? null,
     // Memories this person can write into ("Save to memory").
     memoryTargets: spaces
-      .filter((sp) => sp.canWrite && (sp.kind === "company" || clientName.has(sp.clientId!)))
+      .filter((sp) => sp.canWrite && (sp.kind !== "client" || clientName.has(sp.clientId!)))
       .map((sp) => ({
         spaceId: sp.spaceId,
         clientId: sp.clientId,
-        label: sp.kind === "company" ? tMemory("companyMemory") : tMemory("clientMemoryNamed", { client: clientName.get(sp.clientId!) ?? "" }),
+        label:
+          sp.kind === "client"
+            ? tMemory("clientMemoryNamed", { client: clientName.get(sp.clientId!) ?? "" })
+            : memoryLabel(sp.kind, ownerNames.get(sp.spaceId) ?? null, tMemory),
       })),
     fakeMode: fakeProviderEnabled(),
     // Hide: the company's default modes and the categories Automatic masks.

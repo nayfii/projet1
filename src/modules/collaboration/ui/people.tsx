@@ -210,10 +210,17 @@ export function HistoryWarnings({ warnings, people, kind }: { warnings: HistoryW
   return (
     <div role="alert" className="space-y-1 rounded-lg bg-warning-soft px-3 py-2 text-[13px]">
       {warnings.map((w) => {
-        const memory = w.clientName ? t("clientMemory", { client: w.clientName }) : t("companyMemory");
+        const memory =
+          w.kind === "company" || !w.name
+            ? t("companyMemory")
+            : w.kind === "team"
+              ? t("teamMemory", { name: w.name })
+              : w.kind === "project"
+                ? t("projectMemory", { name: w.name })
+                : t("clientMemory", { client: w.name });
         const names = w.userIds.map((id) => people.find((p) => p.userId === id)?.name ?? "?").join(", ");
         return (
-          <p key={`${w.clientName}-${names}`} className="flex items-start gap-2">
+          <p key={`${w.kind}-${w.name}-${names}`} className="flex items-start gap-2">
             <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" />
             {kind === "share" ? t("historyWarning", { memory, names, count: w.userIds.length }) : t("transferWarningMemory", { memory, names })}
           </p>

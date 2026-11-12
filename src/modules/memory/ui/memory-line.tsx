@@ -3,6 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { memoryLabel } from "../labels";
+import type { MemoryKind } from "../types";
 import { BrainIcon, CheckIcon, ChevronDownIcon, Loader2Icon, PencilIcon, RotateCcwIcon, ShieldOffIcon, SparklesIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -177,7 +179,7 @@ function UsedPanel({ messageId }: { messageId: string }) {
                     <span className="flex items-baseline justify-between gap-3">
                       <span className="font-medium">{i.title}</span>
                       <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {i.where.kind === "company" ? t("companyMemory") : i.where.clientName}
+                        {memoryLabel(i.where.kind, i.where.clientName, t)}
                         {i.date ? ` · ${new Date(i.date).toLocaleDateString()}` : ""}
                       </span>
                     </span>
@@ -194,7 +196,7 @@ function UsedPanel({ messageId }: { messageId: string }) {
       {data.blocked.map((b, i) => (
         <p key={i} className="flex items-start gap-1.5 text-muted-foreground">
           <ShieldOffIcon className="mt-0.5 size-3.5 shrink-0" />
-          {t("blocked", { memory: b.kind === "company" ? t("companyMemory") : (b.clientName ?? "") })}
+          {t("blocked", { memory: memoryLabel(b.kind as MemoryKind, b.clientName, t) })}
         </p>
       ))}
     </div>

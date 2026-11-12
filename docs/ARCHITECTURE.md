@@ -78,7 +78,7 @@ The company's and clients' knowledge lives **outside every LLM**, in our databas
 | `clients` | Clients, Open / Restricted visibility, assignments, client transfer |
 | `conversations` | Conversations, participants, messages, group chat, history sharing, mentions, conversation transfer |
 | `documents` | Upload, parsing (PDF, DOCX, TXT, MD, CSV, XLSX), chunking, embeddings, retrieval |
-| `memory` | Memory spaces (company / client), versioned facts, permission categories, suggestions, promotion, Source Proof; **Cendr Consciousness**: learning after each answer (`server/learning.ts` + rules in `learning.ts`), the Context Gateway that builds what any model receives (`server/gateway.ts`), client living brief and hub (`server/knowledge.ts`). See `docs/CONSCIOUSNESS.md` |
+| `memory` | Memory spaces (company / team / client / project; V1.1 adds team and project, with `projects` and `server/project-actions.ts`), versioned facts, permission categories, suggestions, promotion, Source Proof; **Cendr Consciousness**: learning after each answer (`server/learning.ts` + rules in `learning.ts`), the Context Gateway that builds what any model receives (`server/gateway.ts`), client living brief and hub (`server/knowledge.ts`). See `docs/CONSCIOUSNESS.md` |
 | `providers` | Provider interface, OpenAI / Anthropic / Google adapters, model catalogue, Smart Router, embeddings provider |
 | `hide` | Sensitive data detection, pseudonymisation, mapping vault, restore, masking events |
 | `agents` | Shared agent/tool framework, built-in agents, "Turn into a tool", Applis (catalogue, favourites, picker in the chat), apps our team adds |
@@ -118,7 +118,8 @@ Admin delegation: an Admin's powers are the `admin_scopes` granted by the Owner,
 |---|---|---|---|
 | `clients` | `name`, `visibility` (open / restricted), `sector`, `archived_at` | ✓ | (is the client) |
 | `client_assignments` | `user_id`, `assigned_by` | ✓ | ✓ |
-| `memory_spaces` | `kind` (company / client) — exactly one company space per company, one space per client | ✓ | ✓ (null for company space) |
+| `memory_spaces` | `kind` (company / client / team / project) — exactly one company space per company, one space per client, per team (`team_id`) and per project (`project_id`), created by triggers | ✓ | ✓ (null for company, team and project spaces) |
+| `projects` | `name`, `description`, `client_id` (optional), `created_by`, `archived_at` — V1.1; visible to every member, or for a client's project to those who may open the client | ✓ | ✓ (optional) |
 | `permission_categories` | `name`, `description`, `system_key` (everyone / management: automatic groups) | ✓ | – |
 | `permission_category_members` | `category_id`, `user_id` | ✓ | – |
 | `memory_space_grants` | `space_id`, `category_id`, `can_read`, `can_write` | ✓ | via space |

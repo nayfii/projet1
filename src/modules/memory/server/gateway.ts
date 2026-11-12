@@ -5,7 +5,7 @@ import type { KnowledgePassage, MemoryTrace } from "../types";
 
 export type { MemoryTrace };
 import { embedQuery } from "./indexer";
-import { clientNamesOf, conversationScope, MAX_PASSAGES, myMemorySpaces, searchSpaces, type MemorySpace } from "./retrieval";
+import { conversationScope, MAX_PASSAGES, myMemorySpaces, ownerNamesOf, searchSpaces, type MemorySpace } from "./retrieval";
 
 /**
  * Cendr Context Gateway (docs/CONSCIOUSNESS.md §4): what a model receives from memory, whichever
@@ -72,13 +72,13 @@ export async function buildMemoryContext(
   );
   const blockedSpaces = all.filter((s) => s.blockedProviders.some((p) => options.providers.includes(p)));
   const scope = all.filter((s) => !blockedSpaces.includes(s));
-  const names = await clientNamesOf(supabase, all);
+  const names = await ownerNamesOf(supabase, all);
   const trace: MemoryTrace = {
     used: [],
     recent: 0,
     waitedMs: 0,
     pending: 0,
-    blocked: blockedSpaces.map((s) => ({ spaceId: s.spaceId, kind: s.kind, clientName: s.clientId ? (names.get(s.clientId) ?? null) : null })),
+    blocked: blockedSpaces.map((s) => ({ spaceId: s.spaceId, kind: s.kind, clientName: names.get(s.spaceId) ?? null })),
     ms: 0,
   };
   const clientSpace = options.clientId ? scope.find((s) => s.clientId === options.clientId) : undefined;
@@ -148,7 +148,7 @@ async function clientBrief(supabase: UserClient, space: MemorySpace, names: Map<
       documentId: null,
       spaceId: space.spaceId,
       spaceKind: space.kind,
-      clientName: space.clientId ? (names.get(space.clientId) ?? null) : null,
+      clientName: names.get(space.spaceId) ?? null,
       title: e.title,
       content: e.content.length > BRIEF_FACT_CHARS ? `${e.content.slice(0, BRIEF_FACT_CHARS)}…` : e.content,
       page: null,
