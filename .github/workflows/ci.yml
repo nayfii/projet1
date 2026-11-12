@@ -37,6 +37,8 @@ jobs:
         run: pnpm typecheck
       - name: Lint
         run: pnpm lint
+      - name: FFmpeg (the video unit tests build real MP4s)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: Unit tests
         run: pnpm test
       - name: Dependencies (high and critical)
