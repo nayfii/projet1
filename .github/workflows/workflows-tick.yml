@@ -1,0 +1,27 @@
+# The workflows' clock every 5 minutes (CLAUDE.md §12): schedules, e-mail triggers, delayed runs.
+# Vercel's Hobby plan allows one cron a day only (vercel.json keeps a daily safety net); this calls the
+# same protected endpoint more often. Needs, in the repository settings: secret CRON_SECRET (the same
+# value as in Vercel) and variable APP_URL (the production address). Scheduled GitHub workflows run from
+# the default branch only, and GitHub may delay them under load.
+name: Workflows tick
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    if: ${{ vars.APP_URL != '' }}
+    steps:
+      - name: Call the workflows clock
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          test -n "$CRON_SECRET" || { echo "CRON_SECRET is not set"; exit 1; }
+          curl --fail --silent --show-error --max-time 300 -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/workflows" -o /dev/null

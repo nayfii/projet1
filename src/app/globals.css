@@ -363,3 +363,29 @@
     animation: nudge 1.6s var(--ease-out-soft) 3;
   }
 }
+
+/* Workflow editor (React Flow): its controls, minimap, links and grid wear Cendr's tokens in every theme. */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-background-pattern-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  --xy-edge-stroke: color-mix(in oklab, var(--foreground) 45%, transparent);
+  --xy-edge-stroke-selected: var(--foreground);
+  --xy-connectionline-stroke: var(--foreground);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--accent);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-box-shadow: none;
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--background) 70%, transparent);
+  --xy-edge-label-background-color: var(--background);
+  --xy-edge-label-color: var(--muted-foreground);
+  --xy-node-background-color: transparent;
+  --xy-node-border-radius: 0.75rem;
+}
+.react-flow__controls {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}

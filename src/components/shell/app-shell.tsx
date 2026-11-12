@@ -40,6 +40,7 @@ import {
   LayoutGridIcon,
   PanelsTopLeftIcon,
   TrendingUpIcon,
+  WorkflowIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,7 @@ const ICONS = {
   memory: BrainIcon,
   library: BookOpenIcon,
   apps: LayoutGridIcon,
+  workflows: WorkflowIcon,
   profile: UserIcon,
   overview: LayoutDashboardIcon,
   members: UsersIcon,

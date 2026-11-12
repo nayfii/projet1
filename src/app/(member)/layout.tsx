@@ -31,6 +31,7 @@ export default async function MemberLayout({ children }: { children: React.React
       items: [
         { href: "/memory", label: t("memory"), icon: "memory" },
         { href: "/apps", label: t("library"), icon: "apps" },
+        { href: "/workflows", label: t("workflows"), icon: "workflows" },
       ],
     },
   ];

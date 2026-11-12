@@ -78,6 +78,9 @@ test("the person keeps a preference for themselves and shares a rule with the co
 
 test("a broken file gets a plain explanation", async () => {
   await page.goto("/memory/import");
+  // Wait until the page answers (hydrated) before dropping the file.
+  await page.getByRole("radio", { name: "Autres fichiers" }).click();
+  await expect(page.getByTestId("export-guide")).toContainText("Notes et documents");
   await page.getByTestId("import-input").setInputFiles({ name: "export.zip", mimeType: "application/zip", buffer: Buffer.from("this is not a zip") });
   await expect(page.getByRole("alert").filter({ hasText: "Ce fichier" })).toContainText("Ce fichier est abîmé");
 });

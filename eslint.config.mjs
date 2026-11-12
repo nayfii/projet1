@@ -31,6 +31,9 @@ const eslintConfig = defineConfig([
       "src/modules/agents/server/builtin-sync.ts",
       "src/modules/providers/server/catalog-store.ts",
       "src/modules/integrations/server/store.ts",
+      "src/modules/workflows/server/runtime.ts",
+      "src/modules/workflows/server/engine.ts",
+      "src/modules/workflows/server/control.ts",
     ],
     rules: {
       "no-restricted-imports": [

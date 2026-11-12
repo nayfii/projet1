@@ -2,12 +2,11 @@ import "server-only";
 import type { MemberContext } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { oauthClient } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
 import { capability, isProviderId, PROVIDERS, scopesFor, type ProviderDef, type ProviderId } from "../providers";
 import { integrationsConfigured } from "./crypto";
 import { caller, EXECUTORS, ProviderCallError } from "./executors";
 import { OAuthError, refreshTokens } from "./oauth";
-import { loadConnection, loadTokens, logIntegration, markUsed, saveTokens, setStatus, type ConnectionRow } from "./store";
+import { loadConnection, loadTokens, logIntegration, markUsed, readDisabledProviders, saveTokens, setStatus, type ConnectionRow } from "./store";
 
 /**
  * Who may connect, see and use what, and the one door every use goes through (`runCapability`):
@@ -31,8 +30,7 @@ export type ProviderAvailability = {
 
 /** Whether each provider can be connected here: built, set up by our team, allowed by the company. */
 export async function providerAvailability(companyId: string): Promise<ProviderAvailability[]> {
-  const { data } = await (await createClient()).from("company_integration_settings").select("disabled_providers").eq("company_id", companyId).maybeSingle();
-  const disabled = new Set(data?.disabled_providers ?? []);
+  const disabled = new Set(await readDisabledProviders(companyId));
   const keyReady = integrationsConfigured();
   return Object.values(PROVIDERS).map((p) => {
     const reason = p.status === "soon" ? "soon" : !oauthClient(p.env) ? "not_configured" : !keyReady ? "no_key" : disabled.has(p.id) ? "disabled" : null;

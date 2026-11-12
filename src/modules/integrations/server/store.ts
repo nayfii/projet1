@@ -137,3 +137,9 @@ export async function setDisabledProviders(companyId: string, userId: string, di
 export async function logIntegration(companyId: string, actorId: string, action: "integration.connected" | "integration.revoked" | "integration.used" | "integration.failed" | "integration.settings", connectionId: string | null, metadata: Record<string, string | string[] | number | boolean | null>) {
   await createAdminClient().from("audit_log").insert({ scope: "company", company_id: companyId, actor_id: actorId, action, target_type: "integration", target_id: connectionId, metadata });
 }
+
+/** Providers the company switched off (not sensitive: read with our server's rights, also for workflows). */
+export async function readDisabledProviders(companyId: string): Promise<string[]> {
+  const { data } = await createAdminClient().from("company_integration_settings").select("disabled_providers").eq("company_id", companyId).maybeSingle();
+  return data?.disabled_providers ?? [];
+}

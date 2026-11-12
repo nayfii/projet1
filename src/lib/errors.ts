@@ -46,6 +46,7 @@ export const ERROR_CODES = [
   "password_mismatch",
   "wrong_password",
   "same_password",
+  "conflict",
   "unknown",
 ] as const;
 

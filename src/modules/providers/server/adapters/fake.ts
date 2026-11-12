@@ -27,6 +27,15 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         yield* simulated(JSON.stringify(simulatedFacts(text)));
         return;
       }
+      // Workflow steps and the workflow copilot: simple rules stand in for a real model.
+      if (request.system.startsWith("Task: workflow ")) {
+        yield* simulated(simulatedWorkflowStep(request.system, text));
+        return;
+      }
+      if (request.system.startsWith("Task: edit a workflow.")) {
+        yield* simulated(JSON.stringify(simulatedCopilot(text)));
+        return;
+      }
       // Knowledge import: a few sentences of each item stand in for a real model's selection.
       if (request.system.startsWith("Task: select knowledge from imported conversations.")) {
         yield* simulated(JSON.stringify({ items: simulatedImport(text) }));
@@ -202,6 +211,65 @@ function simulatedFacts(exchange: string) {
     facts.push({ kind: "preference", key: "personal_leave", title: "[TEST] Congé", content: "[TEST] La personne est en congé la semaine prochaine.", stated_by: "user", about: "person", confidence: 0.9, attributes: {} });
   }
   return facts;
+}
+
+/** Test mode only: a workflow step's answer, from its kind (generate, summarize, classify, extract, decide). */
+function simulatedWorkflowStep(system: string, text: string): string {
+  const kind = /^Task: workflow (\w+)\./.exec(system)?.[1];
+  const first = text.split(/(?<=[.!?])\s+|\n+/).find((s) => s.trim().length > 0)?.trim() ?? "";
+  switch (kind) {
+    case "summarize":
+      return `[TEST] Résumé : ${first.slice(0, 200)}`;
+    case "classify": {
+      const labels = (/and nothing else: (.+)$/m.exec(system)?.[1] ?? "").split(" | ").map((l) => l.trim()).filter(Boolean);
+      return labels.find((l) => text.toLowerCase().includes(l.toLowerCase())) ?? labels[0] ?? "";
+    }
+    case "extract": {
+      const keys = [...(/exactly these keys: (.+)\. Use null/.exec(system)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+      return JSON.stringify(Object.fromEntries(keys.map((k) => [k, new RegExp(`${k}\\s*:\\s*([^\\n,.;]+)`, "i").exec(text)?.[1]?.trim() ?? null])));
+    }
+    case "decide":
+      return /urgent|prioritaire|priority|asap/i.test(text) ? "yes\n[TEST] Le message est marqué urgent." : "no\n[TEST] Rien d'urgent.";
+    default:
+      return `[TEST] ${text.replace(/\s+/g, " ").slice(0, 300)}`;
+  }
+}
+
+/**
+ * Test mode only: the copilot's changes from a few words of the request ("Slack", "Drive", "Claude",
+ * "explique", "supprime l'étape n3"), on the workflow it is shown.
+ */
+function simulatedCopilot(context: string) {
+  let data: { workflow?: { nodes?: { id: string; type: string }[] }; connections?: { id: string; apps: string[] }[]; models?: string[]; request?: string } = {};
+  try {
+    data = JSON.parse(context);
+  } catch {
+    return { reply: "[TEST] Je n'ai pas compris.", ops: [] };
+  }
+  const nodes = data.workflow?.nodes ?? [];
+  const last = nodes.at(-1)?.id;
+  const request = (data.request ?? "").toLowerCase();
+  const connection = (app: string) => data.connections?.find((c) => c.apps.includes(app))?.id ?? "";
+  if (/explique|explain/.test(request)) return { reply: `[TEST] Ce workflow a ${nodes.length} étapes, de ${nodes[0]?.type ?? "?"} à ${nodes.at(-1)?.type ?? "?"}.`, ops: [] };
+  const remove = /(?:supprime|remove|retire)[^\d]*(n\d+)/.exec(request);
+  if (remove) return { reply: `[TEST] J'ai retiré l'étape ${remove[1]}.`, ops: [{ op: "remove_node", id: remove[1] }] };
+  if (/claude/.test(request)) {
+    const model = data.models?.find((m) => /claude/.test(m)) ?? "";
+    return { reply: "[TEST] Les étapes IA utilisent maintenant Claude.", ops: nodes.filter((n) => n.type.startsWith("ai.") && n.type !== "ai.memory").map((n) => ({ op: "update_node", id: n.id, config: { model } })) };
+  }
+  if (/slack/.test(request)) return { reply: "[TEST] J'ai ajouté une notification Slack à la fin.", ops: [{ op: "add_node", type: "action.slack_post", after: last, config: { connection: connection("slack"), channel: "general", text: `{{steps.${last}.text}}` } }] };
+  if (/drive/.test(request)) return { reply: "[TEST] J'ai ajouté une recherche dans Google Drive.", ops: [{ op: "add_node", type: "app.search_files", after: nodes[0]?.id, config: { connection: connection("drive"), query: "" } }] };
+  if (/e-?mails?/.test(request) && /résum|summar/.test(request)) {
+    return {
+      reply: "[TEST] Chaque matin, Cendr cherche vos e-mails importants, les résume et prépare un brouillon.",
+      ops: [
+        { op: "update_node", id: nodes[0]?.id ?? "n1", type: "trigger.schedule", config: { frequency: "weekdays", time: "08:00" } },
+        { op: "add_node", id: "mail", type: "app.search_email", after: nodes[0]?.id, config: { connection: connection("gmail") || connection("outlook"), query: "is:important newer_than:1d" } },
+        { op: "add_node", id: "digest", type: "ai.summarize", after: "mail", config: { input: "{{steps.mail.text}}", length: "medium" } },
+      ],
+    };
+  }
+  return { reply: "[TEST] J'ai ajouté une étape de génération de texte.", ops: [{ op: "add_node", type: "ai.generate", after: last, config: { prompt: data.request ?? "" } }] };
 }
 
 /**

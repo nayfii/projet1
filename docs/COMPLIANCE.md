@@ -93,6 +93,7 @@ We do not claim that AI providers process data in the EU. Exact data flows: `doc
 | R10 | Vulnerable dependency | medium | medium | `pnpm audit` at each audit (2 moderate, not exploitable) | IMPL; automated scanning MISSING |
 | R11 | Personal data kept longer than needed | medium | medium | no automatic expiry yet | MISSING (retention policy decisions) |
 | R14 | A connected app's token stolen or misused | low | high | tokens sealed (AES-256-GCM, separate key), never readable by signed-in people, PKCE and one-time state bound to the person, least-privilege permissions per app, personal connections usable by their owner only, company switch, revocation, write actions logged without content | IMPL+TEST (`tests/unit/integrations.test.ts`, `tests/integration/integrations.test.ts`); provider-side app verification MISSING (HUMAN) |
+| R15 | An automated workflow acts beyond what its author may do, or acts twice | low | high | runs with the author's rights re-checked at each run (membership, credits, memories, connections), Play warning for actions writing outside, test mode never acts, steps recorded before acting and never repeated after an interruption, idempotency keys, limits, write actions logged without content | IMPL+TEST (`tests/integration/workflows.test.ts`, `tests/unit/workflows.test.ts`) |
 | R13 | Private life of an employee imported into company memory (former AI exports) | medium | high | archive read in the browser and never stored; private topics and secrets removed without AI; second check; nothing saved without the person's tick; imports visible to their author only | IMPL+TEST (`tests/unit/knowledge-import.test.ts`, `tests/integration/knowledge-import.test.ts`, `e2e/knowledge-import.spec.ts`); word lists cannot catch everything (said in the UI) |
 | R12 | Hostile uploaded files (parsers) | medium | medium | size limits, type checked by content, parsing in server functions | IMPL+TEST (upload tests); isolation of parsing MISSING |
 
@@ -202,6 +203,7 @@ collected throughout: the observation window has not started.
 | Audit log | no expiry | e.g. 1 year (decision) |
 | Usage events (counts, credits) | no expiry | e.g. 2 years (accounting) |
 | Dictation audio, avatar source photo | **not kept** (only the text or the avatar) | — |
+| Workflow runs and their steps' outputs | no expiry | e.g. 90 days for step outputs (decision) |
 | Imported archives (ChatGPT, Claude, Gemini, Perplexity) | **not kept** (read in the browser); proposals waiting for review: **30 days**, then deleted; refused ones at once | — |
 | Our console's check screenshots | no expiry | e.g. 90 days |
 | Deleted company | not implemented as an automatic purge | procedure + purge job |

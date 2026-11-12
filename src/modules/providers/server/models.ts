@@ -19,8 +19,9 @@ export type CompanyModels = {
 };
 
 /** The company's settings with the user's session (RLS); the catalogue and its prices from the server. */
-export async function getCompanyModels(companyId: string): Promise<CompanyModels> {
-  const supabase = await createClient();
+export async function getCompanyModels(companyId: string, client?: Awaited<ReturnType<typeof createClient>>): Promise<CompanyModels> {
+  // `client`: a workflow running on its own (no signed-in session) reads with our server's rights.
+  const supabase = client ?? (await createClient());
   const [catalogRows, allowedRes, settingsRes] = await Promise.all([
     readCatalog(),
     supabase.from("company_allowed_models").select("model_id").eq("company_id", companyId),

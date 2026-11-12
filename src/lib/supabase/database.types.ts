@@ -2221,6 +2221,134 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"workflow_run_steps": {
+                  Row: {
+                    "company_id": string,"duration_ms": number | null,"error_code": string | null,"finished_at": string | null,"id": string,"iteration": number,"node_id": string,"node_type": string,"output": Json | null,"run_id": string,"started_at": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": string,"duration_ms"?: number | null,"error_code"?: string | null,"finished_at"?: string | null,"id"?: string,"iteration"?: number,"node_id": string,"node_type": string,"output"?: Json | null,"run_id": string,"started_at"?: string,"status": string
+                  }
+                  Update: {
+                    "company_id"?: string,"duration_ms"?: number | null,"error_code"?: string | null,"finished_at"?: string | null,"id"?: string,"iteration"?: number,"node_id"?: string,"node_type"?: string,"output"?: Json | null,"run_id"?: string,"started_at"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "workflow_run_steps_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflow_run_steps_run_id_fkey"
+      columns: ["run_id"]
+isOneToOne: false
+      referencedRelation: "workflow_runs"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"workflow_runs": {
+                  Row: {
+                    "attempt": number,"company_id": string,"created_at": string,"error_code": string | null,"error_node": string | null,"finished_at": string | null,"graph": Json | null,"id": string,"idempotency_key": string | null,"input": NonNullable<Json>,"lease_until": string | null,"mode": string,"resume_at": string | null,"started_at": string | null,"status": string,"trigger": string,"triggered_by": string | null,"version_id": string | null,"workflow_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempt"?: number,"company_id": string,"created_at"?: string,"error_code"?: string | null,"error_node"?: string | null,"finished_at"?: string | null,"graph"?: Json | null,"id"?: string,"idempotency_key"?: string | null,"input"?: NonNullable<Json>,"lease_until"?: string | null,"mode": string,"resume_at"?: string | null,"started_at"?: string | null,"status"?: string,"trigger": string,"triggered_by"?: string | null,"version_id"?: string | null,"workflow_id": string
+                  }
+                  Update: {
+                    "attempt"?: number,"company_id"?: string,"created_at"?: string,"error_code"?: string | null,"error_node"?: string | null,"finished_at"?: string | null,"graph"?: Json | null,"id"?: string,"idempotency_key"?: string | null,"input"?: NonNullable<Json>,"lease_until"?: string | null,"mode"?: string,"resume_at"?: string | null,"started_at"?: string | null,"status"?: string,"trigger"?: string,"triggered_by"?: string | null,"version_id"?: string | null,"workflow_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "workflow_runs_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflow_runs_triggered_by_fkey"
+      columns: ["triggered_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflow_runs_version_id_fkey"
+      columns: ["version_id"]
+isOneToOne: false
+      referencedRelation: "workflow_versions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflow_runs_workflow_id_fkey"
+      columns: ["workflow_id"]
+isOneToOne: false
+      referencedRelation: "workflows"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"workflow_versions": {
+                  Row: {
+                    "company_id": string,"created_at": string,"created_by": string | null,"graph": NonNullable<Json>,"id": string,"version": number,"workflow_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": string,"created_at"?: string,"created_by"?: string | null,"graph": NonNullable<Json>,"id"?: string,"version": number,"workflow_id": string
+                  }
+                  Update: {
+                    "company_id"?: string,"created_at"?: string,"created_by"?: string | null,"graph"?: NonNullable<Json>,"id"?: string,"version"?: number,"workflow_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "workflow_versions_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflow_versions_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflow_versions_workflow_id_fkey"
+      columns: ["workflow_id"]
+isOneToOne: false
+      referencedRelation: "workflows"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"workflows": {
+                  Row: {
+                    "active_version_id": string | null,"company_id": string,"created_at": string,"description": string,"draft": NonNullable<Json>,"draft_revision": number,"id": string,"last_run_at": string | null,"name": string,"next_run_at": string | null,"owner_id": string,"scope": string,"status": string,"template_key": string | null,"trigger_state": NonNullable<Json>,"updated_at": string,"webhook_secret_hash": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active_version_id"?: string | null,"company_id": string,"created_at"?: string,"description"?: string,"draft"?: NonNullable<Json>,"draft_revision"?: number,"id"?: string,"last_run_at"?: string | null,"name": string,"next_run_at"?: string | null,"owner_id"?: string,"scope"?: string,"status"?: string,"template_key"?: string | null,"trigger_state"?: NonNullable<Json>,"updated_at"?: string,"webhook_secret_hash"?: string | null
+                  }
+                  Update: {
+                    "active_version_id"?: string | null,"company_id"?: string,"created_at"?: string,"description"?: string,"draft"?: NonNullable<Json>,"draft_revision"?: number,"id"?: string,"last_run_at"?: string | null,"name"?: string,"next_run_at"?: string | null,"owner_id"?: string,"scope"?: string,"status"?: string,"template_key"?: string | null,"trigger_state"?: NonNullable<Json>,"updated_at"?: string,"webhook_secret_hash"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "workflows_active_version_id_fkey"
+      columns: ["active_version_id"]
+isOneToOne: false
+      referencedRelation: "workflow_versions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflows_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workflows_owner_id_fkey"
+      columns: ["owner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -2563,6 +2691,14 @@ isOneToOne: false
                            },
 "update_my_member_card":
 { Args: { "p_company": string,"p_expertise": (string)[],"p_job_title": string,"p_opt_out": boolean }; Returns: undefined
+                           },
+"workflow_member_spaces":
+{ Args: { "p_company": string,"p_user": string,"p_write": boolean }; Returns: string[]
+                           },
+"workflow_quota_status":
+{ Args: { "p_company": string,"p_user": string }; Returns: {
+              "company_limit": number,"company_used": number,"period_start": string,"user_limit": number,"user_used": number
+            }[]
                            }
           }
           Enums: {
