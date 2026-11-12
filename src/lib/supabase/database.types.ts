@@ -1319,6 +1319,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"platform_heartbeats": {
+                  Row: {
+                    "at": string,"detail": NonNullable<Json>,"name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "at"?: string,"detail"?: NonNullable<Json>,"name": string
+                  }
+                  Update: {
+                    "at"?: string,"detail"?: NonNullable<Json>,"name"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"platform_settings": {
                   Row: {
                     "app_review_enabled": boolean,"avatar_cost_usd": number,"avatar_credits": number,"dictation_cost_usd_per_minute": number,"dictation_credits_per_minute": number,"id": boolean,"image_cost_usd": number,"image_credits": number,"open_signup": boolean,"updated_at": string,"updated_by": string | null,"usd_to_eur": number | null,"video_apps_enabled": boolean,"web_search_cost_usd": number,"web_search_credits": number
@@ -2558,6 +2572,9 @@ isOneToOne: false
                            },
 "platform_log_release_event":
 { Args: { "p_action": string,"p_target": string,"p_version": string }; Returns: undefined
+                           },
+"platform_operations_health":
+{ Args: { "p_hours"?: number }; Returns: Json
                            },
 "platform_provider_health":
 { Args: { "p_hours"?: number }; Returns: Json

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { latestLinkFor } from "./mail";
-import { shot, signIn, skipAvatarStep } from "./helpers";
+import { passTwoStep, shot, signIn, skipAvatarStep } from "./helpers";
 
 /**
  * Sign-in with a password (founder's request, 2026-11-04): the e-mail link stays for the first sign-in;
@@ -180,6 +180,9 @@ test("our team member who also owns a company: sign-in opens the console, the co
 
   await signOut(page);
   await signInWithPassword(page, second);
+  // Our team's accounts need two-step sign-in (V1.1): set up at this first sign-in as a team member.
+  await page.waitForURL(/\/auth\/two-step/);
+  await passTwoStep(page, email);
   await expect(page).toHaveURL(/\/platform$/);
 
   // Their company stays one address away, and its account menu leads back to the console.
@@ -196,6 +199,9 @@ test("our team member who also owns a company: sign-in opens the console, the co
   await expect(admin.getByTestId("team-member").filter({ hasText: email })).toHaveCount(0);
   await signOut(page);
   await signInWithPassword(page, second);
+  // Their authenticator stays set up: the code is still asked at sign-in.
+  await page.waitForURL(/\/auth\/two-step/);
+  await passTwoStep(page, email);
   await expect(page.getByRole("heading", { name: "Bonjour Claire" })).toBeVisible();
   await page.getByRole("button", { name: /Claire Martin/ }).click();
   await expect(page.getByRole("menuitem", { name: "Console Cendr" })).toHaveCount(0);

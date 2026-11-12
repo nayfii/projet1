@@ -1,4 +1,5 @@
 import "server-only";
+import { logEvent } from "@/lib/log";
 import type { MemberContext } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { oauthClient } from "@/lib/env";
@@ -71,6 +72,9 @@ export async function runCapability(ctx: MemberContext, connectionId: string, ca
     await saveTokens(row.id, next);
     tokens = { accessToken: next.accessToken, refreshToken: next.refreshToken, expiresAt: next.expiresAt };
   };
+  const started = performance.now();
+  const done = (outcome: string) =>
+    logEvent(outcome === "ok" ? "info" : "warn", "integration.call", { provider: provider.id, capability: cap.id, kind: cap.kind, outcome, ms: performance.now() - started });
   try {
     if (tokens.expiresAt && Date.parse(tokens.expiresAt) - Date.now() < 60_000) await refresh();
     const run = () => executor(caller(EXECUTORS[provider.id].base, tokens!.accessToken, EXECUTORS[provider.id].headers), input);
@@ -84,17 +88,21 @@ export async function runCapability(ctx: MemberContext, connectionId: string, ca
     }
     await markUsed(row.id);
     if (cap.kind === "write") await logIntegration(ctx.active.companyId, ctx.user.id, "integration.used", row.id, { provider: provider.id, capability: cap.id });
+    done("ok");
     return { ok: true, data };
   } catch (error) {
     if (error instanceof OAuthError || (error instanceof ProviderCallError && error.code === "unauthorized")) {
       await setStatus(row.id, "expired", "token_refused");
+      done("expired");
       return { ok: false, error: "expired" };
     }
     if (error instanceof ProviderCallError) {
+      done(error.code);
       if (cap.kind === "write") await logIntegration(ctx.active.companyId, ctx.user.id, "integration.failed", row.id, { provider: provider.id, capability: cap.id, error: error.code });
       return { ok: false, error: error.code === "unauthorized" ? "expired" : error.code === "not_found" ? "not_found" : error.code };
     }
     if (error instanceof Error && error.name === "ZodError") return { ok: false, error: "validation" };
+    done("provider_error");
     return { ok: false, error: "provider_error" };
   }
 }

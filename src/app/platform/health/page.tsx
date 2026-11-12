@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getLastProviderTests, getProviderHealth } from "@/modules/platform/server/queries";
+import { getLastProviderTests, getOperationsHealth, getProviderHealth } from "@/modules/platform/server/queries";
+import { OperationsPanel } from "@/modules/platform/ui/operations-panel";
 import { classifyProvider, classifyRenderQueue, type HealthStatus, type RenderStatus } from "@/modules/platform/health";
 import { ModelCheckPanel } from "@/modules/platform/ui/model-check-panel";
 import { providersWithKeys } from "@/modules/providers/server/registry";
@@ -41,7 +42,7 @@ export default async function PlatformHealthPage() {
   const t = await getTranslations("platformHealth");
   const format = await getFormatter();
   const now = new Date();
-  const [health, tests] = await Promise.all([getProviderHealth(), getLastProviderTests()]);
+  const [health, tests, ops] = await Promise.all([getProviderHealth(), getLastProviderTests(), getOperationsHealth()]);
   // Real keys only: in test mode the simulated AI would make every provider look connected.
   const configured = providersWithKeys();
   const testMode = fakeProviderEnabled();
@@ -153,6 +154,8 @@ export default async function PlatformHealthPage() {
           <p className="mt-4 text-[13px] text-muted-foreground">{t("embeddingsBody", { model: embeddingModelName() })}</p>
         </Card>
       </div>
+
+      <OperationsPanel ops={ops} />
 
       <div className="mt-6 space-y-1 text-[13px] text-muted-foreground">
         <p>{t("noteSource")}</p>

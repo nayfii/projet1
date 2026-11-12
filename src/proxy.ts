@@ -2,7 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // "/api/version": the running version, read by the launch and check workflows (no data).
-const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/auth/", "/invite/", "/api/version"];
+// "/api/health": up or not, for uptime checks (no data).
+// "/api/cron/" and "/api/workflows/hooks/": called by our clock and by outside services with no session;
+// each checks its own secret (CRON_SECRET; the workflow's webhook secret) before doing anything.
+const PUBLIC_PREFIXES = ["/login", "/forgot-password", "/auth/", "/invite/", "/api/version", "/api/health", "/api/cron/", "/api/workflows/hooks/"];
 
 /**
  * Runs before every page: refreshes the Supabase session cookie and sends signed-out

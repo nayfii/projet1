@@ -299,8 +299,17 @@ export function ChatView(props: Props) {
 
   // Drafts are kept per conversation in this browser, and come back when the person returns.
   const draftKey = `${DRAFT_KEY}${conversationId ?? "new"}`;
+  const hadText = React.useRef(false);
   React.useEffect(() => {
-    const timer = window.setTimeout(() => writeLocal(draftKey, input.trim() ? input : null), 400);
+    // A box the person empties forgets its draft at once (an older text never comes back); typing is saved
+    // after a pause. A box that is empty because the page just opened leaves the saved draft alone.
+    if (!input.trim()) {
+      if (hadText.current) writeLocal(draftKey, null);
+      hadText.current = false;
+      return;
+    }
+    hadText.current = true;
+    const timer = window.setTimeout(() => writeLocal(draftKey, input), 400);
     return () => window.clearTimeout(timer);
   }, [draftKey, input]);
 
@@ -1928,6 +1937,10 @@ type TimelineActions = {
   edit: (message: TimelineMessage, text: string) => void;
 };
 
+/** A long conversation first draws its latest messages, then this many more each time the person asks. */
+const TIMELINE_WINDOW = 40;
+const TIMELINE_STEP = 60;
+
 /**
  * The conversation's messages. Memoised: typing in the input, the Hide check or the header do not
  * draw it again; only new messages, a streamed word, or a change of rights do.
@@ -1967,14 +1980,33 @@ const ChatTimeline = React.memo(function ChatTimeline({
   editable: boolean;
   actions: TimelineActions;
 }) {
+  const t = useTranslations("chat");
   const participantIds = new Set(participantKey ? participantKey.split(",") : []);
   const lastAnswerId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
   const lastIsAnswer = messages.at(-1)?.role === "assistant";
+  // A long conversation opens on its latest messages; earlier ones are drawn when the person asks
+  // (they are already loaded: nothing is fetched again). New messages always show.
+  const [shownFrom, setShownFrom] = React.useState(() => Math.max(0, messages.length - TIMELINE_WINDOW));
+  const start = Math.min(shownFrom, Math.max(0, messages.length - TIMELINE_WINDOW));
+  // The question a "Confronter" button refers to: the message itself, or the latest question before it.
+  const questions: (TimelineMessage | undefined)[] = [];
+  let lastQuestion: TimelineMessage | undefined;
+  for (const m of messages) {
+    if (m.role === "user") lastQuestion = m;
+    questions.push(lastQuestion);
+  }
   return (
     <div className="space-y-8">
-      {messages.map((m, index) => {
-        // The question a "Confronter" button refers to: the message itself, or the question an answer replies to.
-        const question = m.role === "user" ? m : messages.slice(0, index).reverse().find((x) => x.role === "user");
+      {start > 0 ? (
+        <div className="flex justify-center">
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setShownFrom(Math.max(0, start - TIMELINE_STEP))}>
+            {t("earlierMessages", { count: start })}
+          </Button>
+        </div>
+      ) : null}
+      {messages.slice(start).map((m, offset) => {
+        const index = start + offset;
+        const question = questions[index];
         const canConfront = conversationId && question && question.id !== "pending-user" && question.content.trim() && !busy;
         return (
           <MessageItem

@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { ProviderTest, ProviderTraffic, RenderQueue } from "../health";
+import type { OperationsHealth, ProviderTest, ProviderTraffic, RenderQueue } from "../health";
 
 /** Company metadata only (name, plan, seats, owner email). Never content. */
 export async function listCompaniesForPlatform() {
@@ -106,4 +106,20 @@ export async function getLastProviderTests(): Promise<Map<string, ProviderTest>>
     tests.set(e.target_id, { ok: m.ok === true, code: m.code ?? null, latencyMs: m.latency_ms ?? null, at: e.created_at });
   }
   return tests;
+}
+
+/** Workflows, imports, connected apps, latencies: counts only (null on a database without V1.1 yet). */
+export async function getOperationsHealth(): Promise<OperationsHealth | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("platform_operations_health", { p_hours: 24 });
+  if (error || !data) return null;
+  const raw = data as unknown as OperationsHealth;
+  const count = (v: unknown) => Number(v ?? 0);
+  return {
+    clock: raw.clock ?? null,
+    workflows: { ...raw.workflows, active: count(raw.workflows.active), queued: count(raw.workflows.queued), waiting: count(raw.workflows.waiting), running: count(raw.workflows.running), stuck: count(raw.workflows.stuck), succeeded: count(raw.workflows.succeeded), failed: count(raw.workflows.failed) },
+    imports: { analyzing: count(raw.imports.analyzing), started: count(raw.imports.started), done: count(raw.imports.done), stalled: count(raw.imports.stalled) },
+    integrations: (raw.integrations ?? []).map((i) => ({ provider: i.provider, active: count(i.active), needs_reconnect: count(i.needs_reconnect), revoked: count(i.revoked) })),
+    latency: (raw.latency ?? []).map((l) => ({ feature: l.feature, requests: count(l.requests), errors: count(l.errors), p50_ms: l.p50_ms === null ? null : count(l.p50_ms), p95_ms: l.p95_ms === null ? null : count(l.p95_ms) })),
+  };
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { logEvent } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { capability, isProviderId, PROVIDERS } from "@/modules/integrations/providers";
 import { runCapability, usableConnection, type RunError } from "@/modules/integrations/server/access";
@@ -97,10 +98,22 @@ async function claim(admin: Admin, runId: string): Promise<RunRow | null> {
 }
 
 async function finish(admin: Admin, runId: string, status: "succeeded" | "failed" | "cancelled", error?: { code: string; node?: string | null }) {
-  await admin
+  const { data } = await admin
     .from("workflow_runs")
     .update({ status, finished_at: new Date().toISOString(), lease_until: null, error_code: error?.code ?? null, error_node: error?.node ?? null })
-    .eq("id", runId);
+    .eq("id", runId)
+    .select("workflow_id, mode, trigger, started_at")
+    .maybeSingle();
+  // Ids, codes and durations only (docs/OBSERVABILITY.md).
+  logEvent(status === "failed" ? "warn" : "info", "workflow.run_finished", {
+    run: runId,
+    workflow: data?.workflow_id ?? null,
+    status,
+    mode: data?.mode ?? null,
+    trigger: data?.trigger ?? null,
+    code: error?.code ?? null,
+    ms: data?.started_at ? Date.now() - Date.parse(data.started_at) : null,
+  });
 }
 
 // ─── Execution ───────────────────────────────────────────────────────────────

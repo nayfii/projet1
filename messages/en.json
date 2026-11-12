@@ -615,7 +615,9 @@
     "noSeatPrice": "No price per seat yet",
     "openSignup": "Open sign-up",
     "openSignupOff": "Off: only the companies we invite can join.",
-    "openSignupOn": "On: anyone signed in can create their company."
+    "openSignupOn": "On: anyone signed in can create their company.",
+    "companiesShown": "{shown} of {total} companies",
+    "showMoreCompanies": "Show more"
   },
   "system": {
     "notFoundCode": "404",
@@ -804,7 +806,8 @@
     "openImage": "Open the image",
     "downloadImage": "Download",
     "renameTitle": "Rename the conversation",
-    "renameHint": "Double-click to rename"
+    "renameHint": "Double-click to rename",
+    "earlierMessages": "{count, plural, one {Show the earlier message} other {Show earlier messages (#)}}"
   },
   "quota": {
     "warningUser": "You have used {percent}% of your AI credits this month.",
@@ -1980,7 +1983,56 @@
       "avatar": "3D avatars"
     },
     "testModeBanner": "Test mode is on (AI_FAKE_PROVIDER): no real AI is called, answers are simulated. The cards below only show whether a real key is present; tests are turned off. Remove AI_FAKE_PROVIDER in Vercel and redeploy to connect the real AIs.",
-    "testModeBadge": "Test mode · key present"
+    "testModeBadge": "Test mode · key present",
+    "ops": {
+      "title": "Operations (last 24 hours)",
+      "unavailable": "Operations indicators arrive with the V1.1 database update.",
+      "never": "never",
+      "seconds": "{s} s",
+      "clockTitle": "Workflows' clock",
+      "clock": {
+        "on_time": "On time",
+        "late": "Late",
+        "never": "Never ran"
+      },
+      "lastRun": "Last run",
+      "scheduled": "Schedules started",
+      "executed": "Runs",
+      "clockOk": "The clock runs every 5 minutes: schedules, e-mails, resumed runs.",
+      "clockHelp": "Scheduled workflows are waiting: set the CRON_SECRET secret and the APP_URL variable in GitHub (see docs/WORKFLOWS.md).",
+      "workflowsTitle": "Workflow runs",
+      "queue": {
+        "idle": "Quiet",
+        "working": "Working",
+        "stuck": "Stuck"
+      },
+      "active": "Active",
+      "queued": "Waiting",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "stuck": "{count, plural, one {# run stuck (its executor vanished): it resumes at the clock's next run.} other {# runs stuck (their executor vanished): they resume at the clock's next run.}}",
+      "topError": "Most frequent error: {code}",
+      "oldestQueued": "Oldest waiting: {when}",
+      "noFailures": "No failures.",
+      "importsTitle": "Knowledge imports",
+      "inProgress": "In progress",
+      "started": "Started",
+      "done": "Finished",
+      "stalled": "Stopped for 1 h",
+      "integrationsTitle": "Connected apps",
+      "noConnections": "No connected app yet.",
+      "provider": "Service",
+      "reconnect": "To reconnect",
+      "revoked": "Revoked",
+      "latencyTitle": "Response time by feature",
+      "noTraffic": "No requests in this period.",
+      "feature": "Feature",
+      "requests": "Requests",
+      "errors": "Errors",
+      "p50": "Median",
+      "p95": "95%",
+      "latencyNote": "Measured by our server for each request to the models (durations only, never the content)."
+    }
   },
   "avatar": {
     "title": "My avatar",

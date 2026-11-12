@@ -59,7 +59,7 @@ test("Claire sets up her company, invites Bruno and adds the client Atlas", asyn
   await page.getByRole("main").getByRole("link", { name: /Atlas/ }).first().click();
   await expect(page).toHaveURL(/\/clients\/[0-9a-f-]{36}$/);
   atlasUrl = page.url();
-  await expect(page.getByTestId("client-brief")).toContainText("Ce que Cendr sait sur Atlas");
+  await expect(page.getByRole("main").getByTestId("client-brief")).toContainText("Ce que Cendr sait sur Atlas");
 });
 
 test("Claire tells Claude about Atlas: Cendr learns the facts on its server and says so under the answer", async () => {
@@ -89,7 +89,8 @@ test("Bruno opens a new Gemini conversation from Atlas: the facts are there, wit
 
   // Atlas's living brief: what Claire told Claude, for Bruno, with its date.
   await p.goto(atlasUrl);
-  const brief = p.getByTestId("client-brief");
+  // Scoped to the page shown: while a page streams in, a hidden copy of its content can be in the document.
+  const brief = p.getByRole("main").getByTestId("client-brief");
   await expect(brief).toContainText("15 000 €");
   await expect(brief).toContainText("12 mars 2027");
   await expect(brief).toContainText("Jean Dupont");
@@ -121,7 +122,7 @@ test("Bruno opens a new Gemini conversation from Atlas: the facts are there, wit
   await expect(latest).toContainText("18 000");
   await expect(latest).not.toContainText("15 000");
   await p.goto(atlasUrl);
-  await expect(p.getByTestId("client-brief")).toContainText("Changements récents");
+  await expect(p.getByRole("main").getByTestId("client-brief")).toContainText("Changements récents");
   await shot(p, "c4-budget-changed");
   await brunoContext.close();
 });

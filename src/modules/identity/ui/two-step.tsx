@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { twoStepDestinationAction } from "../server/actions";
 
 type Supabase = ReturnType<typeof createBrowserSupabase>;
 type Enrolment = { factorId: string; qrCode: string; secret: string };
@@ -56,7 +57,7 @@ export function TwoStepChallenge() {
     const factor = data?.totp[0];
     const result = factor ? await verify(supabase, factor.id, code) : "error";
     if (result === "ok") {
-      router.replace("/");
+      router.replace(await twoStepDestinationAction().catch(() => "/" as const));
       router.refresh();
       return;
     }
@@ -79,7 +80,7 @@ export function TwoStepChallenge() {
  * Sets up an authenticator: a QR code to scan (or the key to type), then one code to confirm it.
  * Unfinished attempts are cleared first, so starting again never piles up factors.
  */
-export function TwoStepSetup({ onDone }: { onDone: () => void }) {
+export function TwoStepSetup({ onDone }: { onDone: () => void | Promise<void> }) {
   const t = useTranslations("twoStep");
   const [enrolment, setEnrolment] = React.useState<Enrolment | null>(null);
   const [code, setCode] = React.useState("");
@@ -111,7 +112,7 @@ export function TwoStepSetup({ onDone }: { onDone: () => void }) {
     setPending(true);
     setError(null);
     const result = await verify(createBrowserSupabase(), enrolment.factorId, code);
-    if (result === "ok") onDone();
+    if (result === "ok") void onDone();
     else {
       setError(result);
       setPending(false);
@@ -220,8 +221,8 @@ export function TwoStepSetupScreen() {
   const router = useRouter();
   return (
     <TwoStepSetup
-      onDone={() => {
-        router.replace("/");
+      onDone={async () => {
+        router.replace(await twoStepDestinationAction().catch(() => "/" as const));
         router.refresh();
       }}
     />

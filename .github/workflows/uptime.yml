@@ -1,0 +1,33 @@
+# Uptime check every 10 minutes (CLAUDE.md §12, V1.1 phase 10): the site and its database answer
+# (/api/health). A failed run is an alert: GitHub e-mails it to whoever watches the repository's
+# Actions (by default the person who last changed this schedule). Needs the repository variable
+# APP_URL (the production address). Scheduled workflows run from the default branch only and GitHub may
+# delay them under load; this is a safety net, not a replacement for a dedicated monitoring service.
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: ${{ vars.APP_URL != '' }}
+    steps:
+      - name: Check the site and its database
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          for attempt in 1 2 3; do
+            if curl --fail --silent --show-error --max-time 15 "$APP_URL/api/health" -o health.json; then
+              cat health.json
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::$APP_URL/api/health did not answer OK three times in a row"
+          exit 1

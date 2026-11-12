@@ -37,7 +37,7 @@ test("onboarding offers the import; the page explains privacy and keeps a slot f
   await expect(page.getByTestId("import-tutorial").getByRole("button")).toHaveCount(0);
   await expect(page.getByText("Vos connaissances, pas votre vie privée.")).toBeVisible();
   await page.getByRole("radio", { name: "ChatGPT" }).click();
-  await expect(page.getByTestId("export-guide")).toContainText("Exporter les données");
+  await expect(page.getByRole("main").getByTestId("export-guide")).toContainText("Exporter les données");
   await shot(page, "60-import-start");
 });
 
@@ -80,7 +80,7 @@ test("a broken file gets a plain explanation", async () => {
   await page.goto("/memory/import");
   // Wait until the page answers (hydrated) before dropping the file.
   await page.getByRole("radio", { name: "Autres fichiers" }).click();
-  await expect(page.getByTestId("export-guide")).toContainText("Notes et documents");
+  await expect(page.getByRole("main").getByTestId("export-guide")).toContainText("Notes et documents");
   await page.getByTestId("import-input").setInputFiles({ name: "export.zip", mimeType: "application/zip", buffer: Buffer.from("this is not a zip") });
   await expect(page.getByRole("alert").filter({ hasText: "Ce fichier" })).toContainText("Ce fichier est abîmé");
 });

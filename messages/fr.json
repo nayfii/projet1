@@ -615,7 +615,9 @@
     "noSeatPrice": "Prix par place non renseigné",
     "openSignup": "Inscription libre",
     "openSignupOff": "Coupée : seules les entreprises que nous invitons peuvent entrer.",
-    "openSignupOn": "Ouverte : toute personne connectée peut créer son entreprise."
+    "openSignupOn": "Ouverte : toute personne connectée peut créer son entreprise.",
+    "companiesShown": "{shown} sur {total} entreprises",
+    "showMoreCompanies": "Afficher plus"
   },
   "system": {
     "notFoundCode": "404",
@@ -804,7 +806,8 @@
     "openImage": "Ouvrir l'image",
     "downloadImage": "Télécharger",
     "renameTitle": "Renommer la conversation",
-    "renameHint": "Double-cliquez pour renommer"
+    "renameHint": "Double-cliquez pour renommer",
+    "earlierMessages": "{count, plural, one {Afficher le message précédent} other {Afficher les messages précédents (#)}}"
   },
   "quota": {
     "warningUser": "Vous avez utilisé {percent} % de vos crédits IA ce mois-ci.",
@@ -1980,7 +1983,56 @@
       "avatar": "Avatars 3D"
     },
     "testModeBanner": "Mode test activé (AI_FAKE_PROVIDER) : aucune vraie IA n'est appelée, les réponses sont simulées. Les cartes ci-dessous indiquent seulement si une vraie clé est présente ; les tests sont désactivés. Retirez AI_FAKE_PROVIDER dans Vercel puis redéployez pour brancher les vraies IA.",
-    "testModeBadge": "Mode test · clé présente"
+    "testModeBadge": "Mode test · clé présente",
+    "ops": {
+      "title": "Opérations (24 dernières heures)",
+      "unavailable": "Les indicateurs d'opérations arrivent avec la mise à jour de la base de la V1.1.",
+      "never": "jamais",
+      "seconds": "{s} s",
+      "clockTitle": "Horloge des workflows",
+      "clock": {
+        "on_time": "À l'heure",
+        "late": "En retard",
+        "never": "Jamais lancée"
+      },
+      "lastRun": "Dernier passage",
+      "scheduled": "Planifiés lancés",
+      "executed": "Exécutions",
+      "clockOk": "L'horloge passe toutes les 5 minutes : planifications, e-mails, reprises.",
+      "clockHelp": "Les workflows planifiés attendent : renseignez le secret CRON_SECRET et la variable APP_URL dans GitHub (voir docs/WORKFLOWS.md).",
+      "workflowsTitle": "Exécutions de workflows",
+      "queue": {
+        "idle": "Calme",
+        "working": "En cours",
+        "stuck": "Bloquée"
+      },
+      "active": "Actifs",
+      "queued": "En attente",
+      "succeeded": "Réussies",
+      "failed": "Échouées",
+      "stuck": "{count, plural, one {# exécution bloquée (son exécuteur a disparu) : elle sera reprise au prochain passage de l'horloge.} other {# exécutions bloquées (leur exécuteur a disparu) : elles seront reprises au prochain passage de l'horloge.}}",
+      "topError": "Erreur la plus fréquente : {code}",
+      "oldestQueued": "Plus ancienne en attente : {when}",
+      "noFailures": "Aucun échec.",
+      "importsTitle": "Imports de connaissances",
+      "inProgress": "En cours",
+      "started": "Commencés",
+      "done": "Terminés",
+      "stalled": "Arrêtés depuis 1 h",
+      "integrationsTitle": "Applications connectées",
+      "noConnections": "Aucune application connectée pour l'instant.",
+      "provider": "Service",
+      "reconnect": "À reconnecter",
+      "revoked": "Révoquées",
+      "latencyTitle": "Temps de réponse par fonction",
+      "noTraffic": "Aucune requête sur la période.",
+      "feature": "Fonction",
+      "requests": "Requêtes",
+      "errors": "Erreurs",
+      "p50": "Médiane",
+      "p95": "95 %",
+      "latencyNote": "Mesuré par notre serveur pour chaque requête aux modèles (durées seulement, jamais le contenu)."
+    }
   },
   "avatar": {
     "title": "Mon avatar",

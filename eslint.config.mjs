@@ -34,6 +34,7 @@ const eslintConfig = defineConfig([
       "src/modules/workflows/server/runtime.ts",
       "src/modules/workflows/server/engine.ts",
       "src/modules/workflows/server/control.ts",
+      "src/modules/platform/server/operations.ts",
     ],
     rules: {
       "no-restricted-imports": [

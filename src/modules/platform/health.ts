@@ -65,3 +65,30 @@ export function classifyRenderQueue(queue: RenderQueue, now = Date.now()): Rende
   if (queue.queued > 0 && queue.oldest_queued_at && now - new Date(queue.oldest_queued_at).getTime() > RENDER_STUCK_MS) return "stuck";
   return queue.queued > 0 ? "working" : "idle";
 }
+
+/** Our operations over the last 24 hours (platform_operations_health; counts, codes and times only). */
+export type OperationsHealth = {
+  clock: { at: string; detail: Record<string, number> } | null;
+  workflows: { active: number; queued: number; waiting: number; running: number; stuck: number; oldest_queued_at: string | null; succeeded: number; failed: number; top_error: string | null };
+  imports: { analyzing: number; started: number; done: number; stalled: number };
+  integrations: { provider: string; active: number; needs_reconnect: number; revoked: number }[];
+  latency: { feature: string; requests: number; errors: number; p50_ms: number | null; p95_ms: number | null }[];
+};
+
+export type ClockStatus = "on_time" | "late" | "never";
+/** The clock is meant to run every 5 minutes; after this long without it, schedules are late. */
+export const CLOCK_LATE_MS = 15 * 60_000;
+
+export function classifyClock(at: string | null | undefined, now = Date.now()): ClockStatus {
+  if (!at) return "never";
+  return now - Date.parse(at) > CLOCK_LATE_MS ? "late" : "on_time";
+}
+
+export type QueueStatus = "idle" | "working" | "stuck";
+/** A run queued for longer than this, or a run whose executor vanished, means the queue is not moving. */
+export const QUEUE_STUCK_MS = 15 * 60_000;
+
+export function classifyWorkflowQueue(w: OperationsHealth["workflows"], now = Date.now()): QueueStatus {
+  if (w.stuck > 0 || (w.oldest_queued_at && now - Date.parse(w.oldest_queued_at) > QUEUE_STUCK_MS)) return "stuck";
+  return w.queued + w.running + w.waiting > 0 ? "working" : "idle";
+}

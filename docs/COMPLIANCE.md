@@ -228,11 +228,11 @@ Status: **MISSING** (durations to be decided by the founder with legal advice, t
 
 | Suite | Result | Date |
 |---|---|---|
-| Unit (Vitest) | 324 pass | 2026-11-13 |
-| Integration (real local database, real users, RLS) | 244 pass, incl. isolation, MFA, security reviews | 2026-11-13 |
-| End to end (browser, simulated AI) | specs of touched areas pass (see `docs/STATUS.md`) | 2026-11-13 |
-| Security reviews | Step 10 (16 findings), 2026-11-11 audit (findings 17–21) | `docs/SECURITY.md` §5 |
-| Dependency audit | 2 moderate, not exploitable | 2026-11-11 |
+| Unit (Vitest) | 396 pass, incl. logs without content, every setting documented, V1.1 migrations destroy no data | V1.1 lot 8 |
+| Integration (real local database, real users, RLS) | 302 pass (23 files), incl. isolation, MFA, imports, integrations, workflows, dictation endpoint, operations indicators | V1.1 lot 8 |
+| End to end (browser, simulated AI) | full suite, see `docs/STATUS.md` (V1.1, lot 8) | V1.1 lot 8 |
+| Security reviews | Step 10 (16 findings), 2026-11-11 audit (findings 17–21), V1.1: the front gate blocked the workflows' clock and webhooks (fixed) | `docs/SECURITY.md` §5, `docs/STATUS.md` |
+| Dependency audit | 2 moderate (fflate: fixed version applied; uuid via exceljs: the affected functions are not called), 0 high, 0 critical; now checked on every push (`.github/workflows/ci.yml`, fails on high or critical) | V1.1 lot 8 |
 
 ## 14. Evidence available
 
@@ -242,8 +242,11 @@ release history in our console (Versions), this dossier.
 ## 15. Missing evidence and steps (to plan)
 
 1. Backups: plan, point-in-time recovery, restore test recorded (**MISSING**).
-2. Monitoring and alerting on errors and availability (**MISSING**).
-3. Dependency and secret scanning in CI (**MISSING**).
+2. Monitoring and alerting: structured logs without content, `/api/health`, uptime alert every 10 minutes,
+   operations panel in our console (**IMPL**, `docs/OBSERVABILITY.md`); an error-tracking service with an
+   EU region and longer log retention (**MISSING**: paid services, founder's decision).
+3. Dependency scanning in CI (**IMPL**, `.github/workflows/ci.yml`); secret scanning (**MISSING**: GitHub
+   secret scanning on a private repository needs a paid plan, or a third-party scanner to choose).
 4. Retention durations decided and purge jobs (**MISSING**).
 5. Account export and deletion for individuals (**MISSING**).
 6. Signed DPAs with all sub-processors; customer DPA template (**LEGAL/EXT**).

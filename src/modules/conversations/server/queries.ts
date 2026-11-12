@@ -81,33 +81,43 @@ type UserClientLike = Awaited<ReturnType<typeof createClient>>;
 
 /** Timeline messages as the viewer may see them (RLS); `ids`: only these (real-time updates). */
 async function loadTimeline(supabase: UserClientLike, conversationId: string, ids?: string[]) {
-  const { data: allRows } = await supabase
+  // Real-time updates ask for a few messages: only those are read, not the whole conversation again.
+  let messagesQuery = supabase
     .from("messages")
     .select(
       "id, seq, author_type, content, masked_content, hide_counts, hide_modes, hide_spans, status, error_code, created_at, provider, model_id, model_label, routing, context_meta, confrontation, author:profiles!messages_author_id_fkey(id, full_name), attachments:conversation_attachments!conversation_attachments_message_id_conversation_id_fkey(id, filename, kind, text_truncated, generated)",
     )
     .eq("conversation_id", conversationId)
-    .is("superseded_at", null)
-    .order("seq");
-  const rows = ids ? (allRows ?? []).filter((r) => ids.includes(r.id)) : (allRows ?? []);
+    .is("superseded_at", null);
+  if (ids) messagesQuery = messagesQuery.in("id", ids);
+  const { data: allRows } = await messagesQuery.order("seq");
+  const rows = allRows ?? [];
 
   // RLS shows a source only to participants who can still read its memory.
   const SOURCE_COLUMNS = "message_id, position, source_type, title, excerpt, page, source_date, space_id, document_id, entry_id, chunk_id, char_start, char_end";
-  const sourcesQuery = await supabase
-    .from("message_sources")
-    .select(`${SOURCE_COLUMNS}, space:memory_spaces(kind, client:clients(name), team:teams(name), project:projects(name))`)
-    .eq("conversation_id", conversationId)
-    .order("position");
+  const sources = (select: string) => {
+    const query = supabase.from("message_sources").select(select).eq("conversation_id", conversationId);
+    return (ids ? query.in("message_id", ids) : query).order("position");
+  };
+  const sourcesQuery = await sources(`${SOURCE_COLUMNS}, space:memory_spaces(kind, client:clients(name), team:teams(name), project:projects(name))`);
   // A database without team and project memories yet (a preview before the V1.1 migration): clients only.
-  const sourceRows = sourcesQuery.error
-    ? ((
-        await supabase
-          .from("message_sources")
-          .select(`${SOURCE_COLUMNS}, space:memory_spaces(kind, client:clients(name))`)
-          .eq("conversation_id", conversationId)
-          .order("position")
-      ).data as unknown as typeof sourcesQuery.data)
-    : sourcesQuery.data;
+  type SourceRow = {
+    message_id: string;
+    position: number;
+    source_type: string;
+    title: string;
+    excerpt: string;
+    page: number | null;
+    source_date: string | null;
+    space_id: string | null;
+    document_id: string | null;
+    entry_id: string | null;
+    chunk_id: string | null;
+    char_start: number | null;
+    char_end: number | null;
+    space: { kind: SourceProof["spaceKind"]; client: { name: string } | null; team?: { name: string } | null; project?: { name: string } | null } | null;
+  };
+  const sourceRows = (sourcesQuery.error ? (await sources(`${SOURCE_COLUMNS}, space:memory_spaces(kind, client:clients(name))`)).data : sourcesQuery.data) as unknown as SourceRow[] | null;
   const sourcesByMessage = new Map<string, SourceProof[]>();
   for (const r of sourceRows ?? []) {
     const list = sourcesByMessage.get(r.message_id) ?? [];

@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { logEvent } from "@/lib/log";
 import { recentRunCount, versionTriggerType, webhookTarget } from "@/modules/workflows/server/control";
 import { enqueueRun, executeRun } from "@/modules/workflows/server/engine";
 
@@ -13,7 +14,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/workflows/h
   const { id } = await ctx.params;
   const secret = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   const target = /^[0-9a-f-]{36}$/.test(id) ? await webhookTarget(id, secret) : null;
-  if (!target) return Response.json({ error: "forbidden" }, { status: 403 });
+  if (!target) {
+    logEvent("warn", "webhook.refused", { workflow: /^[0-9a-f-]{36}$/.test(id) ? id : null, code: "forbidden" });
+    return Response.json({ error: "forbidden" }, { status: 403 });
+  }
   if (target.status !== "active" || !target.active_version_id) return Response.json({ error: "paused" }, { status: 409 });
   if ((await versionTriggerType(target.active_version_id)) !== "trigger.webhook") return Response.json({ error: "not_webhook" }, { status: 409 });
   if ((await recentRunCount(id, 3_600_000)) >= 60) return Response.json({ error: "rate_limited" }, { status: 429 });

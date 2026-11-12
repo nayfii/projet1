@@ -127,6 +127,8 @@ test("dictating again adds the new text after what is already there", async () =
 });
 
 test("the polished version takes the text's place only if the person has not changed it", async () => {
+  await composer().fill("");
+  await expect(composer()).toHaveValue("");
   await page.route("**/api/dictation/clean", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 700));
     await route.fulfill({ json: { ok: true, text: "Texte mis au propre par le modèle.", polished: true } });

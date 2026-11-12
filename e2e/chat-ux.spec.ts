@@ -79,7 +79,8 @@ test("an earlier prompt is edited and run again; the old answer goes", async () 
 });
 
 test("a double-click on the title renames the conversation; Échap cancels", async () => {
-  const title = () => page.locator('h1[title="Double-cliquez pour renommer"]');
+  // The page shown (while a page streams in, a hidden copy of it can be in the document).
+  const title = () => page.getByRole("main").locator('h1[title="Double-cliquez pour renommer"]');
   await title().dblclick();
   const field = page.getByRole("textbox", { name: "Renommer la conversation" });
   await expect(field).toBeFocused();

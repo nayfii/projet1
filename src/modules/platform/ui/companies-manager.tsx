@@ -34,6 +34,9 @@ type Company = {
   credits: { used: number; limit: number; estimatedCostUsd: number; requests: number } | null;
 };
 
+/** Rows drawn at once: hundreds of rows with their menus would make every action on the page slow. */
+const PAGE_SIZE = 50;
+
 export function CompaniesManager({
   header,
   companies,
@@ -53,8 +56,11 @@ export function CompaniesManager({
   const [granting, setGranting] = useState<Company | null>(null);
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
+  // A long list shows its first rows; the search looks through every company.
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const needle = query.trim().toLocaleLowerCase();
-  const shown = needle ? companies.filter((c) => `${c.name} ${c.ownerEmail ?? ""}`.toLocaleLowerCase().includes(needle)) : companies;
+  const matching = needle ? companies.filter((c) => `${c.name} ${c.ownerEmail ?? ""}`.toLocaleLowerCase().includes(needle)) : companies;
+  const shown = matching.slice(0, limit);
 
   const update = (input: Parameters<typeof updateCompanyForPlatformAction>[0]) =>
     startTransition(async () => {
@@ -80,7 +86,13 @@ export function CompaniesManager({
       {companies.length > 8 ? (
         <div className="relative max-w-sm">
           <SearchIcon aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("searchCompanies")} aria-label={t("searchCompanies")} className="pl-9" />
+          <Input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setLimit(PAGE_SIZE);
+            }}
+            placeholder={t("searchCompanies")} aria-label={t("searchCompanies")} className="pl-9" />
         </div>
       ) : null}
 
@@ -179,6 +191,14 @@ export function CompaniesManager({
               ))}
             </tbody>
           </table>
+          {matching.length > shown.length ? (
+            <div className="flex items-center justify-between gap-3 border-t px-4 py-2.5 text-[13px] text-muted-foreground">
+              <span>{t("companiesShown", { shown: shown.length, total: matching.length })}</span>
+              <Button variant="ghost" size="sm" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
+                {t("showMoreCompanies")}
+              </Button>
+            </div>
+          ) : null}
         </Card>
       )}
       <p className="text-[13px] text-muted-foreground">{t("contentNotice")}</p>

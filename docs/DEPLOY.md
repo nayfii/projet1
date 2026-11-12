@@ -202,6 +202,57 @@ Ensuite, à chaque fois :
 
 ---
 
+## Partie 6 — Passer la V1.1 en production
+
+**État aujourd'hui.** Le code de la V1.1 est sur la branche `preview/audit-securite-perf-visuel`. Vercel en publie un
+**aperçu** à chaque envoi. Cet aperçu utilise la base de production **sans** les migrations de la V1.1 : les nouveautés
+qui en ont besoin y disent « Bientôt disponible » au lieu de planter. **La production n'a pas changé.**
+
+### 1. Avant de lancer : sauvegarde
+
+- **Supabase → Database → Backups.** Sur l'offre gratuite, il n'y a pas de sauvegarde automatique. L'offre Pro en fait
+  une par jour, gardée 7 jours, en Europe. **À décider avant d'avoir de vrais clients.**
+- Les 8 migrations de la V1.1 **ajoutent** des tables, des colonnes, des règles et des fonctions. Elles ne suppriment
+  aucune donnée. Un test automatique le vérifie à chaque contrôle (`tests/unit/migrations-safety.test.ts`).
+
+### 2. Réglages à ajouter
+
+| Où | Nom | Pourquoi | Obligatoire ? |
+|---|---|---|---|
+| Vercel → Environment Variables | `CRON_SECRET` | Protège l'horloge des workflows. Générer : `openssl rand -base64 32` | Oui pour les workflows planifiés et les e-mails |
+| GitHub → Secrets | `CRON_SECRET` | La **même valeur** que dans Vercel | Idem |
+| GitHub → Variables (onglet *Variables*) | `APP_URL` | L'adresse du site en production (ex. `https://app.cendr.fr`). Sert à l'horloge (toutes les 5 min) et à la surveillance (toutes les 10 min) | Oui |
+| Vercel | `INTEGRATIONS_ENCRYPTION_KEY` | Chiffre les connexions aux applications. Générer : `openssl rand -base64 48`. **Ne plus jamais la changer** une fois des connexions créées | Oui pour les intégrations |
+| Vercel | `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET`, `MICROSOFT_…`, `SLACK_…`, `NOTION_…`, `CANVA_…` | Les applications enregistrées par notre équipe chez chaque service (docs/INTEGRATIONS.md) | Seulement pour les services voulus |
+| Vercel | `IMPORT_TUTORIAL_VIDEO_URL` | La vidéo d'aide de l'import, quand elle existe | Non |
+
+La liste complète est dans `.env.example`. Un test vérifie que chaque réglage lu par le code y figure.
+
+### 3. Lancer
+
+1. Fusionner la branche de la V1.1 dans la branche de développement `claude/amazing-davinci-5th459`, celle d'où part
+   « Lancer » (variable `RELEASE_SOURCE_BRANCH`). Les tâches planifiées de GitHub (horloge, surveillance) ne tournent
+   que depuis la **branche par défaut** du dépôt : leurs fichiers (`.github/workflows/workflows-tick.yml`,
+   `uptime.yml`) doivent aussi y être.
+2. Notre console → **Versions** → « **Lancer** » : la base d'abord (les 8 migrations), puis le site, pour toutes les
+   entreprises. Ensuite, la vérification avec le gérant et l'employée de démonstration.
+3. Notre console → **Santé** : les fournisseurs d'IA, puis **Opérations** : l'horloge doit passer à « À l'heure »
+   dans les 5 minutes (sinon, `CRON_SECRET` ou `APP_URL` manque).
+4. GitHub → **Actions → Uptime** : un passage vert toutes les 10 minutes. Un passage rouge vous est envoyé par e-mail.
+
+### 4. Revenir en arrière
+
+- **Le site** : Vercel → *Deployments* → la version précédente → **Instant Rollback** (moins d'une minute).
+  L'ancien site fonctionne avec la nouvelle base, puisque les migrations n'ont fait qu'ajouter.
+- **La base** : on ne « défait » pas une migration en production. En cas de problème de données, on restaure la
+  sauvegarde (offre Pro), après analyse. C'est pour cela que la sauvegarde passe avant le lancement.
+
+### 5. Accès pendant cette première phase
+
+- L'inscription reste **sur invitation de notre équipe** (« Inscription libre » désactivée dans notre console).
+- Aucune donnée d'entreprise n'est publique. Seuls `/api/health` (en ligne ou non, sans donnée) et `/api/version`
+  répondent sans connexion. L'horloge et les webhooks des workflows vérifient chacun leur propre secret.
+
 ## Ce qui ne marchera pas encore en ligne
 
 - **Les vidéos** (Motion Design, montage) : l'aperçu animé fonctionne, mais le MP4 reste « En attente » tant que le moteur vidéo n'est pas hébergé (il demande un serveur à part, en Europe : décision à prendre, question 14 de `docs/STATUS.md`). La page **Plateforme → État des fournisseurs** l'indique comme « Bloqué » au bout de 3 minutes.
@@ -215,3 +266,4 @@ Ensuite, à chaque fois :
 - Base : workflow `.github/workflows/deploy-database.yml` (migrations `supabase db push`, puis `scripts/supabase-production-config.mjs` + `supabase config push` quand `APP_URL` est défini). Il ne fait rien, avec une notice, tant que les secrets manquent. La démo (`supabase/seed.sql`) n'est jamais envoyée.
 - Site : Vercel, `vercel.json` (`fra1`), branche de production `claude/amazing-davinci-5th459`. Variables : `.env.example`.
 - Image du moteur vidéo : vérifiée par `.github/workflows/worker-image.yml` (construite, non publiée).
+- V1.1 : `docs/OBSERVABILITY.md` (journaux, `/api/health`, `uptime.yml`, panneau Opérations), `docs/DICTATION.md`, `docs/WORKFLOWS.md`, `docs/INTEGRATIONS.md`. Routes publiques du proxy : `/api/health`, `/api/version`, `/api/cron/`, `/api/workflows/hooks/` (chacune vérifie son propre secret quand elle agit).

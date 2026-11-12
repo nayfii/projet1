@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getAppContext } from "@/lib/auth/context";
 import { publicEnv } from "@/lib/public-env";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
@@ -101,4 +102,13 @@ export async function updateMyProfile(_: unknown, formData: FormData): Promise<A
   if (error) return { ok: false, error: "unknown" };
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/**
+ * Where a person goes once their two-step code is accepted: our console for our team (also when they
+ * belong to a company: the founder's request of 2026-11-09), the app otherwise.
+ */
+export async function twoStepDestinationAction(): Promise<"/platform" | "/"> {
+  const ctx = await getAppContext();
+  return ctx?.isPlatformAdmin ? "/platform" : "/";
 }
