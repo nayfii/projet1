@@ -106,7 +106,8 @@ export function CompaniesManager({
                 <tr key={c.id}>
                   <td className="px-4 py-3">
                     <div className="max-w-64">
-                      <Link href={`/platform/companies/${c.id}`} className="block truncate font-medium hover:underline">
+                      {/* No prefetch: one request per company row would crowd the server (and delay every action) on a long list. */}
+                      <Link href={`/platform/companies/${c.id}`} prefetch={false} className="block truncate font-medium hover:underline">
                         {c.name}
                       </Link>
                       <p className="truncate text-[13px] text-muted-foreground" title={c.ownerEmail ?? undefined}>

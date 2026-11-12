@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -11,7 +10,6 @@ import { setOpenSignupAction } from "../server/app-actions";
 export function SignupSwitch({ open }: { open: boolean }) {
   const t = useTranslations("platform");
   const tErrors = useTranslations("errors");
-  const router = useRouter();
   const [pending, start] = React.useTransition();
   return (
     <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border px-4 py-3">
@@ -25,9 +23,9 @@ export function SignupSwitch({ open }: { open: boolean }) {
         aria-label={t("openSignup")}
         onCheckedChange={(next) =>
           start(async () => {
+            // The action refreshes the page itself (revalidatePath): no second refresh from here.
             const result = await setOpenSignupAction(next);
             if (!result.ok) toast.error(tErrors(result.error));
-            else router.refresh();
           })
         }
       />

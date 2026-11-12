@@ -1055,7 +1055,8 @@
       "ai_suggestion": "Suggestion de l'IA approuvée",
       "promotion": "Enseignement général",
       "auto": "Ajouté automatiquement depuis une conversation",
-      "correction": "Correction"
+      "correction": "Correction",
+      "import": "Importé"
     },
     "deleteEntryTitle": "Supprimer cette entrée ?",
     "deleteEntryBody": "L'IA ne pourra plus s'en servir. Les réponses passées qui la citent garderont le passage cité.",
@@ -2455,7 +2456,8 @@
         "chat": "enregistré",
         "ai_suggestion": "confirmé",
         "promotion": "promu",
-        "correction": "corrigé"
+        "correction": "corrigé",
+        "import": "importé"
       }
     },
     "brief": {
@@ -3029,5 +3031,134 @@
       "newMilestone": "Nouveau jalon",
       "toWorkspace": "Workspace (notre console)"
     }
+  },
+  "knowledgeImport": {
+    "title": "Enrichir mes connaissances",
+    "description": "Apportez ce que ChatGPT, Claude, Gemini ou Perplexity savent déjà de votre travail. Vous choisissez ce que Cendr retient, et où.",
+    "videoTitle": "Comment exporter vos données",
+    "videoSoon": "Tutoriel vidéo bientôt disponible",
+    "videoSoonBody": "En attendant, les étapes pour chaque outil s'affichent ci-dessous quand vous le choisissez.",
+    "privacyTitle": "Vos connaissances, pas votre vie privée.",
+    "privacyBody": "Cendr analyse vos fichiers pour identifier les connaissances et préférences utiles à votre travail. Les informations personnelles sensibles sont écartées de la mémoire et de la personnalisation, et rien n'y entre sans votre validation. Vous gardez le contrôle des informations conservées et partagées.",
+    "howTitle": "Comment vos fichiers sont traités",
+    "how1": "Votre archive est ouverte dans votre navigateur : elle n'est ni envoyée ni conservée telle quelle chez nous.",
+    "how2": "Seul le texte que vous avez écrit (pas les réponses des assistants, pas les pièces jointes) est envoyé, par petits lots, à notre serveur pour être trié. Les PDF et Word sont lus sur notre serveur, en mémoire, sans être conservés.",
+    "how3": "Notre serveur écarte d'abord, sans IA, les conversations et passages qui touchent à la santé, la vie sentimentale, la famille, la politique, la religion ou l'argent personnel, ainsi que les mots de passe, clés et numéros bancaires. Les noms et coordonnées restants sont masqués.",
+    "how4": "Le modèle d'IA de votre entreprise propose ensuite les connaissances utiles. Chaque proposition est vérifiée une seconde fois, puis vous la validez, la modifiez ou la refusez. Refusée, elle est supprimée aussitôt.",
+    "how5": "Les propositions non vérifiées sont supprimées au bout de {days} jours. Rien n'est écrit dans nos journaux.",
+    "howLimit": "Ce tri repose sur des listes de mots et des règles : il réduit fortement ce qui passe, sans pouvoir garantir que rien de personnel n'y échappe. C'est pour cela que vous validez chaque proposition.",
+    "chooseSource": "D'où viennent vos connaissances ?",
+    "source": {
+      "chatgpt": "ChatGPT",
+      "claude": "Claude",
+      "gemini": "Gemini",
+      "perplexity": "Perplexity",
+      "files": "Autres fichiers"
+    },
+    "guide": {
+      "auto": "Choisissez votre ancien outil pour voir comment exporter vos données, ou déposez directement votre fichier : Cendr reconnaît ChatGPT, Claude, Gemini et Perplexity.",
+      "chatgpt": "Dans ChatGPT : Paramètres → Contrôles des données → Exporter les données. Vous recevez un e-mail avec un lien vers un fichier .zip (cela peut prendre jusqu'à 24 h). Déposez ce .zip ici tel quel.",
+      "claude": "Dans Claude : Paramètres → Confidentialité → Exporter les données. Vous recevez un e-mail avec un fichier .zip. Déposez-le ici tel quel. Les instructions de vos projets sont reprises ; leurs documents ne le sont pas.",
+      "gemini": "Sur takeout.google.com : ne sélectionnez que « Mon activité », puis dans ses options gardez seulement « Applications Gemini » (format JSON si on vous le propose). Déposez ici le .zip reçu.",
+      "perplexity": "Perplexity ne propose pas d'export complet : ouvrez une conversation, puis exportez-la en Markdown ou en PDF. Déposez un ou plusieurs fichiers ici.",
+      "files": "Notes et documents : Markdown, texte, HTML, CSV, PDF ou Word, seuls ou dans un .zip."
+    },
+    "dropTitle": "Déposez votre export ici",
+    "dropBody": ".zip, .json, .md, .txt, .html, .csv, .pdf ou .docx",
+    "chooseFiles": "Choisir des fichiers",
+    "readError": {
+      "archive_too_large": "Ce fichier est trop volumineux pour être lu ici. Exportez une partie de vos données, ou déposez les fichiers séparément.",
+      "suspicious_archive": "Cette archive se décompresse de façon anormale : elle a été arrêtée par sécurité.",
+      "invalid_archive": "Ce fichier est abîmé ou n'est pas un export lisible. Téléchargez-le à nouveau puis réessayez.",
+      "unrecognised_format": "Ce fichier n'est pas un export reconnu de ChatGPT, Claude, Gemini ou Perplexity.",
+      "nothing_found": "Aucune conversation ni note exploitable n'a été trouvée dans ce fichier.",
+      "too_many_files": "Cette archive contient trop de fichiers pour être lue ici."
+    },
+    "reading": "Lecture de l'archive dans votre navigateur…",
+    "readingDetail": "Rien n'est envoyé pendant cette étape.",
+    "recognised": "Export {source} reconnu",
+    "foundCount": "{count, plural, =1 {1 élément trouvé} other {# éléments trouvés}}",
+    "analysedLimit": "les {count} plus récents seront analysés",
+    "warning": {
+      "dangerous_path": "Des fichiers au chemin dangereux ont été ignorés.",
+      "nested_archive": "Les archives contenues dans l'archive ont été ignorées.",
+      "unsupported_file": "Certains fichiers n'ont pas pu être lus et ont été ignorés.",
+      "documents_not_imported": "Les documents de vos projets ne sont pas repris : ajoutez-les comme documents dans la bonne mémoire si besoin.",
+      "truncated": "Trop de documents : seuls les premiers seront lus.",
+      "binary_too_large": "Des PDF ou Word de plus de 4 Mo ont été ignorés."
+    },
+    "beforeAnalysis": "L'analyse utilise les crédits de votre entreprise, comme une conversation. Les passages privés sont retirés avant, et vous validez tout après.",
+    "analyse": "Analyser",
+    "cancel": "Annuler",
+    "analysing": "Analyse en cours…",
+    "paused": "Analyse en pause",
+    "analysingDetail": "{done} sur {total} analysés",
+    "resumed": "Reprise de l'import commencé avec ce même fichier : ce qui était déjà analysé est passé.",
+    "counters": "{proposed} proposés · {excluded} écartés car privés · {duplicates} déjà connus",
+    "batchError": {
+      "quota_exceeded": "Le quota de crédits de l'entreprise est atteint. Reprenez quand il sera relevé.",
+      "no_model_available": "Aucun modèle d'IA n'est disponible pour l'analyse. Un administrateur peut en activer un.",
+      "provider_error": "Le service d'IA n'a pas répondu. Réessayez dans un instant."
+    },
+    "retry": "Réessayer",
+    "resume": "Reprendre",
+    "pause": "Mettre en pause",
+    "stopHere": "Arrêter ici",
+    "resumeLater": "Vous pourrez reprendre plus tard en déposant à nouveau le même fichier.",
+    "reviewTitle": "{count, plural, =1 {1 connaissance à vérifier} other {# connaissances à vérifier}}",
+    "reviewBody": "Cochez ce que Cendr doit retenir, choisissez où, modifiez les mots si besoin. Ce qui n'est pas coché est supprimé.",
+    "group": {
+      "mine": "Pour vous seul",
+      "shared": "À partager avec des collègues",
+      "check": "À vérifier : peut-être personnel",
+      "checkBody": "Ces propositions touchent peut-être à votre vie privée. Elles ne sont pas cochées : ne les gardez que si elles sont vraiment professionnelles."
+    },
+    "tickAll": "Tout cocher",
+    "untickAll": "Tout décocher",
+    "keep": "Garder « {title} »",
+    "titleLabel": "Titre",
+    "contentLabel": "Contenu",
+    "destinationLabel": "Où l'enregistrer",
+    "destination": {
+      "personal": "Ma mémoire personnelle"
+    },
+    "audience": {
+      "personal": "Visible par vous seul",
+      "team": "Visible par l'équipe {name}",
+      "company": "Visible selon les droits de la mémoire de l'entreprise",
+      "client": "Visible par ceux qui ont accès à {name}",
+      "project": "Visible par ceux qui ont accès au projet {name}"
+    },
+    "edit": "Modifier",
+    "doneEditing": "Terminé",
+    "saveHint": "{kept} gardées · {dropped} supprimées",
+    "save": "{count, plural, =0 {Tout supprimer} =1 {Enregistrer 1 connaissance} other {Enregistrer # connaissances}}",
+    "savedToast": "{count, plural, =0 {Rien n'a été enregistré.} =1 {1 connaissance enregistrée.} other {# connaissances enregistrées.}}",
+    "savedFailed": "{count, plural, =1 {1 connaissance n'a pas pu être enregistrée (droits ou limite atteinte).} other {# connaissances n'ont pas pu être enregistrées (droits ou limite atteinte).}}",
+    "historyTitle": "Vos imports",
+    "status": {
+      "interrupted": "Interrompu",
+      "review": "{count} à vérifier",
+      "done": "Terminé"
+    },
+    "summary": "{found} trouvés · {analyzed} analysés · {excluded} écartés car privés · {duplicates} déjà connus · {proposed} proposés · {saved} retenus",
+    "reviewNow": "Vérifier",
+    "deleteImport": "Supprimer cet import",
+    "historyHint": "Vos imports ne sont visibles que par vous : ni vos collègues, ni les administrateurs, ni notre équipe ne les voient.",
+    "deleteTitle": "Supprimer cet import ?",
+    "deleteBody": "Son historique et ses propositions en attente sont supprimés.",
+    "deleteSaved": "{count, plural, =1 {Supprimer aussi la connaissance qu'il a ajoutée} other {Supprimer aussi les # connaissances qu'il a ajoutées}}",
+    "deleteConfirm": "Supprimer",
+    "deleted": "{count, plural, =0 {Import supprimé.} =1 {Import supprimé, ainsi qu'1 connaissance.} other {Import supprimé, ainsi que # connaissances.}}",
+    "seeMine": "Ce que l'IA sait de moi",
+    "skipToChat": "Commencer à discuter",
+    "homeTitle": "Apportez ce que vos IA savent déjà",
+    "homeBody": "Importez vos connaissances depuis ChatGPT, Claude, Gemini ou Perplexity, sans votre vie privée.",
+    "homeAction": "Importer",
+    "profileTitle": "Conscience",
+    "profileBody": "Enrichissez ce que Cendr sait de votre travail à partir de vos anciens outils d'IA.",
+    "profileAction": "Enrichir mes connaissances",
+    "onboardingLink": "Vous utilisez déjà ChatGPT, Claude ou Gemini ? Importez vos connaissances",
+    "notReady": "L'import de connaissances arrive avec la prochaine version de la base de données."
   }
 }

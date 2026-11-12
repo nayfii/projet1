@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { ArrowRightIcon, BriefcaseIcon, BuildingIcon, ChevronRightIcon, FolderKanbanIcon, KeyRoundIcon, SettingsIcon, SparklesIcon, UsersIcon } from "lucide-react";
+import { ArrowRightIcon, BriefcaseIcon, DownloadIcon, BuildingIcon, ChevronRightIcon, FolderKanbanIcon, KeyRoundIcon, SettingsIcon, SparklesIcon, UsersIcon } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { listMemorySpaces, projectsAvailable } from "@/modules/memory/server/queries";
 import { consciousnessOverview } from "@/modules/memory/server/knowledge";
@@ -25,9 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function MemoryPage() {
   const ctx = await requireMember();
-  const [t, tc, format, spaces, overview, projectsReady] = await Promise.all([
+  const [t, tc, tImport, format, spaces, overview, projectsReady] = await Promise.all([
     getTranslations("memory"),
     getTranslations("consciousness.hub"),
+    getTranslations("knowledgeImport"),
     getFormatter(),
     listMemorySpaces(ctx),
     consciousnessOverview(ctx),
@@ -54,7 +56,18 @@ export default async function MemoryPage() {
 
   return (
     <PageContainer className="max-w-4xl">
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/memory/import">
+              <DownloadIcon />
+              {tImport("profileAction")}
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="consciousness-stats">
         {stats.map((s) => (

@@ -185,7 +185,7 @@ test("a general learning is promoted to the company memory only after approval",
   await expect(page.getByText("Ajouté à la mémoire.").first()).toBeVisible();
   await page.reload();
   await page.getByRole("tab", { name: /Entrées/ }).click();
-  await expect(page.getByText("[TEST] Enseignement général")).toBeVisible();
+  await expect(page.getByRole("main").getByText("[TEST] Enseignement général")).toBeVisible();
 });
 
 test("Nathalie, without access to Client A, gets nothing from it: pages, links or AI", async ({ browser }) => {

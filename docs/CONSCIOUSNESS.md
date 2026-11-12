@@ -59,6 +59,15 @@ A chat linked to a client uses the company, the person's team, that client and t
 projects; a chat with no client uses every memory the person may read. A group conversation uses only
 the memories **every** participant may read (`conversation_shared_spaces`, the same SQL rule).
 
+### Knowledge import (V1.1)
+
+A person can also feed the memories from the exports of their former AI tools ("Enrichir mes
+connaissances", `src/modules/knowledge-import`). Unlike learning, nothing is written without review:
+the analysis only produces proposals, each one placed (personal, team, company, client, project) and
+ticked by the person, within their write rights. Private topics and secrets are removed before the
+model sees anything, and checked again on each proposal. Saved entries carry `source_type = 'import'`.
+Data flows: `docs/SECURITY.md` §2.
+
 ## 3. Write path (learning)
 
 1. After a complete answer in a conversation linked to a client, `enqueue_memory_job` checks: learning

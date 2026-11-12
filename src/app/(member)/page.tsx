@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRightIcon, BriefcaseIcon, BrainIcon, CheckIcon, FileTextIcon, KeyRoundIcon, LayoutGridIcon, MessageSquareIcon, UsersIcon } from "lucide-react";
+import { ArrowRightIcon, BriefcaseIcon, BrainIcon, CheckIcon, DownloadIcon, FileTextIcon, KeyRoundIcon, LayoutGridIcon, MessageSquareIcon, UsersIcon } from "lucide-react";
 import { requireMember, type MemberContext } from "@/lib/auth/guards";
 import { hasScope } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +9,7 @@ import { PageContainer } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { listClients } from "@/modules/clients/server/queries";
+import { hasImported } from "@/modules/knowledge-import/server/queries";
 
 /** The setup checklist (CLAUDE.md §11): what onboarding no longer asks, done when the company has it. */
 async function setupCounts(ctx: MemberContext) {
@@ -27,7 +28,12 @@ export default async function HomePage() {
   const t = await getTranslations("home");
   const tPassword = await getTranslations("password");
   const canSetUp = hasScope(ctx.active, "company");
-  const [clients, counts] = await Promise.all([listClients(ctx.active.companyId), canSetUp ? setupCounts(ctx) : Promise.resolve(null)]);
+  const [clients, counts, imported, tImport] = await Promise.all([
+    listClients(ctx.active.companyId),
+    canSetUp ? setupCounts(ctx) : Promise.resolve(null),
+    hasImported(ctx),
+    getTranslations("knowledgeImport"),
+  ]);
   const firstName = ctx.profile.fullName?.split(" ")[0];
   const setupPending = canSetUp && !ctx.active.onboardingCompletedAt;
   const checklist = counts
@@ -110,6 +116,21 @@ export default async function HomePage() {
             ))}
           </ol>
         </section>
+      ) : null}
+
+      {/* Until the person has imported once: bring what their former AI tools knew (CLAUDE.md §12). */}
+      {!imported ? (
+        <Link href="/memory/import" className="group mb-8 flex items-center gap-4 glass-standard rounded-xl border px-4 py-3.5 transition-colors hover:border-foreground/25" data-testid="home-import">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+            <DownloadIcon className="size-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">{tImport("homeTitle")}</span>
+            <span className="block text-[13px] text-muted-foreground">{tImport("homeBody")}</span>
+          </span>
+          <span className="hidden text-[13px] font-medium sm:block">{tImport("homeAction")}</span>
+          <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        </Link>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">

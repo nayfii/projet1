@@ -50,12 +50,13 @@ export function OnboardingWizard(props: Props) {
   const home = useCallback(() => router.push("/"), [router]);
   const [finishing, startFinishing] = useTransition();
   // The last onboarding step: the company is set up, the person goes straight to the first conversation.
-  const finish = () =>
+  const finish = (next: "/chat" | "/memory/import?from=onboarding" = "/chat") =>
     startFinishing(async () => {
       const form = new FormData();
-      form.set("next", "/chat");
+      form.set("next", next);
       await completeOnboardingAction(form);
     });
+  const tImport = useTranslations("knowledgeImport");
 
   return (
     <div className="w-full max-w-lg">
@@ -94,13 +95,22 @@ export function OnboardingWizard(props: Props) {
             <CompanyProfileForm
               initial={props.company}
               submitLabel={t("continue")}
-              onSaved={finish}
+              onSaved={() => finish()}
               secondary={
-                <Button type="button" variant="ghost" disabled={finishing} onClick={finish}>
+                <Button type="button" variant="ghost" disabled={finishing} onClick={() => finish()}>
                   {t("skip")}
                 </Button>
               }
             />
+            {/* Optional: bring what former AI tools knew (CLAUDE.md §12); the company profile is saved first only if submitted. */}
+            <button
+              type="button"
+              disabled={finishing}
+              onClick={() => finish("/memory/import?from=onboarding")}
+              className="mt-6 w-full text-center text-[13px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {tImport("onboardingLink")}
+            </button>
           </StepFrame>
         ) : null}
 

@@ -7,6 +7,18 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 // project (database, storage, real time). Images, sound and video from elsewhere are refused, so a
 // planted instruction cannot make a page send data to an outside server.
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : "";
+// The knowledge import's tutorial video (IMPORT_TUTORIAL_VIDEO_URL): only its own host is let in.
+const tutorialVideo = (() => {
+  try {
+    const url = new URL(process.env.IMPORT_TUTORIAL_VIDEO_URL ?? "");
+    if (url.protocol !== "https:") return { media: "", frame: "" };
+    if (/(^|\.)(youtube\.com|youtu\.be)$/.test(url.hostname)) return { media: "", frame: " https://www.youtube-nocookie.com" };
+    if (/(^|\.)vimeo\.com$/.test(url.hostname)) return { media: "", frame: " https://player.vimeo.com" };
+    return { media: ` ${url.origin}`, frame: "" };
+  } catch {
+    return { media: "", frame: "" };
+  }
+})();
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
@@ -14,8 +26,8 @@ const contentSecurityPolicy = [
   `img-src 'self' data: blob: ${supabaseOrigin}`,
   "font-src 'self' data:",
   `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace(/^http/, "ws")}`,
-  `media-src 'self' blob: ${supabaseOrigin}`,
-  "frame-src 'self' blob: data:",
+  `media-src 'self' blob: ${supabaseOrigin}${tutorialVideo.media}`,
+  `frame-src 'self' blob: data:${tutorialVideo.frame}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

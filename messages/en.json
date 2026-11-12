@@ -1055,7 +1055,8 @@
       "ai_suggestion": "Approved AI suggestion",
       "promotion": "General learning",
       "auto": "Added automatically from a conversation",
-      "correction": "Correction"
+      "correction": "Correction",
+      "import": "Imported"
     },
     "deleteEntryTitle": "Delete this entry?",
     "deleteEntryBody": "The AI will no longer use it. Past answers citing it keep the cited passage.",
@@ -2455,7 +2456,8 @@
         "chat": "saved",
         "ai_suggestion": "confirmed",
         "promotion": "promoted",
-        "correction": "corrected"
+        "correction": "corrected",
+        "import": "imported"
       }
     },
     "brief": {
@@ -3029,5 +3031,134 @@
       "newMilestone": "New milestone",
       "toWorkspace": "Workspace (our console)"
     }
+  },
+  "knowledgeImport": {
+    "title": "Bring my knowledge",
+    "description": "Bring what ChatGPT, Claude, Gemini or Perplexity already know about your work. You choose what Cendr keeps, and where.",
+    "videoTitle": "How to export your data",
+    "videoSoon": "Video tutorial coming soon",
+    "videoSoonBody": "Meanwhile, the steps for each tool appear below when you choose it.",
+    "privacyTitle": "Your knowledge, not your private life.",
+    "privacyBody": "Cendr analyses your files to find the knowledge and preferences that help your work. Sensitive personal information is kept out of memory and personalisation, and nothing enters them without your approval. You stay in control of what is kept and shared.",
+    "howTitle": "How your files are handled",
+    "how1": "Your archive is opened in your browser: it is neither uploaded nor kept as such on our side.",
+    "how2": "Only the text you wrote (not the assistants' answers, not attachments) is sent, in small batches, to our server to be sorted. PDF and Word files are read on our server, in memory, without being kept.",
+    "how3": "Our server first removes, without AI, the conversations and passages about health, love life, family, politics, religion or personal money, and any password, key or bank number. Remaining names and contact details are masked.",
+    "how4": "Your company's AI model then proposes the useful knowledge. Each proposal is checked a second time, then you approve, edit or refuse it. Refused, it is deleted at once.",
+    "how5": "Proposals not reviewed are deleted after {days} days. Nothing is written to our logs.",
+    "howLimit": "This sorting relies on word lists and rules: it greatly reduces what gets through, but cannot guarantee that nothing personal slips by. That is why you approve every proposal.",
+    "chooseSource": "Where does your knowledge come from?",
+    "source": {
+      "chatgpt": "ChatGPT",
+      "claude": "Claude",
+      "gemini": "Gemini",
+      "perplexity": "Perplexity",
+      "files": "Other files"
+    },
+    "guide": {
+      "auto": "Choose your former tool to see how to export your data, or drop your file directly: Cendr recognises ChatGPT, Claude, Gemini and Perplexity.",
+      "chatgpt": "In ChatGPT: Settings → Data controls → Export data. You receive an e-mail with a link to a .zip file (it can take up to 24 hours). Drop that .zip here as it is.",
+      "claude": "In Claude: Settings → Privacy → Export data. You receive an e-mail with a .zip file. Drop it here as it is. Your projects' instructions are kept; their documents are not.",
+      "gemini": "On takeout.google.com: select only \"My Activity\", then in its options keep only \"Gemini Apps\" (JSON format if offered). Drop the .zip you receive here.",
+      "perplexity": "Perplexity has no full export: open a conversation, then export it as Markdown or PDF. Drop one or several files here.",
+      "files": "Notes and documents: Markdown, text, HTML, CSV, PDF or Word, alone or in a .zip."
+    },
+    "dropTitle": "Drop your export here",
+    "dropBody": ".zip, .json, .md, .txt, .html, .csv, .pdf or .docx",
+    "chooseFiles": "Choose files",
+    "readError": {
+      "archive_too_large": "This file is too large to be read here. Export part of your data, or drop the files separately.",
+      "suspicious_archive": "This archive decompresses abnormally: it was stopped for safety.",
+      "invalid_archive": "This file is damaged or not a readable export. Download it again and retry.",
+      "unrecognised_format": "This file is not a recognised export from ChatGPT, Claude, Gemini or Perplexity.",
+      "nothing_found": "No usable conversation or note was found in this file.",
+      "too_many_files": "This archive holds too many files to be read here."
+    },
+    "reading": "Reading the archive in your browser…",
+    "readingDetail": "Nothing is sent during this step.",
+    "recognised": "{source} export recognised",
+    "foundCount": "{count, plural, =1 {1 item found} other {# items found}}",
+    "analysedLimit": "the {count} most recent will be analysed",
+    "warning": {
+      "dangerous_path": "Files with a dangerous path were ignored.",
+      "nested_archive": "Archives inside the archive were ignored.",
+      "unsupported_file": "Some files could not be read and were ignored.",
+      "documents_not_imported": "Your projects' documents are not imported: add them as documents in the right memory if needed.",
+      "truncated": "Too many documents: only the first ones will be read.",
+      "binary_too_large": "PDF or Word files over 4 MB were ignored."
+    },
+    "beforeAnalysis": "The analysis uses your company's credits, like a conversation. Private passages are removed first, and you approve everything after.",
+    "analyse": "Analyse",
+    "cancel": "Cancel",
+    "analysing": "Analysing…",
+    "paused": "Analysis paused",
+    "analysingDetail": "{done} of {total} analysed",
+    "resumed": "Resuming the import started with this same file: what was already analysed is skipped.",
+    "counters": "{proposed} proposed · {excluded} left out as private · {duplicates} already known",
+    "batchError": {
+      "quota_exceeded": "The company's credit quota is reached. Resume once it is raised.",
+      "no_model_available": "No AI model is available for the analysis. An administrator can enable one.",
+      "provider_error": "The AI service did not answer. Try again in a moment."
+    },
+    "retry": "Try again",
+    "resume": "Resume",
+    "pause": "Pause",
+    "stopHere": "Stop here",
+    "resumeLater": "You can resume later by dropping the same file again.",
+    "reviewTitle": "{count, plural, =1 {1 piece of knowledge to review} other {# pieces of knowledge to review}}",
+    "reviewBody": "Tick what Cendr should keep, choose where, edit the words if needed. What is not ticked is deleted.",
+    "group": {
+      "mine": "Just for you",
+      "shared": "To share with colleagues",
+      "check": "To check: maybe personal",
+      "checkBody": "These proposals may touch on your private life. They are not ticked: keep them only if they are truly professional."
+    },
+    "tickAll": "Tick all",
+    "untickAll": "Untick all",
+    "keep": "Keep \"{title}\"",
+    "titleLabel": "Title",
+    "contentLabel": "Content",
+    "destinationLabel": "Where to save it",
+    "destination": {
+      "personal": "My personal memory"
+    },
+    "audience": {
+      "personal": "Seen by you only",
+      "team": "Seen by the {name} team",
+      "company": "Seen according to the company memory's rights",
+      "client": "Seen by those with access to {name}",
+      "project": "Seen by those with access to the {name} project"
+    },
+    "edit": "Edit",
+    "doneEditing": "Done",
+    "saveHint": "{kept} kept · {dropped} deleted",
+    "save": "{count, plural, =0 {Delete all} =1 {Save 1 piece of knowledge} other {Save # pieces of knowledge}}",
+    "savedToast": "{count, plural, =0 {Nothing was saved.} =1 {1 piece of knowledge saved.} other {# pieces of knowledge saved.}}",
+    "savedFailed": "{count, plural, =1 {1 piece of knowledge could not be saved (rights or limit reached).} other {# pieces of knowledge could not be saved (rights or limit reached).}}",
+    "historyTitle": "Your imports",
+    "status": {
+      "interrupted": "Interrupted",
+      "review": "{count} to review",
+      "done": "Done"
+    },
+    "summary": "{found} found · {analyzed} analysed · {excluded} left out as private · {duplicates} already known · {proposed} proposed · {saved} kept",
+    "reviewNow": "Review",
+    "deleteImport": "Delete this import",
+    "historyHint": "Your imports are seen by you only: not by colleagues, administrators or our team.",
+    "deleteTitle": "Delete this import?",
+    "deleteBody": "Its history and its waiting proposals are deleted.",
+    "deleteSaved": "{count, plural, =1 {Also delete the piece of knowledge it added} other {Also delete the # pieces of knowledge it added}}",
+    "deleteConfirm": "Delete",
+    "deleted": "{count, plural, =0 {Import deleted.} =1 {Import deleted, with 1 piece of knowledge.} other {Import deleted, with # pieces of knowledge.}}",
+    "seeMine": "What the AI knows about me",
+    "skipToChat": "Start chatting",
+    "homeTitle": "Bring what your AIs already know",
+    "homeBody": "Import your knowledge from ChatGPT, Claude, Gemini or Perplexity, without your private life.",
+    "homeAction": "Import",
+    "profileTitle": "Consciousness",
+    "profileBody": "Enrich what Cendr knows about your work from your former AI tools.",
+    "profileAction": "Bring my knowledge",
+    "onboardingLink": "Already using ChatGPT, Claude or Gemini? Import your knowledge",
+    "notReady": "Knowledge import arrives with the next version of the database."
   }
 }

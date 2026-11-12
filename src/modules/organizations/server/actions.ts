@@ -104,8 +104,9 @@ export async function completeOnboardingAction(formData?: FormData) {
       .is("onboarding_completed_at", null);
   }
   revalidatePath("/", "layout");
-  // Only known destinations: the home page, or the first conversation.
-  redirect(formData?.get("next") === "/chat" ? "/chat" : "/");
+  // Only known destinations: the home page, the first conversation, or the knowledge import.
+  const next = formData?.get("next");
+  redirect(next === "/chat" ? "/chat" : next === "/memory/import?from=onboarding" ? "/memory/import?from=onboarding" : "/");
 }
 
 // ─── Invitations ────────────────────────────────────────────────────────────

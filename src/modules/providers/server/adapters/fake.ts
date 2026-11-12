@@ -27,6 +27,11 @@ export function createFakeProvider(id: ProviderId): ChatProvider {
         yield* simulated(JSON.stringify(simulatedFacts(text)));
         return;
       }
+      // Knowledge import: a few sentences of each item stand in for a real model's selection.
+      if (request.system.startsWith("Task: select knowledge from imported conversations.")) {
+        yield* simulated(JSON.stringify({ items: simulatedImport(text) }));
+        return;
+      }
       // Memory tasks expect JSON.
       if (request.system.startsWith("Task: extract memory entries.")) {
         yield* simulated(JSON.stringify([{ title: "[TEST] Point clé", content: `[TEST] ${text.slice(0, 160)}` }]));
@@ -197,6 +202,40 @@ function simulatedFacts(exchange: string) {
     facts.push({ kind: "preference", key: "personal_leave", title: "[TEST] Congé", content: "[TEST] La personne est en congé la semaine prochaine.", stated_by: "user", about: "person", confidence: 0.9, attributes: {} });
   }
   return facts;
+}
+
+/**
+ * Test mode only: what a model might select from imported conversations. Two sentences per item;
+ * "je préfère" makes a preference; "client X" / "projet X pour|doit" names a client or a project;
+ * "[[doubtful]]" adds a proposal that touches a private topic (the second check keeps it apart).
+ */
+function simulatedImport(prompt: string) {
+  const items: Record<string, unknown>[] = [];
+  for (const [, n, body] of prompt.matchAll(/^Item (\d+) — [^\n]*\n<<<\n([\s\S]*?)\n>>>/gm)) {
+    const sentences = body
+      .split(/(?<=[.!?])\s+|\n+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 25 && !s.includes("[secret retiré]") && !s.includes("[[doubtful]]"));
+    for (const sentence of sentences.slice(0, 2)) {
+      const folded = sentence.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+      const preference = /\b(je prefere|i prefer)\b/.test(folded);
+      const client = /client\s+(\[CLIENT_\d+\]|[A-Z][\w-]+)/.exec(sentence)?.[1];
+      const project = /projet\s+(.+?)\s+(?:pour|doit)\b/i.exec(sentence)?.[1];
+      const level = preference ? "personal" : project ? "project" : client ? "client" : /\b(equipe|team)\b/.test(folded) ? "team" : "company";
+      items.push({
+        from: Number(n),
+        category: preference ? "preference" : "professional",
+        level,
+        target: level === "project" ? project : level === "client" ? client : null,
+        title: `[TEST] ${sentence.split(/\s+/).slice(0, 6).join(" ")}`,
+        content: `[TEST] ${sentence}`,
+      });
+    }
+    if (body.includes("[[doubtful]]")) {
+      items.push({ from: Number(n), category: "professional", level: "team", target: null, title: "[TEST] Absences", content: "[TEST] Prévient l'équipe quand il pose un arrêt maladie." });
+    }
+  }
+  return items;
 }
 
 const SAMPLE_TABLE = [

@@ -68,6 +68,10 @@ We do not claim that AI providers process data in the EU. Exact data flows: `doc
    **before** retrieval results reach any model (`docs/ARCHITECTURE.md` §7, tests in
    `tests/integration/memory.test.ts`, `consciousness.test.ts`).
 3. **App → OpenAI (exceptions)**: dictation audio and avatar photos are sent unmasked (said in the UI).
+3b. **Knowledge import (V1.1)**: the export archive is opened in the browser and never sent; our server
+   receives only the person's own words, drops private topics and secrets without AI, masks identifiers,
+   then the company's model proposes knowledge that the person reviews (`docs/SECURITY.md` §2,
+   `src/modules/knowledge-import`, tests `knowledge-import.test.ts` unit and integration, e2e).
 4. **App → e-mail sender**: address and sign-in link.
 5. **Logs**: Vercel request logs and our structured logs carry error codes only, never prompt content or
    masked values (`docs/SECURITY.md` §1).
@@ -87,6 +91,7 @@ We do not claim that AI providers process data in the EU. Exact data flows: `doc
 | R9 | Undetected incident | medium | high | audit log; no alerting yet | MISSING (alerting) |
 | R10 | Vulnerable dependency | medium | medium | `pnpm audit` at each audit (2 moderate, not exploitable) | IMPL; automated scanning MISSING |
 | R11 | Personal data kept longer than needed | medium | medium | no automatic expiry yet | MISSING (retention policy decisions) |
+| R13 | Private life of an employee imported into company memory (former AI exports) | medium | high | archive read in the browser and never stored; private topics and secrets removed without AI; second check; nothing saved without the person's tick; imports visible to their author only | IMPL+TEST (`tests/unit/knowledge-import.test.ts`, `tests/integration/knowledge-import.test.ts`, `e2e/knowledge-import.spec.ts`); word lists cannot catch everything (said in the UI) |
 | R12 | Hostile uploaded files (parsers) | medium | medium | size limits, type checked by content, parsing in server functions | IMPL+TEST (upload tests); isolation of parsing MISSING |
 
 ## 6. Security controls matrix
@@ -195,6 +200,7 @@ collected throughout: the observation window has not started.
 | Audit log | no expiry | e.g. 1 year (decision) |
 | Usage events (counts, credits) | no expiry | e.g. 2 years (accounting) |
 | Dictation audio, avatar source photo | **not kept** (only the text or the avatar) | — |
+| Imported archives (ChatGPT, Claude, Gemini, Perplexity) | **not kept** (read in the browser); proposals waiting for review: **30 days**, then deleted; refused ones at once | — |
 | Our console's check screenshots | no expiry | e.g. 90 days |
 | Deleted company | not implemented as an automatic purge | procedure + purge job |
 

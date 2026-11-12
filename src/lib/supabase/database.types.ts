@@ -705,6 +705,82 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"knowledge_import_items": {
+                  Row: {
+                    "category": string,"company_id": string,"content": string,"content_hash": string,"created_at": string,"id": string,"import_id": string,"level": string,"saved_entry_id": string | null,"saved_personal_id": string | null,"saved_space_id": string | null,"sensitive": boolean,"source_date": string | null,"status": string,"target_hint": string | null,"title": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category": string,"company_id": string,"content": string,"content_hash": string,"created_at"?: string,"id"?: string,"import_id": string,"level": string,"saved_entry_id"?: string | null,"saved_personal_id"?: string | null,"saved_space_id"?: string | null,"sensitive"?: boolean,"source_date"?: string | null,"status"?: string,"target_hint"?: string | null,"title": string,"user_id"?: string
+                  }
+                  Update: {
+                    "category"?: string,"company_id"?: string,"content"?: string,"content_hash"?: string,"created_at"?: string,"id"?: string,"import_id"?: string,"level"?: string,"saved_entry_id"?: string | null,"saved_personal_id"?: string | null,"saved_space_id"?: string | null,"sensitive"?: boolean,"source_date"?: string | null,"status"?: string,"target_hint"?: string | null,"title"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "knowledge_import_items_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "knowledge_import_items_import_id_fkey"
+      columns: ["import_id"]
+isOneToOne: false
+      referencedRelation: "knowledge_imports"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "knowledge_import_items_saved_entry_id_fkey"
+      columns: ["saved_entry_id"]
+isOneToOne: false
+      referencedRelation: "memory_entries"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "knowledge_import_items_saved_personal_id_fkey"
+      columns: ["saved_personal_id"]
+isOneToOne: false
+      referencedRelation: "personal_memory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "knowledge_import_items_saved_space_id_fkey"
+      columns: ["saved_space_id"]
+isOneToOne: false
+      referencedRelation: "memory_spaces"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "knowledge_import_items_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"knowledge_imports": {
+                  Row: {
+                    "analyzed": number,"company_id": string,"created_at": string,"duplicates": number,"excluded_private": number,"failed": number,"file_name": string,"fingerprint": string,"finished_at": string | null,"found": number,"id": string,"processed_refs": (string)[],"proposed": number,"saved": number,"selected": number,"source": string,"status": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "analyzed"?: number,"company_id": string,"created_at"?: string,"duplicates"?: number,"excluded_private"?: number,"failed"?: number,"file_name": string,"fingerprint": string,"finished_at"?: string | null,"found"?: number,"id"?: string,"processed_refs"?: (string)[],"proposed"?: number,"saved"?: number,"selected"?: number,"source": string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "analyzed"?: number,"company_id"?: string,"created_at"?: string,"duplicates"?: number,"excluded_private"?: number,"failed"?: number,"file_name"?: string,"fingerprint"?: string,"finished_at"?: string | null,"found"?: number,"id"?: string,"processed_refs"?: (string)[],"proposed"?: number,"saved"?: number,"selected"?: number,"source"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "knowledge_imports_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "knowledge_imports_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"member_quotas": {
                   Row: {
                     "company_id": string,"monthly_credits": number,"updated_at": string,"updated_by": string | null,"user_id": string

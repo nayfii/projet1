@@ -50,6 +50,9 @@ importers:
       exceljs:
         specifier: 4.4.0
         version: 4.4.0
+      fflate:
+        specifier: 0.8.2
+        version: 0.8.2
       geist:
         specifier: ^1.8.1
         version: 1.8.1(next@16.4.2(@babel/core@7.29.7)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
@@ -2868,6 +2871,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
 
   fflate@0.8.3:
     resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
@@ -7514,6 +7520,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.7
 
+  fflate@0.8.2: {}
+
   fflate@0.8.3: {}
 
   file-entry-cache@8.0.0:
@@ -8803,7 +8811,7 @@ snapshots:
 
   png-js@2.0.0:
     dependencies:
-      fflate: 0.8.3
+      fflate: 0.8.2
 
   po-parser@2.2.0: {}
 

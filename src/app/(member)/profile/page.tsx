@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireMember } from "@/lib/auth/guards";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
@@ -8,6 +9,7 @@ import { AvatarStudio } from "@/modules/avatars/ui/avatar-studio";
 import { avatarRate } from "@/modules/avatars/server/store";
 import { fakeProviderEnabled } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { PersonalMemory } from "@/modules/memory/ui/personal-memory";
 import { PasswordCard } from "@/modules/identity/ui/password-forms";
 import { TwoStepCard } from "@/modules/identity/ui/two-step";
@@ -24,6 +26,7 @@ export default async function ProfilePage() {
   const ctx = await requireMember();
   const t = await getTranslations("profile");
   const tAvatar = await getTranslations("avatar");
+  const tImport = await getTranslations("knowledgeImport");
   const supabase = await createClient();
   const [card, rate, { data: notes }, needsCurrent] = await Promise.all([
     getMyMemberCard(ctx.active.companyId, ctx.user.id),
@@ -42,6 +45,17 @@ export default async function ProfilePage() {
         <AvatarStudio name={ctx.profile.fullName ?? ctx.user.email} currentUrl={ctx.profile.avatarUrl} credits={rate.credits} testMode={fakeProviderEnabled()} />
       </section>
       <PersonalMemory notes={notes ?? []} />
+      <section aria-labelledby="consciousness-settings" className="glass-standard mb-6 flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h2 id="consciousness-settings" className="text-[15px] font-semibold tracking-tight">
+            {tImport("profileTitle")}
+          </h2>
+          <p className="text-sm text-muted-foreground">{tImport("profileBody")}</p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="shrink-0">
+          <Link href="/memory/import">{tImport("profileAction")}</Link>
+        </Button>
+      </section>
       <ProfileForms
         email={ctx.user.email}
         fullName={ctx.profile.fullName ?? ""}

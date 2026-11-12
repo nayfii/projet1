@@ -95,3 +95,20 @@ export function releaseConfig(): { token: string | undefined; repository: string
     releaseBranch: process.env.RELEASE_BRANCH?.trim() || "production",
   };
 }
+
+/**
+ * Tutorial video above the knowledge import (how to export from ChatGPT, Claude, Gemini, Perplexity):
+ * a file of this site ("/videos/import.mp4", in public/), an https address of a video file, or a
+ * YouTube / Vimeo link. The page's security policy lets in that host only (set before the build).
+ * Unset: a clean placeholder is shown, and the import works the same.
+ */
+export function importTutorialVideoUrl(): string | null {
+  const value = process.env.IMPORT_TUTORIAL_VIDEO_URL?.trim();
+  if (!value) return null;
+  if (/^\/[a-z0-9/_.-]+$/i.test(value) && !value.includes("..")) return value;
+  try {
+    return new URL(value).protocol === "https:" ? value : null;
+  } catch {
+    return null;
+  }
+}

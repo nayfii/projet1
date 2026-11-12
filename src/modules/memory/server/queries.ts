@@ -40,7 +40,7 @@ export async function listEntries(spaceId: string) {
     id: e.id,
     title: e.title,
     content: e.content,
-    sourceType: e.source_type as "manual" | "chat" | "ai_suggestion" | "promotion" | "auto" | "correction",
+    sourceType: e.source_type as "manual" | "chat" | "ai_suggestion" | "promotion" | "auto" | "correction" | "import",
     kind: e.kind,
     conversationId: typeof (e.source_ref as { conversation_id?: unknown })?.conversation_id === "string" ? ((e.source_ref as { conversation_id: string }).conversation_id) : null,
     createdAt: e.created_at,

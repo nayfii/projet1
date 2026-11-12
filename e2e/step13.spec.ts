@@ -143,7 +143,8 @@ test("sign-up by invitation only: without an invitation, nobody creates a compan
   await admin.goto("/platform/companies");
   const open = admin.getByRole("switch", { name: "Inscription libre" });
   await open.click();
-  await expect(open).not.toBeChecked();
+  // Our console lists every company: with the hundreds left by test runs, the page takes seconds to come back.
+  await expect(open).not.toBeChecked({ timeout: 20_000 });
   try {
     const stranger = await (await browser.newContext({ locale: "fr-FR" })).newPage();
     await signIn(stranger, `s13-stranger-${run}@demo.local`);
@@ -155,7 +156,7 @@ test("sign-up by invitation only: without an invitation, nobody creates a compan
     // The other specs create their own companies.
     await admin.goto("/platform/companies");
     await admin.getByRole("switch", { name: "Inscription libre" }).click();
-    await expect(admin.getByRole("switch", { name: "Inscription libre" })).toBeChecked();
+    await expect(admin.getByRole("switch", { name: "Inscription libre" })).toBeChecked({ timeout: 20_000 });
     await admin.context().close();
   }
 });
