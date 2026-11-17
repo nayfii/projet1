@@ -7,13 +7,13 @@ export const SEGMENT_RULES = {
   /** The first part ends at the first pause after this: the first words show quickly. */
   firstMinMs: 1_200,
   /** The next parts are at least this long (shorter parts transcribe worse and cost the one-second minimum). */
-  minMs: 2_000,
-  /** From this length, the next short pause ends the part (the part left when the person stops stays short). */
-  maxMs: 10_000,
+  minMs: 2_500,
+  /** From this length, the next short pause ends the part. */
+  maxMs: 15_000,
   /** Without any pause, a part ends here anyway. */
-  hardMs: 18_000,
+  hardMs: 22_000,
   /** A pause: this long below the quiet threshold (longer than the gaps between words)… */
-  pauseMs: 380,
+  pauseMs: 450,
   /** …a short one once the part is long. */
   shortPauseMs: 150,
   /** Quiet = below this share of the recent peak… */

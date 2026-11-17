@@ -227,8 +227,6 @@ export function ChatView(props: Props) {
   const [dictating, setDictating] = React.useState(false);
   // What is being dictated, shown under the message box while the person talks.
   const [liveDictation, setLiveDictation] = React.useState("");
-  // The box as the last dictation left it (the polished version may only replace an untouched text).
-  const dictated = React.useRef<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement>(null);
   const textarea = React.useRef<HTMLTextAreaElement>(null);
   const creating = React.useRef<Promise<string | null> | null>(null);
@@ -540,22 +538,13 @@ export function ChatView(props: Props) {
 
   /** Dictated text follows what was already typed, then the caret waits after it for a read-through. */
   function insertDictation(text: string) {
-    const added = (input && !/\s$/.test(input) ? " " : "") + text;
-    dictated.current = input + added;
-    insertAtCaret(input.length, input.length, added);
+    insertAtCaret(input.length, input.length, (input && !/\s$/.test(input) ? " " : "") + text);
   }
 
-  /**
-   * The dictation's text, if still in the box, gives way to another version: the original ("Show the
-   * original"), or the polished one arriving on its own (`auto`), which waits for nobody: it only
-   * replaces the text if the box is exactly as the dictation left it.
-   */
-  function replaceDictation(from: string, to: string, auto = false) {
-    if (auto && input !== dictated.current) return false;
+  /** "Show the original": the tidied dictation, if still in the box, gives way to what was transcribed. */
+  function replaceDictation(from: string, to: string) {
     const at = input.lastIndexOf(from);
     if (at < 0) return false;
-    const next = input.slice(0, at) + to + input.slice(at + from.length);
-    if (auto) dictated.current = next;
     insertAtCaret(at, at + from.length, to);
     return true;
   }

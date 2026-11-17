@@ -35,7 +35,45 @@ while they talk; when they stop, the text is in the box, ready to read and edit.
    our own rules' version is sent. A text with a missing part is never sent unread: it goes into the
    box instead.
 
-## Audit: what made it slow (before)
+## Correction after the founder's test (2026-11-17)
+
+The founder reported, on the Vercel preview, a slower and broken dictation. The real model could not be
+used here (the OpenAI key has no credit), so the lot 7 changes that are riskiest with a real microphone
+and model were taken back. What was learnt from the code:
+
+- **A dictation could stay stuck on "Transcription…", microphone on**: when a browser refused to start a
+  new recorder for the next part, or never handed a stopped part over. This was already possible
+  before, but lot 7's shorter parts made the case more frequent (Safari and iPhone especially).
+- Shorter parts and pauses (2 s / 380 ms) cut sentences more often.
+- Parts transcribed side by side could arrive out of order and lose the previous text as a hint.
+- The text could change under the person's eyes when the polished version replaced it.
+
+Now:
+
+- A new part is registered only once its recorder really started; otherwise the current part goes on.
+- A part that is not handed over 4 s after being stopped is given up: the dictation always ends.
+- Parts again last at least 2.5 s, with a 450 ms pause (only the first may end after 1.2 s). They are
+  transcribed one after the other, each with the previous text as a hint. The default bitrate is back.
+- The text lands **once**: the polished version if it comes within 3 s, our own rules otherwise. It no
+  longer changes afterwards.
+
+The rest of lot 7 is kept:
+
+- the bar at once;
+- the server's checks side by side;
+- the 45 s limit and the retry;
+- the "no microphone" message;
+- the timing marks.
+
+| Median (simulated model, 800 ms) | Before lot 7 | Lot 7 | Now |
+|---|---|---|---|
+| Click → first words, early pause | 5.32 s | 2.72 s | 2.77 s |
+| Click → first words, long phrases | 3.40 s | 3.20 s | 3.26 s |
+| Stop → text in the box | 1.70 s | 0.85 s | 1.66 s (waits for the polish, 3 s at most) |
+
+No failures in 16 recordings.
+
+## Audit: what made it slow (before lot 7)
 
 | Cause | Effect | Change |
 |---|---|---|

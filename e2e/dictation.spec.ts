@@ -126,7 +126,7 @@ test("dictating again adds the new text after what is already there", async () =
   await composer().fill("");
 });
 
-test("the polished version takes the text's place only if the person has not changed it", async () => {
+test("the text lands once: polished when that comes quickly, our own rules otherwise", async () => {
   await composer().fill("");
   await expect(composer()).toHaveValue("");
   await page.route("**/api/dictation/clean", async (route) => {
@@ -134,24 +134,21 @@ test("the polished version takes the text's place only if the person has not cha
     await route.fulfill({ json: { ok: true, text: "Texte mis au propre par le modèle.", polished: true } });
   });
   await dictate(2_000);
-  // Our own rules first (at once), then the polished version.
-  await expect(composer()).toHaveValue(/^Ceci est une dictée de démonstration/, { timeout: 10_000 });
-  await expect(composer()).toHaveValue("Texte mis au propre par le modèle.", { timeout: 5_000 });
+  await expect(composer()).toHaveValue("Texte mis au propre par le modèle.", { timeout: 10_000 });
   await page.getByRole("button", { name: "Voir l'original" }).click();
   await expect(composer()).toHaveValue(/^Euh, ceci est une dictée de démonstration/);
   await composer().fill("");
 
+  // A polish that takes too long is not waited for, and never changes the text afterwards.
   await page.unroute("**/api/dictation/clean");
   await page.route("**/api/dictation/clean", async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 2_000));
-    await route.fulfill({ json: { ok: true, text: "Texte mis au propre par le modèle.", polished: true } });
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    await route.fulfill({ json: { ok: true, text: "Texte mis au propre par le modèle.", polished: true } }).catch(() => {});
   });
   await dictate(2_000);
   await expect(composer()).toHaveValue(/^Ceci est une dictée de démonstration/, { timeout: 10_000 });
-  await composer().press("End");
-  await composer().pressSequentially(" Et ceci.");
-  await page.waitForTimeout(2_500);
-  await expect(composer()).toHaveValue(/\(mode test\)\. Et ceci\.$/);
+  await page.waitForTimeout(3_000);
+  await expect(composer()).toHaveValue(/^Ceci est une dictée de démonstration/);
   await page.unroute("**/api/dictation/clean");
   await composer().fill("");
 });
