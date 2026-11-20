@@ -874,7 +874,9 @@
       "avatar": "3D avatars",
       "client_summary": "Client summaries",
       "dictation": "Voice dictation",
-      "title": "Conversation titles"
+      "title": "Conversation titles",
+      "image": "Images",
+      "workflow": "Workflows"
     },
     "limitLabel": "Limit: {limit}",
     "noLimit": "No personal limit",

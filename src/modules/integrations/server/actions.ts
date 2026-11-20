@@ -63,11 +63,16 @@ export async function setProviderEnabledAction(input: { provider: string; enable
   return { ok: true };
 }
 
+/** What the file picker may do: search, then read one file. */
+const PICKER_CAPABILITIES = ["drive.search", "drive.read", "onedrive.search", "onedrive.read", "notion.search", "notion.read"] as const;
+
 /** Reads through a connection from the app (file picker): search, then read one file. Read capabilities only. */
 export async function readFromAppAction(input: { connectionId: string; capability: string; input: unknown }): Promise<{ ok: true; data: unknown } | { ok: false; error: RunError | "forbidden" }> {
   const ctx = await memberOrNull();
   if (!ctx) return { ok: false, error: "forbidden" };
-  const parsed = z.object({ connectionId: z.uuid(), capability: z.string().regex(/^[a-z_]+\.(search|read|events|designs|channels)$/) }).safeParse(input);
+  // The picker brings documents into a memory: files only, never a mailbox, a calendar or a channel (a
+  // company connection is usable by every member; its mail stays inside the workflows it serves).
+  const parsed = z.object({ connectionId: z.uuid(), capability: z.enum(PICKER_CAPABILITIES) }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
   return runCapability(ctx, parsed.data.connectionId, parsed.data.capability, input.input);
 }

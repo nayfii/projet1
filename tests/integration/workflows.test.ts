@@ -233,3 +233,101 @@ describe("Cendr AI copilot", () => {
     expect(await copilotAction({ workflowId: minutes, graph: draft, message: "x" })).toEqual({ ok: false, error: "not_found" });
   });
 });
+
+describe("rights (architecture review, 2026-11-20)", () => {
+  let shared: string;
+  let carl: TestUser;
+
+  beforeAll(async () => {
+    // Carl: an Admin with the "models" scope, without access to the restricted client "Coffre".
+    carl = await createUser("wf-carl", "Carl");
+    await addMember(owner, company, carl, "admin", ["models"]);
+    const coffre = await createClientRecord(owner, company, "Coffre", "restricted");
+    const [{ id: coffreSpace }] = await sql<{ id: string }>("select id from public.memory_spaces where client_id = $1", [coffre]);
+    await sql("insert into public.memory_entries (space_id, company_id, title, content, source_type, author_id) values ($1, $2, 'Coffre', 'Le code du coffre est 4471.', 'manual', $3)", [coffreSpace, company, owner.id]);
+    // The Owner's company workflow: it searches the memory.
+    as(owner, "owner");
+    const created = await actions.createWorkflowAction({ name: "Recherche partagée", scope: "company" });
+    if (!created.ok) throw new Error(created.error);
+    shared = created.data!.id;
+    const graph = {
+      nodes: [
+        { id: "t", type: "trigger.manual", position: { x: 0, y: 0 }, config: {} },
+        { id: "m", type: "ai.memory", position: { x: 0, y: 100 }, config: { query: "coffre", limit: 5 } },
+      ],
+      edges: [{ id: "e1", source: "t", target: "m", handle: "out" }],
+    };
+    const { draft_revision } = await draftOf(shared);
+    expect((await actions.saveDraftAction({ id: shared, graph, revision: draft_revision })).ok).toBe(true);
+  });
+
+  it("seeing a company workflow is not enough to turn it on, run it, pause it, delete it or get its webhook secret", async () => {
+    as(bob);
+    expect((await bob.client.from("workflows").select("id").eq("id", shared)).data).toHaveLength(1);
+    expect(await actions.playWorkflowAction({ id: shared, confirmed: true })).toEqual({ ok: false, error: "not_found" });
+    expect(await actions.runWorkflowAction({ id: shared, mode: "test" })).toEqual({ ok: false, error: "not_found" });
+    expect(await actions.runWorkflowAction({ id: shared, mode: "live" })).toEqual({ ok: false, error: "not_found" });
+    expect(await actions.pauseWorkflowAction({ id: shared })).toEqual({ ok: false, error: "not_found" });
+    expect(await actions.rotateWebhookAction({ id: shared })).toEqual({ ok: false, error: "not_found" });
+    expect(await actions.deleteWorkflowAction({ id: shared })).toEqual({ ok: false, error: "not_found" });
+    // A governor cannot act on someone's personal workflow either.
+    as(carl, "member");
+    state.member = { ...state.member!, active: { companyId: company, role: "admin", adminScopes: ["models"] } };
+    expect(await actions.playWorkflowAction({ id: minutes, confirmed: true })).toEqual({ ok: false, error: "not_found" });
+    expect(await actions.runWorkflowAction({ id: minutes, mode: "test" })).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("a test runs with the rights of the person testing: an Admin never reads a memory through the author", async () => {
+    as(carl, "member");
+    state.member = { ...state.member!, active: { companyId: company, role: "admin", adminScopes: ["models"] } };
+    const { run, steps } = await runToEnd(runIdOf(await actions.runWorkflowAction({ id: shared, mode: "test" })));
+    expect(run.status).toBe("succeeded");
+    expect(JSON.stringify(steps)).not.toContain("4471");
+    // The Owner, who may read it, finds it.
+    as(owner, "owner");
+    const mine = await runToEnd(runIdOf(await actions.runWorkflowAction({ id: shared, mode: "test" })));
+    expect(JSON.stringify(mine.steps)).toContain("4471");
+  });
+
+  it("turning a company workflow on makes it run with the rights of the person who turned it on", async () => {
+    as(carl, "member");
+    state.member = { ...state.member!, active: { companyId: company, role: "admin", adminScopes: ["models"] } };
+    const played = await actions.playWorkflowAction({ id: shared, confirmed: true });
+    expect(played).toMatchObject({ ok: true, data: { status: "active" } });
+    const [{ owner_id }] = await sql<{ owner_id: string }>("select owner_id from public.workflows where id = $1", [shared]);
+    expect(owner_id).toBe(carl.id);
+    const { steps } = await runToEnd(runIdOf(await actions.runWorkflowAction({ id: shared, mode: "live" })));
+    expect(JSON.stringify(steps)).not.toContain("4471");
+  });
+
+  it("variables set before a wait are still there when the run resumes", async () => {
+    as(alice);
+    const created = await actions.createWorkflowAction({ name: "Relance" });
+    if (!created.ok) throw new Error(created.error);
+    const id = created.data!.id;
+    const graph = {
+      nodes: [
+        { id: "t", type: "trigger.manual", position: { x: 0, y: 0 }, config: {} },
+        { id: "v", type: "logic.set", position: { x: 0, y: 100 }, config: { name: "client", value: "Atlas" } },
+        { id: "w", type: "logic.delay", position: { x: 0, y: 200 }, config: { amount: 1, unit: "minutes" } },
+        { id: "o", type: "logic.set", position: { x: 0, y: 300 }, config: { name: "message", value: "Relance {{vars.client}}" } },
+      ],
+      edges: [
+        { id: "e1", source: "t", target: "v", handle: "out" },
+        { id: "e2", source: "v", target: "w", handle: "out" },
+        { id: "e3", source: "w", target: "o", handle: "out" },
+      ],
+    };
+    const { draft_revision } = await draftOf(id);
+    expect((await actions.saveDraftAction({ id, graph, revision: draft_revision })).ok).toBe(true);
+    expect(await actions.playWorkflowAction({ id })).toMatchObject({ ok: true, data: { status: "active" } });
+    const runId = runIdOf(await actions.runWorkflowAction({ id, mode: "live" }));
+    expect((await runToEnd(runId)).run.status).toBe("waiting");
+    // The wait is over: the clock resumes the run in a new invocation.
+    await sql("update public.workflow_run_steps set output = jsonb_build_object('until', now() - interval '1 second') where run_id = $1 and node_id = 'w'", [runId]);
+    await sql("update public.workflow_runs set resume_at = now() - interval '1 second' where id = $1", [runId]);
+    const { run, steps } = await runToEnd(runId);
+    expect(run.status).toBe("succeeded");
+    expect(steps.find((s) => s.node_id === "o")?.output).toMatchObject({ value: "Relance Atlas" });
+  });
+});

@@ -2,7 +2,12 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { ActivityIcon, ClockIcon, DownloadIcon, PlugIcon, WorkflowIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { isProviderId, PROVIDERS } from "@/modules/integrations/providers";
 import { classifyClock, classifyWorkflowQueue, type ClockStatus, type OperationsHealth, type QueueStatus } from "../health";
+
+const FEATURES = ["agent", "avatar", "chat", "client_summary", "confronter", "dictation", "embedding", "handover", "image", "memory", "render", "router", "title", "workflow"] as const;
+const RUN_ERRORS = ["owner_inactive", "quota_exceeded", "no_model_available", "provider_error", "rate_limited", "timeout", "interrupted", "limit", "invalid", "not_found", "forbidden", "expired", "not_granted", "connection_unavailable", "validation", "cancelled", "paused", "unsupported_file", "invalid_answer", "inactive"] as const;
+const known = <T extends string>(list: readonly T[], value: string | null): value is T => list.includes(value as T);
 
 const BADGE: Record<ClockStatus | QueueStatus, "success" | "warning" | "destructive" | "neutral"> = {
   on_time: "success",
@@ -19,6 +24,12 @@ const BADGE: Record<ClockStatus | QueueStatus, "success" | "warning" | "destruct
  */
 export async function OperationsPanel({ ops }: { ops: OperationsHealth | null }) {
   const t = await getTranslations("platformHealth.ops");
+  const tUsage = await getTranslations("usage.features");
+  const tRun = await getTranslations("workflows.runError");
+  // Words, not internal codes.
+  const featureLabel = (f: string) => (known(FEATURES, f) ? tUsage(f) : tUsage("other"));
+  const errorLabel = (code: string) => (known(RUN_ERRORS, code) ? tRun(code) : tRun("provider_error"));
+  const providerLabel = (id: string) => (isProviderId(id) ? PROVIDERS[id].name : id);
   const format = await getFormatter();
   const now = new Date();
   if (!ops) {
@@ -78,7 +89,7 @@ export async function OperationsPanel({ ops }: { ops: OperationsHealth | null })
             {ops.workflows.stuck > 0
               ? t("stuck", { count: ops.workflows.stuck })
               : ops.workflows.top_error
-                ? t("topError", { code: ops.workflows.top_error })
+                ? t("topError", { code: errorLabel(ops.workflows.top_error) })
                 : ops.workflows.oldest_queued_at
                   ? t("oldestQueued", { when: ago(ops.workflows.oldest_queued_at) })
                   : t("noFailures")}
@@ -118,7 +129,7 @@ export async function OperationsPanel({ ops }: { ops: OperationsHealth | null })
               <tbody className="tabular-nums">
                 {ops.integrations.map((i) => (
                   <tr key={i.provider}>
-                    <td className="py-1 capitalize">{i.provider}</td>
+                    <td className="py-1">{providerLabel(i.provider)}</td>
                     <td className="py-1 text-right">{n(i.active)}</td>
                     <td className={i.needs_reconnect > 0 ? "py-1 text-right text-warning" : "py-1 text-right"}>{n(i.needs_reconnect)}</td>
                     <td className="py-1 text-right">{n(i.revoked)}</td>
@@ -151,7 +162,7 @@ export async function OperationsPanel({ ops }: { ops: OperationsHealth | null })
                 <tbody className="tabular-nums">
                   {ops.latency.map((l) => (
                     <tr key={l.feature}>
-                      <td className="py-1">{l.feature}</td>
+                      <td className="py-1">{featureLabel(l.feature)}</td>
                       <td className="py-1 text-right">{n(l.requests)}</td>
                       <td className={l.errors > 0 ? "py-1 text-right text-warning" : "py-1 text-right"}>{n(l.errors)}</td>
                       <td className="py-1 text-right">{seconds(l.p50_ms)}</td>

@@ -20,8 +20,9 @@ export async function createVersion(workflowId: string, companyId: string, userI
   return data.id;
 }
 
-export async function setActive(workflowId: string, versionId: string, nextRunAt: string | null) {
-  await createAdminClient().from("workflows").update({ status: "active", active_version_id: versionId, next_run_at: nextRunAt, trigger_state: {} }).eq("id", workflowId);
+/** On: the new version runs automatically, with the rights of the person who turned it on (`ownerId`). */
+export async function setActive(workflowId: string, versionId: string, nextRunAt: string | null, ownerId: string) {
+  await createAdminClient().from("workflows").update({ status: "active", active_version_id: versionId, next_run_at: nextRunAt, trigger_state: {}, owner_id: ownerId }).eq("id", workflowId);
 }
 
 /** Pause: no new automatic run; queued and waiting runs are cancelled (an action already done stays done). */

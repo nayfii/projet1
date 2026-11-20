@@ -289,6 +289,8 @@ export function DictationButton({
     const levels: number[] = Array(BARS).fill(0);
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let tick = 0;
+    // Read once: asking the page for a colour at every tick forces it to recompute its styles.
+    let color: string | null = null;
     timer.current = setInterval(() => {
       const seconds = (Date.now() - s.startedAt) / 1000;
       setElapsed(Math.floor(seconds));
@@ -309,7 +311,7 @@ export function DictationButton({
       }
       levels.shift();
       levels.push(Math.min(1, level * 4));
-      if (still && tick++ % 4) return;
+      if ((still && tick++ % 4) || document.hidden) return;
       const el = canvas.current;
       const ctx = el?.getContext("2d");
       if (!el || !ctx) return;
@@ -319,7 +321,8 @@ export function DictationButton({
       if (el.width !== width) el.width = width;
       if (el.height !== height) el.height = height;
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = getComputedStyle(el).color;
+      color ??= getComputedStyle(el).color;
+      ctx.fillStyle = color;
       const step = width / BARS;
       levels.forEach((value, i) => {
         const h = Math.max(2 * ratio, value * height);

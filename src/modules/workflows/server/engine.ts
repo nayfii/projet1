@@ -28,6 +28,7 @@ type RunRow = {
   input: Record<string, unknown>;
   status: string;
   started_at: string | null;
+  triggered_by: string | null;
 };
 type StepRow = { node_id: string; iteration: number; status: string; output: unknown };
 
@@ -90,7 +91,7 @@ async function claim(admin: Admin, runId: string): Promise<RunRow | null> {
     .update({ status: "running", lease_until: new Date(Date.now() + LEASE_MS).toISOString(), attempt: row.attempt + 1, resume_at: null })
     .eq("id", runId)
     .eq("attempt", row.attempt)
-    .select("id, workflow_id, company_id, version_id, graph, mode, trigger, input, status, started_at")
+    .select("id, workflow_id, company_id, version_id, graph, mode, trigger, input, status, started_at, triggered_by")
     .maybeSingle();
   if (!data) return null;
   if (!data.started_at) await admin.from("workflow_runs").update({ started_at: now }).eq("id", runId);
@@ -136,11 +137,14 @@ export async function executeRun(runId: string): Promise<void> {
   }
   if (!graph) return finish(admin, run.id, "failed", { code: "invalid" });
 
+  // A test runs with the rights of the person testing it (they see its results); a live run with those
+  // of the person who turned the workflow on. Nobody reaches a memory or an app through someone else.
+  const tester = run.mode === "test" ? run.triggered_by : null;
   let actor: Actor;
   try {
-    actor = await actorFor(run.company_id, workflow.owner_id);
+    actor = await actorFor(run.company_id, tester ?? workflow.owner_id);
   } catch {
-    await admin.from("workflows").update({ status: "paused", next_run_at: null }).eq("id", workflow.id);
+    if (!tester) await admin.from("workflows").update({ status: "paused", next_run_at: null }).eq("id", workflow.id);
     return finish(admin, run.id, "failed", { code: "owner_inactive" });
   }
 
@@ -148,6 +152,11 @@ export async function executeRun(runId: string): Promise<void> {
   const previous = new Map<string, StepRow>(((stepRows ?? []) as StepRow[]).map((s) => [`${s.node_id}:${s.iteration}`, s]));
   const scope: RunScope = { trigger: run.input, steps: {}, vars: {} };
   for (const s of previous.values()) if (s.status === "succeeded" || s.status === "simulated") scope.steps[s.node_id] = s.output;
+  // Variables set before a wait or an interruption come back too.
+  for (const n of graph.nodes) {
+    const done = n.type === "logic.set" ? previous.get(`${n.id}:0`) : undefined;
+    if (done?.status === "succeeded") scope.vars[String(n.config.name)] = (done.output as { value?: unknown } | null)?.value;
+  }
   const follow: string[] = [];
   let count = 0;
   const ctx = { admin, run, graph, actor, scope, previous, follow, started, workflowId: workflow.id };
@@ -254,6 +263,7 @@ async function runNode(ctx: Ctx, node: WfNode, iteration: number, scope: RunScop
   // Already done in an earlier attempt: reuse its output, do not act again.
   if (before && (before.status === "succeeded" || before.status === "simulated" || before.status === "skipped")) {
     ctx.scope.steps[node.id] = before.output;
+    if (node.type === "logic.set" && before.status === "succeeded") ctx.scope.vars[String(node.config.name)] = (before.output as { value?: unknown } | null)?.value;
     return handlesFrom(node, before.output);
   }
   // Started but not finished in an earlier attempt: an action may have happened — never repeat it.

@@ -4,7 +4,8 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
-import { memberOrNull } from "@/lib/auth/guards";
+import { memberOrNull, type MemberContext } from "@/lib/auth/guards";
+import { hasScope } from "@/lib/auth/context";
 import { createClient } from "@/lib/supabase/server";
 import { toErrorCode, type ActionResult } from "@/lib/errors";
 import { usableConnection } from "@/modules/integrations/server/access";
@@ -58,9 +59,16 @@ export async function saveDraftAction(input: { id: string; graph: unknown; revis
   return { ok: true, data: { revision: data.draft_revision } };
 }
 
-async function editable(id: string) {
-  const { data } = await (await createClient()).from("workflows").select("id, company_id, owner_id, status, draft, active_version_id").eq("id", id).maybeSingle();
-  return data;
+/**
+ * The workflow, if this person may change it: its author, or for a company workflow the Owner or an
+ * Admin with the "models" scope (the same rule as the database's update policy). Seeing a workflow is
+ * not enough to turn it on, run it, pause it or get its webhook secret.
+ */
+async function editable(ctx: MemberContext, id: string) {
+  const { data } = await (await createClient()).from("workflows").select("id, company_id, owner_id, scope, status, draft, active_version_id").eq("id", id).maybeSingle();
+  if (!data || data.company_id !== ctx.active.companyId) return null;
+  const governs = ctx.active.role === "owner" || hasScope(ctx.active, "models");
+  return data.owner_id === ctx.user.id || (data.scope === "company" && governs) ? data : null;
 }
 
 /** Checks a graph for the workflow's author: settings and connections they may use. */
@@ -92,11 +100,12 @@ export async function playWorkflowAction(input: { id: string; confirmed?: boolea
   if (!ctx) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(input.id);
   if (!id.success) return { ok: false, error: "validation" };
-  const wf = await editable(id.data);
+  const wf = await editable(ctx, id.data);
   if (!wf) return { ok: false, error: "not_found" };
   const graph = graphSchema.safeParse(wf.draft);
   if (!graph.success) return { ok: true, data: { status: "invalid", issues: [{ node: null, code: "no_trigger" }] } };
-  const issues = await checkGraph(wf.company_id, wf.owner_id, graph.data);
+  // A workflow runs with the rights of the person who turns it on: their connections and memories.
+  const issues = await checkGraph(wf.company_id, ctx.user.id, graph.data);
   if (issues.length) return { ok: true, data: { status: "invalid", issues } };
   const sensitive = sensitivities(graph.data);
   if (sensitive.length && !input.confirmed) return { ok: true, data: { status: "confirm", sensitivities: sensitive } };
@@ -104,7 +113,7 @@ export async function playWorkflowAction(input: { id: string; confirmed?: boolea
   const versionId = await createVersion(wf.id, wf.company_id, ctx.user.id, graph.data);
   const trigger = graph.data.nodes.find((n) => nodeDef(n.type)?.category === "trigger")!;
   const next = trigger.type === "trigger.schedule" ? nextRun(trigger.config, new Date()).toISOString() : trigger.type === "trigger.email" ? new Date().toISOString() : null;
-  await setActive(wf.id, versionId, next);
+  await setActive(wf.id, versionId, next, ctx.user.id);
   let webhookSecret: string | undefined;
   if (trigger.type === "trigger.webhook") {
     const { data } = await (await createClient()).from("workflows").select("webhook_secret_hash").eq("id", wf.id).maybeSingle();
@@ -122,7 +131,7 @@ export async function pauseWorkflowAction(input: { id: string }): Promise<Action
   if (!ctx) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(input.id);
   if (!id.success) return { ok: false, error: "validation" };
-  const wf = await editable(id.data);
+  const wf = await editable(ctx, id.data);
   if (!wf) return { ok: false, error: "not_found" };
   const cancelled = await setPaused(wf.id);
   await logWorkflow(wf.company_id, ctx.user.id, "workflow.paused", wf.id, { cancelled });
@@ -140,7 +149,7 @@ export async function runWorkflowAction(input: { id: string; mode: "test" | "liv
   if (!ctx) return { ok: false, error: "forbidden" };
   const parsed = z.object({ id: z.uuid(), mode: z.enum(["test", "live"]), data: z.string().max(50_000).optional() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "validation" };
-  const wf = await editable(parsed.data.id);
+  const wf = await editable(ctx, parsed.data.id);
   if (!wf) return { ok: false, error: "not_found" };
   let payload: Record<string, unknown> = { text: parsed.data.data ?? "" };
   try {
@@ -207,7 +216,7 @@ export async function deleteWorkflowAction(input: { id: string }): Promise<Actio
   if (!ctx) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(input.id);
   if (!id.success) return { ok: false, error: "validation" };
-  const wf = await editable(id.data);
+  const wf = await editable(ctx, id.data);
   if (!wf) return { ok: false, error: "not_found" };
   await setPaused(wf.id);
   const { error } = await (await createClient()).from("workflows").delete().eq("id", wf.id);
@@ -223,7 +232,7 @@ export async function rotateWebhookAction(input: { id: string }): Promise<Action
   if (!ctx) return { ok: false, error: "forbidden" };
   const id = z.uuid().safeParse(input.id);
   if (!id.success) return { ok: false, error: "validation" };
-  const wf = await editable(id.data);
+  const wf = await editable(ctx, id.data);
   if (!wf) return { ok: false, error: "not_found" };
   const secret = await rotateWebhookSecret(wf.id);
   await logWorkflow(wf.company_id, ctx.user.id, "workflow.webhook_secret", wf.id);

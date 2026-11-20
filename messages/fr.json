@@ -874,7 +874,9 @@
       "avatar": "Avatars 3D",
       "client_summary": "Résumés des clients",
       "dictation": "Dictée vocale",
-      "title": "Titres des conversations"
+      "title": "Titres des conversations",
+      "image": "Images",
+      "workflow": "Workflows"
     },
     "limitLabel": "Limite : {limit}",
     "noLimit": "Sans limite personnelle",
