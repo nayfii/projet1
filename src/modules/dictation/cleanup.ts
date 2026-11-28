@@ -4,18 +4,25 @@
  * nothing is added, answered or translated. Pure functions, shared by the server and the tests.
  */
 
-/** Our product's words, given to the transcription model so it spells them right. Never a customer's
- * words: client names and sensitive terms are protected by Hide and must not leave for OpenAI as hints. */
+/**
+ * Our product's words. They used to be given to the transcription model as a hint, with the end of what
+ * was already said; the real model copied that hint into the text ("Context: ### Vocabulary: …", the
+ * previous sentence twice), so no hint is sent any more (2026-11-28). Kept to recognise such an echo.
+ */
 export const DICTATION_VOCABULARY = ["Cendr", "Consciousness", "Confronter", "Hide", "Albert", "Applis", "Studio", "ChatGPT", "Claude", "Gemini"] as const;
 
 /**
- * The transcription model's hint: our vocabulary, then the end of what was already said in this
- * recording (continuity between the parts of a long dictation).
+ * Removes what a transcription model may copy from its own instructions instead of the speech: a
+ * "Context:" header, "###" separators, a "Vocabulary:" / "Vocabulaire :" list of our product words.
  */
-export function transcriptionPrompt(locale: "fr" | "en", previous: string | null): string {
-  const glossary = locale === "fr" ? `Vocabulaire : ${DICTATION_VOCABULARY.join(", ")}.` : `Vocabulary: ${DICTATION_VOCABULARY.join(", ")}.`;
-  const tail = (previous ?? "").replace(/\s+/g, " ").trim().slice(-400);
-  return tail ? `${glossary}\n${tail}` : glossary;
+export function stripPromptEcho(text: string): string {
+  const words = DICTATION_VOCABULARY.join("|");
+  return text
+    .replace(/(^|\s)Context\s*:\s*/giu, "$1")
+    .replace(/#{2,}/g, " ")
+    .replace(new RegExp(`(Vocabulary|Vocabulaire)\\s*:\\s*(?:(?:${words})\\s*[,.]?\\s*){2,}`, "giu"), " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 const FILLERS: Record<"fr" | "en", RegExp> = {
@@ -67,14 +74,34 @@ export function tidyDictation(text: string, locale: "fr" | "en"): string {
   return out ? out.charAt(0).toLocaleUpperCase(locale) + out.slice(1) : out;
 }
 
-/** The parts of a long dictation, put back together in order. */
+const wordKey = (w: string) => w.toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+/**
+ * The next part without what it repeats from the end of the previous one: at a cut, a model may
+ * transcribe the same words twice, then go on. Three words at least, compared without case or
+ * punctuation; a part that is nothing but a repeat is kept (the person may have said it again).
+ */
+export function withoutOverlap(previous: string, next: string): string {
+  const before = previous.split(/\s+/).filter(Boolean).map(wordKey);
+  const tokens = next.split(/\s+/).filter(Boolean);
+  const after = tokens.map(wordKey);
+  // Strictly shorter than the part: a part that is only a repeat may be the person saying it again.
+  for (let k = Math.min(before.length, after.length - 1, 40); k >= 3; k--) {
+    if (before.slice(-k).every((w, i) => w === after[i])) return tokens.slice(k).join(" ");
+  }
+  return next;
+}
+
+/** The parts of a long dictation, put back together in order, without what one repeats of the other. */
 export function joinSegments(parts: string[]): string {
-  return parts
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
+  let text = "";
+  for (const raw of parts) {
+    const part = stripPromptEcho(raw.trim());
+    if (!part) continue;
+    const next = text ? withoutOverlap(text, part) : part;
+    text = next ? `${text} ${next}` : text;
+  }
+  return text.replace(/\s+/g, " ").trim();
 }
 
 export function cleanupSystem(locale: "fr" | "en"): string {

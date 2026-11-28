@@ -35,6 +35,16 @@ while they talk; when they stop, the text is in the box, ready to read and edit.
    our own rules' version is sent. A text with a missing part is never sent unread: it goes into the
    box instead.
 
+## Second correction (2026-11-28): the model copied its hint
+
+With the real model, the founder's dictation came back as "Context: ### Vocabulary: Cendr, Consciousness,
+… ### Hello comment ça va? Hello comment ça va?". `gpt-4o-transcribe` copied the hint we sent with each
+part (our product words and the end of what was already said) into the text. And the language was
+forced to the interface's (English) while he spoke French. Now each part is sent with the audio only:
+no hint, no previous text, no language (the model detects it). As a safety net, any copied instruction
+is removed (`stripPromptEcho`), and a part that repeats the end of the previous one before going on loses
+the repeat (`joinSegments`).
+
 ## Correction after the founder's test (2026-11-17)
 
 The founder reported, on the Vercel preview, a slower and broken dictation. The real model could not be

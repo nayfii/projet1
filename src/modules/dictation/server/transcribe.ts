@@ -2,7 +2,7 @@ import "server-only";
 import { transcribe } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { aiProviderKey, dictationModel, fakeDictationLatencyMs, fakeProviderEnabled } from "@/lib/env";
-import { transcriptionPrompt } from "../cleanup";
+import { stripPromptEcho } from "../cleanup";
 
 export type Transcript = { text: string; seconds: number | null; model: string; test: boolean };
 
@@ -10,10 +10,10 @@ export type Transcript = { text: string; seconds: number | null; model: string; 
  * Speech → text with OpenAI's transcription model (CLAUDE.md §11: "the same model as OpenAI").
  * The recording goes to OpenAI unmasked — Hide applies to the text afterwards, before any chat model
  * (docs/SECURITY.md, data flows). We keep neither the audio nor the text. In test mode no model is called.
- * The hint given with it holds our product's words and the end of what was already said in this same
- * recording (`previous`), so a long dictation cut in parts reads as one.
+ * No hint and no language are given: the model detects the language spoken (people may dictate in
+ * French with an English interface), and a hint was copied into the text by the real model.
  */
-export async function transcribeSpeech(audio: Uint8Array, locale: "fr" | "en", previous: string | null = null): Promise<Transcript | "not_configured"> {
+export async function transcribeSpeech(audio: Uint8Array, locale: "fr" | "en"): Promise<Transcript | "not_configured"> {
   if (fakeProviderEnabled()) {
     const wait = fakeDictationLatencyMs();
     if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
@@ -27,9 +27,9 @@ export async function transcribeSpeech(audio: Uint8Array, locale: "fr" | "en", p
   const result = await transcribe({
     model: createOpenAI({ apiKey, baseURL: "https://api.openai.com/v1" }).transcription(model),
     audio,
-    providerOptions: { openai: { language: locale, prompt: transcriptionPrompt(locale, previous), temperature: 0 } },
+    providerOptions: { openai: { temperature: 0 } },
     maxRetries: 1,
     abortSignal: AbortSignal.timeout(90_000),
   });
-  return { text: result.text.trim(), seconds: result.durationInSeconds ?? null, model, test: false };
+  return { text: stripPromptEcho(result.text), seconds: result.durationInSeconds ?? null, model, test: false };
 }

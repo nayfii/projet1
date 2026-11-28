@@ -3,7 +3,7 @@ import { memberOrNull } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { getMyQuota } from "@/modules/usage/server/quota";
 import { dictationRate, logBlockedRequest, recordUsage } from "@/modules/usage/server/record";
-import { DICTATION_CONTEXT_CHARS, DICTATION_MAX_BYTES, DICTATION_MAX_SECONDS, dictationCredits, sniffAudioType, type DictationError } from "@/modules/dictation/files";
+import { DICTATION_MAX_BYTES, DICTATION_MAX_SECONDS, dictationCredits, sniffAudioType, type DictationError } from "@/modules/dictation/files";
 import { transcribeSpeech } from "@/modules/dictation/server/transcribe";
 import { serverTiming } from "@/modules/dictation/timing";
 
@@ -45,9 +45,6 @@ export async function POST(request: Request) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!sniffAudioType(bytes)) return fail("invalid_audio", 400);
   const locale = form?.get("locale") === "en" ? "en" : "fr";
-  // The end of what this same recording already said (its previous parts), as a hint for continuity.
-  const context = form?.get("context");
-  const previous = typeof context === "string" ? context.slice(-DICTATION_CONTEXT_CHARS) : null;
 
   if (quota?.state.state === "blocked") {
     await logBlockedRequest(companyId, userId, quota.state.scope === "user" ? "quota_user" : "quota_company");
@@ -59,7 +56,7 @@ export async function POST(request: Request) {
   const usage = { companyId, userId, feature: "dictation" as const, conversationId: null, messageId: null, provider: "openai" as const, autoRouted: false, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, tokensEstimated: false };
   let result: Awaited<ReturnType<typeof transcribeSpeech>>;
   try {
-    result = await transcribeSpeech(bytes, locale, previous);
+    result = await transcribeSpeech(bytes, locale);
   } catch (error) {
     const code = error instanceof Error && error.name ? error.name : "unknown";
     after(() => recordUsage({ ...usage, modelId: "dictation", apiModelId: "dictation", credits: 0, estimatedCostUsd: 0, status: "error", errorCode: code.slice(0, 60), latencyMs: Date.now() - started }));

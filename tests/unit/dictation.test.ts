@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptCleanup, cleanupRequest, cleanupSystem, DICTATION_VOCABULARY, isPhantomTranscript, joinSegments, tidyDictation, transcriptionPrompt } from "@/modules/dictation/cleanup";
+import { acceptCleanup, cleanupRequest, cleanupSystem, isPhantomTranscript, joinSegments, stripPromptEcho, tidyDictation, withoutOverlap } from "@/modules/dictation/cleanup";
 import { DICTATION_MAX_SECONDS, dictationCredits, sniffAudioType } from "@/modules/dictation/files";
 import { isSilent, newCutter, rmsLevel, SEGMENT_RULES, shouldCut } from "@/modules/dictation/segments";
 
@@ -56,11 +56,20 @@ describe("dictated text, made ready to read", () => {
     expect(joinSegments([" Bonjour à tous. ", "", "On commence par le budget."])).toBe("Bonjour à tous. On commence par le budget.");
   });
 
-  it("gives the transcription model our product words only, then the end of what was already said", () => {
-    const hint = transcriptionPrompt("fr", "x".repeat(1000));
-    expect(hint.startsWith("Vocabulaire : Cendr, Consciousness")).toBe(true);
-    expect(hint.split("\n")[1]).toHaveLength(400);
-    expect(transcriptionPrompt("en", null)).toBe(`Vocabulary: ${DICTATION_VOCABULARY.join(", ")}.`);
+  it("removes what the model copies from its own instructions (seen with the real model, 2026-11-28)", () => {
+    const echoed = "Context: ### Vocabulary: Cendr, Consciousness, Confronter, Hide, Albert, Applis, Studio, ChatGPT, Claude, Gemini. ### Hello comment ça va?";
+    expect(stripPromptEcho(echoed)).toBe("Hello comment ça va?");
+    expect(stripPromptEcho("Vocabulaire : Cendr, Hide, Studio. On parle du devis.")).toBe("On parle du devis.");
+    // Real words stay: "Hide" or "Studio" in a sentence, a "context" that is speech.
+    expect(stripPromptEcho("Active Hide dans le Studio, le context est clair.")).toBe("Active Hide dans le Studio, le context est clair.");
+  });
+
+  it("does not write twice what a part repeats from the end of the previous one", () => {
+    expect(withoutOverlap("Bonjour à tous, on commence par le budget.", "on commence par le budget. Puis les délais.")).toBe("Puis les délais.");
+    expect(joinSegments(["Hello comment ça va ?", "Hello comment ça va ? Je voulais te parler du devis."])).toBe("Hello comment ça va ? Je voulais te parler du devis.");
+    // Two words are not enough to call it a repeat; a part that is only a repeat is kept.
+    expect(withoutOverlap("Il a dit oui.", "dit oui, mais demain.")).toBe("dit oui, mais demain.");
+    expect(joinSegments(["Merci beaucoup à tous.", "Merci beaucoup à tous."])).toBe("Merci beaucoup à tous. Merci beaucoup à tous.");
   });
 
   it("keeps the model's version only when it still looks like what was said", () => {

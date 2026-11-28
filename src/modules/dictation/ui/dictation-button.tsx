@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { isPhantomTranscript, joinSegments, tidyDictation } from "../cleanup";
-import { DICTATION_CONTEXT_CHARS, DICTATION_ERRORS, DICTATION_MAX_SECONDS, type DictationError } from "../files";
+import { DICTATION_ERRORS, DICTATION_MAX_SECONDS, type DictationError } from "../files";
 import { isSilent, newCutter, rmsLevel, SEGMENT_RULES, shouldCut, type Cutter } from "../segments";
 import { markDictation } from "../timing";
 
@@ -43,7 +43,7 @@ type Session = {
   cutter: Cutter;
   /** Each part's text: undefined while it is transcribed, null when it said nothing (or was lost). */
   parts: (string | null | undefined)[];
-  /** Each part is transcribed after the previous one, with what was already said as a hint. */
+  /** Each part is transcribed after the previous one, so the text keeps the order of the parts. */
   chain: Promise<void>;
   /** The last part's recording is complete (or given up). */
   lastPart: Promise<unknown>;
@@ -184,7 +184,6 @@ export function DictationButton({
 
   /** One part → its text, with what this recording already said as a hint. One retry on a passing failure. */
   async function transcribePart(s: Session, index: number, blob: Blob, seconds: number) {
-    const previous = joinSegments(s.parts.slice(0, index).filter((p): p is string => Boolean(p))).slice(-DICTATION_CONTEXT_CHARS);
     for (let attempt = 0; attempt < 2; attempt++) {
       if (s.outcome === "cancel" || s.fatal) return;
       if (attempt) await delay(RETRY_DELAY_MS);
@@ -192,7 +191,6 @@ export function DictationButton({
       form.append("audio", blob, `dictation.${extension(blob.type)}`);
       form.append("seconds", String(Math.round(seconds * 10) / 10));
       form.append("locale", locale);
-      if (previous) form.append("context", previous);
       const response = await fetch("/api/dictation", { method: "POST", body: form, signal: partSignal(s) }).catch(() => null);
       const body = response ? ((await response.json().catch(() => null)) as { ok?: boolean; text?: string; error?: string } | null) : null;
       if (response?.ok && body?.ok && typeof body.text === "string") {
