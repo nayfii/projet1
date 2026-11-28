@@ -132,9 +132,12 @@ test("Hide: one switch, and its three modes in a small menu", async () => {
 
 test("the models are shown by their providers' logos, without a column beside the thread", async () => {
   await page.goto("/chat");
-  const claude = page.locator('[data-assistant="anthropic"]').first();
+  // The logos are in the model picker at the top of the conversation (since 2026-11-28).
+  await page.getByRole("button", { name: "Choisir le modèle" }).click();
+  const claude = page.getByRole("menu").locator('[data-assistant="anthropic"]').first();
   await expect(claude.locator("svg path").first()).toHaveAttribute("fill", "#D97757");
   await expect(page.locator("img[src^='/avatars/assistants/']")).toHaveCount(0);
+  await page.keyboard.press("Escape");
 });
 
 test("sign-up by invitation only: without an invitation, nobody creates a company", async ({ browser }) => {
