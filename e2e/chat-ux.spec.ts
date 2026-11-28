@@ -94,6 +94,8 @@ test("a double-click on the title renames the conversation; Échap cancels", asy
   await page.getByRole("textbox", { name: "Renommer la conversation" }).press("Enter");
   await expect(title()).toContainText("Plan de lancement");
   await expect(page.getByTestId("conversation-row").first()).toContainText("Plan de lancement");
+  // Saved (the title's spinner is gone) before the page is opened again.
+  await expect(title().locator(".animate-spin")).toHaveCount(0, { timeout: 10_000 });
   await page.reload();
   await expect(title()).toContainText("Plan de lancement");
 });
