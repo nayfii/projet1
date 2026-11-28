@@ -81,7 +81,8 @@ test("the assistants appear as characters in the chat", async ({ page }) => {
   await page.getByRole("textbox", { name: "Écrivez votre message…" }).fill("Bonjour, présente-toi en une phrase.");
   await page.keyboard.press("Enter");
   await expect(page.locator('article [data-assistant="anthropic"]')).toBeVisible();
-  await expect(page.getByText("[TEST]")).toBeVisible();
+  // In the answer (the conversation's automatic title can say "[TEST]" too).
+  await expect(page.getByRole("main").locator("article").first()).toContainText("[TEST]");
   await shot(page, "av03-chat-answer");
 });
 
