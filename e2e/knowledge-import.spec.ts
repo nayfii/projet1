@@ -42,7 +42,7 @@ test("onboarding offers the import; the page explains privacy and keeps a slot f
 });
 
 test("the export is read in the browser, analysed, and nothing private reaches the review", async () => {
-  await page.getByTestId("import-input").setInputFiles({ name: "chatgpt-export.zip", mimeType: "application/zip", buffer: Buffer.from(chatgptZip()) });
+  await page.getByRole("main").getByTestId("import-input").setInputFiles({ name: "chatgpt-export.zip", mimeType: "application/zip", buffer: Buffer.from(chatgptZip()) });
   await expect(page.getByText("Export ChatGPT reconnu")).toBeVisible();
   await expect(page.getByText("5 éléments trouvés")).toBeVisible();
   await page.getByRole("button", { name: "Analyser" }).click();
@@ -81,6 +81,6 @@ test("a broken file gets a plain explanation", async () => {
   // Wait until the page answers (hydrated) before dropping the file.
   await page.getByRole("radio", { name: "Autres fichiers" }).click();
   await expect(page.getByRole("main").getByTestId("export-guide")).toContainText("Notes et documents");
-  await page.getByTestId("import-input").setInputFiles({ name: "export.zip", mimeType: "application/zip", buffer: Buffer.from("this is not a zip") });
+  await page.getByRole("main").getByTestId("import-input").setInputFiles({ name: "export.zip", mimeType: "application/zip", buffer: Buffer.from("this is not a zip") });
   await expect(page.getByRole("alert").filter({ hasText: "Ce fichier" })).toContainText("Ce fichier est abîmé");
 });
