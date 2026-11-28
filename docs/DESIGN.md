@@ -4,6 +4,27 @@ Art direction, assistant characters and personal avatars (Step 11, 2026-10-30).
 The founder's references: a near-black, ultra-minimal product page (white type, generous space, soft pastel touches)
 and a stylized 3D avatar (soft volumes, diffuse light, a friendly face that reads even when small).
 
+## 0. Since 2026-11-28: the chat "like ChatGPT" (CLAUDE.md §13)
+
+Clair, Sombre and Système (the default, following the computer) are flat and neutral; the rules of §1 below
+(near-black, glass) now apply to Atmosphère only.
+
+| Element | Light | Dark | Where |
+|---|---|---|---|
+| Conversation surface | `#ffffff` | `#212121` | `--background` |
+| Menu (flush, full height) | `#f9f9f9`, hairline on its right edge | `#181818` | `--sidebar-surface`, `.shell-panel` |
+| Menu rows | hover `black 4.5 %`, current `black 7 %` | hover `white 6 %`, current `white 9 %` | `--sidebar-hover`, `--sidebar-selected` |
+| Person's bubble | `#f4f4f4`, radius 22 px | `#303030` | `--bubble` |
+| Message box | white, 1 px ring + soft shadow, radius 28 px | `#303030`, no ring | `--composer`, `.chat-composer` |
+| Text | `#0d0d0d`, secondary `#5d5d5d` | `#ececec`, secondary `#b4b4b4` | `--foreground`, `--muted-foreground` |
+| Menus, dialogs, cards | white with a hairline | `#333333` / `white 3.5 %` | `--glass-solid`, `--glass-standard` |
+| Glass, bending, sheen | none | none | `liquid-glass.tsx` (lens in Atmosphère only) |
+| Notifications | top centre | top centre | `components/ui/toaster.tsx` |
+
+Layout: model picker top left ("Auto ⌄"), the title quiet beside it; "+" menu (attach, Applis, create an image),
+Hide switch, microphone and round send button in the message box; a new conversation shows its question and the
+message box in the middle of the screen. No ChatGPT logo, icon or name is used.
+
 ## 1. Art direction
 
 **Principle: few elements, each one intentional.** The chat stays the centre; everything else is quiet until needed.

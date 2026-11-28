@@ -37,7 +37,9 @@ function LiquidGlass({ material = "card", reach = 26, className, children, ...pr
   // Bending a large pane over a moving background costs the graphics chip on every frame: large panes
   // keep their clear, frosted glass while the background moves; small lenses always bend.
   const moving = React.useSyncExternalStore(subscribeBackground, backgroundMoves, () => false);
-  const liquid = quiet && (material === "lens" || !moving);
+  // Clair, Sombre and Système are flat (appearance.css): the lens is Atmosphère's only.
+  const atmosphere = React.useSyncExternalStore(subscribeBackground, isAtmosphere, () => false);
+  const liquid = quiet && atmosphere && (material === "lens" || !moving);
   return (
     <div data-liquid={liquid ? "" : undefined} className={cn("lq-host isolate", FROST[material], className)} {...props}>
       {liquid ? <Lens material={material} reach={reach} /> : null}
@@ -128,6 +130,10 @@ function subscribeBackground(onChange: () => void) {
     observer.disconnect();
     media.removeEventListener("change", onChange);
   };
+}
+
+function isAtmosphere(): boolean {
+  return document.documentElement.dataset.theme === "atmosphere";
 }
 
 /** The Atmosphère background is animated (motion on, a device that can, no reduced motion). */

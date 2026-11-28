@@ -20,13 +20,13 @@ export function ClientsSidebarSection({ clients, canRestrict }: { clients: Sideb
     <div className="space-y-0.5">
       {/* In the narrow rail: one icon to all clients; the list waits for the full sidebar. */}
       <Tooltip content={t("title")} side="right">
-        <Link href="/clients" aria-label={t("title")} aria-current={pathname.startsWith("/clients") ? "page" : undefined} className="glass-interactive mx-auto hidden size-10 items-center justify-center rounded-[11px] text-muted-foreground hover:text-foreground rail:flex">
+        <Link href="/clients" aria-label={t("title")} aria-current={pathname.startsWith("/clients") ? "page" : undefined} className="glass-interactive mx-auto hidden size-10 items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground rail:flex">
           <BriefcaseIcon className="size-[17px]" />
         </Link>
       </Tooltip>
       <div className="space-y-0.5 rail:hidden">
         <div className="flex items-center justify-between px-2.5 pb-1 pt-4">
-          <Link href="/clients" className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/75 hover:text-foreground">
+          <Link href="/clients" className="sidebar-label hover:text-foreground">
             {t("title")}
           </Link>
           <Tooltip content={t("sidebarAdd")}>
@@ -54,8 +54,8 @@ export function ClientsSidebarSection({ clients, canRestrict }: { clients: Sideb
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "glass-interactive flex h-8 items-center gap-2.5 rounded-[11px] px-2.5 text-[13.5px]",
-                  active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+                  "glass-interactive flex h-9 items-center gap-2.5 rounded-[10px] px-2.5 text-[14px]",
+                  active ? "text-foreground" : "text-foreground/85 hover:text-foreground",
                 )}
               >
                 <span aria-hidden className="flex size-4 shrink-0 items-center justify-center rounded-[5px] bg-sidebar-accent text-[9px] font-semibold uppercase text-foreground/80">

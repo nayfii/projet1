@@ -564,7 +564,7 @@ html:root[data-glass-tone="tinted"][data-theme="atmosphere"] {
   z-index: 0;
   width: 0;
   height: 0;
-  border-radius: 11px;
+  border-radius: 10px;
   pointer-events: none;
   opacity: 0;
   background-color: var(--glass-hover);
@@ -588,4 +588,154 @@ html:root[data-glass-tone="tinted"][data-theme="atmosphere"] {
   .hover-pill {
     transition: opacity 120ms linear;
   }
+}
+
+/* ── Clair, Sombre, Système: the conversation's look (founder's choice, 2026-11-28) ────────────────
+ * Plain, flat surfaces in neutral greys, in the manner of the best-known chat assistants: the menu
+ * flush with the left edge on its own light grey, the conversation on white (or dark grey), the
+ * person's messages in a soft grey bubble, a round message box. No glass, no bending, no sheen:
+ * that stays Atmosphère's. Every token set for Sombre is set again for Clair (same list). */
+:root {
+  /* Atmosphère's values; the plain interfaces set their own below. */
+  --bubble: var(--glass-selected);
+  --composer: transparent;
+  --sidebar-surface: transparent;
+  --sidebar-hover: var(--glass-hover);
+  --sidebar-selected: var(--glass-selected);
+}
+html:root:not([data-theme="atmosphere"]) {
+  --background: #212121;
+  --foreground: #ececec;
+  --muted-foreground: #b4b4b4;
+  --primary: #ececec;
+  --primary-foreground: #0d0d0d;
+  --secondary: oklch(1 0 0 / 0.08);
+  --muted: oklch(1 0 0 / 0.06);
+  --accent: oklch(1 0 0 / 0.07);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.14);
+  --glass-subtle: oklch(1 0 0 / 0.025);
+  --glass-standard: oklch(1 0 0 / 0.035);
+  --glass-elevated: #2a2a2a;
+  --glass-solid: #333333;
+  --glass-hover: oklch(1 0 0 / 0.06);
+  --glass-selected: oklch(1 0 0 / 0.09);
+  --glass-border: oklch(1 0 0 / 0.1);
+  --glass-border-strong: oklch(1 0 0 / 0.16);
+  --glass-ring: transparent;
+  --glass-highlight: transparent;
+  --glass-lowlight: transparent;
+  --glass-sheen: transparent;
+  --glass-shadow-color: oklch(0 0 0 / 0.4);
+  --glass-blur: 0px;
+  --glass-saturate: 100%;
+  --bubble: #303030;
+  --composer: #303030;
+  --composer-ring: transparent;
+  --composer-shadow: none;
+  --sidebar-surface: #181818;
+  --sidebar-line: transparent;
+  --sidebar-hover: oklch(1 0 0 / 0.06);
+  --sidebar-selected: oklch(1 0 0 / 0.09);
+  /* A switch that is on: light grey, so its white glass thumb still shows. */
+  --lg-on: oklch(0.7 0 0);
+}
+html:root:not([data-theme="atmosphere"])[data-scheme="light"] {
+  --background: #ffffff;
+  --foreground: #0d0d0d;
+  --muted-foreground: #5d5d5d;
+  --primary: #0d0d0d;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0 0 0 / 0.05);
+  --muted: oklch(0 0 0 / 0.04);
+  --accent: oklch(0 0 0 / 0.05);
+  --border: oklch(0 0 0 / 0.1);
+  --input: oklch(0 0 0 / 0.15);
+  --glass-subtle: oklch(0 0 0 / 0.02);
+  --glass-standard: #ffffff;
+  --glass-elevated: #ffffff;
+  --glass-solid: #ffffff;
+  --glass-hover: oklch(0 0 0 / 0.04);
+  --glass-selected: oklch(0 0 0 / 0.06);
+  --glass-border: oklch(0 0 0 / 0.1);
+  --glass-border-strong: oklch(0 0 0 / 0.15);
+  --glass-ring: transparent;
+  --glass-highlight: transparent;
+  --glass-lowlight: transparent;
+  --glass-sheen: transparent;
+  --glass-shadow-color: oklch(0 0 0 / 0.12);
+  --glass-blur: 0px;
+  --glass-saturate: 100%;
+  --bubble: #f4f4f4;
+  --composer: #ffffff;
+  --composer-ring: oklch(0 0 0 / 0.1);
+  --composer-shadow: 0 2px 5px 0 oklch(0 0 0 / 0.06), 0 9px 9px 0 oklch(0 0 0 / 0.01);
+  --sidebar-surface: #f9f9f9;
+  --sidebar-line: oklch(0 0 0 / 0.05);
+  --sidebar-hover: oklch(0 0 0 / 0.045);
+  --sidebar-selected: oklch(0 0 0 / 0.07);
+  --lg-on: var(--brand);
+}
+
+/* The menu: flush with the left edge, full height, its own flat grey. */
+html:root:not([data-theme="atmosphere"]) .shell-panel-frame {
+  inset: 0 auto 0 0;
+  width: var(--sidebar-w);
+}
+html:root:not([data-theme="atmosphere"]) .shell-panel {
+  border-radius: 0;
+  background: var(--sidebar-surface);
+  box-shadow: inset -1px 0 0 0 var(--sidebar-line);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html:root:not([data-theme="atmosphere"])[data-sidebar="collapsed"] .shell-sidebar {
+  --sidebar-w: 3.75rem;
+}
+/* On a phone, the bar with the menu button is part of the page, not a floating pane. */
+html:root:not([data-theme="atmosphere"]) .shell-topbar {
+  border-color: transparent;
+  background: var(--background);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Rows light up flat: a grey hover, a slightly darker grey for the page you are on. */
+html:root:not([data-theme="atmosphere"]) .shell-lens,
+html:root:not([data-theme="atmosphere"]) .hover-pill {
+  display: none;
+}
+html:root:not([data-theme="atmosphere"]) .shell-nav .glass-interactive:hover {
+  background-color: var(--sidebar-hover);
+}
+html:root:not([data-theme="atmosphere"]) .glass-interactive:is([aria-current="page"], [data-active], [aria-selected="true"]),
+html:root:not([data-theme="atmosphere"]) .shell-nav .glass-interactive[aria-current="page"] {
+  background-color: var(--sidebar-selected);
+  background-image: none;
+  box-shadow: none;
+}
+html:root:not([data-theme="atmosphere"]) .glass-interactive:active {
+  transform: none;
+}
+/* Section titles: a quiet line in the sentence's own case. */
+.sidebar-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: color-mix(in oklch, var(--muted-foreground) 85%, transparent);
+}
+
+/* The message box (modules/conversations/ui/chat-view.tsx): round, flat, a hairline and a soft shadow. */
+html:root:not([data-theme="atmosphere"]) .chat-composer {
+  border-color: transparent;
+  background: var(--composer);
+  box-shadow:
+    0 0 0 1px var(--composer-ring),
+    var(--composer-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html:root:not([data-theme="atmosphere"]) .chat-composer:focus-within {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--foreground) 18%, var(--composer-ring)),
+    var(--composer-shadow);
 }

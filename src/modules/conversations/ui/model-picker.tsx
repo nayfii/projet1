@@ -32,6 +32,7 @@ export function ModelPicker({
   autoEnabled,
   disabled,
   align = "start",
+  placement = "composer",
 }: {
   value: string;
   onChange: (choice: string) => void;
@@ -39,36 +40,45 @@ export function ModelPicker({
   autoEnabled: boolean;
   disabled?: boolean;
   align?: "start" | "end";
+  /** "header": at the top of the conversation (its name large, the menu opens below); "composer": in a toolbar. */
+  placement?: "header" | "composer";
 }) {
   const t = useTranslations("chat");
   const current = models.find((m) => m.id === value);
   const isAuto = value === MODEL_CHOICE_AUTO;
+  const header = placement === "header";
+  // In a narrow composer (workspace open, small window) the logo alone names the model.
+  const nameClass = header ? "truncate" : "hidden truncate @sm:inline";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         disabled={disabled}
         aria-label={t("modelPicker")}
-        className="flex h-8 max-w-56 items-center gap-1.5 rounded-full pr-2.5 pl-1 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+        className={cn(
+          "flex shrink-0 items-center gap-1.5 transition-colors disabled:opacity-50",
+          header
+            ? "h-9 max-w-[min(18rem,60vw)] rounded-lg px-2 text-[17px] text-foreground hover:bg-accent data-[state=open]:bg-accent"
+            : "h-8 max-w-56 rounded-full pr-2.5 pl-1 text-[13px] text-muted-foreground hover:bg-accent hover:text-foreground",
+        )}
       >
         {isAuto || !current ? (
           <>
-            <AssistantAvatar provider="auto" size={22} />
-            {/* In a narrow composer (workspace open, small window) the logo alone names the model. */}
-            <span className="hidden font-medium text-foreground @sm:inline">{t("auto")}</span>
+            <AssistantAvatar provider="auto" size={header ? 20 : 22} />
+            <span className={cn(nameClass, "font-medium text-foreground")}>{t("auto")}</span>
           </>
         ) : (
           <>
-            <AssistantAvatar provider={current.provider} size={22} />
-            <span className="hidden truncate @sm:inline">
+            <AssistantAvatar provider={current.provider} size={header ? 20 : 22} />
+            <span className={nameClass}>
               <span className="font-medium text-foreground">{modelDisplay(current.provider, current.label).brand}</span>{" "}
-              {modelDisplay(current.provider, current.label).name}
+              <span className={header ? "text-muted-foreground" : undefined}>{modelDisplay(current.provider, current.label).name}</span>
             </span>
           </>
         )}
-        <ChevronDownIcon className="size-3.5 shrink-0" />
+        <ChevronDownIcon className={cn("shrink-0", header ? "size-4 text-muted-foreground" : "size-3.5")} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} side="top" className="w-72">
+      <DropdownMenuContent align={align} side={header ? "bottom" : "top"} className="w-72">
         {autoEnabled ? (
           <>
             <DropdownMenuItem onSelect={() => onChange(MODEL_CHOICE_AUTO)} className="items-start py-2">

@@ -253,7 +253,7 @@ function UserMessage({
           </div>
         ) : null}
         {textBeforeArtifacts(message.content) ? (
-          <p className="max-w-[85%] rounded-2xl bg-secondary px-4 py-2 text-[14px] leading-relaxed">{textBeforeArtifacts(message.content)}</p>
+          <p className="max-w-[80%] rounded-[22px] bg-[var(--bubble)] px-4 py-2 text-[14px] leading-relaxed">{textBeforeArtifacts(message.content)}</p>
         ) : null}
         <ArtifactMessageContext.Provider value={editScope}>
           {edits.map((a, i) => (
@@ -346,7 +346,7 @@ function UserMessage({
           </div>
         </form>
       ) : message.content ? (
-        <div className="flex max-w-[85%] items-start gap-1">
+        <div className="flex max-w-[80%] items-start gap-1">
           <ConfrontButton onConfront={onConfront} className={hover} />
           <SaveToMemory message={message} memoryTargets={memoryTargets} conversationId={conversationId} className={hover} />
           <Tooltip content={copied ? tChat("copied") : tChat("copy")}>
@@ -380,7 +380,7 @@ function UserMessage({
               </Button>
             </Tooltip>
           ) : null}
-          <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-[var(--glass-selected)] px-4 py-2.5 text-[15px] leading-relaxed shadow-[inset_0_1px_0_0_var(--glass-highlight),0_0_0_1px_var(--glass-ring)]">
+          <div className="whitespace-pre-wrap break-words rounded-[22px] bg-[var(--bubble)] px-4 py-2.5 text-[15px] leading-relaxed">
             <ProtectedText text={message.content} spans={message.hideSpans} renderPlain={withMentions} />
           </div>
         </div>
@@ -505,9 +505,9 @@ function AssistantMessage({
 
   return (
     <article className="group/answer animate-message-in space-y-2.5" aria-busy={live}>
-      <header className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px]">
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
         {!confrontation ? (
-          <AssistantAvatar provider={message.model?.provider ?? "auto"} size={30} state={mood} animated={mood !== "idle"} seed={message.id} />
+          <AssistantAvatar provider={message.model?.provider ?? "auto"} size={24} state={mood} animated={mood !== "idle"} seed={message.id} />
         ) : null}
         {message.model && !confrontation ? <ModelName provider={message.model.provider} label={message.model.label} dot={false} /> : null}
         {!message.model && !confrontation && waiting ? <span className="font-medium text-foreground">{t("auto")}</span> : null}

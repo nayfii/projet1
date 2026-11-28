@@ -215,15 +215,17 @@ test("a quick press of the shortcut keeps the microphone on until it is pressed 
   await composer().fill("");
 });
 
-test("an image is created from a request, and the Image button forces one", async () => {
+test("an image is created from a request, and the image tool in "+" forces one", async () => {
   await page.goto("/chat");
   await send("Crée une image d'un vélo rouge sur fond blanc");
   const first = answers().last();
   await expect(first.getByTestId("generated-images").locator("img")).toBeVisible();
   await expect(first).toContainText("Image simulée");
   await expect(first.locator("header")).toContainText("Images");
-  // The Image button forces an image for any text.
-  await page.getByRole("button", { name: "Image", exact: true }).click();
+  // "+" → "Créer ou modifier une image" forces an image for any text; the tool shows as a pill.
+  await page.getByRole("button", { name: "Ajouter des fichiers et plus" }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Créer ou modifier une image" }).click();
+  await expect(page.getByRole("button", { name: "Ne plus créer d'image" })).toBeVisible();
   await send("un coucher de soleil sur Paris");
   await expect(answers().last().getByTestId("generated-images").locator("img")).toBeVisible();
   // An image stays in the conversation: the workspace on the right does not open for it.

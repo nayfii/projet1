@@ -27,12 +27,14 @@ import {
   SquareIcon,
   Trash2Icon,
   UnlinkIcon,
+  XIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -69,11 +71,9 @@ import { DictationButton } from "@/modules/dictation/ui/dictation-button";
 import { LiveDictation } from "@/modules/dictation/ui/live-dictation";
 import type { HideMode, HideSettings, Span } from "@/modules/hide/categories";
 import { MODEL_CHOICE_AUTO, modelDisplay } from "@/modules/providers/catalog";
-import { PROVIDER_IDS, type ProviderId } from "@/modules/providers/types";
-import { CastPicker } from "@/modules/avatars/ui/conversation-cast";
+import { PROVIDER_IDS } from "@/modules/providers/types";
 import { detectClientMention } from "@/modules/clients/detect";
 import { NewClientDialog } from "@/modules/clients/ui/new-client-dialog";
-import type { AssistantId } from "@/modules/avatars/assistants";
 import { leaveConversationAction, loadParticipantsAction, loadTimelineMessagesAction } from "@/modules/collaboration/server/actions";
 import type { Colleague, Handover, Participant } from "@/modules/collaboration/server/queries";
 import { AddPeopleDialog, ParticipantsBar, TypingLine } from "@/modules/collaboration/ui/people";
@@ -1034,9 +1034,6 @@ export function ChatView(props: Props) {
   const mentionKey = clientMention ? (clientMention.kind === "link" ? clientMention.id : `new:${clientMention.name.toLowerCase()}`) : null;
   const showMention = clientMention !== null && mentionKey !== clientMentionDismissed;
 
-  // The assistant picked for the next answer (shown on the empty conversation).
-  const selectedAssistant: AssistantId =
-    modelChoice === MODEL_CHOICE_AUTO ? "auto" : (props.models.find((m) => m.id === modelChoice)?.provider ?? "auto");
   // Artifacts (documents, spreadsheets, slides, code) and the workspace on the right.
   const artifactVersions = React.useMemo(
     () => collectArtifacts(messages.filter((m) => m.id !== "pending-user").map((m) => ({ id: m.id, role: m.role, content: m.content, createdAt: m.createdAt }))),
@@ -1097,33 +1094,41 @@ export function ChatView(props: Props) {
     }),
     [],
   );
-  const castOptions: AssistantId[] = [
-    ...PROVIDER_IDS.filter((provider) => pickerModels.some((m) => m.provider === provider && m.available)),
-    ...(props.autoEnabled && !props.agent?.allowedModels.length ? (["auto"] as const) : []),
-  ];
-  function pickAssistant(id: AssistantId) {
-    if (id === "auto") return changeModel(MODEL_CHOICE_AUTO);
-    if (props.models.find((m) => m.id === modelChoice)?.provider === id) return;
-    const first = pickerModels.find((m) => m.provider === (id as ProviderId) && m.available);
-    if (first) changeModel(first.id);
-  }
-
+  const fresh = messages.length === 0;
 
   return (
     <ArtifactsContext.Provider value={artifactsApi}>
     <div className="flex h-[calc(100dvh-3.5rem)] md:h-dvh">
     <div className="flex min-w-0 flex-1 flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-[var(--glass-border)] px-4 sm:px-6">
-        <EditableTitle
-          conversationId={conversationId}
-          title={title}
-          placeholder={t("newConversation")}
-          canEdit={!readOnly}
-          onRenamed={(next) => {
-            setTitle(next);
-            if (conversationId && next) chatList.upsert({ id: conversationId, title: next });
-          }}
+      <header className="flex h-14 shrink-0 items-center gap-1.5 px-3 sm:px-4">
+        {/* The model for the next answer, at the top like the best-known assistants; Auto included. */}
+        <ModelPicker
+          value={modelChoice}
+          onChange={changeModel}
+          models={pickerModels}
+          autoEnabled={props.autoEnabled && !props.agent?.allowedModels.length}
+          disabled={busy}
+          placement="header"
         />
+        {conversationId ? (
+          // On a phone the title gives its room to the model (it stays in the menu and "⋯ → Renommer").
+          <div className="flex min-w-0 flex-1 max-sm:invisible max-sm:w-0">
+            <EditableTitle
+              conversationId={conversationId}
+              title={title}
+              placeholder={t("newConversation")}
+              canEdit={!readOnly}
+              onRenamed={(next) => {
+                setTitle(next);
+                if (next) chatList.upsert({ id: conversationId, title: next });
+              }}
+            />
+          </div>
+        ) : (
+          <h1 className="min-w-0 flex-1">
+            <span className="sr-only">{t("newConversation")}</span>
+          </h1>
+        )}
         {props.agent ? (
           <Link
             href={`/apps/${props.agent.id}`}
@@ -1285,7 +1290,8 @@ export function ChatView(props: Props) {
 
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto"
+        // A new conversation: its question sits just above the message box, both in the middle.
+        className={cn("min-h-0 flex-1 overflow-y-auto", fresh && "flex flex-col justify-end")}
         onScroll={(e) => {
           const el = e.currentTarget;
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
@@ -1301,18 +1307,12 @@ export function ChatView(props: Props) {
         }}
       >
         <div className="w-full">
-        <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+        <div className={cn("mx-auto w-full max-w-3xl px-4 sm:px-6", fresh ? "pt-8" : "py-8")}>
           {props.conversation?.copyOf ? <CopyBanner copyOf={props.conversation.copyOf} /> : null}
           {props.handover ? <HandoverCard handover={props.handover} className="mb-8" /> : null}
           {props.agent?.notice ? <AgentNotice notice={props.agent.notice} className="mb-6" /> : null}
-          {messages.length === 0 ? (
-            <EmptyChat
-              onPick={(text) => {
-                setInput(text);
-                textarea.current?.focus();
-              }}
-              cast={castOptions.length > 1 ? { options: castOptions, selected: selectedAssistant, onSelect: pickAssistant } : null}
-            />
+          {fresh ? (
+            <EmptyChat />
           ) : (
             <ChatTimeline
               messages={messages}
@@ -1375,7 +1375,7 @@ export function ChatView(props: Props) {
             material="panel"
             reach={34}
             className={cn(
-              "relative rounded-[22px] border transition-[border-color,box-shadow] duration-[var(--dur-micro)] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
+              "chat-composer relative rounded-[28px] border transition-[border-color,box-shadow] duration-[var(--dur-micro)] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15",
               inputBlocked && "opacity-60",
             )}
             onDragOver={(e) => e.preventDefault()}
@@ -1501,69 +1501,74 @@ export function ChatView(props: Props) {
             </div>
             {liveDictation ? <LiveDictation text={liveDictation} label={tDictation("live")} className="mx-4 mb-1" /> : null}
             {/* A container: in a narrow composer (workspace open, small window) labels give way to icons. */}
-            <div className={cn("@container flex min-w-0 items-center gap-1 px-2 pb-2", dictating && "[&>*:not([data-dictation])]:hidden")}>
-              {canAttach ? (
-                <Tooltip content={t("attach")}>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={t("attach")}
-                    disabled={blocked || busy || attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE}
-                    onClick={() => fileInput.current?.click()}
-                  >
-                    <PaperclipIcon />
+            <div className={cn("@container flex min-w-0 items-center gap-1 px-2.5 pb-2.5", dictating && "[&>*:not([data-dictation])]:hidden")}>
+              {/* "+": attach a file, call an app, create an image (the tools stay one click away). */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label={t("moreActions")} title={t("moreActions")} disabled={inputBlocked} className="size-9 rounded-full text-foreground/80">
+                    <PlusIcon className="size-5" />
                   </Button>
-                </Tooltip>
-              ) : null}
-              {props.dictation ? (
-                <DictationButton
-                  disabled={inputBlocked}
-                  onText={insertDictation}
-                  // The send arrow: what was typed, then the dictated text, sent at once.
-                  onSend={(text) => void send(undefined, `${input.trim()}${input.trim() ? " " : ""}${text}`, true)}
-                  onRecordingChange={setDictating}
-                  onLive={setLiveDictation}
-                  onReplace={replaceDictation}
-                  shortcut
-                />
-              ) : null}
-              <Tooltip content={tApps("picker")}>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={tApps("picker")}
-                  aria-expanded={appQuery !== null}
-                  disabled={inputBlocked}
-                  onClick={() => {
-                    setAppIndex(0);
-                    setAppsOpen((open) => !open);
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  side="top"
+                  className="w-72"
+                  // The message box keeps the focus: typing goes on where it was.
+                  onCloseAutoFocus={(e) => {
+                    e.preventDefault();
                     textarea.current?.focus();
                   }}
                 >
-                  <LayoutGridIcon />
-                </Button>
-              </Tooltip>
-              {props.images && !props.agent ? (
-                <Tooltip content={t("imageModeHint")}>
+                  {canAttach ? (
+                    <DropdownMenuItem
+                      disabled={blocked || busy || attachments.length >= MAX_ATTACHMENTS_PER_MESSAGE}
+                      onSelect={() => fileInput.current?.click()}
+                    >
+                      <PaperclipIcon />
+                      {t("attach")}
+                    </DropdownMenuItem>
+                  ) : null}
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setAppIndex(0);
+                      setAppsOpen(true);
+                    }}
+                  >
+                    <LayoutGridIcon />
+                    {tApps("picker")}
+                  </DropdownMenuItem>
+                  {props.images && !props.agent ? (
+                    <DropdownMenuCheckboxItem checked={imageMode} onCheckedChange={(on) => setImageMode(on === true)}>
+                      <ImageIcon className="size-4 text-muted-foreground" />
+                      {t("imageModeHint")}
+                    </DropdownMenuCheckboxItem>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {imageMode && props.images && !props.agent ? (
+                // The tool in use, as a pill: a click puts it away.
+                <Tooltip content={t("imageModeOff")}>
                   <Button
                     variant="ghost"
                     size="sm"
-                    aria-pressed={imageMode}
+                    aria-pressed
+                    aria-label={t("imageModeOff")}
                     disabled={inputBlocked}
                     onClick={() => {
-                      setImageMode((on) => !on);
+                      setImageMode(false);
                       textarea.current?.focus();
                     }}
-                    className={cn("h-8 gap-1.5 px-2", imageMode && "bg-brand-soft text-brand hover:bg-brand-soft")}
+                    className="h-8 gap-1.5 rounded-full px-2.5 text-[13px] text-brand hover:bg-brand-soft"
                   >
                     <ImageIcon />
-                    <span className={cn(!imageMode && "sr-only")}>{t("imageMode")}</span>
+                    {t("imageMode")}
+                    <XIcon className="size-3.5 opacity-70" />
                   </Button>
                 </Tooltip>
               ) : null}
               {group ? (
                 <Tooltip content={tCollab("mentionButton")}>
-                  <Button variant="ghost" size="icon-sm" aria-label={tCollab("mentionButton")} disabled={inputBlocked} onClick={startMention}>
+                  <Button variant="ghost" size="icon-sm" aria-label={tCollab("mentionButton")} disabled={inputBlocked} onClick={startMention} className="size-9 rounded-full">
                     <AtSignIcon />
                   </Button>
                 </Tooltip>
@@ -1579,22 +1584,34 @@ export function ChatView(props: Props) {
                   e.target.value = "";
                 }}
               />
-              <ModelPicker
-                value={modelChoice}
-                onChange={changeModel}
-                models={pickerModels}
-                autoEnabled={props.autoEnabled && !props.agent?.allowedModels.length}
-                disabled={busy}
-              />
-              <div className="flex-1" />
               <AutoSwitch state={hide} disabled={inputBlocked} />
+              <div className="flex-1" />
+              {props.dictation ? (
+                <DictationButton
+                  disabled={inputBlocked}
+                  onText={insertDictation}
+                  // The send arrow: what was typed, then the dictated text, sent at once.
+                  onSend={(text) => void send(undefined, `${input.trim()}${input.trim() ? " " : ""}${text}`, true)}
+                  onRecordingChange={setDictating}
+                  onLive={setLiveDictation}
+                  onReplace={replaceDictation}
+                  shortcut
+                />
+              ) : null}
               {busy ? (
-                <Button size="icon-sm" variant="secondary" aria-label={t("stop")} onClick={stopAnswer} className="rounded-full">
-                  <SquareIcon className="size-3 fill-current" />
+                <Button size="icon" variant="brand" aria-label={t("stop")} onClick={stopAnswer} className="size-9 rounded-full">
+                  <SquareIcon className="size-3.5 fill-current" />
                 </Button>
               ) : (
-                <Button size="icon-sm" variant="brand" aria-label={t("send")} disabled={!canSend} onClick={() => void send()} className="rounded-full">
-                  <ArrowUpIcon />
+                <Button
+                  size="icon"
+                  variant="brand"
+                  aria-label={t("send")}
+                  disabled={!canSend}
+                  onClick={() => void send()}
+                  className="size-9 rounded-full disabled:bg-foreground/15 disabled:text-background disabled:opacity-100"
+                >
+                  <ArrowUpIcon className="size-[18px]" />
                 </Button>
               )}
             </div>
@@ -1602,6 +1619,18 @@ export function ChatView(props: Props) {
           <p className="text-center text-[11px] text-muted-foreground/80">{props.fakeMode ? t("fakeMode") : t("disclaimer")}</p>
         </div>
       </div>
+      {fresh ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {readOnly ? null : (
+            <StarterIdeas
+              onPick={(text) => {
+                setInput(text);
+                textarea.current?.focus();
+              }}
+            />
+          )}
+        </div>
+      ) : null}
 
       <NewClientDialog
         open={creatingClient !== null}
@@ -1759,32 +1788,32 @@ function CopyBanner({ copyOf }: { copyOf: { toName: string | null; at: string } 
   );
 }
 
-function EmptyChat({
-  onPick,
-  cast,
-}: {
-  onPick: (text: string) => void;
-  cast: { options: AssistantId[]; selected: AssistantId; onSelect: (id: AssistantId) => void } | null;
-}) {
+/** A new conversation: one question, centred above the message box (its suggestions sit below it). */
+function EmptyChat() {
+  const t = useTranslations("chat");
+  return (
+    <div className="flex flex-col items-center pb-7 text-center">
+      <h2 className="text-[26px] font-medium tracking-[-0.02em] sm:text-[28px]">{t("emptyTitle")}</h2>
+    </div>
+  );
+}
+
+/** Under the message box of a new conversation: three ideas to start with. */
+function StarterIdeas({ onPick }: { onPick: (text: string) => void }) {
   const t = useTranslations("chat");
   const suggestions = [t("suggestion1"), t("suggestion2"), t("suggestion3")];
   return (
-    <div className="flex min-h-[52vh] flex-col items-center justify-center text-center">
-      {cast ? <CastPicker options={cast.options} selected={cast.selected} onSelect={cast.onSelect} /> : null}
-      <h2 className={cn("text-2xl font-semibold tracking-[-0.025em] sm:text-[2rem]", cast && "mt-10")}>{t("emptyTitle")}</h2>
-      <p className="mt-3 max-w-md text-[15px] text-muted-foreground">{t("emptyBody")}</p>
-      <div className="mt-8 flex max-w-xl flex-wrap justify-center gap-2">
-        {suggestions.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onPick(s)}
-            className="rounded-full border bg-card/60 px-4 py-2 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-wrap justify-center gap-2 px-4 pt-5">
+      {suggestions.map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onPick(s)}
+          className="rounded-full border px-3.5 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          {s}
+        </button>
+      ))}
     </div>
   );
 }

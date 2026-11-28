@@ -2,8 +2,8 @@ import { AMBIENT_IDS, DEFAULT_AMBIENT as DEFAULT_PALETTE, isAmbientId, paletteOf
 
 /**
  * Appearance, chosen per device (cookies read by the root layout, so the first paint is already right):
- * - the interface: Sombre (plain black, the product's default), Clair (plain white), Système (follows
- *   the device), or Atmosphère (glass over a living background, in the colours chosen below);
+ * - the interface: Système (follows the device, the default since 2026-11-28), Clair (white), Sombre
+ *   (dark grey), or Atmosphère (glass over a living background, in the colours chosen below);
  * - the Atmosphère colours (palettes in lib/ambient/palettes.ts);
  * - the background's motion: on, or still (also still whenever the device asks for less motion);
  * - the sidebar: expanded, or a narrow rail of icons.
@@ -11,7 +11,7 @@ import { AMBIENT_IDS, DEFAULT_AMBIENT as DEFAULT_PALETTE, isAmbientId, paletteOf
 export const THEMES = ["light", "dark", "system", "atmosphere"] as const;
 export type Theme = (typeof THEMES)[number];
 export const THEME_COOKIE = "theme";
-export const DEFAULT_THEME: Theme = "dark";
+export const DEFAULT_THEME: Theme = "system";
 
 export const AMBIENTS = AMBIENT_IDS;
 export type Ambient = AmbientId;
@@ -52,8 +52,8 @@ export function isMotion(value: unknown): value is Motion {
   return typeof value === "string" && (MOTIONS as readonly string[]).includes(value);
 }
 
-/** The plain interfaces' backgrounds (Clair, Sombre); the browser bar matches. */
-export const PLAIN_BACKGROUND = { dark: "#09090b", light: "#f7f7f9" } as const;
+/** The plain interfaces' backgrounds (Clair, Sombre: the conversation's surface); the browser bar matches. */
+export const PLAIN_BACKGROUND = { dark: "#212121", light: "#ffffff" } as const;
 
 /** The browser bar colour for a choice. */
 export function themeColor(theme: Theme, ambient: Ambient, scheme: "dark" | "light"): string {

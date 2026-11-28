@@ -801,6 +801,8 @@
     "rowActions": "Options de « {title} »",
     "imageMode": "Image",
     "imageModeHint": "Créer ou modifier une image",
+    "imageModeOff": "Ne plus créer d'image",
+    "moreActions": "Ajouter des fichiers et plus",
     "imagePlaceholder": "Décrivez l'image à créer, ou ce qu'il faut changer…",
     "imaging": "Création de l'image…",
     "openImage": "Ouvrir l'image",

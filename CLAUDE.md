@@ -282,3 +282,10 @@ Taken in the "Cendr V1.1 master development prompt". Where they differ from the 
 **Changes to earlier rules.** Integrations and workflows that act on external systems (sending e-mails, Slack messages, documents) are now in scope (§4.7 "no third-party integrations" and §6 backlog items lifted), always within the workspace's permissions and only once a workflow is played. Two-step sign-in (authenticator app) is required for our team and offered to everyone.
 **Out of scope (V1.2).** New credits/billing system, automatic top-ups, Stripe, new pricing, provider credit purchasing, commercial credit ledger, per-token margin logic. The current OpenAI and Anthropic connections stay as they are.
 **Names.** The founder's "Platform" is the customers' app; "Scale" is now Studio (§11); both stay separate.
+
+## 13. Founder decisions — chat design (2026-11-28)
+
+The founder asked to take ChatGPT's design for the chat ("reprends celui de ChatGPT"). Where this differs from §7 and §11 ("near-black interface"), **this section wins**.
+- The whole chat (conversation, message box, dictation bar, left menu) follows ChatGPT's layout and feel: flat neutral greys, menu flush with the left edge, model picker at the top, the person's messages in a grey bubble, answers as free text, a round message box with a "+" menu. Other pages take the same flat greys.
+- The default theme follows the computer (light or dark); Clair, Sombre and Atmosphère stay available per device.
+- Kept from earlier decisions: the providers' logos and the model label on each answer with the Auto reason (§4.1), the visible Hide switch (§11). Never copied: ChatGPT's logo, icons or name.

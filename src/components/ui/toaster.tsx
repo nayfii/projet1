@@ -5,7 +5,8 @@ import { Toaster as Sonner } from "sonner";
 function Toaster() {
   return (
     <Sonner
-      position="bottom-right"
+      // At the top, like the best-known assistants: never over the message box and its buttons.
+      position="top-center"
       toastOptions={{
         classNames: {
           // Solid glass (sonner's own styles are unlayered, hence the !important utilities).

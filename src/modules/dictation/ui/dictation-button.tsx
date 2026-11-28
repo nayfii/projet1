@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { ArrowUpIcon, Loader2Icon, MicIcon, SquareIcon, XIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, Loader2Icon, MicIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -526,7 +526,7 @@ export function DictationButton({
     return (
       <div
         data-dictation=""
-        className="flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-full bg-muted/70 pl-1 pr-1 text-[13px] animate-message-in"
+        className="flex h-9 min-w-0 flex-1 items-center gap-1.5 pl-2 text-[13px] animate-message-in"
         role="status"
         aria-live="polite"
         aria-label={listening ? t("recording") : t("starting")}
@@ -535,28 +535,35 @@ export function DictationButton({
           if (e.key === "Escape") finish("cancel");
         }}
       >
-        <Tooltip content={t("cancel")}>
-          <Button variant="ghost" size="icon-sm" className="size-7 shrink-0 rounded-full" aria-label={t("cancel")} onClick={() => finish("cancel")}>
-            <XIcon />
-          </Button>
-        </Tooltip>
         {/* Red once the microphone really listens; grey for the instant it opens. */}
-        <span className="relative ml-1 flex size-2 shrink-0" data-listening={listening || undefined}>
+        <span className="relative flex size-2 shrink-0" data-listening={listening || undefined}>
           {listening ? <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive/60 motion-reduce:animate-none" /> : null}
           <span className={cn("relative inline-flex size-2 rounded-full transition-colors", listening ? "bg-destructive" : "bg-muted-foreground/40")} />
         </span>
-        <canvas ref={canvas} aria-hidden className="h-6 min-w-0 flex-1 text-foreground/70" />
-        <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">{formatElapsed(elapsed)}</span>
+        <canvas ref={canvas} aria-hidden className="mx-1 h-7 min-w-0 flex-1 text-foreground/75" />
+        <span className="w-9 shrink-0 text-right tabular-nums text-muted-foreground">{formatElapsed(elapsed)}</span>
+        <Tooltip content={t("cancel")}>
+          <Button variant="ghost" size="icon" className="size-9 shrink-0 rounded-full" aria-label={t("cancel")} onClick={() => finish("cancel")}>
+            <XIcon className="size-[18px]" />
+          </Button>
+        </Tooltip>
         <Tooltip content={viaKey ? t("stopKey", { keys }) : t("stop")}>
           {/* Started from the keyboard, the focus stays in the message box (Space would press Stop). */}
-          <Button variant="secondary" size="icon-sm" className="size-7 shrink-0 rounded-full" aria-label={t("stop")} autoFocus={!viaKey} onClick={() => finish("review")}>
-            <SquareIcon className="size-3 fill-current" />
+          <Button
+            variant={onSend ? "secondary" : "brand"}
+            size="icon"
+            className="size-9 shrink-0 rounded-full"
+            aria-label={t("stop")}
+            autoFocus={!viaKey}
+            onClick={() => finish("review")}
+          >
+            <CheckIcon className="size-[18px]" />
           </Button>
         </Tooltip>
         {onSend ? (
           <Tooltip content={t("send")}>
-            <Button size="icon-sm" className="size-7 shrink-0 rounded-full" aria-label={t("send")} onClick={() => finish("send")}>
-              <ArrowUpIcon />
+            <Button variant="brand" size="icon" className="size-9 shrink-0 rounded-full" aria-label={t("send")} onClick={() => finish("send")}>
+              <ArrowUpIcon className="size-[18px]" />
             </Button>
           </Tooltip>
         ) : null}
@@ -588,7 +595,7 @@ export function DictationButton({
         aria-busy={working}
         disabled={disabled || phase !== "idle"}
         onClick={() => void start("click")}
-        className={cn(working && "text-muted-foreground")}
+        className={cn("size-9 rounded-full", working && "text-muted-foreground")}
       >
         {working ? <Loader2Icon className="animate-spin" /> : <MicIcon />}
       </Button>

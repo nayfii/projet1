@@ -10,7 +10,6 @@ import {
   BotIcon,
   BrainIcon,
   BuildingIcon,
-  ChevronLeftIcon,
   ChevronsUpDownIcon,
   CpuIcon,
   EyeOffIcon,
@@ -33,6 +32,7 @@ import {
   WalletIcon,
   BriefcaseIcon,
   ArrowLeftIcon,
+  PanelLeftIcon,
   SquarePenIcon,
   RocketIcon,
   MonitorCheckIcon,
@@ -147,28 +147,36 @@ export function AppShell(props: ShellProps) {
 
   return (
     <div className="flex min-h-dvh">
-      {/* Desktop: a floating glass panel; collapsed, a narrow rail of icons (widths in appearance.css). */}
+      {/* Desktop: the menu along the left edge (a floating glass panel in Atmosphère); collapsed, a narrow
+          rail of icons (widths in appearance.css). */}
       <aside ref={asideRef} data-shell-sidebar className="shell-sidebar sticky top-0 hidden h-dvh shrink-0 md:block">
         <div className="shell-panel-frame">
-          <LiquidGlass material="panel" reach={56} className="flex h-full flex-col overflow-hidden rounded-[22px]">
-            <SidebarBody {...props} rail={collapsed} />
+          <LiquidGlass material="panel" reach={56} className="shell-panel flex h-full flex-col overflow-hidden rounded-[22px]">
+            <SidebarBody
+              {...props}
+              rail={collapsed}
+              toggle={
+                <Tooltip content={collapsed ? props.labels.expandSidebar : props.labels.collapseSidebar} side="right">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={toggle}
+                    aria-label={collapsed ? props.labels.expandSidebar : props.labels.collapseSidebar}
+                    aria-expanded={!collapsed}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <PanelLeftIcon className="size-[18px]" />
+                  </Button>
+                </Tooltip>
+              }
+            />
           </LiquidGlass>
           {collapsed ? null : <SidebarResizer label={props.labels.resizeSidebar} aside={asideRef} />}
-          {/* Centred on the line under the page header (56 px from the top). */}
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={collapsed ? props.labels.expandSidebar : props.labels.collapseSidebar}
-            aria-expanded={!collapsed}
-            className="absolute -right-3 top-[34px] z-10 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_var(--glass-shadow-color),0_0_0_1px_var(--glass-ring)] transition-transform duration-[var(--dur-micro)] hover:scale-110 active:scale-95"
-          >
-            <ChevronLeftIcon className={cn("size-3.5 transition-transform duration-[var(--dur-layout)]", collapsed && "rotate-180")} />
-          </button>
         </div>
       </aside>
 
       <div ref={columnRef} className="flex min-w-0 flex-1 flex-col">
-        <LiquidGlass material="panel" reach={14} className="sticky top-0 z-30 flex h-14 items-center gap-3 rounded-none border-b px-4 md:hidden">
+        <LiquidGlass material="panel" reach={14} className="shell-topbar sticky top-0 z-30 flex h-14 items-center gap-3 rounded-none border-b px-4 md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon-sm" aria-label={props.labels.openMenu}>
@@ -190,14 +198,29 @@ export function AppShell(props: ShellProps) {
   );
 }
 
-function SidebarBody({ sections, context, user, menuLinks, locale, labels, footerLink, sidebarExtra, appearanceHref, spaceSwitch, rail }: ShellProps & { rail: boolean }) {
+function SidebarBody({
+  sections,
+  context,
+  user,
+  menuLinks,
+  locale,
+  labels,
+  footerLink,
+  sidebarExtra,
+  appearanceHref,
+  spaceSwitch,
+  rail,
+  toggle,
+}: ShellProps & { rail: boolean; toggle?: React.ReactNode }) {
   const pathname = usePathname();
   const navRef = React.useRef<HTMLElement>(null);
   const lens = useSelectionLens(navRef, `${pathname}|${rail}`);
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex h-14 shrink-0 items-center px-4 rail:justify-center rail:px-0">
-        <Logo className="rail:[&>span:last-child]:sr-only" />
+      {/* The logo, and the button that folds the menu (alone in the rail, like the logo's place). */}
+      <div className="flex h-14 shrink-0 items-center gap-2 pl-4 pr-2 rail:justify-center rail:px-0">
+        <Logo className={cn("flex-1", toggle && "rail:hidden")} />
+        {toggle}
       </div>
       {spaceSwitch ? <div className="pb-4 rail:hidden">{spaceSwitch}</div> : null}
       <div className="px-4 pb-2 rail:hidden">
@@ -208,7 +231,7 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
       <nav
         ref={navRef}
         data-lens-ready={lens ? "" : undefined}
-        className="shell-nav relative min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-2.5 py-2 rail:px-0"
+        className="shell-nav relative min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-2.5 py-2 rail:px-0"
         aria-label={labels.navigation}
       >
         {/* Under the mouse, a light glass pill glides from row to row (below the page's own lens). */}
@@ -219,7 +242,7 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
           material="lens"
           reach={8}
           data-lifted={lens?.lifted ? "" : undefined}
-          className="shell-lens pointer-events-none absolute left-0 top-0 z-0 !m-0 rounded-[11px]"
+          className="shell-lens pointer-events-none absolute left-0 top-0 z-0 !m-0 rounded-[10px]"
           style={
             lens
               ? { transform: `translate(${lens.x}px, ${lens.y}px) scale(${lens.lifted ? 1.045 : 1})`, width: lens.w, height: lens.h }
@@ -230,7 +253,7 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
           <div key={i} className="space-y-0.5">
             {section.label ? (
               <>
-                <p className="px-2.5 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/75 rail:hidden">
+                <p className="px-2.5 pb-1 sidebar-label rail:hidden">
                   {section.label}
                 </p>
                 {i > 0 ? <div aria-hidden className="mx-auto mb-2 hidden h-px w-6 bg-border rail:block" /> : null}
@@ -251,7 +274,7 @@ function SidebarBody({ sections, context, user, menuLinks, locale, labels, foote
         </div>
       ) : null}
 
-      <div className="mx-2.5 border-t border-[var(--glass-border)] py-2 rail:mx-2">
+      <div className="mx-2.5 py-2 rail:mx-2">
         <UserMenu user={user} menuLinks={menuLinks} locale={locale} labels={labels} appearanceHref={appearanceHref} />
       </div>
     </div>
@@ -262,12 +285,12 @@ function NavLink({ item, pathname, soonLabel, rail }: { item: NavItem; pathname:
   const Icon = ICONS[item.icon];
   const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
   const base =
-    "flex h-9 items-center gap-2.5 rounded-[11px] px-2.5 text-[13.5px] rail:mx-auto rail:size-10 rail:justify-center rail:gap-0 rail:px-0";
+    "flex h-9 items-center gap-2.5 rounded-[10px] px-2.5 text-[14px] rail:mx-auto rail:size-10 rail:justify-center rail:gap-0 rail:px-0";
 
   if (item.soon) {
     return (
       <span className={cn(base, "cursor-default text-muted-foreground/70")} aria-disabled>
-        <Icon className="size-[17px] shrink-0" />
+        <Icon className="size-[18px] shrink-0" />
         <span className="flex-1 truncate rail:sr-only">{item.label}</span>
         <Badge variant="outline" className="px-1.5 py-0 text-[10px] rail:hidden">
           {soonLabel}
@@ -283,10 +306,10 @@ function NavLink({ item, pathname, soonLabel, rail }: { item: NavItem; pathname:
       className={cn(
         base,
         "glass-interactive",
-        active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+        active ? "text-foreground" : "text-foreground/85 hover:text-foreground",
       )}
     >
-      <Icon className={cn("size-[17px] shrink-0 transition-colors duration-[var(--dur-micro)]", active && "text-brand")} />
+      <Icon className="size-[18px] shrink-0" />
       <span className="truncate rail:sr-only">{item.label}</span>
     </Link>
   );
@@ -419,7 +442,7 @@ function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="glass-interactive flex w-full items-center gap-2.5 rounded-[12px] p-1.5 text-left rail:justify-center">
-          <Avatar name={user.name ?? user.email} src={user.avatarUrl} className="size-8 ring-2 ring-[var(--glass-border)]" />
+          <Avatar name={user.name ?? user.email} src={user.avatarUrl} className="size-8" />
           <span className="min-w-0 flex-1 rail:sr-only">
             <span className="block truncate text-[13px] font-medium">{user.name ?? user.email}</span>
             {user.name ? <span className="block truncate text-xs text-muted-foreground">{user.email}</span> : null}

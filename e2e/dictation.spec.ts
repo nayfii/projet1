@@ -129,6 +129,8 @@ test("dictating again adds the new text after what is already there", async () =
 test("the text lands once: polished when that comes quickly, our own rules otherwise", async () => {
   await composer().fill("");
   await expect(composer()).toHaveValue("");
+  // The earlier dictations' "Voir l'original" notes are gone first (they last a few seconds).
+  await expect(page.getByRole("button", { name: "Voir l'original" })).toHaveCount(0, { timeout: 10_000 });
   await page.route("**/api/dictation/clean", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 700));
     await route.fulfill({ json: { ok: true, text: "Texte mis au propre par le modèle.", polished: true } });

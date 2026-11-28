@@ -84,7 +84,7 @@ export function EditableTitle({
 
   return (
     <h1
-      className={cn("flex min-w-0 flex-1 items-center gap-2 text-sm font-medium", editable && "cursor-text")}
+      className={cn("flex min-w-0 flex-1 items-center gap-2 px-1 text-[14px] text-muted-foreground", editable && "cursor-text")}
       title={editable ? t("renameHint") : undefined}
       onDoubleClick={start}
     >

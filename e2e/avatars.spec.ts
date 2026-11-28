@@ -71,10 +71,12 @@ test("someone from another company cannot load that avatar", async ({ browser })
 test("the assistants appear as characters in the chat", async ({ page }) => {
   await signIn(page, owner);
   await page.goto("/chat");
-  const picker = page.getByRole("radiogroup", { name: "Choisir l'assistant" });
-  await expect(picker).toBeVisible();
-  await picker.getByRole("radio", { name: "Claude" }).click();
-  await expect(picker.getByRole("radio", { name: "Claude" })).toHaveAttribute("aria-checked", "true");
+  // The model is picked at the top of the conversation (since 2026-11-28), its logo next to its name.
+  const picker = page.getByRole("button", { name: "Choisir le modèle" });
+  await picker.click();
+  await page.getByRole("menuitem", { name: /Sonnet 5\.5/ }).click();
+  await expect(picker).toContainText("Claude");
+  await expect(picker.locator('[data-assistant="anthropic"]')).toBeVisible();
   await shot(page, "av02-chat-empty");
   await page.getByRole("textbox", { name: "Écrivez votre message…" }).fill("Bonjour, présente-toi en une phrase.");
   await page.keyboard.press("Enter");

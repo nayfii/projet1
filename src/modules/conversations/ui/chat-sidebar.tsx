@@ -62,7 +62,7 @@ export function ChatSidebarSection() {
     <div className="space-y-0.5">
       {/* In the narrow rail: search stays one click (or Ctrl K) away; recent conversations wait for the full sidebar. */}
       <Tooltip content={t("search")} side="right">
-        <button type="button" onClick={() => setSearching(true)} aria-label={t("search")} className="glass-interactive mx-auto hidden size-10 items-center justify-center rounded-[11px] text-muted-foreground hover:text-foreground rail:flex">
+        <button type="button" onClick={() => setSearching(true)} aria-label={t("search")} className="glass-interactive mx-auto hidden size-10 items-center justify-center rounded-[10px] text-muted-foreground hover:text-foreground rail:flex">
           <SearchIcon className="size-[17px]" />
         </button>
       </Tooltip>
@@ -70,7 +70,7 @@ export function ChatSidebarSection() {
         <button
           type="button"
           onClick={() => setSearching(true)}
-          className="glass-interactive flex h-8 w-full items-center gap-2.5 rounded-[11px] px-2.5 text-[13.5px] text-muted-foreground hover:text-foreground"
+          className="glass-interactive flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-[14px] text-foreground/85 hover:text-foreground"
         >
           <SearchIcon className="size-4 shrink-0" />
           <span className="flex-1 text-left">{t("search")}</span>
@@ -79,13 +79,13 @@ export function ChatSidebarSection() {
 
         {pinned.length > 0 ? (
           <>
-            <p className="px-2.5 pb-1 pt-4 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/75">{t("pinned")}</p>
+            <p className="px-2.5 pb-1 pt-4 sidebar-label">{t("pinned")}</p>
             {pinned.map((c) => (
               <ConversationRow key={c.id} item={c} active={pathname === `/chat/${c.id}`} />
             ))}
           </>
         ) : null}
-        <p className="px-2.5 pb-1 pt-4 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/75">{t("recent")}</p>
+        <p className="px-2.5 pb-1 pt-4 sidebar-label">{t("recent")}</p>
         {recent.length === 0 ? (
           <p className="px-2.5 py-1 text-[13px] text-muted-foreground/80">{t("noConversationsYet")}</p>
         ) : (
@@ -97,7 +97,7 @@ export function ChatSidebarSection() {
               type="button"
               onClick={() => setShowArchived((v) => !v)}
               aria-expanded={showArchived}
-              className="flex w-full items-center gap-1.5 px-2.5 pb-1 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 hover:text-foreground"
+              className="flex w-full items-center gap-1.5 px-2.5 pb-1 pt-3 sidebar-label hover:text-foreground"
             >
               <ArchiveIcon className="size-3" />
               {t("archived", { count: archived.length })}
@@ -297,8 +297,8 @@ function ConversationRow({ item, active }: { item: ChatListItem; active: boolean
         href={`/chat/${item.id}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "glass-interactive flex min-h-8 flex-col justify-center rounded-[11px] py-1 pl-2.5 pr-8 text-[13.5px]",
-          active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+          "glass-interactive flex min-h-9 flex-col justify-center rounded-[10px] py-1 pl-2.5 pr-8 text-[14px]",
+          active ? "text-foreground" : "text-foreground/85 hover:text-foreground",
         )}
       >
         <span className="flex min-w-0 items-center gap-1.5">
